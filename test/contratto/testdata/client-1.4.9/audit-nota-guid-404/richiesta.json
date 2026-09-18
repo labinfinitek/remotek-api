@@ -1,0 +1,14 @@
+{
+  "corpo": {
+    "guid": "collaudo",
+    "note": "nota di collaudo"
+  },
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Authorization": "Bearer collaudo-non-valido",
+    "Content-Type": "application/json"
+  },
+  "metodo": "PUT",
+  "percorso": "/api/audit",
+  "query": []
+}

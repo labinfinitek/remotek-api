@@ -54,8 +54,11 @@ diventa rosso quando la risposta cambia.
 ## Stato
 
 Registrati i quattro scenari anonimi (`version`, `login-options`,
-`non-autenticato`, `audit-conn-active-404`), rieseguiti dalla CI (push e PR
-verso `remotek`) da `TestContract` in `cmd/contratto_test.go`. Il test sta
+`non-autenticato`, `audit-conn-active-404`) e i quattro 404 delle richieste
+che il client manda e l'API non implementa (`audit-alarm-404`,
+`devices-deploy-404`, `devices-cli-404`, `audit-nota-guid-404`), rieseguiti
+dalla CI (push e PR verso `remotek`) da `TestContract` in
+`cmd/contratto_test.go`. Il test sta
 in `package main` perche' li' c'e' `InitGlobal()`: e' provvisorio, finche'
 il bootstrap non esce da `cmd/`. Gira nel processo di `go test`:
 `InitGlobal()` vero, router vero (`http.NewEngine()`) servito da
@@ -66,14 +69,17 @@ La configurazione dell'istanza di riferimento e' fissata con le variabili
 `RUSTDESK_API_*`, cosi' un cambio dei default nel codice non sposta i golden
 (i default sicuri avranno test propri).
 
-Gruppi attivi: `anonime` (4 passi). Restano da registrare 41 passi su 45:
-`non-implementate` (4), `utente` (29), `peer` (7), `login-errato` (1).
+Gruppi attivi: `anonime` (4 passi) e `non-implementate` (4), 8 passi. Restano
+da registrare 37 passi su 45: `utente` (29), `peer` (7), `login-errato` (1).
+`fonte_api` nei `meta.json` indica il codice della v2.7 da cui vengono i
+golden: nel fork le righe si spostano (`NoRoute` oggi e' in
+`http/http.go:35-37`, non 33-35) e i golden non si correggono per questo.
 
 `estrai` in `meta.json` (variabile <- chiave) salva nel contesto il valore
 della chiave nel corpo della risposta, solo se e' una stringa non vuota, e
 sostituisce i segnaposto dei passi successivi (`token` <- `access_token`,
 `guid` <- `guid`). Se manca vale come vuoto. Il registratore lo scrivera'
-prima dei golden con utente: quelli anonimi di oggi non estraggono nulla.
+prima dei golden con utente: quelli registrati finora non estraggono nulla.
 
 Deviazioni dalla lettera di REGOLE 6.1, da ratificare: niente flag
 `-update` (i golden li scrive solo il registratore finche' il riferimento e'
