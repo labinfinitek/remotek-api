@@ -8,9 +8,10 @@ import (
 	"testing"
 )
 
-// minGoldenFiles e' il numero di file .json registrati oggi (4 scenari x 3
-// file + scenario.json): trovarne meno vuol dire percorso sbagliato, e un
-// test che non legge nulla non deve passare in silenzio.
+// minGoldenFiles e' una soglia minima, non il numero dei file registrati: i 4
+// passi del gruppo anonime (4 x 3 file) piu' scenario.json. Trovarne meno
+// vuol dire percorso sbagliato, e un test che non legge nulla non deve
+// passare in silenzio.
 const minGoldenFiles = 13
 
 // TestSerializeMatchesRecorder prova la parita' tra la forma canonica Go e

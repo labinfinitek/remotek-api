@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-const minRecordedSteps = 4 // passi registrati oggi: trovarne meno vuol dire percorso sbagliato
+const minRecordedSteps = 4 // minimo, i passi del gruppo anonime: trovarne meno vuol dire percorso sbagliato
 const ctJSON, ctText = "application/json; charset=utf-8", "text/plain; charset=utf-8"
 
 // TestEnvelopeReproducesGoldens prova Envelope e Serialize sui dati veri: da
