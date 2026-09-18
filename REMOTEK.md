@@ -7,7 +7,7 @@ l'elenco crescera'. `git log v2.7..remotek` mostra la stessa lista come commit.
 | File | Modifica | Motivo | ADR |
 |---|---|---|---|
 | `.github/workflows/build.yml`, `build_test.yml` | rimossi | partivano su tag `v*.*.*`/`test*` e pubblicavano su registry altrui con azioni non piu' eseguite | 0006 |
-| `LICENSE` | riga "Modifiche (c) 2026 Infinitek" sotto l'attribuzione originale | MIT: attribuzione a lejianwen conservata | 0005 |
+| `LICENSE` | riga "Modifiche (c) 2026 Infinitek S.r.l." sotto l'attribuzione originale | MIT: attribuzione a lejianwen conservata | 0005 |
 | `SECURITY.md`, `REMOTEK.md`, `CHANGELOG.md`, `.github/pull_request_template.md` | documenti del fork | sicurezza, tracciabilita' | REGOLE 13 |
 | `go.mod`, `.gitignore`, `go.sum` | Go 1.26 / toolchain go1.26.8; `go.sum` versionato (generato dal job `gosum` della CI) | build riproducibile su una release di Go supportata | REGOLE 9 |
 | `generate_api.go`, `generate_run.go` -> `tools/generate.go` | direttive `go:generate` spostate fuori dal pacchetto radice, con build tag | la radice era un `package main` senza `main`: `go build/vet/test ./...` fallivano | REGOLE 10.2 |
