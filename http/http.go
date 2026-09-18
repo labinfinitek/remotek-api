@@ -10,7 +10,9 @@ import (
 	"strings"
 )
 
-func ApiInit() {
+// NewEngine costruisce il router completo dell'API senza avviare il server:
+// la usano ApiInit e i test del contratto.
+func NewEngine() *gin.Engine {
 	gin.SetMode(global.Config.Gin.Mode)
 	g := gin.New()
 
@@ -37,5 +39,10 @@ func ApiInit() {
 	router.WebInit(g)
 	router.Init(g)
 	router.ApiInit(g)
-	Run(g, global.Config.Gin.ApiAddr)
+	return g
+}
+
+// ApiInit costruisce il router con NewEngine e lo avvia su gin.api-addr.
+func ApiInit() {
+	Run(NewEngine(), global.Config.Gin.ApiAddr)
 }
