@@ -11,6 +11,12 @@ Base upstream: rustdesk-api v2.7.
 - Workflow upstream `build.yml` e `build_test.yml` (build e pubblicazione su
   registry altrui): la CI del fork arriva con `remotek-ci.yml`.
 
+### Modificato
+- Si compila con Go 1.26 (toolchain go1.26.8) e `go.sum` e' versionato: le
+  dipendenze di un build sono quelle del commit, non quelle del giorno.
+
 ### Aggiunto
 - `SECURITY.md`, `REMOTEK.md`, template di pull request; attribuzione delle
   modifiche in `LICENSE`.
+- CI `remotek-ci.yml`: ricerca di segreti, controllo di `go.mod`/`go.sum`,
+  build, vet e test con `-race`, audit dei workflow.
