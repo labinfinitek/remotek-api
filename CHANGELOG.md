@@ -16,7 +16,9 @@ Base upstream: rustdesk-api v2.7.
 - GO-2026-5004, `github.com/jackc/pgx/v5` v5.6.0 -> v5.9.2: SQL injection per
   confusione dei segnaposto con le stringhe dollar-quoted (driver PostgreSQL).
 - GO-2026-4945, `github.com/go-jose/go-jose/v4` v4.0.2 -> v4.1.4: panic nella
-  decifratura JWE (verifica del token nel login OIDC).
+  decifratura JWE. Il pacchetto serve alla verifica del token nel login OIDC;
+  che il percorso JWE fosse davvero esposto non e' dimostrato (l'avviso non
+  elenca i simboli), si corregge comunque.
 - GO-2025-4188, `github.com/sirupsen/logrus` v1.8.1 -> v1.8.3: DoS in
   `Entry.writerScanner` (writer degli errori di gin).
 - GO-2025-3595, `golang.org/x/net` v0.34.0 -> v0.56.0: neutralizzazione errata
