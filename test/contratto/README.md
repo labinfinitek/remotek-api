@@ -54,6 +54,29 @@ diventa rosso quando la risposta cambia.
 ## Stato
 
 Registrati i quattro scenari anonimi (`version`, `login-options`,
-`non-autenticato`, `audit-conn-active-404`). Il test Go che li riesegue contro
-l'API in memoria arriva con la MR dei prerequisiti (DSN configurabile,
-`NewEngine()`); fino ad allora sono dati, non un controllo.
+`non-autenticato`, `audit-conn-active-404`), rieseguiti dalla CI (push e PR
+verso `remotek`) da `TestContract` in `cmd/contratto_test.go`. Il test sta
+in `package main` perche' li' c'e' `InitGlobal()`: e' provvisorio, finche'
+il bootstrap non esce da `cmd/`. Gira nel processo di `go test`:
+`InitGlobal()` vero, router vero (`http.NewEngine()`) servito da
+`httptest.NewServer`, cartella corrente spostata in una cartella temporanea
+con `data/`, `runtime/` e i collegamenti a `resources/` e `conf/`, quindi
+sqlite su un file temporaneo.
+La configurazione dell'istanza di riferimento e' fissata con le variabili
+`RUSTDESK_API_*`, cosi' un cambio dei default nel codice non sposta i golden
+(i default sicuri avranno test propri).
+
+Gruppi attivi: `anonime` (4 passi). Restano da registrare 41 passi su 45:
+`non-implementate` (4), `utente` (29), `peer` (7), `login-errato` (1).
+
+`estrai` in `meta.json` (variabile <- chiave) salva nel contesto il valore
+della chiave nel corpo della risposta, solo se e' una stringa non vuota, e
+sostituisce i segnaposto dei passi successivi (`token` <- `access_token`,
+`guid` <- `guid`). Se manca vale come vuoto. Il registratore lo scrivera'
+prima dei golden con utente: quelli anonimi di oggi non estraggono nulla.
+
+Deviazioni dalla lettera di REGOLE 6.1, da ratificare: niente flag
+`-update` (i golden li scrive solo il registratore finche' il riferimento e'
+la v2.7), niente go-cmp (confronto byte a byte sulla forma canonica, nessuna
+dipendenza nuova), sqlite su file in una cartella temporanea invece che in
+memoria (il percorso del DB configurabile arriva dopo, sotto questi test).
