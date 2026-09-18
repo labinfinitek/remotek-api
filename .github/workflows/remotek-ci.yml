@@ -1,5 +1,5 @@
-# CI dell'API Remotek (REGOLE 7): segreti, go.sum, test, lint, audit dei
-# workflow. govulncheck, hadolint e SBOM entrano con le MR successive del
+# CI dell'API Remotek (REGOLE 7): segreti, go.sum, test, govulncheck, lint,
+# audit dei workflow. hadolint e SBOM entrano con le MR successive del
 # Passo 3.
 #
 # Regole di questo file: azioni pinnate a SHA con la versione in commento
@@ -136,6 +136,39 @@ jobs:
         run: go test -race -shuffle=on -count=1 -coverprofile="${RUNNER_TEMP}/cover.out" ./...
       - name: Copertura (informativa, nessuna soglia)
         run: go tool cover -func="${RUNNER_TEMP}/cover.out" | tail -n 1
+
+  # Vulnerabilita' note RAGGIUNTE dal nostro codice (REGOLE 6.3, 8 e 9).
+  # Bloccante: fallisce (exit 3) solo su cio' che il codice chiama davvero.
+  # Cio' che e' soltanto importato o richiesto non fa fallire il job: con
+  # "-show verbose" resta elencato nel log (id, modulo, versione che corregge)
+  # e si legge nella MR mensile build(deps).
+  govulncheck:
+    name: govulncheck
+    needs: gosum
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      # Versione fissata: si alza con un commit, come le azioni.
+      GOVULNCHECK_VERSION: v1.8.0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+      # "go install pacchetto@versione" ignora il go.mod del repo: funziona anche
+      # con GOFLAGS=-mod=readonly e GOTOOLCHAIN=local (provato in CI), quindi
+      # l'ambiente del workflow resta quello di tutti gli altri job.
+      - name: Installa govulncheck
+        run: go install "golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VERSION}"
+      - name: govulncheck
+        run: |
+          "$(go env GOPATH)/bin/govulncheck" -show verbose ./...
 
   workflow-audit:
     name: workflow-audit

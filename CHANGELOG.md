@@ -7,6 +7,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 ## [Non rilasciato]
 Base upstream: rustdesk-api v2.7.
 
+### Sicurezza
+- govulncheck v1.8.0 in CI, bloccante: una vulnerabilita' nota chiamata dal
+  nostro codice ferma la MR.
+
 ### Rimosso
 - Workflow upstream `build.yml` e `build_test.yml` (build e pubblicazione su
   registry altrui): la CI del fork arriva con `remotek-ci.yml`.
