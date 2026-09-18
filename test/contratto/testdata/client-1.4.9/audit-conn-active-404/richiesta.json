@@ -1,0 +1,24 @@
+{
+  "corpo": null,
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Authorization": "Bearer collaudo-non-valido",
+    "Content-Type": "application/json"
+  },
+  "metodo": "GET",
+  "percorso": "/api/audit/conn/active",
+  "query": [
+    [
+      "id",
+      "999000111"
+    ],
+    [
+      "session_id",
+      "1"
+    ],
+    [
+      "conn_type",
+      "0"
+    ]
+  ]
+}

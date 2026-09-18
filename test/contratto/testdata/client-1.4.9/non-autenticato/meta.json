@@ -1,0 +1,22 @@
+{
+  "attesa_dal_codice": "401 {\"error\":\"Unauthorized\"}",
+  "autenticata": false,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "non-autenticato",
+  "fonte_api": "api/http/middleware/rustauth.go:13-20",
+  "fonte_client": [
+    "client/flutter/lib/models/ab_model.dart:225-227",
+    "client/flutter/lib/models/ab_model.dart:1047-1049",
+    "client/flutter/lib/models/user_model.dart:81-84"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "401 = il client azzera sessione, rubrica e gruppi (logout forzato)",
+  "precondizione": "",
+  "registrato_il": "2026-09-18T06:39:09Z",
+  "scrive": false
+}

@@ -1,0 +1,185 @@
+{
+  "client": "1.4.9",
+  "passi": [
+    {
+      "gruppo": "anonime",
+      "nome": "version"
+    },
+    {
+      "gruppo": "anonime",
+      "nome": "login-options"
+    },
+    {
+      "gruppo": "anonime",
+      "nome": "non-autenticato"
+    },
+    {
+      "gruppo": "anonime",
+      "nome": "audit-conn-active-404"
+    },
+    {
+      "gruppo": "non-implementate",
+      "nome": "audit-alarm-404"
+    },
+    {
+      "gruppo": "non-implementate",
+      "nome": "devices-deploy-404"
+    },
+    {
+      "gruppo": "non-implementate",
+      "nome": "devices-cli-404"
+    },
+    {
+      "gruppo": "non-implementate",
+      "nome": "audit-nota-guid-404"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "login"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "currentUser"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-personal"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-settings"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-shared-profiles"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-peers-vuota"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-tags-vuota"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-tag-add"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-tag-add-duplicato"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-tags-con-tag"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-tag-update"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-tag-rename"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-peer-add"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-peer-add-da-recenti"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-peers-con-peer"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-peer-update-tags"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-peer-update-alias"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-peer-update-note"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-peer-update-hash"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-peer-update-sync"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-legacy-get"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "users"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "peers"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "device-group-accessible"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-peer-delete"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-tag-delete"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "ab-legacy-post"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "logout"
+    },
+    {
+      "gruppo": "utente",
+      "nome": "currentUser-dopo-logout"
+    },
+    {
+      "gruppo": "peer",
+      "nome": "heartbeat"
+    },
+    {
+      "gruppo": "peer",
+      "nome": "sysinfo"
+    },
+    {
+      "gruppo": "peer",
+      "nome": "audit-conn-new"
+    },
+    {
+      "gruppo": "peer",
+      "nome": "audit-conn-auth"
+    },
+    {
+      "gruppo": "peer",
+      "nome": "audit-conn-close"
+    },
+    {
+      "gruppo": "peer",
+      "nome": "audit-conn-nota"
+    },
+    {
+      "gruppo": "peer",
+      "nome": "audit-file"
+    },
+    {
+      "gruppo": "login-errato",
+      "nome": "login-errato"
+    }
+  ]
+}

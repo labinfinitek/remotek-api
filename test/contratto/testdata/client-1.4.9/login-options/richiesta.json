@@ -1,0 +1,10 @@
+{
+  "corpo": null,
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Content-Type": "application/json"
+  },
+  "metodo": "GET",
+  "percorso": "/api/login-options",
+  "query": []
+}
