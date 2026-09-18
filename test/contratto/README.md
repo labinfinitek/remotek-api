@@ -41,6 +41,16 @@ riscrive (`1e-06`, `0`), Go ne conserva il letterale; `NaN` e `Infinity`
 `json.loads` li accetta, `Decode` no; `\d` in Python accetta anche cifre non
 ASCII; i byte non UTF-8.
 
+`Run` riesegue verso un URL base i passi dei gruppi scelti, nell'ordine di
+`scenario.json` e uno per sottotest, e confronta ogni risposta col golden.
+Le regole sono fail-closed, perche' un verde deve aver provato qualcosa:
+sono errori un gruppo che lo scenario non ha, nessun passo da eseguire, un
+passo di un gruppo attivo senza golden (un gruppo non ancora registrato
+non si attiva), un confronto diverso da `esatto` o `forma`, un segnaposto
+senza valore nel contesto, una risposta compressa o oltre 4 MiB.
+`TestRunStepReportsDifference` e' la prova permanente che il motore
+diventa rosso quando la risposta cambia.
+
 ## Stato
 
 Registrati i quattro scenari anonimi (`version`, `login-options`,
