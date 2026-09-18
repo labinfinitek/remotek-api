@@ -257,8 +257,8 @@ Download the release from [release](https://github.com/lejianwen/rustdesk-api/re
     ```bash
     # Run directly
    go run cmd/apimain.go
-   # Or generate and run the API using generate_api.go
-   go generate generate_api.go
+   # To regenerate the Swagger docs first (requires swag in PATH)
+   go generate -tags tools ./tools
    ```
    > **Note:** When using `go run` or the compiled binary, the `conf` and `resources`
    > directories must exist relative to the current working directory. If you run

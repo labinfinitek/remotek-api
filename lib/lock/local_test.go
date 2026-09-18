@@ -16,7 +16,6 @@ func TestLocal_GetLock(t *testing.T) {
 	i := 0
 	go func() {
 		l1 = l.GetLock("key")
-		fmt.Println("l1", l1, i)
 		l1.Lock()
 		fmt.Println("l1", i)
 		i++
@@ -25,7 +24,6 @@ func TestLocal_GetLock(t *testing.T) {
 	}()
 	go func() {
 		l2 = l.GetLock("key")
-		fmt.Println("l2", l2, i)
 		l2.Lock()
 		fmt.Println("l2", i)
 		i++
@@ -34,7 +32,6 @@ func TestLocal_GetLock(t *testing.T) {
 	}()
 	go func() {
 		l3 = l.GetLock("key")
-		fmt.Println("l3", l3, i)
 		l3.Lock()
 		fmt.Println("l3", i)
 		i++
@@ -43,9 +40,15 @@ func TestLocal_GetLock(t *testing.T) {
 	}()
 	wg.Wait()
 
-	fmt.Println(l1, l2, l3)
-	fmt.Println(l1 == l2, l2 == l3)
-	fmt.Println(&sync.Mutex{} == &sync.Mutex{})
+	// La stessa chiave deve dare lo stesso mutex. Le stampe di l1..l3 e di i
+	// fuori dal lock sono state tolte: erano letture non sincronizzate, che
+	// con -race fanno fallire il test.
+	if l1 != l2 || l2 != l3 {
+		t.Fatalf("GetLock ha restituito mutex diversi per la stessa chiave")
+	}
+	if i != 3 {
+		t.Fatalf("i = %d, atteso 3", i)
+	}
 }
 
 func TestLocal_Lock(t *testing.T) {

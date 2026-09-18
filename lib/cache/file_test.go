@@ -16,7 +16,14 @@ func TestFileSet(t *testing.T) {
 }
 
 func TestFileGet(t *testing.T) {
+	// Cartella propria e scrittura prima della lettura: il test non deve
+	// dipendere da cio' che un altro test ha lasciato in os.TempDir()
+	// (con -shuffle=on falliva se girava per primo o dopo un Set di struct).
 	fc := NewFileCache()
+	fc.SetDir(t.TempDir())
+	if err := fc.Set("123", "ddd", 0); err != nil {
+		t.Fatalf("写入失败: %v", err)
+	}
 	res := ""
 	err := fc.Get("123", &res)
 	if err != nil {
@@ -46,7 +53,7 @@ func TestFileGetJson(t *testing.T) {
 	err2 := fc.Get("123", res)
 	fmt.Println("res", res)
 	if err2 != nil {
-		t.Fatalf("读取失败" + err2.Error())
+		t.Fatalf("读取失败: %v", err2)
 	}
 }
 func TestFileSetGetJson(t *testing.T) {
@@ -68,7 +75,7 @@ func TestFileSetGetJson(t *testing.T) {
 	err2 := fc.Get("123", res)
 	fmt.Println("res", res)
 	if err2 != nil {
-		t.Fatalf("读取失败" + err2.Error())
+		t.Fatalf("读取失败: %v", err2)
 	}
 	if !reflect.DeepEqual(res, old) {
 		t.Fatalf("读取错误")
