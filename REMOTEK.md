@@ -14,7 +14,7 @@ l'elenco crescera'. `git log v2.7..remotek` mostra la stessa lista come commit.
 | `lib/cache/*_test.go`, `lib/lock/local_test.go` | test Redis solo con `REDIS_ADDR`; formato costante nei `Fatalf`; niente letture non sincronizzate | i test devono girare in CI con `-race -shuffle=on` | REGOLE 6.1 |
 | `.golangci.yml`, `.github/lint-bonificati.txt`, `.github/scripts/riepilogo-lint.py` | golangci-lint v2 in CI: bloccante sui pacchetti bonificati, informativo sul resto | il debito ereditato resta visibile e non cresce | 0012, REGOLE 6.3 |
 | `.github/workflows/remotek-ci.yml`, `.gitleaks.toml` | CI del fork: gitleaks, go.sum, build/vet/test, zizmor | controlli a ogni push e PR verso `remotek`, gratis sul repo pubblico | 0012, REGOLE 7 |
-| `test/contratto/` | golden delle risposte di v2.7 alle richieste del client 1.4.9 (per ora i quattro scenari anonimi) | il contratto col client si verifica, non si ricorda | 0012, REGOLE 6.1 |
+| `test/contratto/` | golden delle risposte di v2.7 alle richieste del client 1.4.9 (per ora i quattro scenari anonimi) e libreria Go di normalizzazione e confronto, stessa semantica del registratore | il contratto col client si verifica, non si ricorda | 0012, REGOLE 6.1 |
 
 Contratto verso il client RustDesk: invariato (ogni endpoint chiamato dal
 client avra' un test del contratto prima di essere toccato).
