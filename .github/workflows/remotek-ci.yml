@@ -1,0 +1,154 @@
+# CI dell'API Remotek (REGOLE 7). Prima versione: segreti, go.sum, test,
+# audit dei workflow. Lint, govulncheck, hadolint e SBOM entrano con le MR
+# successive del Passo 3.
+#
+# Regole di questo file: azioni pinnate a SHA con la versione in commento
+# (si aggiornano con pinact), permessi minimi per job, nessun cron, nessun tag.
+name: remotek-ci
+
+on:
+  push:
+    branches: [remotek]
+  pull_request:
+    branches: [remotek]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # La versione di Go e' quella della riga toolchain di go.mod: mai download a sorpresa.
+  GOTOOLCHAIN: local
+  # go.mod e go.sum si cambiano solo con un commit, mai durante un build.
+  GOFLAGS: -mod=readonly
+
+jobs:
+  segreti:
+    name: segreti
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read # l'azione elenca i commit della PR via API
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # gitleaks scansiona i commit, non solo l'albero
+          persist-credentials: false
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_ENABLE_COMMENTS: "false" # niente permesso di scrittura sulle PR
+
+  gosum:
+    # Sul lab non c'e' Go: go.sum nasce e si aggiorna qui. Il job gira sempre
+    # ed e' anche il controllo "go.mod e go.sum sono in ordine": se go mod tidy
+    # cambierebbe qualcosa, carica i due file come artefatto e fallisce. Si
+    # scarica l'artefatto (gh run download <id> -n gosum), si committa, si
+    # rispinge.
+    name: gosum
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      GOFLAGS: "" # go mod tidy deve poter scrivere go.mod e go.sum
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Versione di Go uguale alla riga toolchain di go.mod
+        run: |
+          atteso="$(sed -n 's/^toolchain //p' go.mod)"
+          trovato="$(go env GOVERSION)"
+          echo "go.mod: ${atteso} - runner: ${trovato}"
+          test -n "${atteso}" && test "${atteso}" = "${trovato}"
+      - name: go mod tidy
+        id: tidy
+        run: |
+          cp go.mod "${RUNNER_TEMP}/go.mod.prima"
+          if [ -f go.sum ]; then cp go.sum "${RUNNER_TEMP}/go.sum.prima"; else : > "${RUNNER_TEMP}/go.sum.prima"; fi
+          go mod tidy
+          go mod verify
+          cambiato=false
+          diff -u "${RUNNER_TEMP}/go.mod.prima" go.mod || cambiato=true
+          diff -q "${RUNNER_TEMP}/go.sum.prima" go.sum || cambiato=true
+          echo "cambiato=${cambiato}" >> "${GITHUB_OUTPUT}"
+      - name: Carica go.mod e go.sum
+        if: steps.tidy.outputs.cambiato == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gosum
+          path: |
+            go.mod
+            go.sum
+          if-no-files-found: error
+          retention-days: 7
+      - name: Fallisce se go.mod o go.sum non sono quelli committati
+        if: steps.tidy.outputs.cambiato == 'true'
+        run: |
+          echo "::error::go mod tidy cambia go.mod/go.sum: scarica l'artefatto 'gosum' di questa run, committa i due file e rispingi."
+          exit 1
+
+  test:
+    name: test
+    needs: gosum
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    services:
+      redis:
+        image: redis:7.4.11-alpine@sha256:520775a41a63e77e06c73e35d2fd9cc15921a609516818796b4ecbb813078bc7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      CGO_ENABLED: "1" # mattn/go-sqlite3 e -race
+      REDIS_ADDR: 127.0.0.1:6379
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+      - name: go build
+        run: go build ./...
+      - name: go vet
+        run: go vet ./...
+      - name: go test
+        run: go test -race -shuffle=on -count=1 -coverprofile="${RUNNER_TEMP}/cover.out" ./...
+      - name: Copertura (informativa, nessuna soglia)
+        run: go tool cover -func="${RUNNER_TEMP}/cover.out" | tail -n 1
+
+  workflow-audit:
+    name: workflow-audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
+        with:
+          version: 1.30.1
+          advanced-security: false # esito nel log, il job fallisce sui finding: niente security-events: write
+          annotations: true
