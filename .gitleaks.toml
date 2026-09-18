@@ -1,0 +1,20 @@
+# Configurazione gitleaks di remotek-api (REGOLE 6.3, 8).
+# Regole di default di gitleaks + eccezioni motivate. Un'eccezione nuova si
+# aggiunge solo con il motivo scritto qui e nella MR; mai zittire il job.
+title = "remotek-api"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Chiave RSA di prova ereditata da upstream (commit c53df22, 2024-09-13): usata come segreto HMAC nei test di lib/jwt, pubblica da sempre, non protegge nulla. Vale solo per la regola private-key e solo per questo file."
+targetRules = ["private-key"]
+paths = ['''^lib/jwt/jwt_test\.go$''']
+
+[[allowlists]]
+description = "Web client v1/v2 di RustDesk vendored da upstream (JS compilato, con la chiave Firebase web di RustDesk e hash di asset): non e' codice nostro, non contiene segreti nostri, si rimuove nel Passo 3 (REGOLE 9). Il percorso resta in allowlist anche dopo, per la storia."
+paths = ['''^resources/web2?/''']
+
+[[allowlists]]
+description = "Segnaposto della documentazione upstream (README storici: KEY=abc123456789)."
+regexes = ['''^abc123456789$''']
