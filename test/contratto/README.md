@@ -28,6 +28,19 @@ CI lo controlla con gitleaks). I golden restano il riferimento anche dopo
 `api-v0.1.0`: si rigenerano solo quando cambia la versione del client
 supportata, in una cartella nuova.
 
+## Libreria Go
+
+Il pacchetto `contratto` rilegge i golden con la stessa semantica del
+registratore: `Decode` (numeri come `json.Number`, dati dopo il valore =
+errore), `Normalize` (segnaposto) e `Serialize` (forma canonica);
+`TestSerializeMatchesRecorder` pretende gli stessi byte su ogni file di
+`testdata/`. I golden li scrive solo il registratore: niente flag `-update`,
+perche' riscriverli dal nostro output svuoterebbe il test. Limiti noti, tutti
+assenti dai payload di oggi: i numeri non interi e l'intero `-0` Python li
+riscrive (`1e-06`, `0`), Go ne conserva il letterale; `NaN` e `Infinity`
+`json.loads` li accetta, `Decode` no; `\d` in Python accetta anche cifre non
+ASCII; i byte non UTF-8.
+
 ## Stato
 
 Registrati i quattro scenari anonimi (`version`, `login-options`,
