@@ -53,10 +53,12 @@ diventa rosso quando la risposta cambia.
 
 ## Stato
 
-Registrati i quattro scenari anonimi (`version`, `login-options`,
-`non-autenticato`, `audit-conn-active-404`) e i quattro 404 delle richieste
-che il client manda e l'API non implementa (`audit-alarm-404`,
-`devices-deploy-404`, `devices-cli-404`, `audit-nota-guid-404`), rieseguiti
+Registrati 8 passi: tre scenari anonimi che l'API implementa (`version`,
+`login-options`, `non-autenticato`) e i 404 delle cinque richieste che il
+client manda e l'API non implementa, che finiscono nel `NoRoute`
+(`audit-conn-active-404`, nel gruppo `anonime`, e `audit-alarm-404`,
+`devices-deploy-404`, `devices-cli-404`, `audit-nota-guid-404`, nel gruppo
+`non-implementate`), rieseguiti
 dalla CI (push e PR verso `remotek`) da `TestContract` in
 `cmd/contratto_test.go`. Il test sta
 in `package main` perche' li' c'e' `InitGlobal()`: e' provvisorio, finche'
