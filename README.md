@@ -258,8 +258,8 @@
     ```bash
     #直接运行
     go run cmd/apimain.go
-    #或者使用generate_api.go生成api并运行
-    go generate generate_api.go
+    #如需先重新生成swagger文档（需要swag）
+    go generate -tags tools ./tools
     ```
    > 注意：使用 `go run` 或编译后的二进制时，当前目录下必须存在 `conf` 和 `resources`
    > 目录。如果在其他目录运行，可通过 `-c` 和环境变量
