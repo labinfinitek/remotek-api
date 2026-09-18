@@ -17,7 +17,7 @@ cambiare il golden con una motivazione scritta nella MR.
 | `meta.json` | da dove viene la richiesta nel client (`fonte_client`), quale codice dell'API risponde (`fonte_api`), quali campi sono stati sostituiti da segnaposto (`normalizzati`) e come si confronta (`confronto`: `esatto` o `forma`) |
 
 `scenario.json` elenca tutti i passi previsti, anche quelli non ancora
-registrati (servono un utente di collaudo sull'istanza di riferimento).
+registrati (sezione Stato).
 
 ## Come si registrano
 
@@ -104,7 +104,7 @@ sostituisce i segnaposto dei passi successivi (`token` <- `access_token`,
 `guid` <- `guid`). Se manca vale come vuoto. Il registratore lo scrivera'
 prima dei golden con utente: quelli registrati finora non estraggono nulla.
 
-Deviazioni dalla lettera di REGOLE 6.1, da ratificare: niente flag
+Scelte fissate in REGOLE 6.1 (ADR-0014): niente flag
 `-update` (i golden li scrive solo il registratore finche' il riferimento e'
 la v2.7), niente go-cmp (confronto byte a byte sulla forma canonica, nessuna
 dipendenza nuova), sqlite su file in una cartella temporanea invece che in
