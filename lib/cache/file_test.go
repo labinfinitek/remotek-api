@@ -16,7 +16,14 @@ func TestFileSet(t *testing.T) {
 }
 
 func TestFileGet(t *testing.T) {
+	// Cartella propria e scrittura prima della lettura: il test non deve
+	// dipendere da cio' che un altro test ha lasciato in os.TempDir()
+	// (con -shuffle=on falliva se girava per primo o dopo un Set di struct).
 	fc := NewFileCache()
+	fc.SetDir(t.TempDir())
+	if err := fc.Set("123", "ddd", 0); err != nil {
+		t.Fatalf("写入失败: %v", err)
+	}
 	res := ""
 	err := fc.Get("123", &res)
 	if err != nil {
