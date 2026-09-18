@@ -1,0 +1,10 @@
+{
+  "content_type": "application/json; charset=utf-8",
+  "corpo": {
+    "code": 0,
+    "data": "2.7\n",
+    "message": "success"
+  },
+  "corpo_tipo": "json",
+  "stato": 200
+}

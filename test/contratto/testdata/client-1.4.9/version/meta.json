@@ -1,0 +1,20 @@
+{
+  "attesa_dal_codice": "200 {\"code\":0,\"message\":\"success\",\"data\":\"<contenuto di resources/version>\"}",
+  "autenticata": false,
+  "client": "1.4.9",
+  "confronto": "forma",
+  "endpoint": "version",
+  "fonte_api": "api/http/controller/api/index.go:74-81",
+  "fonte_client": [
+    "(non chiamato dal client: healthcheck e --verifica)"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "sulla 111 data vale \"2.7\\n\" (a capo finale incluso): il valore dipende dall'immagine",
+  "precondizione": "",
+  "registrato_il": "2026-09-18T06:39:09Z",
+  "scrive": false
+}

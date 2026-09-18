@@ -20,3 +20,5 @@ Base upstream: rustdesk-api v2.7.
   modifiche in `LICENSE`.
 - CI `remotek-ci.yml`: ricerca di segreti, controllo di `go.mod`/`go.sum`,
   build, vet e test con `-race`, audit dei workflow.
+- `test/contratto/`: risposte di riferimento di rustdesk-api v2.7 alle richieste
+  del client 1.4.9 (scenari anonimi), base dei test del contratto.

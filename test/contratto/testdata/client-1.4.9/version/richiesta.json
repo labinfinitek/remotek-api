@@ -1,0 +1,8 @@
+{
+  "corpo": null,
+  "corpo_vuoto": false,
+  "intestazioni": {},
+  "metodo": "GET",
+  "percorso": "/api/version",
+  "query": []
+}

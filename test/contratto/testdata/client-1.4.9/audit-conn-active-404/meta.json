@@ -1,0 +1,20 @@
+{
+  "attesa_dal_codice": "404 testo '404 not found'",
+  "autenticata": false,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "audit-conn-active-404",
+  "fonte_api": "api/http/http.go:33-35 (NoRoute)",
+  "fonte_client": [
+    "client/flutter/lib/models/model.dart:1259-1311"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "solo con l'opzione allow-ask-for-note; stato != 200 = il client smette di chiedere",
+  "precondizione": "",
+  "registrato_il": "2026-09-18T06:39:20Z",
+  "scrive": false
+}

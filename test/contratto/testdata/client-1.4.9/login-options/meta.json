@@ -1,0 +1,23 @@
+{
+  "attesa_dal_codice": "200 [\"common-oidc/<json array di {name}>\", \"oidc/<name>\", ...]",
+  "autenticata": false,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "login-options",
+  "fonte_api": "api/http/controller/api/login.go:103-123",
+  "fonte_client": [
+    "client/flutter/lib/models/user_model.dart:222-245",
+    "client/flutter/lib/utils/http_service.dart:18",
+    "client/src/hbbs_http/account.rs:155",
+    "client/src/hbbs_http/record_upload.rs:34"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "",
+  "precondizione": "dipende dalla configurazione: app.web-sso e provider OAuth in DB",
+  "registrato_il": "2026-09-18T06:39:09Z",
+  "scrive": false
+}

@@ -1,0 +1,9 @@
+{
+  "content_type": "application/json; charset=utf-8",
+  "corpo": [
+    "common-oidc/[{\"name\":\"webauth\"}]",
+    "oidc/webauth"
+  ],
+  "corpo_tipo": "json",
+  "stato": 200
+}
