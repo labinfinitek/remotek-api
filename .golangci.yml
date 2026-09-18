@@ -1,0 +1,61 @@
+# Configurazione di golangci-lint v2 per l'API Remotek (ADR-0012, REGOLE 6.3).
+# Versione dello strumento: quella fissata in .github/workflows/remotek-ci.yml.
+# Due usi: job `lint` (bloccante) sui soli pacchetti elencati in
+# .github/lint-bonificati.txt, job `lint-tutto` (informativo) su tutto il repo.
+# Niente --new-from-rev: il debito ereditato deve restare visibile.
+version: "2"
+
+run:
+  timeout: 10m
+  tests: true
+
+linters:
+  default: standard # errcheck, govet, ineffassign, staticcheck, unused
+  enable:
+    - bodyclose
+    - errorlint
+    - gocritic
+    - gosec
+    - misspell
+    - noctx
+    - revive
+    - rowserrcheck
+    - sqlclosecheck
+  settings:
+    misspell:
+      locale: US # i commenti nuovi sono in italiano: misspell guarda solo parole inglesi note
+    gosec:
+      excludes:
+        - G115 # conversioni tra interi: rumoroso sul codice ereditato, si rivaluta a bonifica finita
+    revive:
+      rules:
+        - name: exported
+          disabled: true # 23k righe ereditate senza doc-comment: si attiva modulo per modulo
+    staticcheck:
+      checks: ["all", "-ST1000", "-ST1003"] # niente package doc obbligatoria; nomi con underscore ereditati
+  exclusions:
+    generated: lax
+    presets:
+      - std-error-handling
+      - common-false-positives
+    paths:
+      - docs/ # swagger generato
+      - resources/
+    rules:
+      - path: _test\.go
+        linters: [gosec, noctx, bodyclose]
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      # Cambia quando il module path diventa nostro (decisione del Passo 3, con ADR).
+      local-prefixes:
+        - github.com/lejianwen/rustdesk-api
+  exclusions:
+    generated: lax
+    paths:
+      - docs/
+      - resources/

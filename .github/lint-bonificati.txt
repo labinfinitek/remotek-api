@@ -1,0 +1,6 @@
+# Pacchetti su cui golangci-lint e' BLOCCANTE (job `lint` di remotek-ci.yml).
+# Una cartella di pacchetto per riga, relativa alla radice, senza "./" e senza
+# "/...": vale per i file .go di quella cartella, non per le sottocartelle.
+# Si allarga a ogni MR di bonifica del Passo 3 e non si accorcia mai: togliere
+# una riga vuol dire accettare che quel pacchetto torni a sporcarsi.
+http/response/admin

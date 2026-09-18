@@ -1,6 +1,6 @@
-# CI dell'API Remotek (REGOLE 7). Prima versione: segreti, go.sum, test,
-# audit dei workflow. Lint, govulncheck, hadolint e SBOM entrano con le MR
-# successive del Passo 3.
+# CI dell'API Remotek (REGOLE 7): segreti, go.sum, test, lint, audit dei
+# workflow. govulncheck, hadolint e SBOM entrano con le MR successive del
+# Passo 3.
 #
 # Regole di questo file: azioni pinnate a SHA con la versione in commento
 # (si aggiornano con pinact), permessi minimi per job, nessun cron, nessun tag.
@@ -152,3 +152,83 @@ jobs:
           version: 1.30.1
           advanced-security: false # esito nel log, il job fallisce sui finding: niente security-events: write
           annotations: true
+
+  # Bloccante, ma solo sui pacchetti gia' bonificati (.github/lint-bonificati.txt):
+  # l'elenco si allarga a ogni MR di bonifica del Passo 3 fino a coprire tutto.
+  lint:
+    name: lint
+    needs: gosum
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.13.2
+          install-only: true
+      - name: La configurazione e' valida
+        run: golangci-lint config verify
+      - name: golangci-lint e formattazione sui pacchetti bonificati
+        run: |
+          set -euo pipefail
+          mapfile -t cartelle < <(grep -v -e '^#' -e '^[[:space:]]*$' .github/lint-bonificati.txt || true)
+          if [ "${#cartelle[@]}" -eq 0 ]; then
+            echo "Nessun pacchetto bonificato in elenco: niente da controllare."
+            exit 0
+          fi
+          pacchetti=(); sorgenti=()
+          for c in "${cartelle[@]}"; do
+            [ -d "$c" ] || { echo "::error::$c e' in lint-bonificati.txt ma non esiste"; exit 1; }
+            pacchetti+=("./$c")
+            sorgenti+=("$c"/*.go)
+          done
+          golangci-lint run "${pacchetti[@]}"
+          golangci-lint fmt --diff "${sorgenti[@]}"
+
+  # Informativo: tutto il repo, senza --new-from-rev. Non fallisce sui finding;
+  # il conteggio per linter e per pacchetto va nel riepilogo della run e nella
+  # descrizione della MR. I pacchetti a zero finding sono candidati a
+  # lint-bonificati.txt.
+  lint-tutto:
+    name: lint-tutto
+    needs: gosum
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.13.2
+          install-only: true
+      - name: golangci-lint su tutto il repo
+        run: |
+          golangci-lint run --issues-exit-code=0 --max-issues-per-linter=0 --max-same-issues=0 \
+            --output.json.path="${RUNNER_TEMP}/lint.json" --output.text.path=stdout ./...
+      - name: File che gofmt/goimports cambierebbero
+        run: |
+          golangci-lint fmt --diff ./... > "${RUNNER_TEMP}/fmt.diff" || true
+          grep -c '^diff ' "${RUNNER_TEMP}/fmt.diff" || true
+          grep '^diff ' "${RUNNER_TEMP}/fmt.diff" | awk '{print $NF}' | sed 's#^b/##' > "${RUNNER_TEMP}/fmt.txt" || true
+      - name: Riepilogo per linter e per pacchetto
+        run: |
+          go list -f '{{.Dir}}' ./... > "${RUNNER_TEMP}/pacchetti.txt"
+          python3 .github/scripts/riepilogo-lint.py "${RUNNER_TEMP}/lint.json" "${RUNNER_TEMP}/pacchetti.txt" "${RUNNER_TEMP}/fmt.txt" | tee -a "${GITHUB_STEP_SUMMARY}"

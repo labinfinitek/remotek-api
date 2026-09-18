@@ -12,6 +12,7 @@ l'elenco crescera'. `git log v2.7..remotek` mostra la stessa lista come commit.
 | `go.mod`, `.gitignore`, `go.sum` | Go 1.26 / toolchain go1.26.8; `go.sum` versionato (generato dal job `gosum` della CI) | build riproducibile su una release di Go supportata | REGOLE 9 |
 | `generate_api.go`, `generate_run.go` -> `tools/generate.go` | direttive `go:generate` spostate fuori dal pacchetto radice, con build tag | la radice era un `package main` senza `main`: `go build/vet/test ./...` fallivano | REGOLE 10.2 |
 | `lib/cache/*_test.go`, `lib/lock/local_test.go` | test Redis solo con `REDIS_ADDR`; formato costante nei `Fatalf`; niente letture non sincronizzate | i test devono girare in CI con `-race -shuffle=on` | REGOLE 6.1 |
+| `.golangci.yml`, `.github/lint-bonificati.txt`, `.github/scripts/riepilogo-lint.py` | golangci-lint v2 in CI: bloccante sui pacchetti bonificati, informativo sul resto | il debito ereditato resta visibile e non cresce | 0012, REGOLE 6.3 |
 | `.github/workflows/remotek-ci.yml`, `.gitleaks.toml` | CI del fork: gitleaks, go.sum, build/vet/test, zizmor | controlli a ogni push e PR verso `remotek`, gratis sul repo pubblico | 0012, REGOLE 7 |
 | `test/contratto/` | golden delle risposte di v2.7 alle richieste del client 1.4.9 (per ora i quattro scenari anonimi) | il contratto col client si verifica, non si ricorda | 0012, REGOLE 6.1 |
 
