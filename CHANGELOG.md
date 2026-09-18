@@ -18,5 +18,7 @@ Base upstream: rustdesk-api v2.7.
 ### Aggiunto
 - `SECURITY.md`, `REMOTEK.md`, template di pull request; attribuzione delle
   modifiche in `LICENSE`.
+- golangci-lint v2 in CI: bloccante sui pacchetti gia' bonificati, informativo
+  sul resto (703 finding ereditati al primo giro, da azzerare nel Passo 3).
 - CI `remotek-ci.yml`: ricerca di segreti, controllo di `go.mod`/`go.sum`,
   build, vet e test con `-race`, audit dei workflow.
