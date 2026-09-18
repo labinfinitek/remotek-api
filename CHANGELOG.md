@@ -8,8 +8,9 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 Base upstream: rustdesk-api v2.7.
 
 ### Sicurezza
-- govulncheck v1.8.0 in CI, bloccante: una vulnerabilita' nota chiamata dal
-  nostro codice ferma la MR.
+- govulncheck v1.8.0 in CI: il job fallisce se il nostro codice chiama una
+  vulnerabilita' nota. Ferma il merge solo quando `govulncheck` e' tra i
+  controlli obbligatori del ruleset di `remotek`: si aggiunge dopo il merge.
 - GO-2026-5970, `golang.org/x/text` v0.22.0 -> v0.39.0: ciclo infinito su
   input non valido (raggiunto tramite gorm).
 - GO-2026-5004, `github.com/jackc/pgx/v5` v5.6.0 -> v5.9.2: SQL injection per

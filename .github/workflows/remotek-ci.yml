@@ -138,7 +138,9 @@ jobs:
         run: go tool cover -func="${RUNNER_TEMP}/cover.out" | tail -n 1
 
   # Vulnerabilita' note RAGGIUNTE dal nostro codice (REGOLE 6.3, 8 e 9).
-  # Bloccante: fallisce (exit 3) solo su cio' che il codice chiama davvero.
+  # Bloccante nel workflow (nessun continue-on-error): fallisce (exit 3) solo
+  # su cio' che il codice chiama davvero. Ferma il merge solo se "govulncheck"
+  # e' tra i controlli obbligatori del ruleset "remotek protetto".
   # Cio' che e' soltanto importato o richiesto non fa fallire il job: con
   # "-show verbose" resta elencato nel log (id, modulo, versione che corregge)
   # e si legge nella MR mensile build(deps).
