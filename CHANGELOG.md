@@ -24,4 +24,5 @@ Base upstream: rustdesk-api v2.7.
   build, vet e test con `-race`, audit dei workflow.
 - `test/contratto/`: risposte di riferimento di rustdesk-api v2.7 alle richieste
   del client 1.4.9, rieseguite dalla CI (push e PR verso `remotek`) sul
-  router vero dell'API (per ora i quattro scenari anonimi).
+  router vero dell'API (per ora i quattro scenari anonimi e il 404 delle
+  quattro richieste del client che l'API non implementa).

@@ -1,0 +1,15 @@
+{
+  "corpo": {
+    "id": "999000111",
+    "user_name": "collaudo",
+    "uuid": "cmVtb3Rlay1jb2xsYXVkby11dWlk"
+  },
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Authorization": "Bearer collaudo-non-valido",
+    "Content-Type": "application/json"
+  },
+  "metodo": "POST",
+  "percorso": "/api/devices/cli",
+  "query": []
+}

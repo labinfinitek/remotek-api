@@ -1,0 +1,20 @@
+{
+  "attesa_dal_codice": "404 testo '404 not found'",
+  "autenticata": false,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "devices-cli-404",
+  "fonte_api": "api/http/http.go:33-35 (NoRoute)",
+  "fonte_client": [
+    "client/src/core_main.rs:566-633"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "",
+  "precondizione": "",
+  "registrato_il": "2026-09-18T21:09:33Z",
+  "scrive": false
+}

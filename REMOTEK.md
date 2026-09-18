@@ -15,7 +15,7 @@ l'elenco crescera'. `git log v2.7..remotek` mostra la stessa lista come commit.
 | `.golangci.yml`, `.github/lint-bonificati.txt`, `.github/scripts/riepilogo-lint.py` | golangci-lint v2 in CI: bloccante sui pacchetti bonificati, informativo sul resto | il debito ereditato resta visibile e non cresce | 0012, REGOLE 6.3 |
 | `.github/workflows/remotek-ci.yml`, `.gitleaks.toml` | CI del fork: gitleaks, go.sum, build/vet/test, zizmor | controlli a ogni push e PR verso `remotek`, gratis sul repo pubblico | 0012, REGOLE 7 |
 | `http/http.go` | `NewEngine()` costruisce il router, `ApiInit()` lo avvia: stesse istruzioni, stesso ordine | i test del contratto usano il router vero senza aprire la porta | REGOLE 6.1 |
-| `test/contratto/` | golden delle risposte di v2.7 alle richieste del client 1.4.9 (per ora i quattro scenari anonimi) e libreria Go di normalizzazione e confronto, stessa semantica del registratore | il contratto col client si verifica, non si ricorda | 0012, REGOLE 6.1 |
+| `test/contratto/` | golden delle risposte di v2.7 alle richieste del client 1.4.9 (per ora i quattro scenari anonimi e i quattro 404 delle richieste non implementate) e libreria Go di normalizzazione e confronto, stessa semantica del registratore | il contratto col client si verifica, non si ricorda | 0012, REGOLE 6.1 |
 | `cmd/contratto_test.go` | `TestContract`: `InitGlobal()` e router vero su `httptest`, in una cartella temporanea, rieseguono i golden di `test/contratto/` | il contratto si controlla in CI a ogni push e PR verso `remotek`; in `package main` finche' il bootstrap sta in `cmd/` | REGOLE 6.1 |
 
 Contratto verso il client RustDesk: invariato (ogni endpoint chiamato dal
