@@ -67,10 +67,33 @@ con `data/`, `runtime/` e i collegamenti a `resources/` e `conf/`, quindi
 sqlite su un file temporaneo.
 La configurazione dell'istanza di riferimento e' fissata con le variabili
 `RUSTDESK_API_*`, cosi' un cambio dei default nel codice non sposta i golden
-(i default sicuri avranno test propri).
+(i default sicuri avranno test propri). Il modo di gin (`test`) e il livello
+del log (`warn`) sono scelti per la CI e non toccano le risposte.
+L'autoregistrazione invece e' accesa, `RUSTDESK_API_APP_REGISTER=true` (con
+`RUSTDESK_API_APP_REGISTER_STATUS=1`), solo nel processo del test:
+l'istanza di riferimento e la produzione la tengono spenta, e nessun
+endpoint del client la legge.
+
+Serve al seme. Prima degli scenari il sottotest `seme` crea l'utente di
+collaudo `collaudo-contratto` (non admin, email vuota) con
+`POST /api/admin/user/register`: via HTTP e non dai servizi interni, perche'
+deve sopravvivere al loro refactor (ADR-0014), e con una password casuale a
+ogni esecuzione che non si stampa mai. Poi rifa il giro di `--verifica` del
+registratore col corpo che manda il client: login (200, token non vuoto,
+nome giusto, email vuota, non admin, `info` oggetto), `currentUser` (200),
+logout (200), `currentUser` di nuovo (401). Se il seme fallisce gli scenari
+non partono. Il seme non e' un test del contratto (non ha golden): e' il
+prerequisito verificato dei passi con utente, che riceveranno nome e
+password da `Options.Vars`.
 
 Gruppi attivi: `anonime` (4 passi) e `non-implementate` (4), 8 passi. Restano
-da registrare 37 passi su 45: `utente` (29), `peer` (7), `login-errato` (1).
+da registrare 37 passi su 45: `utente` (29), `peer` (7), `login-errato` (1);
+usano l'utente di collaudo i 30 di `utente` e `login-errato`. Aspettano solo
+i golden, da registrare dall'istanza di riferimento nella MR successiva.
+L'obiettivo e' che attivarli voglia dire aggiungere i golden e i gruppi a
+`Groups`; se una differenza di stato tra l'istanza di riferimento e il
+database nuovo del test lo impedisce, la precondizione si aggiunge al seme
+via HTTP o, se non si puo', quel passo si confronta in `forma`.
 `fonte_api` nei `meta.json` indica il codice della v2.7 da cui vengono i
 golden: nel fork le righe si spostano (`NoRoute` oggi e' in
 `http/http.go:35-37`, non 33-35) e i golden non si correggono per questo.
