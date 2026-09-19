@@ -9,6 +9,13 @@ run:
   timeout: 10m
   tests: true
 
+issues:
+  # Il predefinito (true) tiene un solo finding per riga: dove due linter
+  # segnalano la stessa riga (errcheck e gosec G104, ineffassign e SA4006,
+  # errorlint e ST1005) il secondo sparisce, anche quando e' un altro difetto.
+  # Il job bloccante non cambia esito: una riga segnalata fallisce comunque.
+  uniq-by-line: false
+
 linters:
   default: standard # errcheck, govet, ineffassign, staticcheck, unused
   enable:
@@ -28,9 +35,18 @@ linters:
       excludes:
         - G115 # conversioni tra interi: rumoroso sul codice ereditato, si rivaluta a bonifica finita
     revive:
+      # Con una lista rules non vuota revive esegue solo le regole elencate:
+      # senza questa riga, con la sola exported disabilitata, non controllava nulla.
+      enable-default-rules: true
       rules:
         - name: exported
           disabled: true # 23k righe ereditate senza doc-comment: si attiva modulo per modulo
+        # Stessi controlli di ST1000 e ST1003, spenti in staticcheck qui sotto:
+        # una scelta sola per controllo, e se cambia si riaccendono insieme.
+        - name: package-comments
+          disabled: true # come -ST1000: la package doc non e' obbligatoria
+        - name: var-naming
+          disabled: true # come -ST1003: nomi ereditati (Id, Url, underscore) usati in tutto il repo
     staticcheck:
       checks: ["all", "-ST1000", "-ST1003"] # niente package doc obbligatoria; nomi con underscore ereditati
   exclusions:
