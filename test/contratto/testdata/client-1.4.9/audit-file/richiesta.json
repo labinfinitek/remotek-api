@@ -1,0 +1,19 @@
+{
+  "corpo": {
+    "conn_id": 7,
+    "id": "999000111",
+    "info": "{\"files\":[[\"prova.txt\",12]],\"ip\":\"192.0.2.10\",\"name\":\"tecnico\",\"num\":1}",
+    "is_file": false,
+    "path": "C:\\Users\\collaudo\\Desktop",
+    "peer_id": "999000222",
+    "type": 0,
+    "uuid": "cmVtb3Rlay1jb2xsYXVkby11dWlk"
+  },
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Content-Type": "application/json"
+  },
+  "metodo": "POST",
+  "percorso": "/api/audit/file",
+  "query": []
+}

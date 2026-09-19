@@ -1,0 +1,21 @@
+{
+  "attesa_dal_codice": "200 {\"total\":0,\"data\":null|[{guid,name,owner,note,rule}]}",
+  "autenticata": true,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "ab-shared-profiles",
+  "fonte_api": "api/http/controller/api/ab.go:389-447",
+  "fonte_client": [
+    "client/flutter/lib/models/ab_model.dart:295-357",
+    "client/flutter/lib/common/hbbs/hbbs.dart:258-275"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "total e' sempre 0 (ab.go:444): il client non pagina mai oltre la prima",
+  "precondizione": "utente di collaudo senza rubriche condivise",
+  "registrato_il": "2026-09-19T01:03:25Z",
+  "scrive": false
+}

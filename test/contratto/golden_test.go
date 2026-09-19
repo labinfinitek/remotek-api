@@ -14,8 +14,7 @@ import (
 )
 
 // recorded sono i passi del gruppo anonime, i primi di scenario.json. Gli
-// altri passi registrati (i 404 del gruppo non-implementate) li carica
-// TestContract in cmd/.
+// altri 41 passi registrati li carica TestContract in cmd/.
 var recorded = []string{"version", "login-options", "non-autenticato", "audit-conn-active-404"}
 
 func TestLoadScenario(t *testing.T) {

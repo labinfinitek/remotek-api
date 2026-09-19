@@ -1,0 +1,18 @@
+{
+  "corpo": {
+    "alias": "Collaudo",
+    "id": "999000111",
+    "note": "nota",
+    "tags": [
+      "remotek-collaudo-2"
+    ]
+  },
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Authorization": "Bearer __TOKEN__",
+    "Content-Type": "application/json"
+  },
+  "metodo": "POST",
+  "percorso": "/api/ab/peer/add/__GUID__",
+  "query": []
+}

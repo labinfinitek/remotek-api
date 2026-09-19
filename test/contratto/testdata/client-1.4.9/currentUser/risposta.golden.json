@@ -1,0 +1,13 @@
+{
+  "content_type": "application/json; charset=utf-8",
+  "corpo": {
+    "email": "",
+    "info": {},
+    "is_admin": false,
+    "name": "__UTENTE__",
+    "note": "",
+    "status": 1
+  },
+  "corpo_tipo": "json",
+  "stato": 200
+}

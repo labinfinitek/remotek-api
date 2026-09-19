@@ -1,0 +1,20 @@
+{
+  "attesa_dal_codice": "200 {\"code\":0,\"message\":\"success\",\"data\":\"\"}",
+  "autenticata": false,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "audit-conn-auth",
+  "fonte_api": "api/http/controller/api/audit.go:45-57",
+  "fonte_client": [
+    "client/src/server/connection.rs:1681-1689, 1429-1440"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "senza 'action'; primary_auth e two_factor sono opzionali e l'API li ignora",
+  "precondizione": "",
+  "registrato_il": "2026-09-19T01:03:31Z",
+  "scrive": true
+}

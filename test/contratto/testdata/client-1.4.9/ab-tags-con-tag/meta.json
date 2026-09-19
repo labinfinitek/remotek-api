@@ -1,0 +1,42 @@
+{
+  "attesa_dal_codice": "200 [{id,name,user_id,color,collection_id,created_at,updated_at}] (il client legge name e color)",
+  "autenticata": true,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "ab-tags-con-tag",
+  "fonte_api": "api/http/controller/api/ab.go:112-128",
+  "fonte_client": [
+    "client/flutter/lib/models/ab_model.dart:1499-1544",
+    "client/flutter/lib/common/hbbs/hbbs.dart:277-286"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [
+    {
+      "percorso": "[0].id",
+      "segnaposto": "__ID__",
+      "tipo": "number"
+    },
+    {
+      "percorso": "[0].user_id",
+      "segnaposto": "__ID__",
+      "tipo": "number"
+    },
+    {
+      "percorso": "[0].created_at",
+      "segnaposto": "__TIMESTAMP__",
+      "tipo": "string"
+    },
+    {
+      "percorso": "[0].updated_at",
+      "segnaposto": "__TIMESTAMP__",
+      "tipo": "string"
+    }
+  ],
+  "nota": "",
+  "precondizione": "un tag",
+  "registrato_il": "2026-09-19T01:03:25Z",
+  "scrive": false
+}

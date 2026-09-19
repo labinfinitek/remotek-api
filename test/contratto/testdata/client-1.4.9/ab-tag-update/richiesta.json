@@ -1,0 +1,14 @@
+{
+  "corpo": {
+    "color": 4278238420,
+    "name": "remotek-collaudo"
+  },
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Authorization": "Bearer __TOKEN__",
+    "Content-Type": "application/json"
+  },
+  "metodo": "PUT",
+  "percorso": "/api/ab/tag/update/__GUID__",
+  "query": []
+}

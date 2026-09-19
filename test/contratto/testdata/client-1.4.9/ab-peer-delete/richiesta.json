@@ -1,0 +1,14 @@
+{
+  "corpo": [
+    "999000111",
+    "999000222"
+  ],
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Authorization": "Bearer __TOKEN__",
+    "Content-Type": "application/json"
+  },
+  "metodo": "DELETE",
+  "percorso": "/api/ab/peer/__GUID__",
+  "query": []
+}

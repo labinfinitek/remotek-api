@@ -1,0 +1,21 @@
+{
+  "attesa_dal_codice": "200 testo 'SYSINFO_UPDATED' (il client accetta anche 'ID_NOT_FOUND')",
+  "autenticata": false,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "sysinfo",
+  "fonte_api": "api/http/controller/api/peer.go:26-59",
+  "fonte_client": [
+    "client/src/hbbs_http/sync.rs:125-179, 210-229",
+    "client/src/common.rs:857-901"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "crea o aggiorna la riga peers dell'id finto; i campi preset-* opzionali non sono nel modello dell'API",
+  "precondizione": "",
+  "registrato_il": "2026-09-19T01:03:31Z",
+  "scrive": true
+}

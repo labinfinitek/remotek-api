@@ -1,0 +1,21 @@
+{
+  "attesa_dal_codice": "200 corpo vuoto",
+  "autenticata": true,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "ab-peer-add",
+  "fonte_api": "api/http/controller/api/ab.go:570-613",
+  "fonte_client": [
+    "client/flutter/lib/models/ab_model.dart:375-395",
+    "client/flutter/lib/models/ab_model.dart:1548-1578"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "aggiunta per ID dal dialogo; 'note' non esiste nel modello dell'API e si perde",
+  "precondizione": "",
+  "registrato_il": "2026-09-19T01:03:25Z",
+  "scrive": true
+}

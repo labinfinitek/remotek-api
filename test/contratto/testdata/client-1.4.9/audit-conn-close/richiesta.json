@@ -1,0 +1,16 @@
+{
+  "corpo": {
+    "action": "close",
+    "conn_id": 7,
+    "id": "999000111",
+    "session_id": 9007199254740993,
+    "uuid": "cmVtb3Rlay1jb2xsYXVkby11dWlk"
+  },
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Content-Type": "application/json"
+  },
+  "metodo": "POST",
+  "percorso": "/api/audit/conn",
+  "query": []
+}

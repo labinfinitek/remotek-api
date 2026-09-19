@@ -1,0 +1,62 @@
+{
+  "attesa_dal_codice": "200 {\"total\":2,\"data\":[{row_id,id,username,password,hostname,alias,platform,tags,hash,user_id,forceAlwaysRelay,rdpPort,rdpUsername,online,loginName,sameServer,collection_id,created_at,updated_at}],\"licensed_devices\":99999}",
+  "autenticata": true,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "ab-peers-con-peer",
+  "fonte_api": "api/http/controller/api/ab.go:536-557; api/model/addressBook.go:21-41",
+  "fonte_client": [
+    "client/flutter/lib/models/ab_model.dart:1432-1497",
+    "client/flutter/lib/models/peer_model.dart:33-48"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [
+    {
+      "percorso": "data[0].row_id",
+      "segnaposto": "__ID__",
+      "tipo": "number"
+    },
+    {
+      "percorso": "data[0].user_id",
+      "segnaposto": "__ID__",
+      "tipo": "number"
+    },
+    {
+      "percorso": "data[0].created_at",
+      "segnaposto": "__TIMESTAMP__",
+      "tipo": "string"
+    },
+    {
+      "percorso": "data[0].updated_at",
+      "segnaposto": "__TIMESTAMP__",
+      "tipo": "string"
+    },
+    {
+      "percorso": "data[1].row_id",
+      "segnaposto": "__ID__",
+      "tipo": "number"
+    },
+    {
+      "percorso": "data[1].user_id",
+      "segnaposto": "__ID__",
+      "tipo": "number"
+    },
+    {
+      "percorso": "data[1].created_at",
+      "segnaposto": "__TIMESTAMP__",
+      "tipo": "string"
+    },
+    {
+      "percorso": "data[1].updated_at",
+      "segnaposto": "__TIMESTAMP__",
+      "tipo": "string"
+    }
+  ],
+  "nota": "forceAlwaysRelay torna come booleano ma il client lo confronta con la stringa 'true' (peer_model.dart:42)",
+  "precondizione": "due peer in rubrica",
+  "registrato_il": "2026-09-19T01:03:25Z",
+  "scrive": false
+}

@@ -1,0 +1,14 @@
+{
+  "corpo": {
+    "hash": "aGFzaC1kaS1jb2xsYXVkbw==",
+    "id": "999000111"
+  },
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Authorization": "Bearer __TOKEN__",
+    "Content-Type": "application/json"
+  },
+  "metodo": "PUT",
+  "percorso": "/api/ab/peer/update/__GUID__",
+  "query": []
+}

@@ -1,0 +1,10 @@
+{
+  "content_type": "application/json; charset=utf-8",
+  "corpo": {
+    "guid": "__GUID__",
+    "name": "__UTENTE__",
+    "rule": 3
+  },
+  "corpo_tipo": "json",
+  "stato": 200
+}

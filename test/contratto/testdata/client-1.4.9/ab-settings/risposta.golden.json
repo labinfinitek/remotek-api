@@ -1,0 +1,8 @@
+{
+  "content_type": "application/json; charset=utf-8",
+  "corpo": {
+    "max_peer_one_ab": 0
+  },
+  "corpo_tipo": "json",
+  "stato": 200
+}

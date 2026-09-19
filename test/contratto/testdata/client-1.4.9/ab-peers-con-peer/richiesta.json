@@ -1,0 +1,24 @@
+{
+  "corpo": null,
+  "corpo_vuoto": true,
+  "intestazioni": {
+    "Authorization": "Bearer __TOKEN__",
+    "Content-Type": "application/json"
+  },
+  "metodo": "POST",
+  "percorso": "/api/ab/peers",
+  "query": [
+    [
+      "current",
+      "1"
+    ],
+    [
+      "pageSize",
+      "100"
+    ],
+    [
+      "ab",
+      "__GUID__"
+    ]
+  ]
+}

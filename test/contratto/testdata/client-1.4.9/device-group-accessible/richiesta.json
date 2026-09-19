@@ -1,0 +1,19 @@
+{
+  "corpo": null,
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Authorization": "Bearer __TOKEN__"
+  },
+  "metodo": "GET",
+  "percorso": "/api/device-group/accessible",
+  "query": [
+    [
+      "current",
+      "1"
+    ],
+    [
+      "pageSize",
+      "100"
+    ]
+  ]
+}

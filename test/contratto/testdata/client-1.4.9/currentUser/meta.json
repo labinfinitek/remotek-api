@@ -1,0 +1,26 @@
+{
+  "attesa_dal_codice": "200 {name,email,note,is_admin,status,info:{}}",
+  "autenticata": true,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "currentUser",
+  "fonte_api": "api/http/controller/api/user.go:39-43",
+  "fonte_client": [
+    "client/flutter/lib/models/user_model.dart:59-92"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [
+    {
+      "percorso": "name",
+      "segnaposto": "__UTENTE__",
+      "tipo": "string"
+    }
+  ],
+  "nota": "401 o 400 = il client azzera la sessione (user_model.dart:81-84)",
+  "precondizione": "",
+  "registrato_il": "2026-09-19T01:03:25Z",
+  "scrive": false
+}

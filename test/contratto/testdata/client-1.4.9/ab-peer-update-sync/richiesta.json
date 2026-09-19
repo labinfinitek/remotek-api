@@ -1,0 +1,16 @@
+{
+  "corpo": {
+    "hostname": "PC-COLLAUDO-2",
+    "id": "999000111",
+    "platform": "Windows",
+    "username": "utente2"
+  },
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Authorization": "Bearer __TOKEN__",
+    "Content-Type": "application/json"
+  },
+  "metodo": "PUT",
+  "percorso": "/api/ab/peer/update/__GUID__",
+  "query": []
+}

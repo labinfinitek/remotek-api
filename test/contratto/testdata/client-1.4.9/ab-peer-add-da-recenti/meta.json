@@ -1,0 +1,21 @@
+{
+  "attesa_dal_codice": "200 corpo vuoto",
+  "autenticata": true,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "ab-peer-add-da-recenti",
+  "fonte_api": "api/http/controller/api/ab.go:570-613; api/http/request/api/peer.go:40-64",
+  "fonte_client": [
+    "client/flutter/lib/models/peer_model.dart:50-68",
+    "client/flutter/lib/models/ab_model.dart:1548-1578"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "Peer.toJson senza 'password' (rubrica personale: removePassword); forceAlwaysRelay e' una STRINGA",
+  "precondizione": "",
+  "registrato_il": "2026-09-19T01:03:25Z",
+  "scrive": true
+}

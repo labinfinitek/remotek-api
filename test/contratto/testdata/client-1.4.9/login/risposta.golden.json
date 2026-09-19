@@ -1,0 +1,17 @@
+{
+  "content_type": "application/json; charset=utf-8",
+  "corpo": {
+    "access_token": "__TOKEN__",
+    "type": "access_token",
+    "user": {
+      "email": "",
+      "info": {},
+      "is_admin": false,
+      "name": "__UTENTE__",
+      "note": "",
+      "status": 1
+    }
+  },
+  "corpo_tipo": "json",
+  "stato": 200
+}

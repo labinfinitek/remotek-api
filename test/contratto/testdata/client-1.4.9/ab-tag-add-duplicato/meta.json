@@ -1,0 +1,21 @@
+{
+  "attesa_dal_codice": "400 {\"error\":\"<ItemExists nella lingua dell'istanza>\"}",
+  "autenticata": true,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "ab-tag-add-duplicato",
+  "fonte_api": "api/http/controller/api/ab.go:164-168",
+  "fonte_client": [
+    "client/flutter/lib/models/ab_model.dart:1776-1802",
+    "client/flutter/lib/models/ab_model.dart:2002-2026"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "",
+  "precondizione": "il tag esiste gia'",
+  "registrato_il": "2026-09-19T01:03:25Z",
+  "scrive": false
+}
