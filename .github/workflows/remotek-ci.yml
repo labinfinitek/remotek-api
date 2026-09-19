@@ -132,10 +132,44 @@ jobs:
         run: go build ./...
       - name: go vet
         run: go vet ./...
+      # -coverpkg=./...: senza, ogni pacchetto conta solo cio' che eseguono i
+      # suoi test, e il codice del server (http/, service, ...) che TestContract
+      # esercita da cmd/ risulterebbe allo 0%.
       - name: go test
-        run: go test -race -shuffle=on -count=1 -coverprofile="${RUNNER_TEMP}/cover.out" ./...
+        run: go test -race -shuffle=on -count=1 -coverpkg=./... -coverprofile="${RUNNER_TEMP}/cover.out" ./...
+      # Informativo (REGOLE 6.1): nessuna soglia e mai rosso, anche se il passo
+      # stesso si rompe. Totale e tabella per pacchetto nel log e nel riepilogo
+      # della run; un blocco contato da piu' binari di test vale una volta.
       - name: Copertura (informativa, nessuna soglia)
-        run: go tool cover -func="${RUNNER_TEMP}/cover.out" | tail -n 1
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          profilo="${RUNNER_TEMP}/cover.out"
+          {
+            echo "### Copertura con -coverpkg=./... (nessuna soglia)"
+            echo
+            echo "Totale (go tool cover -func): $(go tool cover -func="${profilo}" | tail -n 1 | awk '{print $NF}')"
+            echo
+            echo "Le righe 0.0% di go test per i pacchetti senza test ignorano -coverpkg: vale questa tabella."
+            echo
+            echo "| Pacchetto | Istruzioni | Coperte | % |"
+            echo "|---|---:|---:|---:|"
+            awk -v modulo="$(go list -m)/" '
+              $1 != "mode:" { n[$1] = $2; if ($3 > 0) coperto[$1] = 1 }
+              END {
+                for (b in n) {
+                  p = b
+                  sub(/\/[^\/]*$/, "", p)
+                  if (index(p, modulo) == 1) p = substr(p, length(modulo) + 1)
+                  tot[p] += n[b]
+                  if (b in coperto) cop[p] += n[b]
+                }
+                for (p in tot) {
+                  pct = tot[p] > 0 ? 100 * cop[p] / tot[p] : 0
+                  printf "| %s | %d | %d | %.1f%% |\n", p, tot[p], cop[p], pct
+                }
+              }' "${profilo}" | sort
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
 
   # Vulnerabilita' note RAGGIUNTE dal nostro codice (REGOLE 6.3, 8 e 9).
   # Bloccante nel workflow (nessun continue-on-error): fallisce (exit 3) solo
