@@ -35,9 +35,18 @@ linters:
       excludes:
         - G115 # conversioni tra interi: rumoroso sul codice ereditato, si rivaluta a bonifica finita
     revive:
+      # Con una lista rules non vuota revive esegue solo le regole elencate:
+      # senza questa riga, con la sola exported disabilitata, non controllava nulla.
+      enable-default-rules: true
       rules:
         - name: exported
           disabled: true # 23k righe ereditate senza doc-comment: si attiva modulo per modulo
+        # Stessi controlli di ST1000 e ST1003, spenti in staticcheck qui sotto:
+        # una scelta sola per controllo, e se cambia si riaccendono insieme.
+        - name: package-comments
+          disabled: true # come -ST1000: la package doc non e' obbligatoria
+        - name: var-naming
+          disabled: true # come -ST1003: nomi ereditati (Id, Url, underscore) usati in tutto il repo
     staticcheck:
       checks: ["all", "-ST1000", "-ST1003"] # niente package doc obbligatoria; nomi con underscore ereditati
   exclusions:
