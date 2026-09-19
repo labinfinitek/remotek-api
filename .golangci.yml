@@ -9,6 +9,13 @@ run:
   timeout: 10m
   tests: true
 
+issues:
+  # Il predefinito (true) tiene un solo finding per riga: dove due linter
+  # segnalano la stessa riga (errcheck e gosec G104, ineffassign e SA4006,
+  # errorlint e ST1005) il secondo sparisce, anche quando e' un altro difetto.
+  # Il job bloccante non cambia esito: una riga segnalata fallisce comunque.
+  uniq-by-line: false
+
 linters:
   default: standard # errcheck, govet, ineffassign, staticcheck, unused
   enable:
