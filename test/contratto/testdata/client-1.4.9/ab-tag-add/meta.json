@@ -1,0 +1,20 @@
+{
+  "attesa_dal_codice": "200 corpo vuoto (il client accetta solo 200 + corpo vuoto: ab_model.dart:2002-2026)",
+  "autenticata": true,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "ab-tag-add",
+  "fonte_api": "api/http/controller/api/ab.go:141-177",
+  "fonte_client": [
+    "client/flutter/lib/models/ab_model.dart:1776-1802"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "",
+  "precondizione": "",
+  "registrato_il": "2026-09-19T01:03:25Z",
+  "scrive": true
+}

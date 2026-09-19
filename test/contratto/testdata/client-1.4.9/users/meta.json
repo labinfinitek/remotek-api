@@ -1,0 +1,26 @@
+{
+  "attesa_dal_codice": "200 {\"total\":n,\"data\":[{name,email,note,is_admin,status,info:{}}]}",
+  "autenticata": true,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "users",
+  "fonte_api": "api/http/controller/api/group.go:30-58",
+  "fonte_client": [
+    "client/flutter/lib/models/group_model.dart:160-222"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [
+    {
+      "percorso": "data[0].name",
+      "segnaposto": "__UTENTE__",
+      "tipo": "string"
+    }
+  ],
+  "nota": "il client manda 'current', l'API legge 'page' (request/api/user.go:42): la pagina e' sempre la prima",
+  "precondizione": "utente di collaudo non admin in gruppo non condiviso: vede solo se stesso",
+  "registrato_il": "2026-09-19T01:03:25Z",
+  "scrive": false
+}

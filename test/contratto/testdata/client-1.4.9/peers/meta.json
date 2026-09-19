@@ -1,0 +1,21 @@
+{
+  "attesa_dal_codice": "200 {\"total\":n,\"data\":[{id,info:{device_name,os,username},status,user,user_name,note,device_group_name}]}",
+  "autenticata": true,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "peers",
+  "fonte_api": "api/http/controller/api/group.go:74-122; api/http/response/api/peer.go:34-47",
+  "fonte_client": [
+    "client/flutter/lib/models/group_model.dart:224-290",
+    "client/flutter/lib/common/hbbs/hbbs.dart:77-105"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "",
+  "precondizione": "nessun peer associato all'utente di collaudo (o solo quello finto del gruppo peer)",
+  "registrato_il": "2026-09-19T01:03:25Z",
+  "scrive": false
+}

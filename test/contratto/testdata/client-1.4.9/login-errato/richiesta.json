@@ -1,0 +1,22 @@
+{
+  "corpo": {
+    "autoLogin": true,
+    "deviceInfo": {
+      "name": "REMOTEK-COLLAUDO",
+      "os": "windows",
+      "type": "client"
+    },
+    "id": "999000111",
+    "password": "password-sbagliata-di-collaudo",
+    "type": "account",
+    "username": "__UTENTE__",
+    "uuid": "cmVtb3Rlay1jb2xsYXVkby11dWlk"
+  },
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Content-Type": "application/json"
+  },
+  "metodo": "POST",
+  "percorso": "/api/login",
+  "query": []
+}

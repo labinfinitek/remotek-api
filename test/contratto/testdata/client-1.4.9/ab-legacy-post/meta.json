@@ -1,0 +1,21 @@
+{
+  "attesa_dal_codice": "200 'null'",
+  "autenticata": true,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "ab-legacy-post",
+  "fonte_api": "api/http/controller/api/ab.go:69-99",
+  "fonte_client": [
+    "client/flutter/lib/models/ab_model.dart:1055-1096",
+    "client/flutter/lib/models/ab_model.dart:1309-1323"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "rubrica legacy: sostituisce TUTTA la rubrica personale dell'utente; mai chiamata da 1.4.9 con questa API",
+  "precondizione": "rubrica gia' vuota: l'invio di una rubrica vuota non cambia nulla",
+  "registrato_il": "2026-09-19T01:03:25Z",
+  "scrive": true
+}

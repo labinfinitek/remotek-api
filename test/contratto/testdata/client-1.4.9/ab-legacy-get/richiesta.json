@@ -1,0 +1,12 @@
+{
+  "corpo": null,
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Accept-Encoding": "gzip",
+    "Authorization": "Bearer __TOKEN__",
+    "Content-Type": "application/json"
+  },
+  "metodo": "GET",
+  "percorso": "/api/ab",
+  "query": []
+}

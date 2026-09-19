@@ -1,0 +1,20 @@
+{
+  "attesa_dal_codice": "utente non admin: 400 {\"error\":\"Permission denied\"}; admin: 200 {\"total\":0,\"data\":[{id,name,created_at,updated_at}]}",
+  "autenticata": true,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "device-group-accessible",
+  "fonte_api": "api/http/controller/api/group.go:138-150",
+  "fonte_client": [
+    "client/flutter/lib/models/group_model.dart:103-158"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "il client ignora l'errore in silenzio (group_model.dart:151-156)",
+  "precondizione": "utente di collaudo NON admin",
+  "registrato_il": "2026-09-19T01:03:25Z",
+  "scrive": false
+}

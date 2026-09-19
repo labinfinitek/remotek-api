@@ -1,0 +1,14 @@
+{
+  "corpo": {
+    "id": "999000111",
+    "uuid": "cmVtb3Rlay1jb2xsYXVkby11dWlk"
+  },
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Authorization": "Bearer __TOKEN__",
+    "Content-Type": "application/json"
+  },
+  "metodo": "POST",
+  "percorso": "/api/logout",
+  "query": []
+}

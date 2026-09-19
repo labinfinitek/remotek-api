@@ -1,0 +1,61 @@
+{
+  "attesa_dal_codice": "200 {\"data\":\"<stringa JSON {peers,tags,tag_colors:\\\"<json>\\\"}>\"}",
+  "autenticata": true,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "ab-legacy-get",
+  "fonte_api": "api/http/controller/api/ab.go:32-56",
+  "fonte_client": [
+    "client/flutter/lib/models/ab_model.dart:1008-1053"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [
+    {
+      "percorso": "(data).peers[0].row_id",
+      "segnaposto": "__ID__",
+      "tipo": "number"
+    },
+    {
+      "percorso": "(data).peers[0].user_id",
+      "segnaposto": "__ID__",
+      "tipo": "number"
+    },
+    {
+      "percorso": "(data).peers[0].created_at",
+      "segnaposto": "__TIMESTAMP__",
+      "tipo": "string"
+    },
+    {
+      "percorso": "(data).peers[0].updated_at",
+      "segnaposto": "__TIMESTAMP__",
+      "tipo": "string"
+    },
+    {
+      "percorso": "(data).peers[1].row_id",
+      "segnaposto": "__ID__",
+      "tipo": "number"
+    },
+    {
+      "percorso": "(data).peers[1].user_id",
+      "segnaposto": "__ID__",
+      "tipo": "number"
+    },
+    {
+      "percorso": "(data).peers[1].created_at",
+      "segnaposto": "__TIMESTAMP__",
+      "tipo": "string"
+    },
+    {
+      "percorso": "(data).peers[1].updated_at",
+      "segnaposto": "__TIMESTAMP__",
+      "tipo": "string"
+    }
+  ],
+  "nota": "rubrica legacy: il client 1.4.9 la usa solo se /api/ab/personal risponde 404, cioe' mai con questa API",
+  "precondizione": "due peer e un tag",
+  "registrato_il": "2026-09-19T01:03:25Z",
+  "scrive": false
+}

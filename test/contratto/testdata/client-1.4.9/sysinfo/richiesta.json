@@ -1,0 +1,19 @@
+{
+  "corpo": {
+    "cpu": "Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz, 3GHz, 6/6 cores",
+    "hostname": "REMOTEK-COLLAUDO",
+    "id": "999000111",
+    "memory": "15.85GB",
+    "os": "windows / Windows 11 Pro - 10.0.26100",
+    "username": "collaudo",
+    "uuid": "cmVtb3Rlay1jb2xsYXVkby11dWlk",
+    "version": "1.4.9"
+  },
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Content-Type": "application/json"
+  },
+  "metodo": "POST",
+  "percorso": "/api/sysinfo",
+  "query": []
+}

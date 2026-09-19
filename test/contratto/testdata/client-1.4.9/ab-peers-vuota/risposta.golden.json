@@ -1,0 +1,10 @@
+{
+  "content_type": "application/json; charset=utf-8",
+  "corpo": {
+    "data": [],
+    "licensed_devices": 99999,
+    "total": 0
+  },
+  "corpo_tipo": "json",
+  "stato": 200
+}

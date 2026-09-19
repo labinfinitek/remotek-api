@@ -1,0 +1,13 @@
+{
+  "corpo": [
+    "remotek-collaudo-2"
+  ],
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Authorization": "Bearer __TOKEN__",
+    "Content-Type": "application/json"
+  },
+  "metodo": "DELETE",
+  "percorso": "/api/ab/tag/__GUID__",
+  "query": []
+}

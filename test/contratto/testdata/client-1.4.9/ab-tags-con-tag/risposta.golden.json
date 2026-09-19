@@ -1,0 +1,16 @@
+{
+  "content_type": "application/json; charset=utf-8",
+  "corpo": [
+    {
+      "collection_id": 0,
+      "color": 4288585374,
+      "created_at": "__TIMESTAMP__",
+      "id": "__ID__",
+      "name": "remotek-collaudo",
+      "updated_at": "__TIMESTAMP__",
+      "user_id": "__ID__"
+    }
+  ],
+  "corpo_tipo": "json",
+  "stato": 200
+}

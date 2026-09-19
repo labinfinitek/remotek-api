@@ -1,0 +1,26 @@
+{
+  "corpo": {
+    "alias": "",
+    "device_group_name": "",
+    "forceAlwaysRelay": "false",
+    "hash": "aGFzaC1kaS1jb2xsYXVkbw==",
+    "hostname": "PC-COLLAUDO",
+    "id": "999000222",
+    "loginName": "",
+    "note": "",
+    "platform": "Windows",
+    "rdpPort": "",
+    "rdpUsername": "",
+    "same_server": null,
+    "tags": [],
+    "username": "utente"
+  },
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Authorization": "Bearer __TOKEN__",
+    "Content-Type": "application/json"
+  },
+  "metodo": "POST",
+  "percorso": "/api/ab/peer/add/__GUID__",
+  "query": []
+}

@@ -1,0 +1,37 @@
+{
+  "attesa_dal_codice": "200 {\"type\":\"access_token\",\"access_token\":str,\"user\":{name,email,note,is_admin,status,info:{}}}",
+  "autenticata": false,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "login",
+  "estrai": {
+    "token": "access_token"
+  },
+  "fonte_api": "api/http/controller/api/login.go:29-92",
+  "fonte_client": [
+    "client/flutter/lib/models/user_model.dart:178-202",
+    "client/flutter/lib/common/hbbs/hbbs.dart:155-177",
+    "client/flutter/lib/common/widgets/login.dart:559-565",
+    "client/src/ui_interface.rs:1295-1302"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [
+    {
+      "percorso": "access_token",
+      "segnaposto": "__TOKEN__",
+      "tipo": "string"
+    },
+    {
+      "percorso": "user.name",
+      "segnaposto": "__UTENTE__",
+      "tipo": "string"
+    }
+  ],
+  "nota": "scrive user_tokens e login_logs dell'utente di collaudo; il logout finale cancella il token",
+  "precondizione": "",
+  "registrato_il": "2026-09-19T01:03:25Z",
+  "scrive": true
+}

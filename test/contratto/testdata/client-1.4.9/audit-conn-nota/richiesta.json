@@ -1,0 +1,14 @@
+{
+  "corpo": {
+    "id": "999000111",
+    "note": "nota di collaudo",
+    "session_id": 9007199254740993
+  },
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Content-Type": "application/json"
+  },
+  "metodo": "POST",
+  "percorso": "/api/audit/conn",
+  "query": []
+}

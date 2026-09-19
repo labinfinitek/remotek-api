@@ -1,0 +1,21 @@
+{
+  "attesa_dal_codice": "400 {\"error\":\"<UsernameOrPasswordError nella lingua dell'istanza>\"}",
+  "autenticata": false,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "login-errato",
+  "fonte_api": "api/http/controller/api/login.go:57-64",
+  "fonte_client": [
+    "client/flutter/lib/models/user_model.dart:194-199",
+    "client/flutter/lib/common/widgets/login.dart:567-568"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "conta come tentativo fallito per l'IP del lab (ban dopo 10 in 10 minuti sulla 111): un solo invio, solo su richiesta",
+  "precondizione": "",
+  "registrato_il": "2026-09-19T01:03:31Z",
+  "scrive": false
+}

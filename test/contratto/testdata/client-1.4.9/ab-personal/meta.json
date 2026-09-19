@@ -1,0 +1,34 @@
+{
+  "attesa_dal_codice": "200 {\"guid\":\"<gid>-<uid>-0\",\"name\":<username>,\"rule\":3}",
+  "autenticata": true,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "ab-personal",
+  "estrai": {
+    "guid": "guid"
+  },
+  "fonte_api": "api/http/controller/api/ab.go:337-358",
+  "fonte_client": [
+    "client/flutter/lib/models/ab_model.dart:262-293"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [
+    {
+      "percorso": "guid",
+      "segnaposto": "__GUID__",
+      "tipo": "string"
+    },
+    {
+      "percorso": "name",
+      "segnaposto": "__UTENTE__",
+      "tipo": "string"
+    }
+  ],
+  "nota": "404 = server legacy (ab_model.dart:271-275)",
+  "precondizione": "rustdesk.personal=1 (con altro valore l'API risponde 200 'null' e il client va in errore, non in legacy)",
+  "registrato_il": "2026-09-19T01:03:25Z",
+  "scrive": false
+}

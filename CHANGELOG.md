@@ -47,6 +47,7 @@ Base upstream: rustdesk-api v2.7.
   build, vet e test con `-race`, audit dei workflow.
 - `test/contratto/`: risposte di riferimento di rustdesk-api v2.7 alle richieste
   del client 1.4.9, rieseguite dalla CI (push e PR verso `remotek`) sul
-  router vero dell'API (per ora 8 passi: tre scenari anonimi che l'API
-  implementa e il 404 delle cinque richieste del client che l'API non
-  implementa, una delle quali nel gruppo `anonime`).
+  router vero dell'API: tutti i 45 passi dello scenario (anonimi, 404 delle
+  cinque richieste che l'API non implementa, utente di collaudo con login,
+  rubrica e logout, heartbeat, sysinfo e audit del dispositivo, login con
+  password sbagliata).

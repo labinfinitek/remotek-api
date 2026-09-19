@@ -1,0 +1,55 @@
+{
+  "content_type": "application/json; charset=utf-8",
+  "corpo": {
+    "data": [
+      {
+        "alias": "Collaudo",
+        "collection_id": 0,
+        "created_at": "__TIMESTAMP__",
+        "forceAlwaysRelay": false,
+        "hash": "",
+        "hostname": "",
+        "id": "999000111",
+        "loginName": "",
+        "online": false,
+        "password": "",
+        "platform": "",
+        "rdpPort": "",
+        "rdpUsername": "",
+        "row_id": "__ID__",
+        "sameServer": false,
+        "tags": [
+          "remotek-collaudo-2"
+        ],
+        "updated_at": "__TIMESTAMP__",
+        "user_id": "__ID__",
+        "username": ""
+      },
+      {
+        "alias": "",
+        "collection_id": 0,
+        "created_at": "__TIMESTAMP__",
+        "forceAlwaysRelay": false,
+        "hash": "aGFzaC1kaS1jb2xsYXVkbw==",
+        "hostname": "PC-COLLAUDO",
+        "id": "999000222",
+        "loginName": "",
+        "online": false,
+        "password": "",
+        "platform": "Windows",
+        "rdpPort": "",
+        "rdpUsername": "",
+        "row_id": "__ID__",
+        "sameServer": false,
+        "tags": [],
+        "updated_at": "__TIMESTAMP__",
+        "user_id": "__ID__",
+        "username": "utente"
+      }
+    ],
+    "licensed_devices": 99999,
+    "total": 2
+  },
+  "corpo_tipo": "json",
+  "stato": 200
+}

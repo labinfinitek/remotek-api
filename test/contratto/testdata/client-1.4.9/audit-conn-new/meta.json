@@ -1,0 +1,20 @@
+{
+  "attesa_dal_codice": "200 {\"code\":0,\"message\":\"success\",\"data\":\"\"} (il client ignora la risposta)",
+  "autenticata": false,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "audit-conn-new",
+  "fonte_api": "api/http/controller/api/audit.go:26-59; api/http/request/api/audit.go:10-42",
+  "fonte_client": [
+    "client/src/server/connection.rs:1393-1400, 1429-1440"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "session_id e' u64: l'API lo legge come float64 e perde precisione sopra 2^53 (il valore di prova e' 2^53+1)",
+  "precondizione": "",
+  "registrato_il": "2026-09-19T01:03:31Z",
+  "scrive": true
+}

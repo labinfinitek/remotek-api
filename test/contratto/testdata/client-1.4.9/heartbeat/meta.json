@@ -1,0 +1,21 @@
+{
+  "attesa_dal_codice": "200 {} (il client cerca le chiavi opzionali sysinfo, disconnect, modified_at, strategy: sync.rs:245-269)",
+  "autenticata": false,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "heartbeat",
+  "fonte_api": "api/http/controller/api/index.go:41-63",
+  "fonte_client": [
+    "client/src/hbbs_http/sync.rs:235-244",
+    "client/libs/hbb_common/src/lib.rs:264-289"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "peer sconosciuto: nessuna scrittura; peer noto: aggiorna last_online se sono passati 30 s. 'conns' c'e' solo con connessioni attive",
+  "precondizione": "",
+  "registrato_il": "2026-09-19T01:03:31Z",
+  "scrive": true
+}

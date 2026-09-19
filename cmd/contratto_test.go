@@ -120,7 +120,7 @@ func TestContract(t *testing.T) {
 	contratto.Run(t, contratto.Options{
 		BaseURL: srv.URL,
 		Golden:  os.DirFS(filepath.Join(root, "test", "contratto", "testdata", "client-1.4.9")),
-		Groups:  []string{"anonime", "non-implementate"},
+		Groups:  []string{"anonime", "non-implementate", "utente", "peer", "login-errato"},
 		Vars:    map[string]string{"utente": user, "password": password},
 	})
 }

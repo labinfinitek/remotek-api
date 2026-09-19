@@ -1,0 +1,21 @@
+{
+  "corpo": {
+    "conn_id": 7,
+    "id": "999000111",
+    "peer": [
+      "999000222",
+      "tecnico"
+    ],
+    "primary_auth": 1,
+    "session_id": 9007199254740993,
+    "type": 0,
+    "uuid": "cmVtb3Rlay1jb2xsYXVkby11dWlk"
+  },
+  "corpo_vuoto": false,
+  "intestazioni": {
+    "Content-Type": "application/json"
+  },
+  "metodo": "POST",
+  "percorso": "/api/audit/conn",
+  "query": []
+}
