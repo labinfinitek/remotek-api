@@ -66,9 +66,13 @@ func substituteValue(v any, vars map[string]string) (any, error) {
 // intestazioni e nelle stringhe del corpo, in quest'ordine e per chiave
 // ordinata, cosi' un valore mancante da' sempre lo stesso errore; escape del
 // percorso come quote() e query nell'ordine del file, non riordinata. Tre
-// differenze, indifferenti per l'API: le chiavi del corpo escono ordinate (in
-// richiesta.json lo sono gia'), U+2028 e U+2029 escono come sequenze di
-// escape (json.Encoder lo fa sempre) e User-Agent resta quello di Go.
+// differenze, indifferenti per l'API. Le chiavi degli oggetti del corpo
+// escono ordinate, mentre il registratore le manda nell'ordine della sua
+// tabella delle richieste, non in quello di richiesta.json: per alcuni passi
+// i byte differiscono, ma i controller decodificano il corpo in una struct o
+// in una mappa, e il NoRoute non lo legge. U+2028 e U+2029 escono come
+// sequenze di escape (json.Encoder lo fa sempre). User-Agent resta quello di
+// Go, che l'API non legge.
 func (r Request) Build(ctx context.Context, baseURL string, vars map[string]string) (*http.Request, error) {
 	if err := r.validate(); err != nil {
 		return nil, err

@@ -13,7 +13,9 @@ import (
 	"testing/fstest"
 )
 
-// recorded sono i passi registrati oggi: i primi di scenario.json.
+// recorded sono i passi del gruppo anonime, i primi di scenario.json. Gli
+// altri passi registrati (i 404 del gruppo non-implementate) li carica
+// TestContract in cmd/.
 var recorded = []string{"version", "login-options", "non-autenticato", "audit-conn-active-404"}
 
 func TestLoadScenario(t *testing.T) {
@@ -31,7 +33,7 @@ func TestLoadScenario(t *testing.T) {
 	}
 }
 
-// TestLoadStepRecorded legge i passi registrati: golden uguale al file,
+// TestLoadStepRecorded legge i passi di recorded: golden uguale al file,
 // nessuna chiave annidata, confronto "forma" solo per version.
 func TestLoadStepRecorded(t *testing.T) {
 	fsys := os.DirFS("testdata/client-1.4.9")
