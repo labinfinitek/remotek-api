@@ -75,6 +75,10 @@ Base upstream: rustdesk-api v2.7.
   `x/sync` v0.11.0 -> v0.21.0, `x/tools` v0.26.0 -> v0.47.0.
 
 ### Corretto
+- Un file di lingua che non si carica ferma l'avvio con un messaggio che lo
+  nomina: prima si saltava in silenzio e l'API rispondeva in inglese. Un
+  file in `resources/i18n` dal nome di meno di 5 caratteri non manda piu'
+  l'avvio in panic.
 - 22 messaggi arrivavano all'utente come ID nudi, per esempio
   `UserDisabled` al login di un utente disattivato, `LoginBanned` e
   `NoCaptchaRequired` nel pannello e gli errori di LDAP e OIDC: ora hanno
