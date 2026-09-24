@@ -1,4 +1,4 @@
-lang: "zh-CN"
+lang: "it" # senza Accept-Language; anche en, es, fr, ko, ru, zh-CN, zh-TW
 app:
   web-client: 0  # 1: acceso, 0: spento
   register: false #是否开启注册

@@ -149,7 +149,7 @@ The password must be 15 to 32 characters long (characters, not bytes); the same 
 * [Config File](./conf/config.yaml)
 * Modify the configuration in `conf/config.yaml`. 
 * If `gorm.type` is set to `sqlite`, MySQL-related configurations are not required.
-* Language support: `en` and `zh-CN` are supported. The default is `zh-CN`.
+* Languages: `it`, `en`, `es`, `fr`, `ko`, `ru`, `zh-CN` and `zh-TW`; the default is `it`. A request is answered in the language of its `Accept-Language` header if it is one of these (the admin panel sends its own language, by default the browser's), otherwise in the configured one: the RustDesk client does not send the header.
 
 
 ### Environment Variables
@@ -159,7 +159,7 @@ The table below does not list all configurations. Please refer to the configurat
 | Variable Name                                          | Description                                                                                                                                         | Example                       |
 |--------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|
 | TZ                                                     | timezone                                                                                                                                            | Asia/Shanghai                 |
-| RUSTDESK_API_LANG                                      | Language                                                                                                                                            | `en`,`zh-CN`                  |
+| RUSTDESK_API_LANG                                      | Language used when `Accept-Language` does not pick one; default `it`                                                                                | `it`,`en`,`zh-CN`             |
 | RUSTDESK_API_APP_WEB_CLIENT                            | web client on/off; 1: on, 0 off, default: 0                                                                                                         | 1                             |
 | RUSTDESK_API_APP_REGISTER                              | register enable; `true`, `false`; default:`false`                                                                                                   | `false`                       |
 | RUSTDESK_API_APP_WEB_SSO                               | offer clients the login confirmed from the web admin (`webauth`); `true`, `false`; default: `false`                                                 | `false`                       |

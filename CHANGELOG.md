@@ -93,6 +93,12 @@ Base upstream: rustdesk-api v2.7.
   registry altrui): la CI del fork arriva con `remotek-ci.yml`.
 
 ### Modificato
+- La lingua predefinita e' l'italiano, nel codice e in `conf/config.yaml`
+  (prima `zh-CN` nel file e l'inglese senza file). Il client RustDesk non
+  manda `Accept-Language`: riceve i messaggi in italiano, e
+  `RUSTDESK_API_LANG=en` riporta all'inglese. I due testi che il client
+  confronta alla lettera, `No authed oidc is found` e `SYSINFO_UPDATED`,
+  non cambiano.
 - Messaggi e validatore scelgono la lingua con la stessa regola: quella di
   `Accept-Language` se l'API la ha, altrimenti `lang`, altrimenti
   l'inglese. Prima il validatore voleva la stringa esatta, e `it-IT`, che il

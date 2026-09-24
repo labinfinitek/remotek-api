@@ -152,7 +152,7 @@
 * [配置文件](./conf/config.yaml)
 * 参考`conf/config.yaml`配置文件，修改相关配置。
 * 如果`gorm.type`是`sqlite`，则不需要配置mysql相关配置。
-* 语言如果不设置默认为`zh-CN`
+* 支持的语言：`it`、`en`、`es`、`fr`、`ko`、`ru`、`zh-CN`、`zh-TW`，不设置默认为`it`。请求的`Accept-Language`是其中之一时用它回复（后台发送自己的语言，默认是浏览器的语言），否则用配置的语言：RustDesk客户端不发送该请求头。
 
 ### 环境变量
 环境变量和配置文件`conf/config.yaml`中的配置一一对应，变量名前缀是`RUSTDESK_API`
@@ -161,7 +161,7 @@
 | 变量名                                                    | 说明                                                                             | 示例                           |
 |--------------------------------------------------------|--------------------------------------------------------------------------------|------------------------------|
 | TZ                                                     | 时区                                                                             | Asia/Shanghai                |
-| RUSTDESK_API_LANG                                      | 语言                                                                             | `en`,`zh-CN`                 |
+| RUSTDESK_API_LANG                                      | `Accept-Language`未选定语言时使用的语言，默认`it`                                | `it`,`en`,`zh-CN`            |
 | RUSTDESK_API_APP_WEB_CLIENT                            | 是否启用web-client; 1:启用,0:不启用; 默认`0`不启用                                           | 1                            |
 | RUSTDESK_API_APP_REGISTER                              | 是否开启注册; `true`, `false`  默认`false`                                             | `false`                      |
 | RUSTDESK_API_APP_WEB_SSO                               | 是否向客户端提供web后台授权登录(`webauth`); `true`, `false` 默认`false`                         | `false`                      |

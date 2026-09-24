@@ -81,3 +81,18 @@ func leggi(path string) sicuri {
 		BanThreshold: c.App.BanThreshold, TrustProxy: c.Gin.TrustProxy,
 	}
 }
+
+// TestLinguaPredefinita verifica che senza RUSTDESK_API_LANG la lingua sia
+// l'italiano, col conf/config.yaml del repo e con un file che non la nomina:
+// e' la lingua dei messaggi al client RustDesk, che non manda
+// Accept-Language.
+func TestLinguaPredefinita(t *testing.T) {
+	t.Setenv("RUSTDESK_API_LANG", "") // vuota, per viper non c'e'
+	for _, path := range []string{fileSenzaChiavi(t), filepath.Join("..", "conf", "config.yaml")} {
+		var c Config
+		Init(&c, path)
+		if c.Lang != "it" {
+			t.Errorf("Init(%s): lang %q, atteso \"it\"", path, c.Lang)
+		}
+	}
+}
