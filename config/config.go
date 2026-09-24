@@ -64,6 +64,17 @@ func Init(rowVal *Config, path string) *viper.Viper {
 		path = DefaultConfig
 	}
 	v := viper.GetViper()
+	// Default sicuri (ADR-0008): li prende una chiave che manca sia dal file
+	// sia dalle variabili RUSTDESK_API_*, al posto dello zero del tipo. Il file
+	// batte il default, la variabile batte il file. Col default viper conosce
+	// la chiave, quindi la variabile vale anche se il file non la nomina.
+	v.SetDefault("app.web-client", 0)
+	v.SetDefault("app.web-sso", false)
+	v.SetDefault("app.register", false)
+	v.SetDefault("app.show-swagger", 0)
+	v.SetDefault("app.captcha-threshold", 3)
+	v.SetDefault("app.ban-threshold", 10)
+	v.SetDefault("gin.trust-proxy", "") // nessun proxy fidato: vedi http.setTrustedProxies
 	v.AutomaticEnv()
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	v.SetEnvPrefix("RUSTDESK_API")

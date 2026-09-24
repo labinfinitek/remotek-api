@@ -163,20 +163,21 @@
 |--------------------------------------------------------|--------------------------------------------------------------------------------|------------------------------|
 | TZ                                                     | 时区                                                                             | Asia/Shanghai                |
 | RUSTDESK_API_LANG                                      | 语言                                                                             | `en`,`zh-CN`                 |
-| RUSTDESK_API_APP_WEB_CLIENT                            | 是否启用web-client; 1:启用,0:不启用; 默认启用                                               | 1                            |
+| RUSTDESK_API_APP_WEB_CLIENT                            | 是否启用web-client; 1:启用,0:不启用; 默认`0`不启用                                           | 1                            |
 | RUSTDESK_API_APP_REGISTER                              | 是否开启注册; `true`, `false`  默认`false`                                             | `false`                      |
+| RUSTDESK_API_APP_WEB_SSO                               | 是否向客户端提供web后台授权登录(`webauth`); `true`, `false` 默认`false`                         | `false`                      |
 | RUSTDESK_API_APP_SHOW_SWAGGER                          | 是否可见swagger文档;`1`显示，`0`不显示，默认`0`不显示                                            | `1`                          |
 | RUSTDESK_API_APP_TOKEN_EXPIRE                          | token有效时长                                                                      | `168h`                       |
 | RUSTDESK_API_APP_DISABLE_PWD_LOGIN                     | 是否禁用密码登录;  `true`, `false`  默认`false`                                          | `false`                      |
 | RUSTDESK_API_APP_REGISTER_STATUS                       | 注册用户默认状态; 1 启用，2 禁用, 默认 1                                                      | `1`                          |
 | RUSTDESK_API_APP_CAPTCHA_THRESHOLD                     | 验证码触发次数; -1 不启用， 0 一直启用， >0 登录错误次数后启用 ;默认 `3`                                  | `3`                          |
-| RUSTDESK_API_APP_BAN_THRESHOLD                         | 封禁IP触发次数; 0 不启用, >0 登录错误次数后封禁IP; 默认 `0`                                        | `0`                          |
+| RUSTDESK_API_APP_BAN_THRESHOLD                         | 封禁IP触发次数; 0 不启用, >0 同一IP在10分钟内登录错误达到该次数后，该IP的所有请求被拒绝30分钟; 默认 `10` | `10`                         |
 | -----ADMIN配置-----                                      | ----------                                                                     | ----------                   |
 | RUSTDESK_API_ADMIN_TITLE                               | 后台标题                                                                           | `RustDesk Api Admin`         |
 | RUSTDESK_API_ADMIN_HELLO                               | 后台欢迎语，可以使用`html`                                                               |                              |
 | RUSTDESK_API_ADMIN_HELLO_FILE                          | 后台欢迎语文件，如果内容多，使用文件更方便。<br>会覆盖`RUSTDESK_API_ADMIN_HELLO`                        | `./conf/admin/hello.html`    |
 | -----GIN配置-----                                        | ----------                                                                     | ----------                   |
-| RUSTDESK_API_GIN_TRUST_PROXY                           | 信任的代理IP列表，以`,`分割，默认信任所有                                                        | 192.168.1.2,192.168.1.3      |
+| RUSTDESK_API_GIN_TRUST_PROXY                           | 信任的代理IP或CIDR，以`,`分割；默认为空，不信任任何代理，忽略`X-Forwarded-For`和`X-Real-IP`。<br>在反向代理后面必须填写代理的地址，否则验证码和封禁把所有客户端都当作代理的IP | 192.168.1.2,192.168.1.3      |
 | -----GORM配置-----                                       | ----------                                                                     | ---------------------------  |
 | RUSTDESK_API_GORM_TYPE                                 | 数据库类型sqlite或者mysql，默认sqlite                                                    | sqlite                       |
 | RUSTDESK_API_GORM_MAX_IDLE_CONNS                       | 数据库最大空闲连接数                                                                     | 10                           |

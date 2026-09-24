@@ -15,15 +15,8 @@ import (
 func NewEngine() *gin.Engine {
 	gin.SetMode(global.Config.Gin.Mode)
 	g := gin.New()
-
-	//[WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
-	//Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
-	if global.Config.Gin.TrustProxy != "" {
-		pro := strings.Split(global.Config.Gin.TrustProxy, ",")
-		err := g.SetTrustedProxies(pro)
-		if err != nil {
-			panic(err)
-		}
+	if err := setTrustedProxies(g, global.Config.Gin.TrustProxy); err != nil {
+		panic(err)
 	}
 
 	if global.Config.Gin.Mode == gin.ReleaseMode {
@@ -40,6 +33,19 @@ func NewEngine() *gin.Engine {
 	router.Init(g)
 	router.ApiInit(g)
 	return g
+}
+
+// setTrustedProxies dice a g di quali proxy fidarsi. ClientIP(), l'IP con cui
+// il limiter dei login conta i tentativi per captcha e ban, legge
+// X-Forwarded-For e X-Real-IP solo nelle richieste che arrivano da un proxy
+// fidato. trustProxy e' gin.trust-proxy, IP o CIDR separati da virgola; vuoto
+// (il default) vuol dire nessun proxy, non tutti come in gin.New(), che
+// lascerebbe a ogni client scegliere l'IP con cui viene contato o bannato.
+func setTrustedProxies(g *gin.Engine, trustProxy string) error {
+	if trustProxy == "" {
+		return g.SetTrustedProxies(nil)
+	}
+	return g.SetTrustedProxies(strings.Split(trustProxy, ","))
 }
 
 // ApiInit costruisce il router con NewEngine e lo avvia su gin.api-addr.

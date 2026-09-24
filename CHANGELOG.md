@@ -8,6 +8,18 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 Base upstream: rustdesk-api v2.7.
 
 ### Sicurezza
+- Default sicuri nel codice (ADR-0008), con `conf/config.yaml` allineato:
+  web client (`app.web-client` 0) e login `webauth` dal pannello
+  (`app.web-sso` false) spenti, autoregistrazione e swagger spenti come
+  prima, captcha dopo 3 login sbagliati e, dopo 10 in 10 minuti, ogni
+  richiesta dallo stesso IP rifiutata per 30 minuti (`app.ban-threshold` 10,
+  prima 0). `gin.trust-proxy` vuoto, il default, ora vuol dire nessun proxy
+  fidato, non tutti: un client non sceglie piu' con `X-Forwarded-For` l'IP
+  con cui captcha e ban lo contano. Rottura per chi non configurava niente:
+  web client e `webauth` si riaccendono a mano, e dietro un reverse proxy va
+  impostato `RUSTDESK_API_GIN_TRUST_PROXY`, altrimenti tutti i client
+  contano come l'IP del proxy e 10 login sbagliati di chiunque bloccano
+  tutti per 30 minuti.
 - govulncheck v1.8.0 in CI: il job fallisce se il nostro codice chiama una
   vulnerabilita' nota. Ferma il merge solo quando `govulncheck` e' tra i
   controlli obbligatori del ruleset di `remotek`: si aggiunge dopo il merge.
