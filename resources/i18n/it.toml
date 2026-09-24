@@ -167,3 +167,113 @@ other = "Accesso bloccato."
 description = "Register success, wait admin confirm."
 one = "Registrazione riuscita: attendi che un amministratore la confermi."
 other = "Registrazione riuscita: attendi che un amministratore la confermi."
+
+[LoginBanned]
+description = "Too many failed logins from this address."
+one = "Troppi accessi non riusciti dal tuo indirizzo: riprova più tardi."
+other = "Troppi accessi non riusciti dal tuo indirizzo: riprova più tardi."
+
+[LoginFailed]
+description = "Login failed."
+one = "Accesso non riuscito."
+other = "Accesso non riuscito."
+
+[NoCaptchaRequired]
+description = "No captcha required."
+one = "Il codice di verifica non serve."
+other = "Il codice di verifica non serve."
+
+[UserDisabled]
+description = "User disabled."
+one = "Utente disattivato."
+other = "Utente disattivato."
+
+[UserNotFound]
+description = "User not found."
+one = "Utente non trovato."
+other = "Utente non trovato."
+
+[UsernameExists]
+description = "Username already exists."
+one = "Il nome utente esiste già."
+other = "Il nome utente esiste già."
+
+[IdTokenVerifyError]
+description = "OIDC: ID token verification failed."
+one = "Verifica del token ID non riuscita."
+other = "Verifica del token ID non riuscita."
+
+[IDTokenClaimsError]
+description = "OIDC: cannot read the ID token claims."
+one = "Impossibile leggere i dati del token ID."
+other = "Impossibile leggere i dati del token ID."
+
+[NonceDoesNotMatch]
+description = "OIDC: nonce does not match."
+one = "Il nonce non corrisponde."
+other = "Il nonce non corrisponde."
+
+[UrlParseFailed]
+description = "LDAP: invalid server URL."
+one = "Indirizzo del server LDAP non valido."
+other = "Indirizzo del server LDAP non valido."
+
+[FileReadFailed]
+description = "LDAP: cannot read the CA certificate file."
+one = "Impossibile leggere il certificato CA di LDAP."
+other = "Impossibile leggere il certificato CA di LDAP."
+
+[LdapNotEnabled]
+description = "LDAP not enabled."
+one = "LDAP non è attivo."
+other = "LDAP non è attivo."
+
+[UserDisabledAtLdap]
+description = "LDAP: user disabled."
+one = "Utente disattivato in LDAP."
+other = "Utente disattivato in LDAP."
+
+[MailNotMatch]
+description = "LDAP: email does not match."
+one = "L'email non corrisponde."
+other = "L'email non corrisponde."
+
+[LdapConnectFailed]
+description = "LDAP: connection failed."
+one = "Impossibile connettersi al server LDAP."
+other = "Impossibile connettersi al server LDAP."
+
+[LdapSearchRequestFailed]
+description = "LDAP: search failed."
+one = "Ricerca LDAP non riuscita."
+other = "Ricerca LDAP non riuscita."
+
+[LdapStartTLSFailed]
+description = "LDAP: TLS failed."
+one = "Connessione TLS a LDAP non riuscita."
+other = "Connessione TLS a LDAP non riuscita."
+
+[LdapBindServiceFailed]
+description = "LDAP: service account bind failed."
+one = "Accesso a LDAP con l'account di servizio non riuscito."
+other = "Accesso a LDAP con l'account di servizio non riuscito."
+
+[LdapBindFailed]
+description = "LDAP: bind failed."
+one = "Accesso a LDAP non riuscito."
+other = "Accesso a LDAP non riuscito."
+
+[LdapToLocalUserFailed]
+description = "LDAP: cannot map to a local user."
+one = "Impossibile collegare l'utente LDAP a un utente locale."
+other = "Impossibile collegare l'utente LDAP a un utente locale."
+
+[LdapCreateUserFailed]
+description = "LDAP: cannot create the local user."
+one = "Impossibile creare l'utente locale per l'utente LDAP."
+other = "Impossibile creare l'utente locale per l'utente LDAP."
+
+[PasswordNotMatch]
+description = "LDAP: wrong password."
+one = "Password errata."
+other = "Password errata."

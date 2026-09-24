@@ -68,6 +68,11 @@ Base upstream: rustdesk-api v2.7.
   `x/sync` v0.11.0 -> v0.21.0, `x/tools` v0.26.0 -> v0.47.0.
 
 ### Corretto
+- 22 messaggi arrivavano all'utente come ID nudi, per esempio
+  `UserDisabled` al login di un utente disattivato, `LoginBanned` e
+  `NoCaptchaRequired` nel pannello e gli errori di LDAP e OIDC: ora hanno
+  il testo in inglese e in italiano, e un test controlla che ogni ID usato
+  nel codice sia in `en.toml`.
 - Registrazione: il server rifiuta una conferma diversa dalla password. Prima
   salvava la password senza guardare la conferma; il pannello le confrontava
   gia' nel browser.
