@@ -8,6 +8,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 Base upstream: rustdesk-api v2.7.
 
 ### Sicurezza
+- Password di almeno 15 caratteri dove si creano o si cambiano (ADR-0008,
+  NIST SP 800-63B-4): registrazione, password impostata dal pannello e cambio
+  della propria; prima ne bastavano 4. Il massimo resta 32 e si contano
+  caratteri, non byte. Il login non cambia: le password corte gia' impostate
+  continuano a funzionare e si possono cambiare. Non vale per i comandi
+  `reset-admin-pwd` e `reset-pwd`, ne' per la password iniziale di admin.
 - Token di sessione casuali (ADR-0008): senza `jwt.key` il token era
   md5(nome utente + ora del login), che si indovina conoscendo il nome utente
   e il momento del login; ora e' fatto di 16 byte da `crypto/rand`, sempre 32
@@ -47,6 +53,11 @@ Base upstream: rustdesk-api v2.7.
 - Di conseguenza salgono, al minimo richiesto dai moduli sopra:
   `golang.org/x/crypto` v0.33.0 -> v0.53.0, `x/sys` v0.30.0 -> v0.46.0,
   `x/sync` v0.11.0 -> v0.21.0, `x/tools` v0.26.0 -> v0.47.0.
+
+### Corretto
+- Registrazione: il server rifiuta una conferma diversa dalla password. Prima
+  salvava la password senza guardare la conferma; il pannello le confrontava
+  gia' nel browser.
 
 ### Rimosso
 - Workflow upstream `build.yml` e `build_test.yml` (build e pubblicazione su

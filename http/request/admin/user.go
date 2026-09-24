@@ -52,25 +52,35 @@ type UserQuery struct {
 	PageQuery
 	Username string `form:"username"`
 }
+
+// Dove una password si crea o si cambia (registrazione, password impostata
+// dal pannello, cambio della propria) servono almeno 15 caratteri (ADR-0008,
+// NIST SP 800-63B-4: minimo per una password che e' l'unico fattore); il
+// massimo resta 32 come nel login, che accetta ancora le password di prima.
+// OldPassword resta a 4: chi ha una password corta deve poterla cambiare.
+
 type UserPasswordForm struct {
 	Id       uint   `json:"id" validate:"required"`
-	Password string `json:"password" validate:"required,gte=4,lte=32"`
+	Password string `json:"password" validate:"required,gte=15,lte=32"`
 }
 
 type ChangeCurPasswordForm struct {
 	OldPassword string `json:"old_password" validate:"required,gte=4,lte=32"`
-	NewPassword string `json:"new_password" validate:"required,gte=4,lte=32"`
+	NewPassword string `json:"new_password" validate:"required,gte=15,lte=32"`
 }
 type GroupUsersQuery struct {
 	IsMy   int  `json:"is_my"`
 	UserId uint `json:"user_id"`
 }
 
+// RegisterForm e' il form di registrazione. La conferma deve essere uguale
+// alla password anche per il server, non solo per il pannello che le
+// confronta nel browser.
 type RegisterForm struct {
 	Username        string `json:"username" validate:"required,gte=2,lte=32"`
 	Email           string `json:"email"` // validate:"required,email"
-	Password        string `json:"password" validate:"required,gte=4,lte=32"`
-	ConfirmPassword string `json:"confirm_password" validate:"required,gte=4,lte=32"`
+	Password        string `json:"password" validate:"required,gte=15,lte=32"`
+	ConfirmPassword string `json:"confirm_password" validate:"required,gte=15,lte=32,eqfield=Password"`
 }
 
 type UserTokenBatchDeleteForm struct {
