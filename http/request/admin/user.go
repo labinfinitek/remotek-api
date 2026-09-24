@@ -73,11 +73,14 @@ type GroupUsersQuery struct {
 	UserId uint `json:"user_id"`
 }
 
+// RegisterForm e' il form di registrazione. La conferma deve essere uguale
+// alla password anche per il server, non solo per il pannello che le
+// confronta nel browser.
 type RegisterForm struct {
 	Username        string `json:"username" validate:"required,gte=2,lte=32"`
 	Email           string `json:"email"` // validate:"required,email"
 	Password        string `json:"password" validate:"required,gte=15,lte=32"`
-	ConfirmPassword string `json:"confirm_password" validate:"required,gte=15,lte=32"`
+	ConfirmPassword string `json:"confirm_password" validate:"required,gte=15,lte=32,eqfield=Password"`
 }
 
 type UserTokenBatchDeleteForm struct {

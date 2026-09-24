@@ -54,6 +54,11 @@ Base upstream: rustdesk-api v2.7.
   `golang.org/x/crypto` v0.33.0 -> v0.53.0, `x/sys` v0.30.0 -> v0.46.0,
   `x/sync` v0.11.0 -> v0.21.0, `x/tools` v0.26.0 -> v0.47.0.
 
+### Corretto
+- Registrazione: il server rifiuta una conferma diversa dalla password. Prima
+  salvava la password senza guardare la conferma; il pannello le confrontava
+  gia' nel browser.
+
 ### Rimosso
 - Workflow upstream `build.yml` e `build_test.yml` (build e pubblicazione su
   registry altrui): la CI del fork arriva con `remotek-ci.yml`.

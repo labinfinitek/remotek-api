@@ -101,3 +101,13 @@ func TestLoginPasswordCorte(t *testing.T) {
 		}
 	}
 }
+
+// TestRegistrazioneConfermaDiversa verifica che la registrazione rifiuti una
+// conferma diversa dalla password, con il messaggio del validatore come per
+// gli altri campi del form.
+func TestRegistrazioneConfermaDiversa(t *testing.T) {
+	f := &RegisterForm{Username: "collaudo", Password: strings.Repeat("a", 15), ConfirmPassword: strings.Repeat("b", 15)}
+	if got, want := valida(t, f), "ConfirmPassword must be equal to Password"; got != want {
+		t.Errorf("errore %q, atteso %q", got, want)
+	}
+}
