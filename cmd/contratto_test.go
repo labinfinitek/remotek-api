@@ -137,7 +137,7 @@ func seedUser(t *testing.T, c *http.Client, baseURL string) (user, password stri
 	if _, err := rand.Read(secret); err != nil {
 		t.Fatalf("password casuale: %v", err)
 	}
-	user, password = seedUsername, hex.EncodeToString(secret) // 32 caratteri: il form accetta 4-32
+	user, password = seedUsername, hex.EncodeToString(secret) // 32 caratteri: il form accetta 15-32
 	status, body := postJSON(t, c, baseURL+"/api/admin/user/register", "", map[string]any{
 		"username": user, "email": "", "password": password, "confirm_password": password,
 	})

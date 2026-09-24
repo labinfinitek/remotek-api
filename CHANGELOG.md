@@ -8,6 +8,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 Base upstream: rustdesk-api v2.7.
 
 ### Sicurezza
+- Password di almeno 15 caratteri dove si creano o si cambiano (ADR-0008,
+  NIST SP 800-63B-4): registrazione, password impostata dal pannello e cambio
+  della propria; prima ne bastavano 4. Il massimo resta 32 e si contano
+  caratteri, non byte. Il login non cambia: le password corte gia' impostate
+  continuano a funzionare e si possono cambiare. Non vale per i comandi
+  `reset-admin-pwd` e `reset-pwd`, ne' per la password iniziale di admin.
 - Token di sessione casuali (ADR-0008): senza `jwt.key` il token era
   md5(nome utente + ora del login), che si indovina conoscendo il nome utente
   e il momento del login; ora e' fatto di 16 byte da `crypto/rand`, sempre 32
