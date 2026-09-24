@@ -20,6 +20,7 @@ l'elenco crescera'. `git log v2.7..remotek` mostra la stessa lista come commit.
 | `http/http.go` | `NewEngine()` costruisce il router, `ApiInit()` lo avvia: stesse istruzioni, stesso ordine | i test del contratto usano il router vero senza aprire la porta | 0014, REGOLE 6.1 |
 | `test/contratto/` | golden delle risposte di v2.7 alle richieste del client 1.4.9 (45 passi: anonimi, 404 delle cinque richieste che l'API non implementa, utente di collaudo, dispositivo, login errato) e libreria Go di normalizzazione e confronto, stessa semantica del registratore | il contratto col client si verifica, non si ricorda | 0012, 0014, REGOLE 6.1 |
 | `cmd/contratto_test.go` | `TestContract`: `InitGlobal()` e router vero su `httptest`, in una cartella temporanea, rieseguono i golden di `test/contratto/` | il contratto si controlla in CI a ogni push e PR verso `remotek`; in `package main` finche' il bootstrap sta in `cmd/` | 0014, REGOLE 6.1 |
+| `config/config.go`, `conf/config.yaml`, `http/http.go` (con i test) | default sicuri nel codice e file allineato: web client, `webauth`, autoregistrazione e swagger spenti, captcha dopo 3 login sbagliati, ban dopo 10; `gin.trust-proxy` vuoto vuol dire nessun proxy fidato, non tutti | un'installazione senza configurazione e' sicura, e `X-Forwarded-For` non sceglie l'IP con cui captcha e ban contano un client | 0008 |
 
 Contratto verso il client RustDesk: invariato (ogni endpoint chiamato dal
 client avra' un test del contratto prima di essere toccato).

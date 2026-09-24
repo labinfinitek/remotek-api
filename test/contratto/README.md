@@ -74,7 +74,7 @@ con `data/`, `runtime/` e i collegamenti a `resources/` e `conf/`, quindi
 sqlite su un file temporaneo.
 La configurazione dell'istanza di riferimento e' fissata con le variabili
 `RUSTDESK_API_*`, cosi' un cambio dei default nel codice non sposta i golden
-(i default sicuri avranno test propri). Il modo di gin (`test`) e il livello
+(i default sicuri hanno test propri). Il modo di gin (`test`) e il livello
 del log (`warn`) sono scelti per la CI e non toccano le risposte.
 L'autoregistrazione invece e' accesa, `RUSTDESK_API_APP_REGISTER=true` (con
 `RUSTDESK_API_APP_REGISTER_STATUS=1`), solo nel processo del test:
@@ -155,7 +155,7 @@ Non coperto da questi test: i messaggi in italiano (l'istanza di riferimento
 risponde in inglese e il test fissa `RUSTDESK_API_LANG=en`), la scadenza e
 il rinnovo del token, il login OIDC e LDAP, il pannello admin, MySQL e
 PostgreSQL (il test usa sqlite), l'avvio vero (`main`, cobra, endless) e i
-default sicuri, che avranno test propri. Coperti solo in parte, finche' la
+default sicuri, che hanno test propri. Coperti solo in parte, finche' la
 tabella del registratore non avra' i passi che mancano: `/api/peers`
 risponde sempre con l'elenco vuoto, perche' `peers` viene prima di
 `sysinfo`, quindi la forma di un elemento (`GroupPeerPayload`, letto dal

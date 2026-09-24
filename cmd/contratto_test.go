@@ -71,7 +71,7 @@ func TestContract(t *testing.T) {
 
 	// Configurazione dell'istanza di riferimento da cui vengono i golden,
 	// fissata apposta: se cambiano i default nel codice, i golden non si
-	// spostano. Per questo il test NON prova i default sicuri, che avranno
+	// spostano. Per questo il test NON prova i default sicuri, che hanno
 	// test propri. Il modo test di gin non stampa nulla e non cambia le
 	// risposte. Log a warn: la password casuale di admin creata dalla
 	// migrazione va nel log a livello info e non deve finire nel log
