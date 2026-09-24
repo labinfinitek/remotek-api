@@ -19,17 +19,26 @@ franchezza: un problema si dice subito, un dubbio si dichiara come dubbio,
 
 - Niente accesso a server, VM, DNS o infrastruttura, neanche se raggiungibili.
 - Niente merge: l'agente apre la MR verso `remotek`, il titolare approva.
-- Niente push su `remotek`, niente tag, niente modifiche ai workflow senza
-  che la MR lo dica nel titolo (`ci:`).
+  Aprire la MR a lavoro fatto e verificato e' autorizzato sempre, senza che
+  la richiesta lo ripeta; non la si apre solo se la richiesta lo esclude.
+- Niente push su `remotek`, niente tag.
+- Niente modifiche a `.github/workflows/`, anche se l'accesso GitHub lo
+  permetterebbe: le MR `ci:` le fa l'agente locale, perche' le regole della
+  CI (azioni fissate per SHA, `permissions:` minimi, niente cron ne' tag
+  automatici) stanno nel repo privato che da qui non si legge.
 - Niente segreti nel repo, nei log, nei messaggi di commit. Il repo e' pubblico.
 - `LICENSE` resta intatto con l'attribuzione a lejianwen.
 
 ## Flusso
 
 - Branch di lavoro `<tipo>/<argomento>` da `remotek`; una MR, un argomento,
-  massimo 300 righe modificate (esclusi `go.sum` e file generati).
+  massimo 300 righe modificate (esclusi `go.sum` e file generati). Nel cloud
+  il push e' ammesso solo sul branch assegnato alla sessione (`claude/...`):
+  si usa quello, e il tipo sta nel titolo della MR e nei commit.
 - MR verso `labinfinitek/remotek-api`, base `remotek`, mai verso il progetto
-  originale. Con `gh`: sempre `--repo labinfinitek/remotek-api`.
+  originale. Con `gh`: sempre `--repo labinfinitek/remotek-api`. Nel cloud
+  GitHub si usa dal connettore (o da `gh`, se c'e'), con repo e base
+  espliciti.
 - Descrizione con il template `.github/pull_request_template.md`, tutte le
   sezioni: cosa cambia, perche', come verificato (comandi e output), cosa non
   verificato e perche', cosa serve dal titolare.
@@ -51,6 +60,11 @@ dipendenze). Niente `chore`, `style`, `perf`. Ambito = il pacchetto toccato
 `router`, `docker`, `pannello`). Rottura del contratto col client o di una
 variabile `RUSTDESK_API_*`: `!` dopo il tipo e footer `BREAKING CHANGE:`.
 
+I trailer che l'ambiente cloud aggiunge ai commit (`Co-Authored-By: Claude`,
+`Claude-Session: <link>`) e la riga finale delle MR restano: legano ogni
+commit alla sessione che l'ha prodotto, e il link si apre solo con l'account
+del titolare.
+
 ## Verifica prima della MR
 
 Dove c'e' Go (sessione cloud) si verifica in locale, e l'output va nella MR:
@@ -61,10 +75,18 @@ go vet ./...
 go test -race -shuffle=on ./...
 ```
 
-`go.mod` chiede Go 1.26 (toolchain go1.26.8): se il Go installato e' piu'
-vecchio lo scarica da solo (`GOTOOLCHAIN=auto`). Poi la CI del repo deve
-essere verde (gitleaks, go.sum, build/vet/test, test del contratto,
-golangci-lint, govulncheck, zizmor).
+`go.mod` chiede Go 1.26 (toolchain go1.26.8): l'ambiente cloud ha un Go piu'
+vecchio e `GOTOOLCHAIN=auto`, quindi scarica da solo la versione giusta.
+
+Test Redis: senza `REDIS_ADDR` si saltano. Nel container c'e' `redis-server`:
+lo si puo' avviare li' (mai altrove) e lanciare i test con
+`REDIS_ADDR=127.0.0.1:6379`. Fa fede la CI, che usa redis 7.4.11.
+
+gitleaks, govulncheck, golangci-lint e zizmor non si lanciano in locale: le
+versioni che contano sono quelle fissate nei workflow, e un secondo elenco da
+tenere allineato si sbaglia. Prima di dichiarare pronta la MR si legge
+l'esito della CI (segreti, go.sum, build/vet/test, test del contratto, lint,
+govulncheck, zizmor) e lo si riporta.
 
 `resources/web/` e' il web client di RustDesk incluso da upstream (15 MB,
 spento di default): non si aggiorna a pezzi, e gli alert Dependabot che lo
