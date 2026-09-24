@@ -8,6 +8,13 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 Base upstream: rustdesk-api v2.7.
 
 ### Sicurezza
+- Un errore interno che un controller passa come messaggio non arriva piu'
+  al client ne' al pannello (REGOLE 8): per esempio l'errore di rete di un
+  provider OIDC irraggiungibile, con il suo indirizzo e la sua risposta, da
+  `/api/oidc/auth`, `/api/admin/oidc/auth` e dall'associazione di un account
+  OAuth nel pannello. La risposta porta "Errore di sistema." (`SystemError`)
+  e il testo va nel log a livello warn. Un messaggio che manca in una lingua
+  esce in inglese, non piu' come ID.
 - Password iniziale di admin (ADR-0008): 20 caratteri casuali invece di 8, e
   non piu' nel log, dove finiva a livello info. Sta nel file
   `data/admin-password.txt`, accanto a `rustdeskapi.db` (nel container

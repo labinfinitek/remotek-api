@@ -55,47 +55,39 @@ type ServerConfigResponse struct {
 	ApiServer   string `json:"api_server"`
 }
 
+// TranslateMsg traduce il messaggio messageId nella lingua della richiesta.
 func TranslateMsg(c *gin.Context, messageId string) string {
-	localizer := global.Localizer(c.GetHeader("Accept-Language"))
-	errMsg, err := localizer.LocalizeMessage(&i18n.Message{
-		ID: messageId,
-	})
-	if err != nil {
-		global.Logger.Warn("LocalizeMessage Error: " + err.Error())
-		errMsg = messageId
-	}
-	return errMsg
+	return traduci(c, messageId, nil)
 }
+
+// TranslateTempMsg traduce messageId riempiendo il modello con templateData.
 func TranslateTempMsg(c *gin.Context, messageId string, templateData map[string]interface{}) string {
-	localizer := global.Localizer(c.GetHeader("Accept-Language"))
-	errMsg, err := localizer.Localize(&i18n.LocalizeConfig{
-		DefaultMessage: &i18n.Message{
-			ID: messageId,
-		},
-		TemplateData: templateData,
-	})
-	if err != nil {
-		global.Logger.Warn("LocalizeMessage Error: " + err.Error())
-		errMsg = messageId
-	}
-	return errMsg
+	return traduci(c, messageId, templateData)
 }
+
+// TranslateParamMsg traduce messageId mettendo params al posto di {{.P0}},
+// {{.P1}} e cosi' via.
 func TranslateParamMsg(c *gin.Context, messageId string, params ...string) string {
-	localizer := global.Localizer(c.GetHeader("Accept-Language"))
 	templateData := make(map[string]interface{})
 	for i, v := range params {
 		k := fmt.Sprintf("P%d", i)
 		templateData[k] = v
 	}
-	errMsg, err := localizer.Localize(&i18n.LocalizeConfig{
-		DefaultMessage: &i18n.Message{
-			ID: messageId,
-		},
-		TemplateData: templateData,
-	})
-	if err != nil {
-		global.Logger.Warn("LocalizeMessage Error: " + err.Error())
-		errMsg = messageId
+	return traduci(c, messageId, templateData)
+}
+
+// traduci e' il punto unico delle tre funzioni sopra. Un messaggio che manca
+// nella lingua della richiesta ripiega sull'inglese. Un ID che non esiste in
+// nessun file, come il testo di un errore di rete passato con err.Error(),
+// va nel log a livello warn e non nella risposta, che porta SystemError: i
+// dettagli interni non arrivano al client ne' al pannello (REGOLE 8).
+func traduci(c *gin.Context, id string, dati map[string]interface{}) string {
+	localizer := global.Localizer(c.GetHeader("Accept-Language"))
+	msg, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: id, TemplateData: dati})
+	if msg != "" {
+		return msg
 	}
-	return errMsg
+	global.Logger.Warnf("messaggio %q non tradotto, al client va SystemError: %v", id, err)
+	msg, _ = localizer.Localize(&i18n.LocalizeConfig{MessageID: "SystemError"})
+	return msg
 }
