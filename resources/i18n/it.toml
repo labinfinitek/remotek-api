@@ -277,3 +277,53 @@ other = "Impossibile creare l'utente locale per l'utente LDAP."
 description = "LDAP: wrong password."
 one = "Password errata."
 other = "Password errata."
+
+[Username]
+description = "Field name: username."
+one = "Nome utente"
+other = "Nome utente"
+
+[Password]
+description = "Field name: password."
+one = "Password"
+other = "Password"
+
+[ConfirmPassword]
+description = "Field name: password confirmation."
+one = "Conferma password"
+other = "Conferma password"
+
+[OldPassword]
+description = "Field name: old password."
+one = "Vecchia password"
+other = "Vecchia password"
+
+[NewPassword]
+description = "Field name: new password."
+one = "Nuova password"
+other = "Nuova password"
+
+[Email]
+description = "Field name: email."
+one = "Email"
+other = "Email"
+
+[Captcha]
+description = "Field name: captcha."
+one = "Codice di verifica"
+other = "Codice di verifica"
+
+[Platform]
+description = "Field name: platform."
+one = "Piattaforma"
+other = "Piattaforma"
+
+[AutoLogin]
+description = "Field name: auto login."
+one = "Accesso automatico"
+other = "Accesso automatico"
+
+[DeviceInfo]
+description = "Field name: device info."
+one = "Informazioni sul dispositivo"
+other = "Informazioni sul dispositivo"

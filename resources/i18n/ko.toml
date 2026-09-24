@@ -161,3 +161,53 @@ other = "금지됨."
 description = "Register success wait admin confirm."
 one = "가입 성공, 관리자 확인 대기 중."
 other = "가입 성공, 관리자 확인 대기 중."
+
+[Username]
+description = "Field name: username."
+one = "사용자 이름"
+other = "사용자 이름"
+
+[Password]
+description = "Field name: password."
+one = "비밀번호"
+other = "비밀번호"
+
+[ConfirmPassword]
+description = "Field name: password confirmation."
+one = "비밀번호 확인"
+other = "비밀번호 확인"
+
+[OldPassword]
+description = "Field name: old password."
+one = "이전 비밀번호"
+other = "이전 비밀번호"
+
+[NewPassword]
+description = "Field name: new password."
+one = "새 비밀번호"
+other = "새 비밀번호"
+
+[Email]
+description = "Field name: email."
+one = "이메일"
+other = "이메일"
+
+[Captcha]
+description = "Field name: captcha."
+one = "인증 코드"
+other = "인증 코드"
+
+[Platform]
+description = "Field name: platform."
+one = "플랫폼"
+other = "플랫폼"
+
+[AutoLogin]
+description = "Field name: auto login."
+one = "자동 로그인"
+other = "자동 로그인"
+
+[DeviceInfo]
+description = "Field name: device info."
+one = "기기 정보"
+other = "기기 정보"

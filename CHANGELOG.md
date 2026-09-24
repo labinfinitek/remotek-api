@@ -93,6 +93,14 @@ Base upstream: rustdesk-api v2.7.
   registry altrui): la CI del fork arriva con `remotek-ci.yml`.
 
 ### Modificato
+- Messaggi e validatore scelgono la lingua con la stessa regola: quella di
+  `Accept-Language` se l'API la ha, altrimenti `lang`, altrimenti
+  l'inglese. Prima il validatore voleva la stringa esatta, e `it-IT`, che il
+  pannello manda con un browser italiano, finiva in inglese; i messaggi
+  ripiegavano sull'inglese invece che su `lang`. Il validatore ha
+  l'italiano, e i nomi dei campi escono nella lingua della risposta: prima
+  erano in cinese in ogni lingua (`用户名 is a required field`) o erano il
+  nome Go (`ConfirmPassword`, `NewPassword`).
 - Si compila con Go 1.26 (toolchain go1.26.8) e `go.sum` e' versionato: le
   dipendenze di un build sono quelle del commit, non quelle del giorno.
 

@@ -1,7 +1,7 @@
 package api
 
 type OidcAuthRequest struct {
-	DeviceInfo DeviceInfoInLogin `json:"deviceInfo" label:"设备信息"`
+	DeviceInfo DeviceInfoInLogin `json:"deviceInfo" label:"DeviceInfo"`
 	Id         string            `json:"id"  label:"id"`
 	Op         string            `json:"op" label:"op"`
 	Uuid       string            `json:"uuid"  label:"uuid"`

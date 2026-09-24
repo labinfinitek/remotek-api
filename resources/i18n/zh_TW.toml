@@ -167,3 +167,53 @@ other = "已被禁用。"
 description = "Register success, wait admin confirm."
 one = "註冊成功，等待管理員確認。"
 other = "註冊成功，等待管理員確認。"
+
+[Username]
+description = "Field name: username."
+one = "使用者名稱"
+other = "使用者名稱"
+
+[Password]
+description = "Field name: password."
+one = "密碼"
+other = "密碼"
+
+[ConfirmPassword]
+description = "Field name: password confirmation."
+one = "確認密碼"
+other = "確認密碼"
+
+[OldPassword]
+description = "Field name: old password."
+one = "舊密碼"
+other = "舊密碼"
+
+[NewPassword]
+description = "Field name: new password."
+one = "新密碼"
+other = "新密碼"
+
+[Email]
+description = "Field name: email."
+one = "電子郵件"
+other = "電子郵件"
+
+[Captcha]
+description = "Field name: captcha."
+one = "驗證碼"
+other = "驗證碼"
+
+[Platform]
+description = "Field name: platform."
+one = "平台"
+other = "平台"
+
+[AutoLogin]
+description = "Field name: auto login."
+one = "自動登入"
+other = "自動登入"
+
+[DeviceInfo]
+description = "Field name: device info."
+one = "裝置資訊"
+other = "裝置資訊"

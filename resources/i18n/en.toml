@@ -268,3 +268,53 @@ other = "Cannot create the local user for the LDAP user."
 description = "LDAP: wrong password."
 one = "Wrong password."
 other = "Wrong password."
+
+[Username]
+description = "Field name: username."
+one = "Username"
+other = "Username"
+
+[Password]
+description = "Field name: password."
+one = "Password"
+other = "Password"
+
+[ConfirmPassword]
+description = "Field name: password confirmation."
+one = "Confirm password"
+other = "Confirm password"
+
+[OldPassword]
+description = "Field name: old password."
+one = "Old password"
+other = "Old password"
+
+[NewPassword]
+description = "Field name: new password."
+one = "New password"
+other = "New password"
+
+[Email]
+description = "Field name: email."
+one = "Email"
+other = "Email"
+
+[Captcha]
+description = "Field name: captcha."
+one = "Captcha"
+other = "Captcha"
+
+[Platform]
+description = "Field name: platform."
+one = "Platform"
+other = "Platform"
+
+[AutoLogin]
+description = "Field name: auto login."
+one = "Auto login"
+other = "Auto login"
+
+[DeviceInfo]
+description = "Field name: device info."
+one = "Device info"
+other = "Device info"

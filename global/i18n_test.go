@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/BurntSushi/toml"
+	"golang.org/x/text/language"
 )
 
 // chiaviDi restituisce gli ID dei messaggi del file di lingua path.
@@ -110,7 +111,8 @@ func TestIDDeiMessaggi(t *testing.T) {
 // TestChiaviDeiFileDiLingua verifica che it.toml abbia esattamente le chiavi
 // di en.toml e che nessun file di lingua ne abbia una che en.toml non ha: gli
 // ID nascono in en.toml, e una lingua a cui ne manca uno ripiega
-// sull'inglese.
+// sull'inglese. I file sono uno per ogni lingua di lingue(), quelle che la
+// regola della lingua puo' scegliere e che il validatore traduce.
 func TestChiaviDeiFileDiLingua(t *testing.T) {
 	en := chiaviDi(t, "../resources/i18n/en.toml")
 	it := chiaviDi(t, "../resources/i18n/it.toml")
@@ -123,11 +125,23 @@ func TestChiaviDeiFileDiLingua(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	api := make(map[language.Tag]bool)
+	for _, l := range lingue() {
+		api[l.tag] = true
+	}
 	for _, path := range files {
+		tag := language.Make(strings.TrimSuffix(filepath.Base(path), ".toml"))
+		if !api[tag] {
+			t.Errorf("%s: la lingua %s non e' in lingue()", filepath.Base(path), tag)
+		}
+		delete(api, tag)
 		for id := range chiaviDi(t, path) {
 			if !en[id] {
 				t.Errorf("%s: %s non c'e' in en.toml", filepath.Base(path), id)
 			}
 		}
+	}
+	for tag := range api {
+		t.Errorf("lingue() ha %s, resources/i18n non ha il suo file", tag)
 	}
 }

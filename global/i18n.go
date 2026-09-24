@@ -28,30 +28,33 @@ func InitI18n() {
 			Logger.Fatalf("file di lingua %s non caricato, l'API non parte: %v", fileInfo.Name(), err)
 		}
 	}
+	scegli := sceltaLingua()
 	Localizer = func(lang string) *i18n.Localizer {
-		if lang == "" {
-			lang = Config.Lang
-		}
-		if lang == "en" {
-			return i18n.NewLocalizer(bundle, "en")
-		} else {
-			return i18n.NewLocalizer(bundle, lang, "en")
-		}
+		return i18n.NewLocalizer(bundle, scegli(lang).String())
 	}
+}
 
-	//personUnreadEmails := localizer.MustLocalize(&i18n.LocalizeConfig{
-	//	DefaultMessage: &i18n.Message{
-	//		ID: "PersonUnreadEmails",
-	//	},
-	//	PluralCount: 6,
-	//	TemplateData: map[string]interface{}{
-	//		"Name":        "LE",
-	//		"PluralCount": 6,
-	//	},
-	//})
-	//personUnreadEmails, err := global.Localizer.LocalizeMessage(&i18n.Message{
-	//	ID: "ParamsError",
-	//})
-	//fmt.Println(err, personUnreadEmails)
-
+// sceltaLingua restituisce la regola, una sola per messaggi e validatore,
+// che sceglie la lingua di una risposta da Accept-Language: la prima lingua
+// dell'intestazione che l'API ha; altrimenti Config.Lang, se l'API la ha;
+// altrimenti l'inglese. Il pannello manda la sua lingua, di partenza quella
+// del browser ("it-IT"); il client RustDesk non manda Accept-Language.
+func sceltaLingua() func(acceptLanguage string) language.Tag {
+	var tags []language.Tag
+	for _, l := range lingue() {
+		tags = append(tags, l.tag)
+	}
+	matcher := language.NewMatcher(tags)
+	return func(acceptLanguage string) language.Tag {
+		for _, voluta := range []string{acceptLanguage, Config.Lang} {
+			voluti, _, err := language.ParseAcceptLanguage(voluta)
+			if err != nil || len(voluti) == 0 {
+				continue
+			}
+			if _, i, conf := matcher.Match(voluti...); conf != language.No {
+				return tags[i]
+			}
+		}
+		return language.English
+	}
 }
