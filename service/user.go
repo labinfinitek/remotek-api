@@ -89,6 +89,10 @@ func (us *UserService) InfoByAccessToken(token string) (*model.User, *model.User
 	return u, ut
 }
 
+// fonteCasuale e' la fonte dei token di sessione; i test la sostituiscono
+// per vedere che il token e' fatto solo dei byte letti da qui.
+var fonteCasuale io.Reader = crand.Reader
+
 // GenerateToken restituisce il token di sessione: un JWT se jwt.key e'
 // impostata, altrimenti 16 byte da crypto/rand in esadecimale (ADR-0008),
 // 32 caratteri come il vecchio md5(username + ora), che si poteva indovinare.
@@ -96,7 +100,7 @@ func (us *UserService) GenerateToken(u *model.User) string {
 	if len(Jwt.Key) > 0 {
 		return Jwt.GenerateToken(u.Id)
 	}
-	token, err := tokenCasuale(crand.Reader)
+	token, err := tokenCasuale(fonteCasuale)
 	if err != nil {
 		// Con Go 1.26 un guasto della fonte di sistema ferma il processo
 		// dentro crypto/rand e qui non si arriva. Se ci si arriva, si
