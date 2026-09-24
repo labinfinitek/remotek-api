@@ -81,6 +81,9 @@ Base upstream: rustdesk-api v2.7.
   dipendenze di un build sono quelle del commit, non quelle del giorno.
 
 ### Aggiunto
+- Messaggi dell'API in italiano (`resources/i18n/it.toml`): danno del tu e
+  usano i termini della traduzione italiana del client RustDesk (Accedi,
+  Nome utente, Password errata, Codice di verifica).
 - `SECURITY.md`, `REMOTEK.md`, template di pull request; attribuzione delle
   modifiche in `LICENSE`.
 - golangci-lint v2 in CI: bloccante sui pacchetti gia' bonificati, informativo
