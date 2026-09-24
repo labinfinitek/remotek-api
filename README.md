@@ -85,9 +85,7 @@
 * 使用前后端分离，提供用户友好的管理界面，主要用来管理和展示。前端代码在[rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)
 
 * 后台访问地址是`http://<your server>[:port]/_admin/`
-* 初次安装管理员为用户名为`admin`，密码将在控制台打印，可以通过[命令行](#CLI)更改密码
-
-  ![img.png](./docs/init_admin_pwd.png)
+* 初次安装管理员用户名为`admin`，初始密码为20位随机字符，只写入`data/admin-password.txt`（与`rustdeskapi.db`同目录，容器中为`/app/data/admin-password.txt`），权限`0600`，不会打印到控制台或日志。请登录后台修改密码并删除该文件，也可以通过[命令行](#CLI)更改密码
 
 1. 管理员界面
    ![web_admin](docs/web_admin.png)
@@ -145,6 +143,7 @@
 ```bash
 ./apimain reset-admin-pwd <pwd>
 ```
+密码需为15到32个字符（按字符计算，不是字节），`reset-pwd <userId> <pwd>`同样。拒绝密码、用户不存在或更新失败时，命令以非0状态码退出。
 
 ## 安装与运行
 
@@ -271,7 +270,7 @@
 5. 编译，如果想自己编译,先cd到项目根目录，然后windows下直接运行`build.bat`,linux下运行`build.sh`,编译后会在`release`
    目录下生成对应的可执行文件。直接运行编译后的可执行文件即可。
 
-6. 打开浏览器访问`http://<your server[:port]>/_admin/`，默认用户名密码为`admin`，请及时更改密码。
+6. 打开浏览器访问`http://<your server[:port]>/_admin/`，用户名为`admin`，初始密码在`data/admin-password.txt`中，请及时更改密码并删除该文件。
 
 
 #### 使用`lejianwen/server-s6`镜像运行

@@ -82,9 +82,7 @@ Basic implementation of the PC client's primary interfaces.Supports the Personal
 displaying data.Frontend code is available at [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)
 
 * Admin panel URL: `http://<your server[:port]>/_admin/`
-* For the initial installation, the admin username is `admin`, and the password will be printed in the console. You can change the password via the [command line](#CLI).
-
-  ![img.png](./docs/init_admin_pwd.png)
+* For the initial installation, the admin username is `admin` and the password is 20 random characters, written only to `data/admin-password.txt` (next to `rustdeskapi.db`; `/app/data/admin-password.txt` in the container) with permissions `0600`: it is not printed to the console or the log. Change it from the admin panel and delete the file; you can also change it via the [command line](#CLI).
 
 
 1. Admin interface:
@@ -142,6 +140,7 @@ displaying data.Frontend code is available at [rustdesk-api-web](https://github.
 ```bash
 ./apimain reset-admin-pwd <pwd>
 ```
+The password must be 15 to 32 characters long (characters, not bytes); the same holds for `reset-pwd <userId> <pwd>`. When the password is refused, the user does not exist or the update fails, the command exits with a non-zero code.
 
 ## Installation and Setup
 
@@ -273,8 +272,8 @@ Download the release from [release](https://github.com/lejianwen/rustdesk-api/re
    compiling, the corresponding executables will be generated in the `release` directory. Run the compiled executables
    directly.
 
-6. Open your browser and visit `http://<your server[:port]>/_admin/`, with default credentials `admin admin`. Please
-   change the password promptly.
+6. Open your browser and visit `http://<your server[:port]>/_admin/` and log in as `admin` with the initial password
+   from `data/admin-password.txt`. Please change the password promptly and delete the file.
 
 #### Running with my forked server-s6 image
 

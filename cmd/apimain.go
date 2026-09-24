@@ -1,10 +1,14 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
+	"unicode/utf8"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/lejianwen/rustdesk-api/v2/config"
@@ -21,9 +25,15 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/utils"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/spf13/cobra"
+	"gorm.io/gorm"
 )
 
 const DatabaseVersion = 265
+
+// fileAdminPassword e' il file in cui il primo avvio scrive la password
+// iniziale di admin, nella cartella di rustdeskapi.db (nel container
+// /app/data, il volume); nel log va solo il percorso (ADR-0008).
+const fileAdminPassword = "data/admin-password.txt"
 
 // @title 管理系统API
 // @version 1.0
@@ -50,53 +60,48 @@ var rootCmd = &cobra.Command{
 
 var resetPwdCmd = &cobra.Command{
 	Use:     "reset-admin-pwd [pwd]",
-	Example: "reset-admin-pwd 123456",
+	Example: "reset-admin-pwd <password di 15-32 caratteri>",
 	Short:   "Reset Admin Password",
 	Args:    cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		pwd := args[0]
-		admin := service.AllService.UserService.InfoById(1)
-		if admin.Id == 0 {
-			global.Logger.Warn("user not found! ")
-			return
-		}
-		err := service.AllService.UserService.UpdatePassword(admin, pwd)
-		if err != nil {
-			global.Logger.Error("reset password fail! ", err)
-			return
-		}
-		global.Logger.Info("reset password success! ")
+	Run: func(_ *cobra.Command, args []string) {
+		reimpostaPassword(1, args[0])
 	},
 }
 var resetUserPwdCmd = &cobra.Command{
 	Use:     "reset-pwd [userId] [pwd]",
-	Example: "reset-pwd 2 123456",
+	Example: "reset-pwd 2 <password di 15-32 caratteri>",
 	Short:   "Reset User Password",
 	Args:    cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
-		userId := args[0]
-		pwd := args[1]
-		uid, err := strconv.Atoi(userId)
-		if err != nil {
-			global.Logger.Warn("userId must be int!")
-			return
+	Run: func(_ *cobra.Command, args []string) {
+		uid, err := strconv.ParseUint(args[0], 10, 0)
+		if err != nil || uid == 0 {
+			global.Logger.Fatalf("userId deve essere un numero intero maggiore di 0, non %q", args[0])
 		}
-		if uid <= 0 {
-			global.Logger.Warn("userId must be greater than 0! ")
-			return
-		}
-		u := service.AllService.UserService.InfoById(uint(uid))
-		if u.Id == 0 {
-			global.Logger.Warn("user not found! ")
-			return
-		}
-		err = service.AllService.UserService.UpdatePassword(u, pwd)
-		if err != nil {
-			global.Logger.Warn("reset password fail! ", err)
-			return
-		}
-		global.Logger.Info("reset password success!")
+		reimpostaPassword(uint(uid), args[1])
 	},
+}
+
+// reimpostaPassword da' all'utente id la password pwd se ha da 15 a 32
+// caratteri, i limiti del validatore per le password nuove
+// (http/request/admin/user.go), contati come li conta lui: caratteri, non
+// byte. Se rifiuta o non riesce ferma il processo con codice 1, cosi' uno
+// script se ne accorge.
+func reimpostaPassword(id uint, pwd string) {
+	if n := utf8.RuneCountInString(pwd); n < 15 || n > 32 {
+		global.Logger.Fatalf("password rifiutata: servono da 15 a 32 caratteri, questa ne ha %d", n)
+	}
+	u := &model.User{}
+	err := global.DB.First(u, id).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		global.Logger.Fatalf("utente %d non trovato", id)
+	}
+	if err != nil {
+		global.Logger.Fatalf("lettura dell'utente %d: %v", id, err)
+	}
+	if err := service.AllService.UserService.UpdatePassword(u, pwd); err != nil {
+		global.Logger.Fatalf("password dell'utente %d non aggiornata: %v", id, err)
+	}
+	global.Logger.Infof("password dell'utente %d reimpostata", id)
 }
 
 func init() {
@@ -307,51 +312,103 @@ func Migrate(version uint) {
 		&model.ServerCmd{},
 		&model.DeviceGroup{},
 	)
+	// La riga di Version resta solo se il resto riesce: le tabelle e, al
+	// primo avvio (quando e' la prima riga), i gruppi predefiniti e admin,
+	// creati nella stessa transazione. Se restasse dopo un errore, al riavvio
+	// admin non nascerebbe piu' e reset-admin-pwd non lo troverebbe; invece
+	// il processo si ferma e al riavvio il primo avvio si ripete da capo.
+	primo := false
+	if err == nil {
+		err = global.DB.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Create(&model.Version{Version: version}).Error; err != nil {
+				return fmt.Errorf("riga di Version: %w", err)
+			}
+			var vc int64
+			if err := tx.Model(&model.Version{}).Count(&vc).Error; err != nil {
+				return fmt.Errorf("conteggio delle versioni: %w", err)
+			}
+			primo = vc == 1
+			if primo {
+				return primoAvvio(tx)
+			}
+			return nil
+		})
+	}
 	if err != nil {
-		global.Logger.Error("migrate err :=>", err)
+		global.Logger.Fatalf("migrazione del database alla versione %d non riuscita, al riavvio si ripete: %v", version, err)
 	}
-	global.DB.Create(&model.Version{Version: version})
-	//如果是初次则创建一个默认用户
-	var vc int64
-	global.DB.Model(&model.Version{}).Count(&vc)
-	if vc == 1 {
-		localizer := global.Localizer("")
-		defaultGroup, _ := localizer.LocalizeMessage(&i18n.Message{
-			ID: "DefaultGroup",
-		})
-		group := &model.Group{
-			Name: defaultGroup,
-			Type: model.GroupTypeDefault,
-		}
-		service.AllService.GroupService.Create(group)
-
-		shareGroup, _ := localizer.LocalizeMessage(&i18n.Message{
-			ID: "ShareGroup",
-		})
-		groupShare := &model.Group{
-			Name: shareGroup,
-			Type: model.GroupTypeShare,
-		}
-		service.AllService.GroupService.Create(groupShare)
-		//是true
-		is_admin := true
-		admin := &model.User{
-			Username: "admin",
-			Nickname: "Admin",
-			Status:   model.COMMON_STATUS_ENABLE,
-			IsAdmin:  &is_admin,
-			GroupId:  1,
-		}
-
-		// 生成随机密码
-		pwd := utils.RandomString(8)
-		global.Logger.Info("Admin Password Is: ", pwd)
-		var err error
-		admin.Password, err = utils.EncryptPassword(pwd)
+	if primo {
+		percorso, err := filepath.Abs(fileAdminPassword)
 		if err != nil {
-			global.Logger.Fatalf("failed to generate admin password: %v", err)
+			percorso = fileAdminPassword
 		}
-		global.DB.Create(admin)
+		global.Logger.Warnf("password iniziale di admin in %s: cambiala dal pannello e poi cancella il file", percorso)
 	}
+}
 
+// primoAvvio crea i due gruppi predefiniti e admin, con una password casuale
+// di 20 caratteri che va solo in fileAdminPassword. Il file si scrive prima
+// degli insert: se non si puo', gruppi e admin non hanno consumato id (con
+// MySQL e PostgreSQL il rollback non li restituisce), e al riavvio admin ha
+// ancora l'id 1 che cerca reset-admin-pwd.
+func primoAvvio(tx *gorm.DB) error {
+	pwd := utils.RandomString(20)
+	if pwd == "" {
+		return errors.New("password iniziale di admin vuota")
+	}
+	hash, err := utils.EncryptPassword(pwd)
+	if err != nil {
+		return fmt.Errorf("hash della password iniziale di admin: %w", err)
+	}
+	if err := scriviPasswordIniziale(pwd); err != nil {
+		return fmt.Errorf("file della password iniziale di admin: %w", err)
+	}
+	localizer := global.Localizer("")
+	defaultGroup, _ := localizer.LocalizeMessage(&i18n.Message{ID: "DefaultGroup"})
+	shareGroup, _ := localizer.LocalizeMessage(&i18n.Message{ID: "ShareGroup"})
+	group := &model.Group{Name: defaultGroup, Type: model.GroupTypeDefault}
+	if err := tx.Create(group).Error; err != nil {
+		return fmt.Errorf("gruppo predefinito: %w", err)
+	}
+	if err := tx.Create(&model.Group{Name: shareGroup, Type: model.GroupTypeShare}).Error; err != nil {
+		return fmt.Errorf("gruppo di condivisione: %w", err)
+	}
+	isAdmin := true
+	admin := &model.User{
+		Username: "admin",
+		Nickname: "Admin",
+		Password: hash,
+		Status:   model.COMMON_STATUS_ENABLE,
+		IsAdmin:  &isAdmin,
+		GroupId:  group.Id,
+	}
+	if err := tx.Create(admin).Error; err != nil {
+		return fmt.Errorf("utente admin: %w", err)
+	}
+	return nil
+}
+
+// scriviPasswordIniziale scrive pwd, e nient'altro, in fileAdminPassword,
+// creando la cartella se manca. Il file ha permessi 0600 anche se esisteva
+// gia': si cancella e si ricrea, perche' os.WriteFile non cambia i permessi
+// di un file che c'e', e O_EXCL non segue un link simbolico messo al suo
+// posto. Chmod li porta a 0600 esatti anche con una umask insolita, prima
+// di scrivere.
+func scriviPasswordIniziale(pwd string) error {
+	if err := os.MkdirAll(filepath.Dir(fileAdminPassword), 0o700); err != nil {
+		return err
+	}
+	if err := os.Remove(fileAdminPassword); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
+	f, err := os.OpenFile(fileAdminPassword, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	if err != nil {
+		return err
+	}
+	if err = f.Chmod(0o600); err == nil {
+		if _, err = f.WriteString(pwd); err == nil {
+			err = f.Sync()
+		}
+	}
+	return errors.Join(err, f.Close())
 }

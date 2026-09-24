@@ -73,9 +73,9 @@ func TestContract(t *testing.T) {
 	// fissata apposta: se cambiano i default nel codice, i golden non si
 	// spostano. Per questo il test NON prova i default sicuri, che hanno
 	// test propri. Il modo test di gin non stampa nulla e non cambia le
-	// risposte. Log a warn: la password casuale di admin creata dalla
-	// migrazione va nel log a livello info e non deve finire nel log
-	// pubblico della CI.
+	// risposte. Log a warn: il log della CI e' pubblico e al test le righe
+	// info non servono. La password casuale di admin creata dalla migrazione
+	// non va nel log ma in data/admin-password.txt, nella sandbox.
 	t.Setenv("RUSTDESK_API_LANG", "en")
 	t.Setenv("RUSTDESK_API_APP_WEB_CLIENT", "0")
 	t.Setenv("RUSTDESK_API_APP_SHOW_SWAGGER", "0")

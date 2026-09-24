@@ -8,12 +8,25 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 Base upstream: rustdesk-api v2.7.
 
 ### Sicurezza
+- Password iniziale di admin (ADR-0008): 20 caratteri casuali invece di 8, e
+  non piu' nel log, dove finiva a livello info. Sta nel file
+  `data/admin-password.txt`, accanto a `rustdeskapi.db` (nel container
+  `/app/data/admin-password.txt`, nel volume), con permessi 0600; il log dice
+  solo dov'e'. Va cambiata dal pannello e il file va cancellato. Se il primo
+  avvio non riesce a scrivere il file o a creare admin, il processo si ferma
+  senza segnare la versione del database e al riavvio riprova da capo: prima
+  restava un database senza admin, che `reset-admin-pwd` non trovava. Anche
+  un errore nell'aggiornamento delle tabelle ora ferma il processo, invece
+  di finire nel log.
 - Password di almeno 15 caratteri dove si creano o si cambiano (ADR-0008,
-  NIST SP 800-63B-4): registrazione, password impostata dal pannello e cambio
-  della propria; prima ne bastavano 4. Il massimo resta 32 e si contano
-  caratteri, non byte. Il login non cambia: le password corte gia' impostate
-  continuano a funzionare e si possono cambiare. Non vale per i comandi
-  `reset-admin-pwd` e `reset-pwd`, ne' per la password iniziale di admin.
+  NIST SP 800-63B-4): registrazione, password impostata dal pannello, cambio
+  della propria e comandi `reset-admin-pwd` e `reset-pwd`; prima ne bastavano
+  4, e ai comandi nessuna. Il massimo resta 32 e si contano caratteri, non
+  byte. Il login non cambia: le password corte gia' impostate continuano a
+  funzionare e si possono cambiare. I due comandi escono con codice diverso
+  da 0 quando rifiutano la password, quando l'utente non c'e' e quando
+  l'aggiornamento non riesce: prima uscivano con 0 e uno script non se ne
+  accorgeva.
 - Token di sessione casuali (ADR-0008): senza `jwt.key` il token era
   md5(nome utente + ora del login), che si indovina conoscendo il nome utente
   e il momento del login; ora e' fatto di 16 byte da `crypto/rand`, sempre 32
