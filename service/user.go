@@ -1,7 +1,11 @@
 package service
 
 import (
+	crand "crypto/rand"
+	"encoding/hex"
 	"errors"
+	"fmt"
+	"io"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -85,12 +89,32 @@ func (us *UserService) InfoByAccessToken(token string) (*model.User, *model.User
 	return u, ut
 }
 
-// GenerateToken 生成token
+// GenerateToken restituisce il token di sessione: un JWT se jwt.key e'
+// impostata, altrimenti 16 byte da crypto/rand in esadecimale (ADR-0008),
+// 32 caratteri come il vecchio md5(username + ora), che si poteva indovinare.
 func (us *UserService) GenerateToken(u *model.User) string {
 	if len(Jwt.Key) > 0 {
 		return Jwt.GenerateToken(u.Id)
 	}
-	return utils.Md5(u.Username + time.Now().String())
+	token, err := tokenCasuale(crand.Reader)
+	if err != nil {
+		// Con Go 1.26 un guasto della fonte di sistema ferma il processo
+		// dentro crypto/rand e qui non si arriva. Se ci si arriva, si
+		// interrompe la richiesta prima di salvare il token: meglio un
+		// login fallito che un token prevedibile.
+		panic(err)
+	}
+	return token
+}
+
+// tokenCasuale legge 16 byte da r e li restituisce in esadecimale. Se r
+// fallisce o ne da' meno di 16 restituisce l'errore e nessun token.
+func tokenCasuale(r io.Reader) (string, error) {
+	b := make([]byte, 16)
+	if _, err := io.ReadFull(r, b); err != nil {
+		return "", fmt.Errorf("token di sessione da crypto/rand: %w", err)
+	}
+	return hex.EncodeToString(b), nil
 }
 
 // Login 登录

@@ -8,6 +8,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 Base upstream: rustdesk-api v2.7.
 
 ### Sicurezza
+- Token di sessione casuali (ADR-0008): senza `jwt.key` il token era
+  md5(nome utente + ora del login), che si indovina conoscendo il nome utente
+  e il momento del login; ora e' fatto di 16 byte da `crypto/rand`, sempre 32
+  caratteri esadecimali. Se `crypto/rand` fallisce non si emette nessun
+  token: con Go 1.26 si ferma il processo, e se l'errore arrivasse comunque
+  fallirebbe il login. I token gia' emessi restano validi fino alla scadenza.
 - Default sicuri nel codice (ADR-0008), con `conf/config.yaml` allineato:
   web client (`app.web-client` 0) e login `webauth` dal pannello
   (`app.web-sso` false) spenti, autoregistrazione e swagger spenti come
