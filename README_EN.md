@@ -198,7 +198,18 @@ The table below does not list all configurations. Please refer to the configurat
     lejianwen/rustdesk-api
     ```
 
-2. Using `docker-compose`,look [WIKI](https://github.com/lejianwen/rustdesk-api/wiki)
+2. Using `docker compose`: `docker-compose.yaml` in the repository builds the
+   image from the `Dockerfile` (see [Building the image](#building-the-image))
+   as `ghcr.io/labinfinitek/remotek-api:dev`. Replace the `<...>` placeholders
+   of the `RUSTDESK_API_RUSTDESK_*` variables with your hbbs/hbbr addresses,
+   the address clients use for this API and the hbbs public key. The data
+   directory `./remotek-data` is mounted on `/app/data` and must belong to
+   uid/gid 10001, otherwise the API does not start:
+
+    ```bash
+    mkdir -p remotek-data && sudo chown 10001:10001 remotek-data
+    docker compose up -d --build
+    ```
 
 #### Building the image
 

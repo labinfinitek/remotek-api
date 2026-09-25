@@ -271,6 +271,13 @@ Base upstream: rustdesk-api v2.7.
   Si compila con `go build -o apimain ./cmd`, l'immagine con `docker build`.
 
 ### Modificato
+- `docker-compose.yaml` e' un esempio che funziona col `Dockerfile` del
+  repo: costruisce l'immagine come `ghcr.io/labinfinitek/remotek-api:dev`,
+  con `TZ=Europe/Rome`, segnaposti `<...>` nelle variabili
+  `RUSTDESK_API_RUSTDESK_*` e i dati in `./remotek-data`, che deve essere
+  di 10001:10001. Prima usava l'immagine di upstream
+  `lejianwen/rustdesk-api`, `TZ=Asia/Shanghai`, indirizzi e chiave
+  d'esempio (`123456789`) e il `container_name` `rustdesk-api`.
 - Il prodotto si chiama Remotek dove lo vede chi lo usa: titolo del pannello
   (prima "RustDesk API Admin"), benvenuto del pannello (ora in italiano),
   titolo delle pagine del login OAuth/OIDC. `admin.title` vuoto, come in

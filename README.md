@@ -200,7 +200,16 @@ Remotek 的 API，基于 lejianwen 的 [rustdesk-api](https://github.com/lejianw
     lejianwen/rustdesk-api
     ```
 
-2. 使用`docker compose`，参考[WIKI](https://github.com/lejianwen/rustdesk-api/wiki)
+2. 使用`docker compose`：仓库中的`docker-compose.yaml`用`Dockerfile`构建镜像（见
+   [构建镜像](#构建镜像)），镜像名为`ghcr.io/labinfinitek/remotek-api:dev`。把
+   `RUSTDESK_API_RUSTDESK_*`变量中的`<...>`占位符换成自己的 hbbs/hbbr 地址、客户端访问
+   本 API 的地址和 hbbs 的公钥。数据目录`./remotek-data`挂载到`/app/data`，必须属于
+   uid/gid 10001，否则 API 无法启动：
+
+    ```bash
+    mkdir -p remotek-data && sudo chown 10001:10001 remotek-data
+    docker compose up -d --build
+    ```
 
 #### 构建镜像
 
