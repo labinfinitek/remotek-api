@@ -25,16 +25,17 @@ import (
 // conf/config.yaml del repo senza RUSTDESK_API_LANG, un database sqlite
 // temporaneo e un provider OIDC che risponde 500: l'errore di rete che ne
 // esce non e' un ID, e al client deve arrivare SystemError, non il suo testo.
-// Un ID che manca in una lingua (NoCaptchaRequired in es.toml) ripiega
-// sull'inglese. Messaggi e validatore seguono la stessa regola: la lingua di
-// Accept-Language se l'API la ha, altrimenti quella configurata (conf, se la
-// riga la fissa; se no l'italiano del file), col nome del campo in quella
-// lingua. Senza Accept-Language, come dal client RustDesk, i due testi che il
-// client confronta alla lettera restano quelli di prima. Un corpo JSON rotto
-// alle rotte del client senza autenticazione riceve ParamsError, e il testo
-// dell'errore di JSON va solo nel log. Lo stato globale e' quello di
-// InitGlobal, ridotto a cio' che serve a queste richieste; il test non
-// scrive nel repo.
+// Messaggi e validatore seguono la stessa regola: la lingua di
+// Accept-Language se l'API la ha (it o en), altrimenti quella configurata
+// (conf, se la riga la fissa; se no l'italiano del file), col nome del campo
+// in quella lingua; es non c'e' piu' e vale lang. Il ripiego sull'inglese di
+// un ID che manca in it.toml si prova in http/response (TestRipiegoInglese):
+// it.toml ha tutte le chiavi di en.toml. Senza Accept-Language, come dal
+// client RustDesk, i due testi che il client confronta alla lettera restano
+// quelli di prima. Un corpo JSON rotto alle rotte del client senza
+// autenticazione riceve ParamsError, e il testo dell'errore di JSON va solo
+// nel log. Lo stato globale e' quello di InitGlobal, ridotto a cio' che serve
+// a queste richieste; il test non scrive nel repo.
 func TestMessaggi(t *testing.T) {
 	t.Setenv("RUSTDESK_API_LANG", "")
 	t.Setenv("RUSTDESK_API_GIN_MODE", "test")
@@ -67,7 +68,7 @@ func TestMessaggi(t *testing.T) {
 
 	configurata := global.Config.Lang
 	for _, tc := range []struct{ metodo, percorso, lingua, conf, corpo, atteso string }{
-		{"GET", "/api/admin/captcha", "es", "", "", `{"code":101,"message":"No verification code is required.","data":null}`},
+		{"GET", "/api/admin/captcha", "es", "", "", `{"code":101,"message":"Il codice di verifica non serve.","data":null}`},
 		{"POST", "/api/oidc/auth", "en", "", `{"op":"inesistente"}`, `{"error":"Config not found."}`},
 		{"POST", "/api/oidc/auth", "en", "", `{"op":"prova"}`, `{"error":"System error."}`},
 		{"POST", "/api/login", "it-IT", "en", `{}`, `{"error":"Nome utente è un campo obbligatorio"}`},

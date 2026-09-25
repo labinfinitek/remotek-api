@@ -152,7 +152,7 @@ Remotek 的 API，基于 lejianwen 的 [rustdesk-api](https://github.com/lejianw
 * [配置文件](./conf/config.yaml)
 * 参考`conf/config.yaml`配置文件，修改相关配置。
 * 数据库只支持SQLite（`data/rustdeskapi.db`）：`gorm.type`只能是`sqlite`或为空，其他值（例如旧安装的`mysql`）会让API在启动时以状态码1退出。
-* 支持的语言：`it`、`en`、`es`、`fr`、`ko`、`ru`、`zh-CN`、`zh-TW`，不设置默认为`it`。请求的`Accept-Language`是其中之一时用它回复（后台发送自己的语言，默认是浏览器的语言），否则用配置的语言：RustDesk客户端不发送该请求头。
+* 支持的语言只有`it`和`en`，不设置默认为`it`，为空时是英语。`lang`的其他值（例如旧配置文件的`zh-CN`）会让API在启动时以状态码1退出。请求的`Accept-Language`是其中之一时用它回复（后台发送自己的语言，默认是浏览器的语言），否则用配置的语言：RustDesk客户端不发送该请求头。
 
 ### 环境变量
 环境变量和配置文件`conf/config.yaml`中的配置一一对应，变量名前缀是`RUSTDESK_API`
@@ -161,7 +161,7 @@ Remotek 的 API，基于 lejianwen 的 [rustdesk-api](https://github.com/lejianw
 | 变量名                                                    | 说明                                                                             | 示例                           |
 |--------------------------------------------------------|--------------------------------------------------------------------------------|------------------------------|
 | TZ                                                     | 时区                                                                             | Asia/Shanghai                |
-| RUSTDESK_API_LANG                                      | `Accept-Language`未选定语言时使用的语言，默认`it`                                | `it`,`en`,`zh-CN`            |
+| RUSTDESK_API_LANG                                      | `Accept-Language`未选定语言时使用的语言，只能是`it`或`en`，默认`it`；其他值启动时退出 | `it`,`en`                    |
 | RUSTDESK_API_APP_WEB_CLIENT                            | 是否启用web-client; 1:启用,0:不启用; 默认`0`不启用                                           | 1                            |
 | RUSTDESK_API_APP_REGISTER                              | 是否开启注册; `true`, `false`  默认`false`                                             | `false`                      |
 | RUSTDESK_API_APP_WEB_SSO                               | 是否向客户端提供web后台授权登录(`webauth`); `true`, `false` 默认`false`                         | `false`                      |
@@ -211,7 +211,7 @@ Remotek 的 API，基于 lejianwen 的 [rustdesk-api](https://github.com/lejianw
     docker run -d --name rustdesk-api -p 21114:21114 \
     -v /data/rustdesk/api:/app/data \
     -e TZ=Asia/Shanghai \
-    -e RUSTDESK_API_LANG=zh-CN \
+    -e RUSTDESK_API_LANG=it \
     -e RUSTDESK_API_RUSTDESK_ID_SERVER=192.168.1.66:21116 \
     -e RUSTDESK_API_RUSTDESK_RELAY_SERVER=192.168.1.66:21117 \
     -e RUSTDESK_API_RUSTDESK_API_SERVER=http://192.168.1.66:21114 \

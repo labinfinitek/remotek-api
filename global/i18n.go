@@ -3,6 +3,7 @@ package global
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -11,6 +12,7 @@ import (
 )
 
 func InitI18n() {
+	controllaLang()
 	bundle := i18n.NewBundle(language.English)
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 	// Carica i file .toml di resources/i18n. Uno che non si carica ferma
@@ -32,6 +34,24 @@ func InitI18n() {
 	Localizer = func(lang string) *i18n.Localizer {
 		return i18n.NewLocalizer(bundle, scegli(lang).String())
 	}
+}
+
+// controllaLang ferma l'avvio se lang non e' una lingua dell'API ne' vuoto
+// (vuoto vale l'inglese). Un valore di un file vecchio, per esempio "zh-CN"
+// di upstream, prima ripiegava sull'inglese senza dirlo.
+func controllaLang() {
+	var ammessi []string
+	for _, l := range lingue() {
+		if Config.Lang == l.tag.String() {
+			return
+		}
+		ammessi = append(ammessi, strconv.Quote(l.tag.String()))
+	}
+	if Config.Lang == "" {
+		return
+	}
+	Logger.Fatalf("lang %q non supportato, l'API non parte: i valori ammessi sono %s, o vuoto per l'inglese",
+		Config.Lang, strings.Join(ammessi, ", "))
 }
 
 // sceltaLingua restituisce la regola, una sola per messaggi e validatore,

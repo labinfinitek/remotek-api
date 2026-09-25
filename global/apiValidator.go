@@ -7,23 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/locales"
 	"github.com/go-playground/locales/en"
-	"github.com/go-playground/locales/es"
-	"github.com/go-playground/locales/fr"
 	"github.com/go-playground/locales/it"
-	"github.com/go-playground/locales/ko"
-	"github.com/go-playground/locales/ru"
-	"github.com/go-playground/locales/zh_Hans_CN"
-	"github.com/go-playground/locales/zh_Hant"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
-	es_translations "github.com/go-playground/validator/v10/translations/es"
-	fr_translations "github.com/go-playground/validator/v10/translations/fr"
 	it_translations "github.com/go-playground/validator/v10/translations/it"
-	ko_translations "github.com/go-playground/validator/v10/translations/ko"
-	ru_translations "github.com/go-playground/validator/v10/translations/ru"
-	zh_translations "github.com/go-playground/validator/v10/translations/zh"
-	zh_tw_translations "github.com/go-playground/validator/v10/translations/zh_tw"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
 )
@@ -36,17 +24,13 @@ type lingua struct {
 	traduzioni func(*validator.Validate, ut.Translator) error
 }
 
-// lingue restituisce le lingue dell'API, una per file di lingua.
+// lingue restituisce le lingue dell'API, una per file di lingua: solo
+// italiano e inglese (A3), perche' ogni lingua tenuta va tradotta a ogni
+// messaggio nuovo. Sono anche i soli valori ammessi di lang (InitI18n).
 func lingue() []lingua {
 	return []lingua{
 		{language.English, en.New, en_translations.RegisterDefaultTranslations},
 		{language.Italian, it.New, it_translations.RegisterDefaultTranslations},
-		{language.Spanish, es.New, es_translations.RegisterDefaultTranslations},
-		{language.French, fr.New, fr_translations.RegisterDefaultTranslations},
-		{language.Korean, ko.New, ko_translations.RegisterDefaultTranslations},
-		{language.Russian, ru.New, ru_translations.RegisterDefaultTranslations},
-		{language.MustParse("zh-CN"), zh_Hans_CN.New, zh_translations.RegisterDefaultTranslations},
-		{language.MustParse("zh-TW"), zh_Hant.New, zh_tw_translations.RegisterDefaultTranslations},
 	}
 }
 

@@ -175,6 +175,14 @@ Base upstream: rustdesk-api v2.7.
   salva, non piu' successo. Le righe create prima dell'errore restano.
 
 ### Rimosso
+- **Cambio incompatibile per chi ha `lang` diverso da `it` o `en`.** L'API
+  parla solo italiano e inglese: via i file di lingua `es`, `fr`, `ko`,
+  `ru`, `zh_CN` e `zh_TW` e le traduzioni del validatore in quelle lingue.
+  `lang` (`RUSTDESK_API_LANG`) vale solo `it` (il default) o `en`, vuoto
+  vale l'inglese; con un altro valore, per esempio `zh-CN` di un file di
+  upstream, l'API non parte: esce con codice 1 e un messaggio che elenca i
+  valori ammessi. Prima ripiegava sull'inglese in silenzio. Una richiesta
+  con `Accept-Language` in un'altra lingua riceve la lingua configurata.
 - **Cambio incompatibile per chi usa MySQL o PostgreSQL.** L'API usa solo
   SQLite (`data/rustdeskapi.db`): via i driver MySQL e PostgreSQL, le
   sezioni `mysql` e `postgresql` della configurazione e le variabili

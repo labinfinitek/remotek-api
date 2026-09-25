@@ -1,4 +1,4 @@
-lang: "it" # senza Accept-Language; anche en, es, fr, ko, ru, zh-CN, zh-TW
+lang: "it" # senza Accept-Language; solo it o en, un altro valore ferma l'avvio
 brand:
   name: "Remotek" # nome del prodotto: titolo del pannello, benvenuto, pagine OAuth
   dir: "./resources/brand" # logo.svg e favicon.svg, serviti su /brand/
