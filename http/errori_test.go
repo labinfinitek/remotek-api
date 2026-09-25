@@ -17,14 +17,6 @@ import (
 var daSistemare = map[string]int{
 	// /api/oidc/*, aspetta i golden del contratto
 	"api/ouath.go": 5,
-	// pannello, sezione dell'utente
-	"admin/my/addressBook.go":               10,
-	"admin/my/addressBookCollection.go":     7,
-	"admin/my/addressBookCollectionRule.go": 7,
-	"admin/my/loginLog.go":                  5,
-	"admin/my/peer.go":                      1,
-	"admin/my/shareRecord.go":               5,
-	"admin/my/tag.go":                       7,
 	// pannello, amministrazione
 	"admin/addressBook.go":               11,
 	"admin/addressBookCollection.go":     7,

@@ -18,7 +18,13 @@ Base upstream: rustdesk-api v2.7.
   "Parametri non validi." o "Operazione non riuscita."; `/api/users` e
   `/api/peers`, che con parametri non validi rispondevano col solo testo
   dell'errore, rispondono "Parametri non validi.". L'errore va nel log a
-  livello warn, con metodo e rotta. Il pannello e `/api/oidc/*` restano da
+  livello warn, con metodo e rotta. Lo stesso vale per la sezione
+  dell'utente del pannello (`/api/admin/my/*`, 42 punti: rubriche,
+  collezioni e loro regole, tag, dispositivi, log di accesso, condivisioni),
+  dove un corpo JSON rotto riceveva il testo del parser dopo il messaggio e
+  la cancellazione di un log di accesso o di un tag il solo testo
+  dell'errore del database: la risposta resta 200 con `code` 101 e porta
+  solo il messaggio. Il resto del pannello e `/api/oidc/*` restano da
   sistemare.
 - Un errore interno che un controller passa come messaggio non arriva piu'
   al client ne' al pannello (REGOLE 8): per esempio l'errore di rete di un

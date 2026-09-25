@@ -28,7 +28,7 @@ type AddressBook struct{}
 func (ct *AddressBook) List(c *gin.Context) {
 	query := &admin.AddressBookQuery{}
 	if err := c.ShouldBindQuery(query); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
@@ -74,7 +74,7 @@ func (ct *AddressBook) List(c *gin.Context) {
 func (ct *AddressBook) Create(c *gin.Context) {
 	f := &admin.AddressBookForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	errList := global.Validator.ValidStruct(c, f)
@@ -98,7 +98,7 @@ func (ct *AddressBook) Create(c *gin.Context) {
 
 	err := service.AllService.AddressBookService.Create(t)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -118,7 +118,7 @@ func (ct *AddressBook) Create(c *gin.Context) {
 func (ct *AddressBook) Update(c *gin.Context) {
 	f := &admin.AddressBookForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	errList := global.Validator.ValidStruct(c, f)
@@ -152,7 +152,7 @@ func (ct *AddressBook) Update(c *gin.Context) {
 	}
 	err := service.AllService.AddressBookService.UpdateAll(t)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -172,7 +172,7 @@ func (ct *AddressBook) Update(c *gin.Context) {
 func (ct *AddressBook) Delete(c *gin.Context) {
 	f := &admin.AddressBookForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	id := f.RowId
@@ -196,13 +196,13 @@ func (ct *AddressBook) Delete(c *gin.Context) {
 		response.Success(c, nil)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+	response.FailErr(c, 101, "OperationFailed", err)
 	return
 }
 func (ct *AddressBook) BatchCreateFromPeers(c *gin.Context) {
 	f := &admin.BatchCreateFromPeersForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
@@ -249,7 +249,7 @@ func (ct *AddressBook) BatchCreateFromPeers(c *gin.Context) {
 func (ct *AddressBook) BatchUpdateTags(c *gin.Context) {
 	f := &admin.BatchUpdateTagsForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
@@ -264,7 +264,7 @@ func (ct *AddressBook) BatchUpdateTags(c *gin.Context) {
 	}
 	err := service.AllService.AddressBookService.BatchUpdateTags(abs.AddressBooks, f.Tags)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
