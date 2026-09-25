@@ -150,7 +150,7 @@ The password must be 15 to 32 characters long (characters, not bytes); the same 
 * [Config File](./conf/config.yaml)
 * Modify the configuration in `conf/config.yaml`. 
 * The only database is SQLite (`data/rustdeskapi.db`): `gorm.type` must be `sqlite` or empty; any other value (for example `mysql` from an old installation) stops the API at startup with exit code 1.
-* Languages: `it`, `en`, `es`, `fr`, `ko`, `ru`, `zh-CN` and `zh-TW`; the default is `it`. A request is answered in the language of its `Accept-Language` header if it is one of these (the admin panel sends its own language, by default the browser's), otherwise in the configured one: the RustDesk client does not send the header.
+* Languages: only `it` and `en`; the default is `it`, and an empty value means English. Any other `lang` (for example `zh-CN` from an old config file) makes the API exit with status 1 at startup. A request is answered in the language of its `Accept-Language` header if it is one of these (the admin panel sends its own language, by default the browser's), otherwise in the configured one: the RustDesk client does not send the header.
 
 
 ### Environment Variables
@@ -160,7 +160,7 @@ The table below does not list all configurations. Please refer to the configurat
 | Variable Name                                          | Description                                                                                                                                         | Example                       |
 |--------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|
 | TZ                                                     | timezone                                                                                                                                            | Asia/Shanghai                 |
-| RUSTDESK_API_LANG                                      | Language used when `Accept-Language` does not pick one; default `it`                                                                                | `it`,`en`,`zh-CN`             |
+| RUSTDESK_API_LANG                                      | Language used when `Accept-Language` does not pick one: `it` or `en`, default `it`; any other value stops startup                                     | `it`,`en`                     |
 | RUSTDESK_API_APP_WEB_CLIENT                            | web client on/off; 1: on, 0 off, default: 0                                                                                                         | 1                             |
 | RUSTDESK_API_APP_REGISTER                              | register enable; `true`, `false`; default:`false`                                                                                                   | `false`                       |
 | RUSTDESK_API_APP_WEB_SSO                               | offer clients the login confirmed from the web admin (`webauth`); `true`, `false`; default: `false`                                                 | `false`                       |

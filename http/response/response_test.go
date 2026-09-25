@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -66,5 +67,43 @@ func TestErrorErr(t *testing.T) {
 				t.Errorf("%s, %s, log:\n got  %s want %s", tc.nome, f.nome, registro.String(), riga)
 			}
 		}
+	}
+}
+
+// TestRipiegoInglese prova con un bundle di prova, lang it, che un ID che
+// manca in it.toml esca in inglese e senza riga nel log, sia con
+// Accept-Language italiano sia senza, come dal client RustDesk; un ID che
+// c'e' esce in italiano. Coi file del repo non si prova: it.toml ha tutte le
+// chiavi di en.toml (TestChiaviDeiFileDiLingua).
+func TestRipiegoInglese(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	dir := filepath.Join(t.TempDir(), "i18n")
+	err := errors.Join(os.Mkdir(dir, 0o750),
+		os.WriteFile(filepath.Join(dir, "en.toml"), []byte("[SystemError]\nother = \"System error.\"\n[SoloInglese]\nother = \"Only in English.\"\n"), 0o600),
+		os.WriteFile(filepath.Join(dir, "it.toml"), []byte("[SystemError]\nother = \"Errore di sistema.\"\n"), 0o600))
+	if err != nil {
+		t.Fatal(err)
+	}
+	global.Config.Gin.ResourcesPath = filepath.Dir(dir)
+	global.Config.Lang = "it"
+	var registro strings.Builder
+	global.Logger = logrus.New()
+	global.Logger.SetOutput(&registro)
+	global.InitI18n()
+
+	for _, lingua := range []string{"it-IT", ""} {
+		for id, atteso := range map[string]string{"SoloInglese": "Only in English.", "SystemError": "Errore di sistema."} {
+			c, _ := gin.CreateTestContext(httptest.NewRecorder())
+			c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
+			if lingua != "" {
+				c.Request.Header.Set("Accept-Language", lingua)
+			}
+			if got := TranslateMsg(c, id); got != atteso {
+				t.Errorf("%s, Accept-Language %q: %q, atteso %q", id, lingua, got, atteso)
+			}
+		}
+	}
+	if registro.Len() != 0 {
+		t.Errorf("il log doveva essere vuoto:\n%s", registro.String())
 	}
 }
