@@ -113,6 +113,10 @@ Base upstream: rustdesk-api v2.7.
   v0.18.0, v0.38.0 e v0.41.0). Il modulo arriva con il captcha del pannello
   (`mojocn/base64Captcha`), che usa solo `font` e `math/fixed`, identici
   nelle due versioni. Nessun altro modulo sale.
+- GHSA-pjcq-xvwq-hhpj, `github.com/Azure/go-ntlmssp`
+  v0.0.0-20221128193559-754e69321358 -> v0.1.1: panic su una challenge NTLM
+  malformata. Il modulo arriva con `go-ldap/ldap/v3`, che resta v3.4.10; il
+  login LDAP usa il bind semplice, non quello NTLM. Nessun altro modulo sale.
 - Il file di log (`logger.path`, `./runtime/log.txt` in
   `conf/config.yaml`) nasce con permessi 0600 e non piu' 0644, e un file
   che c'era gia' viene portato a 0600 all'avvio: contiene nomi utente e
