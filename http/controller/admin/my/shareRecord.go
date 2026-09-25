@@ -27,7 +27,7 @@ type ShareRecord struct {
 func (sr *ShareRecord) List(c *gin.Context) {
 	query := &admin.PageQuery{}
 	if err := c.ShouldBindQuery(query); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
@@ -51,7 +51,7 @@ func (sr *ShareRecord) List(c *gin.Context) {
 func (sr *ShareRecord) Delete(c *gin.Context) {
 	f := &admin.ShareRecordForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	id := f.Id
@@ -75,7 +75,7 @@ func (sr *ShareRecord) Delete(c *gin.Context) {
 		response.Success(c, nil)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+	response.FailErr(c, 101, "OperationFailed", err)
 }
 
 // BatchDelete 批量删除我的分享记录
@@ -92,7 +92,7 @@ func (sr *ShareRecord) Delete(c *gin.Context) {
 func (sr *ShareRecord) BatchDelete(c *gin.Context) {
 	f := &admin.PeerShareRecordBatchDeleteForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	if len(f.Ids) == 0 {
@@ -112,7 +112,7 @@ func (sr *ShareRecord) BatchDelete(c *gin.Context) {
 	}
 	err := service.AllService.ShareRecordService.BatchDelete(f.Ids)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)

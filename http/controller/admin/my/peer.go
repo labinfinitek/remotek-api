@@ -31,7 +31,7 @@ type Peer struct {
 func (ct *Peer) List(c *gin.Context) {
 	query := &admin.PeerQuery{}
 	if err := c.ShouldBindQuery(query); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
