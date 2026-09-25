@@ -1,14 +1,16 @@
 package admin
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/request/admin"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
-	"gorm.io/gorm"
-	"strconv"
 )
 
 type AddressBookCollectionRule struct {
@@ -117,8 +119,9 @@ func (abcr *AddressBookCollectionRule) CheckForm(t *model.AddressBookCollectionR
 		return "ParamsError", false
 	}
 
-	//check to_id
-	if t.Type == model.ShareAddressBookRuleTypePersonal {
+	// check to_id
+	switch t.Type {
+	case model.ShareAddressBookRuleTypePersonal:
 		if t.ToId == t.UserId {
 			return "CannotShareToSelf", false
 		}
@@ -126,12 +129,12 @@ func (abcr *AddressBookCollectionRule) CheckForm(t *model.AddressBookCollectionR
 		if tou.Id == 0 {
 			return "ItemNotFound", false
 		}
-	} else if t.Type == model.ShareAddressBookRuleTypeGroup {
+	case model.ShareAddressBookRuleTypeGroup:
 		tog := service.AllService.GroupService.InfoById(t.ToId)
 		if tog.Id == 0 {
 			return "ItemNotFound", false
 		}
-	} else {
+	default:
 		return "ParamsError", false
 	}
 	// 重复检查

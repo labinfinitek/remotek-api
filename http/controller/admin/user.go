@@ -1,7 +1,11 @@
 package admin
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/request/admin"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
@@ -9,8 +13,6 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 	"github.com/lejianwen/rustdesk-api/v2/utils"
-	"gorm.io/gorm"
-	"strconv"
 )
 
 type User struct {
@@ -36,7 +38,6 @@ func (ct *User) Detail(c *gin.Context) {
 		return
 	}
 	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
-	return
 }
 
 // Create 管理员
@@ -260,7 +261,8 @@ func (ct *User) ChangeCurPwd(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// MyOauth
+// MyOauth elenca i provider OAuth, con Status 1 per quelli collegati
+// all'utente corrente.
 // @Tags 用户
 // @Summary 我的授权
 // @Description 我的授权
@@ -273,10 +275,6 @@ func (ct *User) ChangeCurPwd(c *gin.Context) {
 func (ct *User) MyOauth(c *gin.Context) {
 	u := service.AllService.UserService.CurUser(c)
 	oal := service.AllService.OauthService.List(1, 100, nil)
-	ops := make([]string, 0)
-	for _, oa := range oal.Oauths {
-		ops = append(ops, oa.Op)
-	}
 	uts := service.AllService.UserService.UserThirdsByUserId(u.Id)
 	var res []*adResp.UserOauthItem
 	for _, oa := range oal.Oauths {
@@ -294,7 +292,7 @@ func (ct *User) MyOauth(c *gin.Context) {
 	response.Success(c, res)
 }
 
-// groupUsers
+// GroupUsers risponde coi gruppi e con gli utenti (i primi 999 e 9999).
 func (ct *User) GroupUsers(c *gin.Context) {
 	aG := service.AllService.GroupService.List(1, 999, nil)
 	aU := service.AllService.UserService.List(1, 9999, nil)
@@ -304,7 +302,8 @@ func (ct *User) GroupUsers(c *gin.Context) {
 	})
 }
 
-// Register
+// Register registra un utente, se la registrazione e' aperta, e lo fa
+// entrare subito se non serve l'approvazione di un amministratore.
 func (ct *User) Register(c *gin.Context) {
 	if !global.Config.App.Register {
 		response.Fail(c, 101, response.TranslateMsg(c, "RegisterClosed"))

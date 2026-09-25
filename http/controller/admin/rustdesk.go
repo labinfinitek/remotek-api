@@ -2,6 +2,7 @@ package admin
 
 import (
 	"github.com/gin-gonic/gin"
+
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/request/admin"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
@@ -25,7 +26,7 @@ func (r *Rustdesk) CmdList(c *gin.Context) {
 		return
 	}
 	res := service.AllService.ServerCmdService.List(q.Page, 9999)
-	//在列表前添加系统命令
+	// 在列表前添加系统命令
 	list := make([]*model.ServerCmd, 0)
 	list = append(list, model.SysIdServerCmds...)
 	list = append(list, model.SysRelayServerCmds...)

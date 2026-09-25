@@ -191,3 +191,110 @@ func TestPannelloBatchCreateFromPeers(t *testing.T) {
 		t.Errorf("righe della rubrica dopo l'errore: %q, attese %q", salvati, want)
 	}
 }
+
+// conToken manda una richiesta a rotta con l'api-token token.
+func conToken(g *gin.Engine, metodo, rotta, token string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(metodo, rotta, nil)
+	req.Header.Set("api-token", token)
+	rec := httptest.NewRecorder()
+	g.ServeHTTP(rec, req)
+	return rec
+}
+
+// TestPannelloLogout prova sul router vero che il logout del pannello
+// invalida il token: dopo POST /api/admin/logout con l'api-token,
+// GET /api/admin/user/current con lo stesso token risponde come a un token
+// che non esiste. Prima la rotta di logout
+// stava fuori da BackendUserAuth: senza utente ne' token nel contesto
+// rispondeva successo e il token restava valido fino alla scadenza.
+func TestPannelloLogout(t *testing.T) {
+	g, _, _ := pannello(t, false)
+	const protetta = "/api/admin/user/current"
+	nonValido := conToken(g, "GET", protetta, "token-che-non-esiste")
+
+	if rec := conToken(g, "GET", protetta, tokenDelPannello); rec.Code != 200 || !strings.HasPrefix(rec.Body.String(), `{"code":0,`) {
+		t.Fatalf("GET %s prima del logout: stato %d, corpo %s", protetta, rec.Code, rec.Body.String())
+	}
+	rec := alPannello(g, "/api/admin/logout", "")
+	if got, want := rec.Body.String(), `{"code":0,"message":"success","data":null}`; rec.Code != 200 || got != want {
+		t.Errorf("POST /api/admin/logout: stato %d\n got  %s\n want %s", rec.Code, got, want)
+	}
+	dopo := conToken(g, "GET", protetta, tokenDelPannello)
+	if dopo.Code != nonValido.Code || dopo.Body.String() != nonValido.Body.String() {
+		t.Errorf("GET %s dopo il logout: stato %d, corpo %s; a un token non valido: stato %d, corpo %s",
+			protetta, dopo.Code, dopo.Body.String(), nonValido.Code, nonValido.Body.String())
+	}
+}
+
+// TestPannelloLogoutFallito prova sul router vero che il logout del pannello
+// non risponde successo se il token non si cancella: un trigger di sqlite
+// rifiuta la cancellazione, il pannello riceve OperationFailed, il testo
+// dell'errore va solo nel log e il token resta valido.
+func TestPannelloLogoutFallito(t *testing.T) {
+	g, _, registro := pannello(t, false)
+	const rifiuto = "cancellazione rifiutata dalla prova"
+	if err := service.DB.Exec(`CREATE TRIGGER rifiuta_logout BEFORE DELETE ON user_tokens
+		BEGIN SELECT RAISE(ABORT, '` + rifiuto + `'); END`).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	rec := alPannello(g, "/api/admin/logout", "")
+	if got, want := rec.Body.String(), `{"code":101,"message":"Operazione non riuscita.","data":null}`; rec.Code != 200 || got != want {
+		t.Errorf("POST /api/admin/logout: stato %d\n got  %s\n want %s", rec.Code, got, want)
+	}
+	if nelLog := registro.String(); !strings.Contains(nelLog, "POST /api/admin/logout: ") || !strings.Contains(nelLog, rifiuto) {
+		t.Errorf("POST /api/admin/logout, nel log mancano rotta o errore:\n%s", nelLog)
+	}
+	if rec := conToken(g, "GET", "/api/admin/user/current", tokenDelPannello); rec.Code != 200 || !strings.HasPrefix(rec.Body.String(), `{"code":0,`) {
+		t.Errorf("GET /api/admin/user/current dopo il logout fallito: stato %d, corpo %s", rec.Code, rec.Body.String())
+	}
+}
+
+// TestPannelloAdminBatchCreate prova sul router vero che le due creazioni in
+// blocco della rubrica dall'amministrazione (/api/admin/address_book/
+// batchCreate e batchCreateFromPeers) non rispondono successo se una riga non
+// si salva: un trigger di sqlite rifiuta la seconda riga, il pannello riceve
+// OperationFailed e il testo dell'errore va solo nel log. La riga creata
+// prima dell'errore resta.
+func TestPannelloAdminBatchCreate(t *testing.T) {
+	const rifiuto = "riga rifiutata dalla prova"
+	for _, tc := range []struct {
+		rotta, rifiutata, corpo string // nel corpo UTENTE, PEER_A e PEER_B diventano gli ID
+	}{
+		// una riga per utente: quella dell'utente 999999 si rifiuta
+		{"/api/admin/address_book/batchCreate", "NEW.user_id = 999999", `{"id": "peer-a", "user_ids": [UTENTE, 999999]}`},
+		{"/api/admin/address_book/batchCreateFromPeers", "NEW.id = 'peer-b'", `{"user_id": UTENTE, "peer_ids": [PEER_A, PEER_B]}`},
+	} {
+		t.Run(tc.rotta, func(t *testing.T) {
+			g, utente, registro := pannello(t, true)
+			if err := service.DB.AutoMigrate(&model.Peer{}, &model.AddressBook{}); err != nil {
+				t.Fatal(err)
+			}
+			peers := []*model.Peer{{Id: "peer-a", UserId: utente.Id}, {Id: "peer-b", UserId: utente.Id}}
+			if err := service.DB.Create(&peers).Error; err != nil {
+				t.Fatal(err)
+			}
+			if err := service.DB.Exec(`CREATE TRIGGER rifiuta_riga BEFORE INSERT ON address_books
+				WHEN ` + tc.rifiutata + ` BEGIN SELECT RAISE(ABORT, '` + rifiuto + `'); END`).Error; err != nil {
+				t.Fatal(err)
+			}
+
+			id := func(n uint) string { return strconv.FormatUint(uint64(n), 10) }
+			corpo := strings.NewReplacer("UTENTE", id(utente.Id), "PEER_A", id(peers[0].RowId), "PEER_B", id(peers[1].RowId)).Replace(tc.corpo)
+			rec := alPannello(g, tc.rotta, corpo)
+			if got, want := rec.Body.String(), `{"code":101,"message":"Operazione non riuscita.","data":null}`; rec.Code != 200 || got != want {
+				t.Errorf("POST %s: stato %d\n got  %s\n want %s", tc.rotta, rec.Code, got, want)
+			}
+			if nelLog := registro.String(); !strings.Contains(nelLog, "POST "+tc.rotta+": ") || !strings.Contains(nelLog, rifiuto) {
+				t.Errorf("POST %s, nel log mancano rotta o errore:\n%s", tc.rotta, nelLog)
+			}
+			var salvate []string
+			if err := service.DB.Model(&model.AddressBook{}).Order("row_id").Pluck("id || '/' || user_id", &salvate).Error; err != nil {
+				t.Fatal(err)
+			}
+			if want := []string{"peer-a/" + id(utente.Id)}; !slices.Equal(salvate, want) {
+				t.Errorf("righe della rubrica dopo l'errore: %q, attese %q", salvate, want)
+			}
+		})
+	}
+}

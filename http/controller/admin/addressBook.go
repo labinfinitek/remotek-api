@@ -2,14 +2,15 @@ package admin
 
 import (
 	"encoding/json"
-	_ "encoding/json"
+	"strconv"
+
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/request/admin"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
 	"github.com/lejianwen/rustdesk-api/v2/service"
-	"gorm.io/gorm"
-	"strconv"
 )
 
 type AddressBook struct {
@@ -35,7 +36,6 @@ func (ct *AddressBook) Detail(c *gin.Context) {
 		return
 	}
 	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
-	return
 }
 
 // Create 创建地址簿
@@ -113,13 +113,13 @@ func (ct *AddressBook) BatchCreate(c *gin.Context) {
 		return
 	}
 	if ul > 1 {
-		//多用户置空标签
+		// 多用户置空标签
 		f.Tags = []string{}
-		//多用户只能创建到默认地址簿
+		// 多用户只能创建到默认地址簿
 		f.CollectionId = 0
 	}
 
-	//创建标签
+	// 创建标签
 	/*for _, fu := range f.UserIds {
 		if fu == 0 {
 			continue
@@ -141,7 +141,10 @@ func (ct *AddressBook) BatchCreate(c *gin.Context) {
 		}
 		ex := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(t.UserId, t.Id, t.CollectionId)
 		if ex.RowId == 0 {
-			service.AllService.AddressBookService.Create(t)
+			if err := service.AllService.AddressBookService.Create(t); err != nil {
+				response.FailErr(c, 101, "OperationFailed", err)
+				return
+			}
 		}
 	}
 
@@ -189,10 +192,6 @@ func (ct *AddressBook) List(c *gin.Context) {
 		}
 	})
 
-	abCIds := make([]uint, 0)
-	for _, ab := range res.AddressBooks {
-		abCIds = append(abCIds, ab.CollectionId)
-	}
 	response.Success(c, res)
 }
 
@@ -276,7 +275,8 @@ func (ct *AddressBook) Delete(c *gin.Context) {
 	response.FailErr(c, 101, "OperationFailed", err)
 }
 
-// ShareByWebClient
+// ShareByWebClient condivide una voce della propria rubrica col web client e
+// risponde col token della condivisione.
 // @Tags 地址簿
 // @Summary 地址簿分享
 // @Description 地址簿分享
@@ -356,7 +356,10 @@ func (ct *AddressBook) BatchCreateFromPeers(c *gin.Context) {
 		if ex.RowId != 0 {
 			continue
 		}
-		service.AllService.AddressBookService.Create(ab)
+		if err := service.AllService.AddressBookService.Create(ab); err != nil {
+			response.FailErr(c, 101, "OperationFailed", err)
+			return
+		}
 	}
 	response.Success(c, nil)
 }

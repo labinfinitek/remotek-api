@@ -1,14 +1,16 @@
 package admin
 
 import (
+	"strconv"
+	"time"
+
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/request/admin"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
 	"github.com/lejianwen/rustdesk-api/v2/service"
-	"gorm.io/gorm"
-	"strconv"
-	"time"
 )
 
 type Peer struct {
@@ -34,7 +36,6 @@ func (ct *Peer) Detail(c *gin.Context) {
 		return
 	}
 	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
-	return
 }
 
 // Create 创建设备
@@ -232,7 +233,7 @@ func (ct *Peer) SimpleData(c *gin.Context) {
 		return
 	}
 	res := service.AllService.PeerService.List(1, 99999, func(tx *gorm.DB) {
-		//可以公开的情报
+		// 可以公开的情报
 		tx.Select("id,version")
 		tx.Where("id in (?)", f.Ids)
 	})

@@ -4,9 +4,9 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/request/admin"
-	adminReq "github.com/lejianwen/rustdesk-api/v2/http/request/admin"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 )
@@ -14,7 +14,7 @@ import (
 type Oauth struct {
 }
 
-// Info
+// Info risponde con lo stato OAuth in cache per il codice nella query.
 func (o *Oauth) Info(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {
@@ -30,7 +30,7 @@ func (o *Oauth) Info(c *gin.Context) {
 }
 
 func (o *Oauth) ToBind(c *gin.Context) {
-	f := &adminReq.BindOauthForm{}
+	f := &admin.BindOauthForm{}
 	err := c.ShouldBindJSON(f)
 	if err != nil {
 		response.FailErr(c, 101, "ParamsError", err)
@@ -66,7 +66,7 @@ func (o *Oauth) ToBind(c *gin.Context) {
 
 // Confirm 确认授权登录
 func (o *Oauth) Confirm(c *gin.Context) {
-	j := &adminReq.OauthConfirmForm{}
+	j := &admin.OauthConfirmForm{}
 	err := c.ShouldBindJSON(j)
 	if err != nil {
 		response.FailErr(c, 101, "ParamsError", err)
@@ -88,7 +88,7 @@ func (o *Oauth) Confirm(c *gin.Context) {
 }
 
 func (o *Oauth) BindConfirm(c *gin.Context) {
-	j := &adminReq.OauthConfirmForm{}
+	j := &admin.OauthConfirmForm{}
 	err := c.ShouldBindJSON(j)
 	if err != nil {
 		response.FailErr(c, 101, "ParamsError", err)
@@ -118,7 +118,7 @@ func (o *Oauth) BindConfirm(c *gin.Context) {
 }
 
 func (o *Oauth) Unbind(c *gin.Context) {
-	f := &adminReq.UnBindOauthForm{}
+	f := &admin.UnBindOauthForm{}
 	err := c.ShouldBindJSON(f)
 	if err != nil {
 		response.FailErr(c, 101, "ParamsError", err)
@@ -158,7 +158,6 @@ func (o *Oauth) Detail(c *gin.Context) {
 		return
 	}
 	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
-	return
 }
 
 // Create 创建Oauth
