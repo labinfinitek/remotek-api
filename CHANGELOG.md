@@ -96,6 +96,27 @@ Base upstream: rustdesk-api v2.7.
 - Di conseguenza salgono, al minimo richiesto dai moduli sopra:
   `golang.org/x/crypto` v0.33.0 -> v0.53.0, `x/sys` v0.30.0 -> v0.46.0,
   `x/sync` v0.11.0 -> v0.21.0, `x/tools` v0.26.0 -> v0.47.0.
+- GHSA-2c4m-59x9-fr2g, `github.com/gin-gonic/gin` v1.9.0 -> v1.9.1: nome
+  del file non ripulito nell'header `Content-Disposition` di
+  `Context.FileAttachment`, che il nostro codice non chiama. Salgono con gin,
+  al minimo che chiede: `bytedance/sonic` v1.9.1, `goccy/go-json` v0.10.2,
+  `klauspost/cpuid/v2` v2.2.4, `mattn/go-isatty` v0.0.19,
+  `pelletier/go-toml/v2` v2.0.8, `ugorji/go/codec` v1.2.11, `x/arch` v0.3.0.
+- GHSA-6v2p-p543-phr9, `golang.org/x/oauth2` v0.23.0 -> v0.27.0: consumo di
+  memoria eccessivo nel parsing di un token malformato in
+  `golang.org/x/oauth2/jws`, pacchetto che il binario non include (il login
+  OIDC usa `oauth2`, `endpoints` e `github`, dove cambiano solo commenti).
+  Nessun altro modulo sale.
+- GHSA-9phm-fm57-rhg8, GHSA-44p7-9xx4-hf2g, GHSA-q675-qj96-32m9,
+  `golang.org/x/image` v0.13.0 -> v0.41.0: panic e consumo eccessivo di
+  memoria decodificando immagini TIFF o con palette malformate (corretti in
+  v0.18.0, v0.38.0 e v0.41.0). Il modulo arriva con il captcha del pannello
+  (`mojocn/base64Captcha`), che usa solo `font` e `math/fixed`, identici
+  nelle due versioni. Nessun altro modulo sale.
+- GHSA-pjcq-xvwq-hhpj, `github.com/Azure/go-ntlmssp`
+  v0.0.0-20221128193559-754e69321358 -> v0.1.1: panic su una challenge NTLM
+  malformata. Il modulo arriva con `go-ldap/ldap/v3`, che resta v3.4.10; il
+  login LDAP usa il bind semplice, non quello NTLM. Nessun altro modulo sale.
 - Il file di log (`logger.path`, `./runtime/log.txt` in
   `conf/config.yaml`) nasce con permessi 0600 e non piu' 0644, e un file
   che c'era gia' viene portato a 0600 all'avvio: contiene nomi utente e
