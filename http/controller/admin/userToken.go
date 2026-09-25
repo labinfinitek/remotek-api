@@ -29,7 +29,7 @@ type UserToken struct {
 func (ct *UserToken) List(c *gin.Context) {
 	query := &admin.LoginTokenQuery{}
 	if err := c.ShouldBindQuery(query); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	res := service.AllService.UserService.TokenList(query.Page, query.PageSize, func(tx *gorm.DB) {
@@ -55,7 +55,7 @@ func (ct *UserToken) List(c *gin.Context) {
 func (ct *UserToken) Delete(c *gin.Context) {
 	f := &model.UserToken{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	id := f.Id
@@ -76,7 +76,7 @@ func (ct *UserToken) Delete(c *gin.Context) {
 			response.Success(c, nil)
 			return
 		}
-		response.Fail(c, 101, err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
@@ -96,7 +96,7 @@ func (ct *UserToken) Delete(c *gin.Context) {
 func (ct *UserToken) BatchDelete(c *gin.Context) {
 	f := &admin.UserTokenBatchDeleteForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	ids := f.Ids
@@ -109,5 +109,5 @@ func (ct *UserToken) BatchDelete(c *gin.Context) {
 		response.Success(c, nil)
 		return
 	}
-	response.Fail(c, 101, err.Error())
+	response.FailErr(c, 101, "OperationFailed", err)
 }

@@ -24,8 +24,13 @@ Base upstream: rustdesk-api v2.7.
   dove un corpo JSON rotto riceveva il testo del parser dopo il messaggio e
   la cancellazione di un log di accesso o di un tag il solo testo
   dell'errore del database: la risposta resta 200 con `code` 101 e porta
-  solo il messaggio. Il resto del pannello e `/api/oidc/*` restano da
-  sistemare.
+  solo il messaggio. Lo stesso vale per l'amministrazione nel pannello (il
+  resto di `/api/admin/*`, 121 punti), dove un errore del database, di
+  bcrypt o della rete verso il server finiva nella risposta: un nome
+  utente che esiste gia' riceve "Il nome utente esiste già." invece di
+  `Operazione non riuscita.UsernameExists`, una password oltre i 72 byte
+  di bcrypt "Operazione non riuscita." senza il testo di bcrypt. Resta da
+  sistemare solo `/api/oidc/*`.
 - Un errore interno che un controller passa come messaggio non arriva piu'
   al client ne' al pannello (REGOLE 8): per esempio l'errore di rete di un
   provider OIDC irraggiungibile, con il suo indirizzo e la sua risposta, da

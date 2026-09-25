@@ -17,22 +17,6 @@ import (
 var daSistemare = map[string]int{
 	// /api/oidc/*, aspetta i golden del contratto
 	"api/ouath.go": 5,
-	// pannello, amministrazione
-	"admin/addressBook.go":               11,
-	"admin/addressBookCollection.go":     7,
-	"admin/addressBookCollectionRule.go": 7,
-	"admin/audit.go":                     10,
-	"admin/deviceGroup.go":               7,
-	"admin/group.go":                     7,
-	"admin/login.go":                     5,
-	"admin/loginLog.go":                  5,
-	"admin/oauth.go":                     14,
-	"admin/peer.go":                      10,
-	"admin/rustdesk.go":                  9,
-	"admin/shareRecord.go":               5,
-	"admin/tag.go":                       7,
-	"admin/user.go":                      12,
-	"admin/userToken.go":                 5,
 }
 
 // TestErrorNeiController conta, file per file, le chiamate X.Error() senza

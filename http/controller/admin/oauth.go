@@ -33,7 +33,7 @@ func (o *Oauth) ToBind(c *gin.Context) {
 	f := &adminReq.BindOauthForm{}
 	err := c.ShouldBindJSON(f)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
@@ -46,7 +46,7 @@ func (o *Oauth) ToBind(c *gin.Context) {
 
 	err, state, verifier, nonce, url := service.AllService.OauthService.BeginAuth(f.Op)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, err.Error()))
+		response.ErrorErr(c, "SystemError", err)
 		return
 	}
 
@@ -69,7 +69,7 @@ func (o *Oauth) Confirm(c *gin.Context) {
 	j := &adminReq.OauthConfirmForm{}
 	err := c.ShouldBindJSON(j)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	if j.Code == "" {
@@ -91,7 +91,7 @@ func (o *Oauth) BindConfirm(c *gin.Context) {
 	j := &adminReq.OauthConfirmForm{}
 	err := c.ShouldBindJSON(j)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	if j.Code == "" {
@@ -121,7 +121,7 @@ func (o *Oauth) Unbind(c *gin.Context) {
 	f := &adminReq.UnBindOauthForm{}
 	err := c.ShouldBindJSON(f)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
@@ -132,7 +132,7 @@ func (o *Oauth) Unbind(c *gin.Context) {
 	}
 	err = service.AllService.OauthService.UnBindOauthUser(u.Id, f.Op)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -175,7 +175,7 @@ func (o *Oauth) Detail(c *gin.Context) {
 func (o *Oauth) Create(c *gin.Context) {
 	f := &admin.OauthForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	errList := global.Validator.ValidStruct(c, f)
@@ -186,7 +186,7 @@ func (o *Oauth) Create(c *gin.Context) {
 	u := f.ToOauth()
 	err := u.FormatOauthInfo()
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	ex := service.AllService.OauthService.InfoByOp(u.Op)
@@ -196,7 +196,7 @@ func (o *Oauth) Create(c *gin.Context) {
 	}
 	err = service.AllService.OauthService.Create(u)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -217,7 +217,7 @@ func (o *Oauth) Create(c *gin.Context) {
 func (o *Oauth) List(c *gin.Context) {
 	query := &admin.PageQuery{}
 	if err := c.ShouldBindQuery(query); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	res := service.AllService.OauthService.List(query.Page, query.PageSize, nil)
@@ -238,7 +238,7 @@ func (o *Oauth) List(c *gin.Context) {
 func (o *Oauth) Update(c *gin.Context) {
 	f := &admin.OauthForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	if f.Id == 0 {
@@ -253,7 +253,7 @@ func (o *Oauth) Update(c *gin.Context) {
 	u := f.ToOauth()
 	err := service.AllService.OauthService.Update(u)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -273,7 +273,7 @@ func (o *Oauth) Update(c *gin.Context) {
 func (o *Oauth) Delete(c *gin.Context) {
 	f := &admin.OauthForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	id := f.Id
@@ -289,7 +289,7 @@ func (o *Oauth) Delete(c *gin.Context) {
 			response.Success(c, nil)
 			return
 		}
-		response.Fail(c, 101, err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
