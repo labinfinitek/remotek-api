@@ -2,12 +2,14 @@ package my
 
 import (
 	"encoding/json"
+
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/request/admin"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
 	"github.com/lejianwen/rustdesk-api/v2/service"
-	"gorm.io/gorm"
 )
 
 type AddressBook struct{}
@@ -52,11 +54,6 @@ func (ct *AddressBook) List(c *gin.Context) {
 			tx.Where("collection_id = ?", query.CollectionId)
 		}
 	})
-
-	abCIds := make([]uint, 0)
-	for _, ab := range res.AddressBooks {
-		abCIds = append(abCIds, ab.CollectionId)
-	}
 	response.Success(c, res)
 }
 
@@ -197,7 +194,6 @@ func (ct *AddressBook) Delete(c *gin.Context) {
 		return
 	}
 	response.FailErr(c, 101, "OperationFailed", err)
-	return
 }
 func (ct *AddressBook) BatchCreateFromPeers(c *gin.Context) {
 	f := &admin.BatchCreateFromPeersForm{}

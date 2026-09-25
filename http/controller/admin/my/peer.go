@@ -1,12 +1,14 @@
 package my
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/lejianwen/rustdesk-api/v2/http/request/admin"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
 	"github.com/lejianwen/rustdesk-api/v2/service"
-	"gorm.io/gorm"
-	"time"
 )
 
 type Peer struct {

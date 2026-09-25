@@ -2,14 +2,15 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
 	// Registra con init() lo swagger "admin" servito su /admin/swagger/*any (con ShowSwagger).
 	_ "github.com/lejianwen/rustdesk-api/v2/docs/admin"
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/controller/admin"
 	"github.com/lejianwen/rustdesk-api/v2/http/controller/admin/my"
 	"github.com/lejianwen/rustdesk-api/v2/http/middleware"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func Init(g *gin.Engine) {
