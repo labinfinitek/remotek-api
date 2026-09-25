@@ -272,7 +272,7 @@ func TestB64CaptchaFlow(t *testing.T) {
 	}
 	fmt.Printf("验证码内容: %#v\n", capc)
 
-	//draw
+	// draw
 	b64, err := limiter.DrawCaptcha(capc.Content)
 	if err != nil {
 		t.Fatalf("绘制验证码失败: %v", err)

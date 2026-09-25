@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// 安全策略配置
+// SecurityPolicy 安全策略配置
 type SecurityPolicy struct {
 	CaptchaThreshold int // 尝试失败次数达到验证码阈值，小于0表示不启用, 0表示强制启用
 	BanThreshold     int // 尝试失败次数达到封禁阈值，为0表示不启用
@@ -14,15 +14,15 @@ type SecurityPolicy struct {
 	BanDuration      time.Duration
 }
 
-// 验证码提供者接口
+// CaptchaProvider 验证码提供者接口
 type CaptchaProvider interface {
 	Generate() (id string, content string, answer string, err error)
-	//Validate(ip, code string) bool
+	// Validate(ip, code string) bool
 	Expiration() time.Duration           // 验证码过期时间, 应该小于 AttemptsWindow
 	Draw(content string) (string, error) // 绘制验证码
 }
 
-// 验证码元数据
+// CaptchaMeta 验证码元数据
 type CaptchaMeta struct {
 	Id        string
 	Content   string
@@ -30,13 +30,13 @@ type CaptchaMeta struct {
 	ExpiresAt time.Time
 }
 
-// IP封禁记录
+// BanRecord IP封禁记录
 type BanRecord struct {
 	ExpiresAt time.Time
 	Reason    string
 }
 
-// 登录限制器
+// LoginLimiter 登录限制器
 type LoginLimiter struct {
 	mu          sync.Mutex
 	policy      SecurityPolicy
@@ -74,7 +74,7 @@ func NewLoginLimiter(policy SecurityPolicy) *LoginLimiter {
 	return ll
 }
 
-// 注册验证码提供者
+// RegisterProvider 注册验证码提供者
 func (ll *LoginLimiter) RegisterProvider(p CaptchaProvider) {
 	ll.mu.Lock()
 	defer ll.mu.Unlock()
@@ -86,7 +86,7 @@ func (ll *LoginLimiter) isDisabled() bool {
 	return ll.policy.CaptchaThreshold < 0 && ll.policy.BanThreshold == 0
 }
 
-// 记录登录失败尝试
+// RecordFailedAttempt 记录登录失败尝试
 func (ll *LoginLimiter) RecordFailedAttempt(ip string) {
 	if ll.isDisabled() {
 		return
@@ -115,7 +115,7 @@ func (ll *LoginLimiter) RecordFailedAttempt(ip string) {
 	}
 }
 
-// 生成验证码
+// RequireCaptcha 生成验证码
 func (ll *LoginLimiter) RequireCaptcha() (CaptchaMeta, error) {
 	ll.mu.Lock()
 	defer ll.mu.Unlock()
@@ -140,7 +140,7 @@ func (ll *LoginLimiter) RequireCaptcha() (CaptchaMeta, error) {
 	return ll.captchas[id], nil
 }
 
-// 验证验证码
+// VerifyCaptcha 验证验证码
 func (ll *LoginLimiter) VerifyCaptcha(id, answer string) bool {
 	ll.mu.Lock()
 	defer ll.mu.Unlock()
@@ -175,7 +175,7 @@ func (ll *LoginLimiter) DrawCaptcha(content string) (string, error) {
 	return ll.provider.Draw(content)
 }
 
-// 清除记录窗口
+// RemoveAttempts 清除记录窗口
 func (ll *LoginLimiter) RemoveAttempts(ip string) {
 	ll.mu.Lock()
 	defer ll.mu.Unlock()

@@ -118,10 +118,10 @@ func main() {
 }
 
 func InitGlobal() {
-	//配置解析
+	// 配置解析
 	global.Viper = config.Init(&global.Config, global.ConfigPath)
 
-	//日志
+	// 日志
 	global.Logger = logger.New(&logger.Config{
 		Path:         global.Config.Logger.Path,
 		Level:        global.Config.Logger.Level,
@@ -130,14 +130,14 @@ func InitGlobal() {
 
 	global.InitI18n()
 
-	//redis
+	// redis
 	global.Redis = redis.NewClient(&redis.Options{
 		Addr:     global.Config.Redis.Addr,
 		Password: global.Config.Redis.Password,
 		DB:       global.Config.Redis.Db,
 	})
 
-	//cache
+	// cache
 	switch global.Config.Cache.Type {
 	case cache.TypeFile:
 		fc := cache.NewFileCache()
@@ -150,7 +150,7 @@ func InitGlobal() {
 			DB:       global.Config.Cache.RedisDb,
 		})
 	}
-	//gorm
+	// gorm
 	switch global.Config.Gorm.Type {
 	case config.TypeMysql:
 		dsn := fmt.Sprintf("%s:%s@(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local&tls=%s",
@@ -182,23 +182,23 @@ func InitGlobal() {
 			MaxOpenConns: global.Config.Gorm.MaxOpenConns,
 		}, global.Logger)
 	default:
-		//sqlite
+		// sqlite
 		global.DB = orm.NewSqlite(&orm.SqliteConfig{
 			MaxIdleConns: global.Config.Gorm.MaxIdleConns,
 			MaxOpenConns: global.Config.Gorm.MaxOpenConns,
 		}, global.Logger)
 	}
 
-	//validator
+	// validator
 	global.ApiInitValidator()
 
-	//jwt
-	//fmt.Println(global.Config.Jwt.PrivateKey)
+	// jwt
+	// fmt.Println(global.Config.Jwt.PrivateKey)
 	global.Jwt = jwt.NewJwt(global.Config.Jwt.Key, global.Config.Jwt.ExpireDuration)
-	//locker
+	// locker
 	global.Lock = lock.NewLocal()
 
-	//service
+	// service
 	service.New(&global.Config, global.DB, global.Logger, global.Jwt, global.Lock)
 
 	global.LoginLimiter = utils.NewLoginLimiter(utils.SecurityPolicy{
@@ -217,7 +217,7 @@ func DatabaseAutoUpdate() {
 	db := global.DB
 
 	if global.Config.Gorm.Type == config.TypeMysql {
-		//检查存不存在数据库，不存在则创建
+		// 检查存不存在数据库，不存在则创建
 		dbName := db.Migrator().CurrentDatabase()
 		if dbName == "" {
 			dbName = global.Config.Mysql.Dbname
@@ -229,7 +229,7 @@ func DatabaseAutoUpdate() {
 				"",
 			)
 
-			//新链接
+			// 新链接
 			dbWithoutDB := orm.NewMysql(&orm.MysqlConfig{
 				Dsn: dsnWithoutDB,
 			}, global.Logger)
@@ -256,7 +256,7 @@ func DatabaseAutoUpdate() {
 	if !db.Migrator().HasTable(&model.Version{}) {
 		Migrate(uint(version))
 	} else {
-		//查找最后一个version
+		// 查找最后一个version
 		var v model.Version
 		db.Last(&v)
 		if v.Version < uint(version) {
@@ -265,11 +265,11 @@ func DatabaseAutoUpdate() {
 
 		// 245迁移
 		if v.Version < 245 {
-			//oauths 表的 oauth_type 字段设置为 op同样的值
+			// oauths 表的 oauth_type 字段设置为 op同样的值
 			db.Exec("update oauths set oauth_type = op")
 			db.Exec("update oauths set issuer = 'https://accounts.google.com' where op = 'google'")
 			db.Exec("update user_thirds set oauth_type = third_type, op = third_type")
-			//通过email迁移旧的google授权
+			// 通过email迁移旧的google授权
 			uts := make([]model.UserThird, 0)
 			db.Where("oauth_type = ?", "google").Find(&uts)
 			for _, ut := range uts {
