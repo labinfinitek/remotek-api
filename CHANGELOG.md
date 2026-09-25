@@ -96,6 +96,11 @@ Base upstream: rustdesk-api v2.7.
 - Di conseguenza salgono, al minimo richiesto dai moduli sopra:
   `golang.org/x/crypto` v0.33.0 -> v0.53.0, `x/sys` v0.30.0 -> v0.46.0,
   `x/sync` v0.11.0 -> v0.21.0, `x/tools` v0.26.0 -> v0.47.0.
+- Il file di log (`logger.path`, `./runtime/log.txt` in
+  `conf/config.yaml`) nasce con permessi 0600 e non piu' 0644, e un file
+  che c'era gia' viene portato a 0600 all'avvio: contiene nomi utente e
+  indirizzi IP, e lo leggeva ogni utente della macchina. Se il file non si apre o i permessi non si
+  cambiano, l'avvio si ferma con un messaggio che dice quale file e perche'.
 
 ### Corretto
 - Con la porta dell'API gia' occupata, o un altro errore all'apertura, il
