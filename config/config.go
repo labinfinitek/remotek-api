@@ -34,6 +34,7 @@ type Admin struct {
 }
 type Config struct {
 	Lang       string `mapstructure:"lang"`
+	Brand      Brand
 	App        App
 	Admin      Admin
 	Gorm       Gorm
@@ -47,7 +48,11 @@ type Config struct {
 	Ldap       Ldap
 }
 
-func (a *Admin) Init() {
+// Init completa la sezione admin: il titolo vuoto e' il nome del marchio.
+func (a *Admin) Init(brand Brand) {
+	if a.Title == "" {
+		a.Title = brand.Name
+	}
 	if a.IdServerPort == 0 {
 		a.IdServerPort = DefaultIdServerPort
 	}
@@ -76,6 +81,11 @@ func Init(rowVal *Config, path string) *viper.Viper {
 	// Lingua delle risposte quando Accept-Language non ne sceglie una: il
 	// client RustDesk non la manda, quindi e' quella che vede chi lo usa.
 	v.SetDefault("lang", "it")
+	// Marchio (vedi Brand): col default viper conosce le chiavi, e
+	// RUSTDESK_API_BRAND_NAME vale anche se il file non ha la sezione brand.
+	v.SetDefault("brand.name", DefaultBrandName)
+	v.SetDefault("brand.dir", DefaultBrandDir)
+	v.SetDefault("admin.title", "") // vuoto: brand.name (Admin.Init)
 	v.AutomaticEnv()
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	v.SetEnvPrefix("RUSTDESK_API")
@@ -104,7 +114,8 @@ func Init(rowVal *Config, path string) *viper.Viper {
 		panic(fmt.Errorf("configurazione %s non valida: %w", path, err))
 	}
 	rowVal.Rustdesk.LoadKeyFile()
-	rowVal.Admin.Init()
+	rowVal.Brand.Init()
+	rowVal.Admin.Init(rowVal.Brand)
 	return v
 }
 

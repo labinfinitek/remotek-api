@@ -1,8 +1,8 @@
-# RustDesk API
+# Remotek
 
 [English Doc](README_EN.md)
 
-本项目使用 Go 实现了 RustDesk 的 API，并包含了 Web Admin 和 Web 客户端。
+Remotek 的 API，基于 lejianwen 的 [rustdesk-api](https://github.com/lejianwen/rustdesk-api) v2.7，兼容 RustDesk 客户端，用 Go 实现，包含 Web Admin 和 Web 客户端。
 
 
 <div align=center>
@@ -171,8 +171,11 @@
 | RUSTDESK_API_APP_REGISTER_STATUS                       | 注册用户默认状态; 1 启用，2 禁用, 默认 1                                                      | `1`                          |
 | RUSTDESK_API_APP_CAPTCHA_THRESHOLD                     | 验证码触发次数; -1 不启用， 0 一直启用， >0 登录错误次数后启用 ;默认 `3`                                  | `3`                          |
 | RUSTDESK_API_APP_BAN_THRESHOLD                         | 封禁IP触发次数; 0 不启用, >0 同一IP在10分钟内登录错误达到该次数后，该IP的所有请求被拒绝30分钟; 默认 `10` | `10`                         |
+| -----BRAND配置-----                                      | ----------                                                                     | ----------                   |
+| RUSTDESK_API_BRAND_NAME                                | 产品名称：后台标题、欢迎语中的`{{brand}}`、OAuth登录页面标题；默认`Remotek`                   | `Remotek`                    |
+| RUSTDESK_API_BRAND_DIR                                 | `logo.svg`和`favicon.svg`所在目录，通过`/brand/`提供；默认`./resources/brand`             | `./resources/brand`          |
 | -----ADMIN配置-----                                      | ----------                                                                     | ----------                   |
-| RUSTDESK_API_ADMIN_TITLE                               | 后台标题                                                                           | `RustDesk Api Admin`         |
+| RUSTDESK_API_ADMIN_TITLE                               | 后台标题；为空时等于`brand.name`                                                     | `Remotek`                    |
 | RUSTDESK_API_ADMIN_HELLO                               | 后台欢迎语，可以使用`html`                                                               |                              |
 | RUSTDESK_API_ADMIN_HELLO_FILE                          | 后台欢迎语文件，如果内容多，使用文件更方便。<br>会覆盖`RUSTDESK_API_ADMIN_HELLO`                        | `./conf/admin/hello.html`    |
 | -----GIN配置-----                                        | ----------                                                                     | ----------                   |
@@ -251,6 +254,22 @@ docker build \
 - `HEALTHCHECK` 访问 `http://127.0.0.1:21114/api/version`：如果修改了
   `RUSTDESK_API_GIN_API_ADDR` 中的端口，请用 `--health-cmd` 覆盖。
 - 基础镜像按 digest 固定：更新时标签和 digest 一起修改。
+
+#### 更换品牌
+
+名称和标志集中在一处，更换时不需要修改代码：
+
+- 名称：`brand.name`（`RUSTDESK_API_BRAND_NAME`，默认`Remotek`）。它是后台标题
+  （`admin.title`为空时，由`GET /api/admin/config/admin`返回）、欢迎语中的
+  `{{brand}}`（与`{{username}}`一样替换，见`conf/admin/hello.html`）以及 OAuth/OIDC
+  登录页面的标题。重启 API 即生效。
+- 标志和图标：`brand.dir`目录（`RUSTDESK_API_BRAND_DIR`，默认`./resources/brand`）中的
+  `logo.svg`和`favicon.svg`，API 通过`/brand/logo.svg`和`/brand/favicon.svg`提供，
+  后台从这里读取。替换文件即可，不需要重新构建，例如在容器中挂载：
+  `-v /srv/remotek/brand:/app/resources/brand:ro`（文件对 uid 10001 可读）。
+
+不改名的部分：`RUSTDESK_API_`变量前缀、配置中的`rustdesk:`部分、
+`/api/admin/rustdesk/*`路由、Go module 路径。
 
 #### 下载release直接运行
 
