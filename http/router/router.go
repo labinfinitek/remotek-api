@@ -22,4 +22,6 @@ func WebInit(g *gin.Engine) {
 		g.StaticFS("/webclient2", http.Dir(global.Config.Gin.ResourcesPath+"/web2"))
 	}
 	g.StaticFS("/_admin", http.Dir(global.Config.Gin.ResourcesPath+"/admin"))
+	// Logo e favicon del marchio: brand.dir, senza elenco della cartella.
+	g.Static("/brand", global.Config.Brand.Dir)
 }

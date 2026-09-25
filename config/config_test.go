@@ -147,3 +147,33 @@ func panicDiInit(path string) (err error) {
 	Init(&c, path)
 	return nil
 }
+
+// TestMarchio verifica il marchio: senza RUSTDESK_API_BRAND_NAME il nome e'
+// "Remotek" e la cartella ./resources/brand, col conf/config.yaml del repo e
+// con un file senza la sezione brand; admin.title vuoto vale il nome. La
+// variabile cambia il nome anche nel titolo, un admin.title esplicito resta.
+func TestMarchio(t *testing.T) {
+	type marchio struct{ Name, Dir, Title string }
+	t.Setenv("RUSTDESK_API_BRAND_DIR", "")
+	t.Setenv("RUSTDESK_API_ADMIN_TITLE", "")
+	for _, tc := range []struct {
+		caso, nome, titolo string
+		want               marchio
+	}{
+		{"default", "", "", marchio{"Remotek", "./resources/brand", "Remotek"}},
+		{"RUSTDESK_API_BRAND_NAME", "Acme Assist", "", marchio{"Acme Assist", "./resources/brand", "Acme Assist"}},
+		{"admin.title esplicito", "Acme Assist", "Pannello Acme", marchio{"Acme Assist", "./resources/brand", "Pannello Acme"}},
+	} {
+		t.Run(tc.caso, func(t *testing.T) {
+			t.Setenv("RUSTDESK_API_BRAND_NAME", tc.nome)
+			t.Setenv("RUSTDESK_API_ADMIN_TITLE", tc.titolo)
+			for _, path := range []string{fileSenzaChiavi(t), filepath.Join("..", "conf", "config.yaml")} {
+				var c Config
+				Init(&c, path)
+				if got := (marchio{c.Brand.Name, c.Brand.Dir, c.Admin.Title}); got != tc.want {
+					t.Errorf("Init(%s):\ngot  %+v\nwant %+v", path, got, tc.want)
+				}
+			}
+		})
+	}
+}

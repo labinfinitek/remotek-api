@@ -90,8 +90,9 @@ func (co *Config) AdminConfig(c *gin.Context) {
 		}
 	}
 
-	// replace {{username}} to username
-	hello = strings.ReplaceAll(hello, "{{username}}", u.Username)
+	// {{username}} e {{brand}} in una passata sola: un nome utente che
+	// contiene "{{brand}}" resta com'e'.
+	hello = strings.NewReplacer("{{username}}", u.Username, "{{brand}}", global.Config.Brand.Name).Replace(hello)
 	response.Success(c, &gin.H{
 		"title": global.Config.Admin.Title,
 		"hello": hello,

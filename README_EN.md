@@ -1,6 +1,7 @@
-# RustDesk API
+# Remotek
 
-This project implements the RustDesk API using Go, and includes both a web UI and web client. RustDesk is a remote
+The API of Remotek, based on [rustdesk-api](https://github.com/lejianwen/rustdesk-api) v2.7 by lejianwen and
+compatible with the RustDesk client: written in Go, it includes both a web UI and web client. RustDesk is a remote
 desktop software that provides self-hosted solutions.
 
 <div align=center>
@@ -169,8 +170,11 @@ The table below does not list all configurations. Please refer to the configurat
 | RUSTDESK_API_APP_REGISTER_STATUS                       | register user default status ; 1 enabled , 2 disabled ; default 1                                                                                   | `1`                           |
 | RUSTDESK_API_APP_CAPTCHA_THRESHOLD                     | captcha threshold; -1 disabled, 0 always enable, >0 threshold  ;default `3`                                                                         | `3`                           |
 | RUSTDESK_API_APP_BAN_THRESHOLD                         | ban ip threshold; 0 disabled; >0 after this many failed logins from one IP within 10 minutes, every request from that IP is refused for 30 minutes; default `10` | `10`                          |
+| ----- BRAND Configuration-----                         | ----------                                                                                                                                          | ----------                    |
+| RUSTDESK_API_BRAND_NAME                                | Product name: admin title, `{{brand}}` in the welcome message, OAuth login pages; default `Remotek`                                                 | `Remotek`                     |
+| RUSTDESK_API_BRAND_DIR                                 | Directory of `logo.svg` and `favicon.svg`, served on `/brand/`; default `./resources/brand`                                                         | `./resources/brand`           |
 | ----- ADMIN Configuration-----                         | ----------                                                                                                                                          | ----------                    |
-| RUSTDESK_API_ADMIN_TITLE                               | Admin Title                                                                                                                                         | `RustDesk Api Admin`          |
+| RUSTDESK_API_ADMIN_TITLE                               | Admin title; empty means `brand.name`                                                                                                               | `Remotek`                     |
 | RUSTDESK_API_ADMIN_HELLO                               | Admin welcome message, you can use `html`                                                                                                           |                               |
 | RUSTDESK_API_ADMIN_HELLO_FILE                          | Admin welcome message file,<br>will override `RUSTDESK_API_ADMIN_HELLO`                                                                             | `./conf/admin/hello.html`     |
 | ----- GIN Configuration -----                          | ---------------------------------------                                                                                                             | ----------------------------- |
@@ -239,7 +243,9 @@ docker build \
   `/api/version` (default `dev`); `REVISION` goes into the OCI label (default
   `unknown`); `PANNELLO_COMMIT` is the full sha of the rustdesk-api-web commit
   (default `3998c2a9213fcd047252776d0f0db33e6717026c`, the last commit of
-  master, the one packaged with v2.7).
+  master, the one packaged with v2.7); `BRAND_NAME` is the static title of
+  the admin panel (default `Remotek`; letters, digits, spaces and `. _ -`
+  only), see [Changing the brand](#changing-the-brand).
 - The process runs as user `remotek` (uid/gid 10001), not root. `/app/data`
   is the volume (database, `admin-password.txt`); `/app/runtime` holds
   `log.txt` (the log also goes to stdout).
@@ -252,6 +258,29 @@ docker build \
   port in `RUSTDESK_API_GIN_API_ADDR`, override it with `--health-cmd`.
 - Base images are pinned by digest: to update one, change tag and digest
   together.
+
+#### Changing the brand
+
+Name and logo live in one place and change without touching the code:
+
+- Name: `brand.name` (`RUSTDESK_API_BRAND_NAME`, default `Remotek`). It is
+  the admin title (when `admin.title` is empty, returned by
+  `GET /api/admin/config/admin`), `{{brand}}` in the welcome message
+  (replaced like `{{username}}`, see `conf/admin/hello.html`) and the title
+  of the OAuth/OIDC login pages. Restart the API to apply it.
+- Logo and favicon: `logo.svg` and `favicon.svg` in `brand.dir`
+  (`RUSTDESK_API_BRAND_DIR`, default `./resources/brand`), served by the API
+  on `/brand/logo.svg` and `/brand/favicon.svg`, where the admin panel reads
+  them. Replace the files, no rebuild needed; in a container, mount them:
+  `-v /srv/remotek/brand:/app/resources/brand:ro` (readable by uid 10001).
+- The static title the panel shows before it loads its configuration is set
+  at build time: `docker build --build-arg BRAND_NAME=<name> ...`. Before
+  `npm run build` the `Dockerfile` rewrites a few lines (logo, favicon,
+  title) of the panel source at the pinned commit; if a line is missing the
+  build fails.
+
+Not renamed: the `RUSTDESK_API_` variable prefix, the `rustdesk:` config
+section, the `/api/admin/rustdesk/*` routes, the Go module path.
 
 #### Running from Release
 

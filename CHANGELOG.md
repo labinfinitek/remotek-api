@@ -117,6 +117,8 @@ Base upstream: rustdesk-api v2.7.
   successo. Il logout del client (`/api/logout`) non cambia.
 
 ### Corretto
+- `RUSTDESK_API_ADMIN_TITLE` vale anche se il file di configurazione non ha
+  `admin.title`: prima viper non conosceva la chiave e la ignorava.
 - Se il file di configurazione non si legge o non si decodifica, l'avvio
   si ferma con un messaggio che nomina il file, per esempio
   `lettura della configurazione ./conf/config.yaml: ...` o
@@ -169,6 +171,10 @@ Base upstream: rustdesk-api v2.7.
   `Dockerfile` che costruisce tutto dal sorgente.
 
 ### Modificato
+- Il prodotto si chiama Remotek dove lo vede chi lo usa: titolo del pannello
+  (prima "RustDesk API Admin"), benvenuto del pannello (ora in italiano),
+  titolo delle pagine del login OAuth/OIDC. `admin.title` vuoto, come in
+  `conf/config.yaml`, vale `brand.name`.
 - La lingua predefinita e' l'italiano, nel codice e in `conf/config.yaml`
   (prima `zh-CN` nel file e l'inglese senza file). Il client RustDesk non
   manda `Accept-Language`: riceve i messaggi in italiano, e
@@ -193,6 +199,16 @@ Base upstream: rustdesk-api v2.7.
   default, ne' `docs/`.
 
 ### Aggiunto
+- Marchio in un posto solo: `brand.name` (`RUSTDESK_API_BRAND_NAME`,
+  default "Remotek") e' il nome nel titolo del pannello, in `{{brand}}` del
+  benvenuto e nelle pagine OAuth; `brand.dir` (`RUSTDESK_API_BRAND_DIR`,
+  default `./resources/brand`) contiene `logo.svg` e `favicon.svg`, che
+  l'API serve su `/brand/`: per cambiare logo si sostituiscono i file, anche
+  montandoli nel container. Logo e favicon attuali sono provvisori.
+- Nell'immagine Docker il pannello prende logo e favicon da `/brand/` e il
+  titolo statico da `ARG BRAND_NAME` (default "Remotek"): il `Dockerfile`
+  adatta sei righe del sorgente al commit fissato prima di `npm run build`,
+  e la build si ferma se una non c'e' piu'.
 - `Dockerfile` multi-stage che costruisce l'immagine dal sorgente: binario Go
   statico, pannello rustdesk-api-web di upstream compilato al commit fissato
   `3998c2a` (`ARG PANNELLO_COMMIT`), base Alpine; immagini di base fissate

@@ -1,4 +1,7 @@
 lang: "it" # senza Accept-Language; anche en, es, fr, ko, ru, zh-CN, zh-TW
+brand:
+  name: "Remotek" # nome del prodotto: titolo del pannello, benvenuto, pagine OAuth
+  dir: "./resources/brand" # logo.svg e favicon.svg, serviti su /brand/
 app:
   web-client: 0  # 1: acceso, 0: spento
   register: false #是否开启注册
@@ -11,7 +14,7 @@ app:
   disable-pwd-login: false #禁用密码登录
 
 admin:
-  title: "RustDesk API Admin"
+  title: "" # vuoto: brand.name
   hello-file: "./conf/admin/hello.html"  #优先使用file
   hello: ""
   # ID Server and Relay Server ports https://github.com/lejianwen/rustdesk-api/issues/257

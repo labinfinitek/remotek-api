@@ -1,6 +1,7 @@
 package router
 
 import (
+	"html/template"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -21,7 +22,10 @@ func ApiInit(g *gin.Engine) {
 	if global.Config.App.ShowSwagger == 1 {
 		g.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.InstanceName("api")))
 	}
-	// 加载 HTML 模板
+	// Le pagine del login OAuth (resources/templates) prendono il nome del
+	// marchio da {{brand}}: la funzione va registrata prima di LoadHTMLGlob.
+	brand := global.Config.Brand.Name
+	g.SetFuncMap(template.FuncMap{"brand": func() string { return brand }})
 	g.LoadHTMLGlob("resources/templates/*")
 
 	frg := g.Group("/api")
