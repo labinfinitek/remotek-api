@@ -107,6 +107,12 @@ Base upstream: rustdesk-api v2.7.
   `golang.org/x/oauth2/jws`, pacchetto che il binario non include (il login
   OIDC usa `oauth2`, `endpoints` e `github`, dove cambiano solo commenti).
   Nessun altro modulo sale.
+- GHSA-9phm-fm57-rhg8, GHSA-44p7-9xx4-hf2g, GHSA-q675-qj96-32m9,
+  `golang.org/x/image` v0.13.0 -> v0.41.0: panic e consumo eccessivo di
+  memoria decodificando immagini TIFF o con palette malformate (corretti in
+  v0.18.0, v0.38.0 e v0.41.0). Il modulo arriva con il captcha del pannello
+  (`mojocn/base64Captcha`), che usa solo `font` e `math/fixed`, identici
+  nelle due versioni. Nessun altro modulo sale.
 - Il file di log (`logger.path`, `./runtime/log.txt` in
   `conf/config.yaml`) nasce con permessi 0600 e non piu' 0644, e un file
   che c'era gia' viene portato a 0600 all'avvio: contiene nomi utente e
