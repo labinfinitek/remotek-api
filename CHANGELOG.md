@@ -160,6 +160,16 @@ Base upstream: rustdesk-api v2.7.
   carica font, immagini o fogli di stile da altri siti ora li perde.
 
 ### Corretto
+- Se il database si apre ma non si scrive, l'avvio si ferma con codice 1:
+  SQLite apre in sola lettura, senza errore, un `data/rustdeskapi.db` che
+  l'utente del processo non puo' scrivere, e senza la cartella scrivibile
+  non crea il journal, quindi l'API partiva e sbagliava alla prima
+  scrittura (login, heartbeat, rubrica). Succede passando dall'immagine di
+  upstream, che girava come root, alla nostra, che gira come 10001. Il
+  messaggio nomina il file col percorso assoluto, dice se a non scriversi
+  e' il file o la cartella e da' il rimedio: `chown -R 10001:10001` della
+  cartella dati. La prova crea una tabella e annulla la transazione: nel
+  database non resta niente.
 - Se il database non si apre, per esempio con `data/` montata dall'host e
   non scrivibile dall'utente 10001 dell'immagine Docker, l'avvio si ferma
   con codice 1 e un messaggio che nomina il file col percorso assoluto e

@@ -145,6 +145,11 @@ func InitGlobal() {
 		if errAbs != nil {
 			percorso = orm.FileSqlite
 		}
+		if errors.Is(err, orm.ErrNonScrivibile) {
+			global.Logger.Fatalf("database %s non scrivibile, l'API non parte: %v. Il file e la cartella %s devono "+
+				"essere dell'utente del processo: nell'immagine Docker 10001:10001, quindi sull'host "+
+				"chown -R 10001:10001 della cartella dati montata (vedi README)", percorso, err, filepath.Dir(percorso))
+		}
 		global.Logger.Fatalf("database %s non aperto, l'API non parte: controlla che la cartella %s esista, "+
 			"o si possa creare, e sia scrivibile dall'utente del processo (nell'immagine Docker 10001:10001, "+
 			"vedi README): %v", percorso, filepath.Dir(percorso), err)
