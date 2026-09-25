@@ -118,17 +118,17 @@ func (ll *LoginLimiter) RecordFailedAttempt(ip string) {
 }
 
 // 生成验证码
-func (ll *LoginLimiter) RequireCaptcha() (error, CaptchaMeta) {
+func (ll *LoginLimiter) RequireCaptcha() (CaptchaMeta, error) {
 	ll.mu.Lock()
 	defer ll.mu.Unlock()
 
 	if ll.provider == nil {
-		return errors.New("no captcha provider available"), CaptchaMeta{}
+		return CaptchaMeta{}, errors.New("no captcha provider available")
 	}
 
 	id, content, answer, err := ll.provider.Generate()
 	if err != nil {
-		return err, CaptchaMeta{}
+		return CaptchaMeta{}, err
 	}
 
 	// 存储验证码
@@ -139,7 +139,7 @@ func (ll *LoginLimiter) RequireCaptcha() (error, CaptchaMeta) {
 		ExpiresAt: time.Now().Add(ll.provider.Expiration()),
 	}
 
-	return nil, ll.captchas[id]
+	return ll.captchas[id], nil
 }
 
 // 验证验证码
@@ -173,9 +173,8 @@ func (ll *LoginLimiter) VerifyCaptcha(id, answer string) bool {
 	return false
 }
 
-func (ll *LoginLimiter) DrawCaptcha(content string) (err error, str string) {
-	str, err = ll.provider.Draw(content)
-	return
+func (ll *LoginLimiter) DrawCaptcha(content string) (string, error) {
+	return ll.provider.Draw(content)
 }
 
 // 清除记录窗口
