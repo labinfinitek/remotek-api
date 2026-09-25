@@ -27,7 +27,7 @@ func (a *Audit) AuditConn(c *gin.Context) {
 	af := &request.AuditConnForm{}
 	err := c.ShouldBindBodyWith(af, binding.JSON)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 	/*ttt := &gin.H{}
@@ -72,7 +72,7 @@ func (a *Audit) AuditFile(c *gin.Context) {
 	aff := &request.AuditFileForm{}
 	err := c.ShouldBindBodyWith(aff, binding.JSON)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 	//ttt := &gin.H{}

@@ -70,26 +70,26 @@ func (a *Ab) UpAb(c *gin.Context) {
 	abf := &requstform.AddressBookForm{}
 	err := c.ShouldBindJSON(&abf)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 	abd := &requstform.AddressBookFormData{}
 	err = json.Unmarshal([]byte(abf.Data), abd)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 	tc := map[string]uint{}
 	err = json.Unmarshal([]byte(abd.TagColors), &tc)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 	user := service.AllService.UserService.CurUser(c)
 
 	err = service.AllService.AddressBookService.UpdateAddressBook(abd.Peers, user.Id)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.ErrorErr(c, "OperationFailed", err)
 		return
 	}
 
@@ -114,7 +114,7 @@ func (a *Ab) PTags(c *gin.Context) {
 	guid := c.Param("guid")
 	_, uid, cid, err := a.CheckGuid(u, guid)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, err.Error()))
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 
@@ -143,7 +143,7 @@ func (a *Ab) TagAdd(c *gin.Context) {
 	t := &model.Tag{}
 	err := c.ShouldBindJSON(t)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 
@@ -151,7 +151,7 @@ func (a *Ab) TagAdd(c *gin.Context) {
 	guid := c.Param("guid")
 	_, uid, cid, err := a.CheckGuid(u, guid)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, err.Error()))
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 
@@ -170,7 +170,7 @@ func (a *Ab) TagAdd(c *gin.Context) {
 	t.CollectionId = cid
 	err = service.AllService.TagService.Create(t)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.ErrorErr(c, "OperationFailed", err)
 		return
 	}
 	c.String(http.StatusOK, "")
@@ -192,14 +192,14 @@ func (a *Ab) TagRename(c *gin.Context) {
 	t := &requstform.TagRenameForm{}
 	err := c.ShouldBindJSON(t)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
 	guid := c.Param("guid")
 	_, uid, cid, err := a.CheckGuid(u, guid)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, err.Error()))
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 
@@ -222,7 +222,7 @@ func (a *Ab) TagRename(c *gin.Context) {
 	tag.Name = t.New
 	err = service.AllService.TagService.Update(tag)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.ErrorErr(c, "OperationFailed", err)
 		return
 	}
 	c.String(http.StatusOK, "")
@@ -243,14 +243,14 @@ func (a *Ab) TagUpdate(c *gin.Context) {
 	t := &requstform.TagColorForm{}
 	err := c.ShouldBindJSON(t)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
 	guid := c.Param("guid")
 	_, uid, cid, err := a.CheckGuid(u, guid)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, err.Error()))
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 
@@ -268,7 +268,7 @@ func (a *Ab) TagUpdate(c *gin.Context) {
 	tag.Color = t.Color
 	err = service.AllService.TagService.Update(tag)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.ErrorErr(c, "OperationFailed", err)
 		return
 	}
 	c.String(http.StatusOK, "")
@@ -290,7 +290,7 @@ func (a *Ab) TagDel(c *gin.Context) {
 	t := &[]string{}
 	err := c.ShouldBind(t)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 	//fmt.Println(t)
@@ -298,7 +298,7 @@ func (a *Ab) TagDel(c *gin.Context) {
 	guid := c.Param("guid")
 	_, uid, cid, err := a.CheckGuid(u, guid)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, err.Error()))
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 
@@ -316,7 +316,7 @@ func (a *Ab) TagDel(c *gin.Context) {
 		}
 		err = service.AllService.TagService.Delete(tag)
 		if err != nil {
-			response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
+			response.ErrorErr(c, "OperationFailed", err)
 			return
 		}
 	}
@@ -538,7 +538,7 @@ func (a *Ab) Peers(c *gin.Context) {
 	guid := c.Query("ab")
 	_, uid, cid, err := a.CheckGuid(u, guid)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, err.Error()))
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 
@@ -573,7 +573,7 @@ func (a *Ab) PeerAdd(c *gin.Context) {
 	f := &requstform.PersonalAddressBookForm{}
 	err := c.ShouldBindJSON(f)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 
@@ -581,7 +581,7 @@ func (a *Ab) PeerAdd(c *gin.Context) {
 	guid := c.Param("guid")
 	_, uid, cid, err := a.CheckGuid(u, guid)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, err.Error()))
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 
@@ -606,7 +606,7 @@ func (a *Ab) PeerAdd(c *gin.Context) {
 
 	err = service.AllService.AddressBookService.AddAddressBook(ab)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.ErrorErr(c, "OperationFailed", err)
 		return
 	}
 	c.String(http.StatusOK, "")
@@ -627,14 +627,14 @@ func (a *Ab) PeerDel(c *gin.Context) {
 	f := &[]string{}
 	err := c.ShouldBind(f)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
 	guid := c.Param("guid")
 	_, uid, cid, err := a.CheckGuid(u, guid)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, err.Error()))
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 
@@ -652,7 +652,7 @@ func (a *Ab) PeerDel(c *gin.Context) {
 		}
 		err = service.AllService.AddressBookService.Delete(ab)
 		if err != nil {
-			response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
+			response.ErrorErr(c, "OperationFailed", err)
 			return
 		}
 	}
@@ -676,14 +676,14 @@ func (a *Ab) PeerUpdate(c *gin.Context) {
 	//f := &requstform.PersonalAddressBookForm{}
 	err := c.ShouldBindJSON(&f)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
 	guid := c.Param("guid")
 	_, uid, cid, err := a.CheckGuid(u, guid)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, err.Error()))
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 
@@ -720,7 +720,7 @@ func (a *Ab) PeerUpdate(c *gin.Context) {
 	}
 	err = service.AllService.AddressBookService.UpdateByMap(ab, f)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.ErrorErr(c, "OperationFailed", err)
 		return
 	}
 	c.String(http.StatusOK, "")

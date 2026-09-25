@@ -27,7 +27,7 @@ func (p *Peer) SysInfo(c *gin.Context) {
 	f := &requstform.PeerForm{}
 	err := c.ShouldBindBodyWith(f, binding.JSON)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 	fpe := f.ToPeer()
@@ -37,7 +37,7 @@ func (p *Peer) SysInfo(c *gin.Context) {
 		pe.UserId = service.AllService.UserService.FindLatestUserIdFromLoginLogByUuid(pe.Uuid, pe.Id)
 		err = service.AllService.PeerService.Create(pe)
 		if err != nil {
-			response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
+			response.ErrorErr(c, "OperationFailed", err)
 			return
 		}
 	} else {
@@ -48,7 +48,7 @@ func (p *Peer) SysInfo(c *gin.Context) {
 		fpe.UserId = pe.UserId
 		err = service.AllService.PeerService.Update(fpe)
 		if err != nil {
-			response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
+			response.ErrorErr(c, "OperationFailed", err)
 			return
 		}
 	}

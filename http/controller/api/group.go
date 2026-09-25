@@ -31,7 +31,7 @@ func (g *Group) Users(c *gin.Context) {
 	q := &apiReq.UserListQuery{}
 	err := c.ShouldBindQuery(&q)
 	if err != nil {
-		response.Error(c, err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
@@ -76,7 +76,7 @@ func (g *Group) Peers(c *gin.Context) {
 	q := &apiReq.PeerListQuery{}
 	err := c.ShouldBindQuery(&q)
 	if err != nil {
-		response.Error(c, err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 	gr := service.AllService.GroupService.InfoById(u.GroupId)
