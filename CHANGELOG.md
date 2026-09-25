@@ -163,6 +163,10 @@ Base upstream: rustdesk-api v2.7.
   della configurazione e le variabili `RUSTDESK_API_REDIS_*` e
   `RUSTDESK_API_CACHE_*` non si leggono piu': non avevano effetto nemmeno
   prima. Redis non serve piu' ne' per l'API ne' per i test.
+- `Dockerfile.dev`, `docker-compose-dev.yaml`, `docker-dev.sh` (build dal
+  master del pannello con `npm install`) e `Dockerfile_full_s6` (binario gia'
+  compilato dentro l'immagine `rustdesk-server-s6:latest`): li sostituisce il
+  `Dockerfile` che costruisce tutto dal sorgente.
 
 ### Modificato
 - La lingua predefinita e' l'italiano, nel codice e in `conf/config.yaml`
