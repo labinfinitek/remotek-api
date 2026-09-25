@@ -221,6 +221,38 @@ The table below does not list all configurations. Please refer to the configurat
 
 2. Using `docker-compose`,look [WIKI](https://github.com/lejianwen/rustdesk-api/wiki)
 
+#### Building the image
+
+`Dockerfile` builds everything from source, in three stages: the Go binary
+(static, CGO for sqlite), the admin panel [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)
+at a pinned commit, and the final Alpine image. No prebuilt binary or
+`release/` directory is needed.
+
+```bash
+docker build \
+  --build-arg VERSION=<version> \
+  --build-arg REVISION="$(git rev-parse HEAD)" \
+  -t remotek-api .
+```
+
+- Build arguments: `VERSION` is written to `resources/version` and returned by
+  `/api/version` (default `dev`); `REVISION` goes into the OCI label (default
+  `unknown`); `PANNELLO_COMMIT` is the full sha of the rustdesk-api-web commit
+  (default `3998c2a9213fcd047252776d0f0db33e6717026c`, the last commit of
+  master, the one packaged with v2.7).
+- The process runs as user `remotek` (uid/gid 10001), not root. `/app/data`
+  is the volume (database, `admin-password.txt`); `/app/runtime` holds
+  `log.txt` (the log also goes to stdout).
+- A bind-mounted directory must be writable by uid 10001, otherwise the API
+  does not start: `sudo chown -R 10001:10001 /data/rustdesk/api`. The same
+  holds for data written by an image that ran as root.
+- The web client (`resources/web`) is not in the image: it is off by default
+  (`app.web-client: 0`).
+- `HEALTHCHECK` calls `http://127.0.0.1:21114/api/version`: if you change the
+  port in `RUSTDESK_API_GIN_API_ADDR`, override it with `--health-cmd`.
+- Base images are pinned by digest: to update one, change tag and digest
+  together.
+
 #### Running from Release
 
 Download the release from [release](https://github.com/lejianwen/rustdesk-api/releases).
