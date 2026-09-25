@@ -32,7 +32,7 @@ type AddressBookCollectionRule struct {
 func (abcr *AddressBookCollectionRule) List(c *gin.Context) {
 	query := &admin.AddressBookCollectionRuleQuery{}
 	if err := c.ShouldBindQuery(query); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 
@@ -83,7 +83,7 @@ func (abcr *AddressBookCollectionRule) Detail(c *gin.Context) {
 func (abcr *AddressBookCollectionRule) Create(c *gin.Context) {
 	f := &model.AddressBookCollectionRule{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	errList := global.Validator.ValidStruct(c, f)
@@ -103,7 +103,7 @@ func (abcr *AddressBookCollectionRule) Create(c *gin.Context) {
 	}
 	err := service.AllService.AddressBookService.CreateRule(t)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -159,7 +159,7 @@ func (abcr *AddressBookCollectionRule) CheckForm(t *model.AddressBookCollectionR
 func (abcr *AddressBookCollectionRule) Update(c *gin.Context) {
 	f := &model.AddressBookCollectionRule{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	errList := global.Validator.ValidStruct(c, f)
@@ -179,7 +179,7 @@ func (abcr *AddressBookCollectionRule) Update(c *gin.Context) {
 	}
 	err := service.AllService.AddressBookService.UpdateRule(t)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -199,7 +199,7 @@ func (abcr *AddressBookCollectionRule) Update(c *gin.Context) {
 func (abcr *AddressBookCollectionRule) Delete(c *gin.Context) {
 	f := &model.AddressBookCollectionRule{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	id := f.Id
@@ -218,5 +218,5 @@ func (abcr *AddressBookCollectionRule) Delete(c *gin.Context) {
 		response.Success(c, nil)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+	response.FailErr(c, 101, "OperationFailed", err)
 }

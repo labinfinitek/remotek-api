@@ -44,7 +44,7 @@ func (ct *Login) Login(c *gin.Context) {
 	if err != nil {
 		loginLimiter.RecordFailedAttempt(clientIp)
 		global.Logger.Warn(fmt.Sprintf("Login Fail: %s %s %s", "ParamsError", c.RemoteIP(), clientIp))
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 
@@ -113,12 +113,12 @@ func (ct *Login) Captcha(c *gin.Context) {
 	}
 	err, captcha := loginLimiter.RequireCaptcha()
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "CaptchaError")+err.Error())
+		response.FailErr(c, 101, "CaptchaError", err)
 		return
 	}
 	err, b64 := loginLimiter.DrawCaptcha(captcha.Content)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "CaptchaError")+err.Error())
+		response.FailErr(c, 101, "CaptchaError", err)
 		return
 	}
 	response.Success(c, gin.H{
@@ -187,13 +187,13 @@ func (ct *Login) OidcAuth(c *gin.Context) {
 	f := &apiReq.OidcAuthRequest{}
 	err := c.ShouldBindJSON(f)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 
 	err, state, verifier, nonce, url := service.AllService.OauthService.BeginAuth(f.Op)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, err.Error()))
+		response.ErrorErr(c, "SystemError", err)
 		return
 	}
 

@@ -53,7 +53,7 @@ func (ct *LoginLog) Detail(c *gin.Context) {
 func (ct *LoginLog) List(c *gin.Context) {
 	query := &admin.LoginLogQuery{}
 	if err := c.ShouldBindQuery(query); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	res := service.AllService.LoginLogService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
@@ -79,7 +79,7 @@ func (ct *LoginLog) List(c *gin.Context) {
 func (ct *LoginLog) Delete(c *gin.Context) {
 	f := &model.LoginLog{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	id := f.Id
@@ -98,7 +98,7 @@ func (ct *LoginLog) Delete(c *gin.Context) {
 		response.Success(c, nil)
 		return
 	}
-	response.Fail(c, 101, err.Error())
+	response.FailErr(c, 101, "OperationFailed", err)
 }
 
 // BatchDelete 删除
@@ -115,7 +115,7 @@ func (ct *LoginLog) Delete(c *gin.Context) {
 func (ct *LoginLog) BatchDelete(c *gin.Context) {
 	f := &admin.LoginLogIds{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	if len(f.Ids) == 0 {
@@ -128,6 +128,6 @@ func (ct *LoginLog) BatchDelete(c *gin.Context) {
 		response.Success(c, nil)
 		return
 	}
-	response.Fail(c, 101, err.Error())
+	response.FailErr(c, 101, "OperationFailed", err)
 	return
 }

@@ -30,7 +30,7 @@ type Audit struct {
 func (a *Audit) ConnList(c *gin.Context) {
 	query := &admin.AuditQuery{}
 	if err := c.ShouldBindQuery(query); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	res := service.AllService.AuditService.AuditConnList(query.Page, query.PageSize, func(tx *gorm.DB) {
@@ -59,7 +59,7 @@ func (a *Audit) ConnList(c *gin.Context) {
 func (a *Audit) ConnDelete(c *gin.Context) {
 	f := &model.AuditConn{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	id := f.Id
@@ -75,7 +75,7 @@ func (a *Audit) ConnDelete(c *gin.Context) {
 			response.Success(c, nil)
 			return
 		}
-		response.Fail(c, 101, err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
@@ -95,7 +95,7 @@ func (a *Audit) ConnDelete(c *gin.Context) {
 func (a *Audit) BatchConnDelete(c *gin.Context) {
 	f := &admin.AuditConnLogIds{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	if len(f.Ids) == 0 {
@@ -108,7 +108,7 @@ func (a *Audit) BatchConnDelete(c *gin.Context) {
 		response.Success(c, nil)
 		return
 	}
-	response.Fail(c, 101, err.Error())
+	response.FailErr(c, 101, "OperationFailed", err)
 	return
 }
 
@@ -129,7 +129,7 @@ func (a *Audit) BatchConnDelete(c *gin.Context) {
 func (a *Audit) FileList(c *gin.Context) {
 	query := &admin.AuditQuery{}
 	if err := c.ShouldBindQuery(query); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	res := service.AllService.AuditService.AuditFileList(query.Page, query.PageSize, func(tx *gorm.DB) {
@@ -158,7 +158,7 @@ func (a *Audit) FileList(c *gin.Context) {
 func (a *Audit) FileDelete(c *gin.Context) {
 	f := &model.AuditFile{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	id := f.Id
@@ -174,7 +174,7 @@ func (a *Audit) FileDelete(c *gin.Context) {
 			response.Success(c, nil)
 			return
 		}
-		response.Fail(c, 101, err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
@@ -194,7 +194,7 @@ func (a *Audit) FileDelete(c *gin.Context) {
 func (a *Audit) BatchFileDelete(c *gin.Context) {
 	f := &admin.AuditFileLogIds{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	if len(f.Ids) == 0 {
@@ -207,6 +207,6 @@ func (a *Audit) BatchFileDelete(c *gin.Context) {
 		response.Success(c, nil)
 		return
 	}
-	response.Fail(c, 101, err.Error())
+	response.FailErr(c, 101, "OperationFailed", err)
 	return
 }

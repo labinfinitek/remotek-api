@@ -52,7 +52,7 @@ func (ct *AddressBook) Detail(c *gin.Context) {
 func (ct *AddressBook) Create(c *gin.Context) {
 	f := &admin.AddressBookForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	errList := global.Validator.ValidStruct(c, f)
@@ -78,7 +78,7 @@ func (ct *AddressBook) Create(c *gin.Context) {
 
 	err := service.AllService.AddressBookService.Create(t)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -98,7 +98,7 @@ func (ct *AddressBook) Create(c *gin.Context) {
 func (ct *AddressBook) BatchCreate(c *gin.Context) {
 	f := &admin.AddressBookForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	errList := global.Validator.ValidStruct(c, f)
@@ -165,7 +165,7 @@ func (ct *AddressBook) BatchCreate(c *gin.Context) {
 func (ct *AddressBook) List(c *gin.Context) {
 	query := &admin.AddressBookQuery{}
 	if err := c.ShouldBindQuery(query); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	res := service.AllService.AddressBookService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
@@ -210,7 +210,7 @@ func (ct *AddressBook) List(c *gin.Context) {
 func (ct *AddressBook) Update(c *gin.Context) {
 	f := &admin.AddressBookForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	errList := global.Validator.ValidStruct(c, f)
@@ -234,7 +234,7 @@ func (ct *AddressBook) Update(c *gin.Context) {
 	}
 	err := service.AllService.AddressBookService.UpdateAll(t)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -254,7 +254,7 @@ func (ct *AddressBook) Update(c *gin.Context) {
 func (ct *AddressBook) Delete(c *gin.Context) {
 	f := &admin.AddressBookForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	id := f.RowId
@@ -273,7 +273,7 @@ func (ct *AddressBook) Delete(c *gin.Context) {
 		response.Success(c, nil)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+	response.FailErr(c, 101, "OperationFailed", err)
 }
 
 // ShareByWebClient
@@ -290,7 +290,7 @@ func (ct *AddressBook) Delete(c *gin.Context) {
 func (ct *AddressBook) ShareByWebClient(c *gin.Context) {
 	f := &admin.ShareByWebClientForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	errList := global.Validator.ValidStruct(c, f)
@@ -309,7 +309,7 @@ func (ct *AddressBook) ShareByWebClient(c *gin.Context) {
 	m.UserId = u.Id
 	err := service.AllService.AddressBookService.ShareByWebClient(m)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, &gin.H{
@@ -320,7 +320,7 @@ func (ct *AddressBook) ShareByWebClient(c *gin.Context) {
 func (ct *AddressBook) BatchCreateFromPeers(c *gin.Context) {
 	f := &admin.BatchCreateFromPeersForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 

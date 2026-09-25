@@ -51,7 +51,7 @@ func (abc *AddressBookCollection) Detail(c *gin.Context) {
 func (abc *AddressBookCollection) Create(c *gin.Context) {
 	f := &model.AddressBookCollection{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	errList := global.Validator.ValidStruct(c, f)
@@ -66,7 +66,7 @@ func (abc *AddressBookCollection) Create(c *gin.Context) {
 	t := f
 	err := service.AllService.AddressBookService.CreateCollection(t)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -89,7 +89,7 @@ func (abc *AddressBookCollection) Create(c *gin.Context) {
 func (abc *AddressBookCollection) List(c *gin.Context) {
 	query := &admin.AddressBookCollectionQuery{}
 	if err := c.ShouldBindQuery(query); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	res := service.AllService.AddressBookService.ListCollection(query.Page, query.PageSize, func(tx *gorm.DB) {
@@ -114,7 +114,7 @@ func (abc *AddressBookCollection) List(c *gin.Context) {
 func (abc *AddressBookCollection) Update(c *gin.Context) {
 	f := &model.AddressBookCollection{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	errList := global.Validator.ValidStruct(c, f)
@@ -129,7 +129,7 @@ func (abc *AddressBookCollection) Update(c *gin.Context) {
 	t := f //f.ToAddressBookCollection()
 	err := service.AllService.AddressBookService.UpdateCollection(t)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -149,7 +149,7 @@ func (abc *AddressBookCollection) Update(c *gin.Context) {
 func (abc *AddressBookCollection) Delete(c *gin.Context) {
 	f := &model.AddressBookCollection{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	id := f.Id
@@ -168,5 +168,5 @@ func (abc *AddressBookCollection) Delete(c *gin.Context) {
 		response.Success(c, nil)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+	response.FailErr(c, 101, "OperationFailed", err)
 }

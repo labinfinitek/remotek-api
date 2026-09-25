@@ -21,7 +21,7 @@ type RustdeskCmd struct {
 func (r *Rustdesk) CmdList(c *gin.Context) {
 	q := &admin.PageQuery{}
 	if err := c.ShouldBindQuery(q); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	res := service.AllService.ServerCmdService.List(q.Page, 9999)
@@ -37,7 +37,7 @@ func (r *Rustdesk) CmdList(c *gin.Context) {
 func (r *Rustdesk) CmdDelete(c *gin.Context) {
 	f := &model.ServerCmd{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	if f.Id == 0 {
@@ -53,7 +53,7 @@ func (r *Rustdesk) CmdDelete(c *gin.Context) {
 
 	err := service.AllService.ServerCmdService.Delete(ex)
 	if err != nil {
-		response.Fail(c, 101, err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -61,7 +61,7 @@ func (r *Rustdesk) CmdDelete(c *gin.Context) {
 func (r *Rustdesk) CmdCreate(c *gin.Context) {
 	f := &model.ServerCmd{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	errList := global.Validator.ValidStruct(c, f)
@@ -71,7 +71,7 @@ func (r *Rustdesk) CmdCreate(c *gin.Context) {
 	}
 	err := service.AllService.ServerCmdService.Create(f)
 	if err != nil {
-		response.Fail(c, 101, err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -80,7 +80,7 @@ func (r *Rustdesk) CmdCreate(c *gin.Context) {
 func (r *Rustdesk) CmdUpdate(c *gin.Context) {
 	f := &model.ServerCmd{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	errList := global.Validator.ValidStruct(c, f)
@@ -95,7 +95,7 @@ func (r *Rustdesk) CmdUpdate(c *gin.Context) {
 	}
 	err := service.AllService.ServerCmdService.Update(f)
 	if err != nil {
-		response.Fail(c, 101, err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -104,7 +104,7 @@ func (r *Rustdesk) CmdUpdate(c *gin.Context) {
 func (r *Rustdesk) SendCmd(c *gin.Context) {
 	rc := &RustdeskCmd{}
 	if err := c.ShouldBindJSON(rc); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	if rc.Cmd == "" {
@@ -130,7 +130,7 @@ func (r *Rustdesk) SendCmd(c *gin.Context) {
 
 	res, err := service.AllService.ServerCmdService.SendCmd(port, rc.Cmd, rc.Option)
 	if err != nil {
-		response.Fail(c, 101, err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, res)

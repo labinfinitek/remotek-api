@@ -49,7 +49,7 @@ func (ct *Group) Detail(c *gin.Context) {
 func (ct *Group) Create(c *gin.Context) {
 	f := &admin.GroupForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	errList := global.Validator.ValidStruct(c, f)
@@ -60,7 +60,7 @@ func (ct *Group) Create(c *gin.Context) {
 	u := f.ToGroup()
 	err := service.AllService.GroupService.Create(u)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -81,7 +81,7 @@ func (ct *Group) Create(c *gin.Context) {
 func (ct *Group) List(c *gin.Context) {
 	query := &admin.PageQuery{}
 	if err := c.ShouldBindQuery(query); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	res := service.AllService.GroupService.List(query.Page, query.PageSize, nil)
@@ -102,7 +102,7 @@ func (ct *Group) List(c *gin.Context) {
 func (ct *Group) Update(c *gin.Context) {
 	f := &admin.GroupForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	if f.Id == 0 {
@@ -117,7 +117,7 @@ func (ct *Group) Update(c *gin.Context) {
 	u := f.ToGroup()
 	err := service.AllService.GroupService.Update(u)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -137,7 +137,7 @@ func (ct *Group) Update(c *gin.Context) {
 func (ct *Group) Delete(c *gin.Context) {
 	f := &admin.GroupForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	id := f.Id
@@ -153,7 +153,7 @@ func (ct *Group) Delete(c *gin.Context) {
 			response.Success(c, nil)
 			return
 		}
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))

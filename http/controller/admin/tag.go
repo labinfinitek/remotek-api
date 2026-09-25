@@ -55,7 +55,7 @@ func (ct *Tag) Detail(c *gin.Context) {
 func (ct *Tag) Create(c *gin.Context) {
 	f := &admin.TagForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	errList := global.Validator.ValidStruct(c, f)
@@ -70,7 +70,7 @@ func (ct *Tag) Create(c *gin.Context) {
 	}
 	err := service.AllService.TagService.Create(t)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -93,7 +93,7 @@ func (ct *Tag) Create(c *gin.Context) {
 func (ct *Tag) List(c *gin.Context) {
 	query := &admin.TagQuery{}
 	if err := c.ShouldBindQuery(query); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	res := service.AllService.TagService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
@@ -124,7 +124,7 @@ func (ct *Tag) List(c *gin.Context) {
 func (ct *Tag) Update(c *gin.Context) {
 	f := &admin.TagForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	errList := global.Validator.ValidStruct(c, f)
@@ -144,7 +144,7 @@ func (ct *Tag) Update(c *gin.Context) {
 	t := f.ToTag()
 	err := service.AllService.TagService.Update(t)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
@@ -164,7 +164,7 @@ func (ct *Tag) Update(c *gin.Context) {
 func (ct *Tag) Delete(c *gin.Context) {
 	f := &admin.TagForm{}
 	if err := c.ShouldBindJSON(f); err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
 	id := f.Id
@@ -183,5 +183,5 @@ func (ct *Tag) Delete(c *gin.Context) {
 		response.Success(c, nil)
 		return
 	}
-	response.Fail(c, 101, err.Error())
+	response.FailErr(c, 101, "OperationFailed", err)
 }
