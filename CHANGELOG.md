@@ -130,6 +130,11 @@ Base upstream: rustdesk-api v2.7.
 ### Rimosso
 - Workflow upstream `build.yml` e `build_test.yml` (build e pubblicazione su
   registry altrui): la CI del fork arriva con `remotek-ci.yml`.
+- Caricamento di file su Aliyun OSS e in locale dal pannello
+  (`/api/admin/file/oss_token`, `/notify`, `/upload`): le rotte erano gia'
+  commentate in upstream e rispondevano 404, ora sparisce anche il codice.
+  La sezione `oss` della configurazione e le variabili `RUSTDESK_API_OSS_*`
+  non si leggono piu': non avevano effetto nemmeno prima.
 
 ### Modificato
 - La lingua predefinita e' l'italiano, nel codice e in `conf/config.yaml`

@@ -19,7 +19,6 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/lib/lock"
 	"github.com/lejianwen/rustdesk-api/v2/lib/logger"
 	"github.com/lejianwen/rustdesk-api/v2/lib/orm"
-	"github.com/lejianwen/rustdesk-api/v2/lib/upload"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 	"github.com/lejianwen/rustdesk-api/v2/utils"
@@ -190,16 +189,6 @@ func InitGlobal() {
 
 	//validator
 	global.ApiInitValidator()
-
-	//oss
-	global.Oss = &upload.Oss{
-		AccessKeyId:     global.Config.Oss.AccessKeyId,
-		AccessKeySecret: global.Config.Oss.AccessKeySecret,
-		Host:            global.Config.Oss.Host,
-		CallbackUrl:     global.Config.Oss.CallbackUrl,
-		ExpireTime:      global.Config.Oss.ExpireTime,
-		MaxByte:         global.Config.Oss.MaxByte,
-	}
 
 	//jwt
 	//fmt.Println(global.Config.Jwt.PrivateKey)
