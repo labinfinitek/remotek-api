@@ -119,7 +119,7 @@ func (abcr *AddressBookCollectionRule) CheckForm(t *model.AddressBookCollectionR
 		return "ParamsError", false
 	}
 
-	//check to_id
+	// check to_id
 	switch t.Type {
 	case model.ShareAddressBookRuleTypePersonal:
 		if t.ToId == t.UserId {

@@ -233,7 +233,7 @@ func (ct *Peer) SimpleData(c *gin.Context) {
 		return
 	}
 	res := service.AllService.PeerService.List(1, 99999, func(tx *gorm.DB) {
-		//可以公开的情报
+		// 可以公开的情报
 		tx.Select("id,version")
 		tx.Where("id in (?)", f.Ids)
 	})

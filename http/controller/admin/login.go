@@ -90,7 +90,7 @@ func (ct *Login) Login(c *gin.Context) {
 	ut := service.AllService.UserService.Login(u, &model.LoginLog{
 		UserId:   u.Id,
 		Client:   model.LoginLogClientWebAdmin,
-		Uuid:     "", //must be empty
+		Uuid:     "", // must be empty
 		Ip:       clientIp,
 		Type:     model.LoginLogTypeAccount,
 		Platform: f.Platform,
@@ -151,7 +151,8 @@ func (ct *Login) Logout(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// LoginOptions
+// LoginOptions risponde con le opzioni della pagina di login: provider
+// OAuth, registrazione, captcha, login con password e OIDC come unico accesso.
 // @Tags 登录
 // @Summary 登录选项
 // @Description 登录选项
@@ -178,7 +179,8 @@ func (ct *Login) LoginOptions(c *gin.Context) {
 	})
 }
 
-// OidcAuth
+// OidcAuth avvia il login OIDC del pannello e risponde col codice da
+// interrogare e l'indirizzo del provider.
 // @Tags Oauth
 // @Summary OidcAuth
 // @Description OidcAuth
@@ -219,7 +221,8 @@ func (ct *Login) OidcAuth(c *gin.Context) {
 	})
 }
 
-// OidcAuthQuery
+// OidcAuthQuery chiude il login OIDC del pannello: a login riuscito risponde
+// come Login.
 // @Tags Oauth
 // @Summary OidcAuthQuery
 // @Description OidcAuthQuery

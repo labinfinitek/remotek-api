@@ -90,7 +90,7 @@ func (co *Config) AdminConfig(c *gin.Context) {
 		}
 	}
 
-	//replace {{username}} to username
+	// replace {{username}} to username
 	hello = strings.ReplaceAll(hello, "{{username}}", u.Username)
 	response.Success(c, &gin.H{
 		"title": global.Config.Admin.Title,

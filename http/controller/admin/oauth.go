@@ -14,7 +14,7 @@ import (
 type Oauth struct {
 }
 
-// Info
+// Info risponde con lo stato OAuth in cache per il codice nella query.
 func (o *Oauth) Info(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {

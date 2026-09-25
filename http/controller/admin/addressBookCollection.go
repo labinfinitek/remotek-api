@@ -127,7 +127,7 @@ func (abc *AddressBookCollection) Update(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError"))
 		return
 	}
-	t := f //f.ToAddressBookCollection()
+	t := f // f.ToAddressBookCollection()
 	err := service.AllService.AddressBookService.UpdateCollection(t)
 	if err != nil {
 		response.FailErr(c, 101, "OperationFailed", err)

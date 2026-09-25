@@ -261,7 +261,8 @@ func (ct *User) ChangeCurPwd(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// MyOauth
+// MyOauth elenca i provider OAuth, con Status 1 per quelli collegati
+// all'utente corrente.
 // @Tags 用户
 // @Summary 我的授权
 // @Description 我的授权
@@ -291,7 +292,7 @@ func (ct *User) MyOauth(c *gin.Context) {
 	response.Success(c, res)
 }
 
-// groupUsers
+// GroupUsers risponde coi gruppi e con gli utenti (i primi 999 e 9999).
 func (ct *User) GroupUsers(c *gin.Context) {
 	aG := service.AllService.GroupService.List(1, 999, nil)
 	aU := service.AllService.UserService.List(1, 9999, nil)
@@ -301,7 +302,8 @@ func (ct *User) GroupUsers(c *gin.Context) {
 	})
 }
 
-// Register
+// Register registra un utente, se la registrazione e' aperta, e lo fa
+// entrare subito se non serve l'approvazione di un amministratore.
 func (ct *User) Register(c *gin.Context) {
 	if !global.Config.App.Register {
 		response.Fail(c, 101, response.TranslateMsg(c, "RegisterClosed"))

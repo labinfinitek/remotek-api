@@ -113,13 +113,13 @@ func (ct *AddressBook) BatchCreate(c *gin.Context) {
 		return
 	}
 	if ul > 1 {
-		//多用户置空标签
+		// 多用户置空标签
 		f.Tags = []string{}
-		//多用户只能创建到默认地址簿
+		// 多用户只能创建到默认地址簿
 		f.CollectionId = 0
 	}
 
-	//创建标签
+	// 创建标签
 	/*for _, fu := range f.UserIds {
 		if fu == 0 {
 			continue
@@ -275,7 +275,8 @@ func (ct *AddressBook) Delete(c *gin.Context) {
 	response.FailErr(c, 101, "OperationFailed", err)
 }
 
-// ShareByWebClient
+// ShareByWebClient condivide una voce della propria rubrica col web client e
+// risponde col token della condivisione.
 // @Tags 地址簿
 // @Summary 地址簿分享
 // @Description 地址簿分享
