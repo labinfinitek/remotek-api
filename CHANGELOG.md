@@ -132,6 +132,10 @@ Base upstream: rustdesk-api v2.7.
 - Registrazione: il server rifiuta una conferma diversa dalla password. Prima
   salvava la password senza guardare la conferma; il pannello le confrontava
   gia' nel browser.
+- Pannello, "aggiungi alla rubrica" dai dispositivi
+  (`/api/admin/my/address_book/batchCreateFromPeers`): se una riga non si
+  salva la risposta e' "Operazione non riuscita." (`code` 101) con l'errore
+  nel log, non piu' successo. Le righe create prima dell'errore restano.
 
 ### Rimosso
 - Workflow upstream `build.yml` e `build_test.yml` (build e pubblicazione su

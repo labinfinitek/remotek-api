@@ -237,7 +237,10 @@ func (ct *AddressBook) BatchCreateFromPeers(c *gin.Context) {
 		if ex.RowId != 0 {
 			continue
 		}
-		service.AllService.AddressBookService.Create(ab)
+		if err := service.AllService.AddressBookService.Create(ab); err != nil {
+			response.FailErr(c, 101, "OperationFailed", err)
+			return
+		}
 	}
 	response.Success(c, nil)
 }
