@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/mojocn/base64Captcha"
 	"time"
+
+	"github.com/mojocn/base64Captcha"
 )
 
 var capdString = base64Captcha.NewDriverString(50, 150, 0, 5, 4, "123456789abcdefghijklmnopqrstuvwxyz", nil, nil,

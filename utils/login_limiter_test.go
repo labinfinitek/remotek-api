@@ -2,9 +2,10 @@ package utils
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type MockCaptchaProvider struct{}
@@ -19,7 +20,7 @@ func (p *MockCaptchaProvider) Generate() (string, string, string, error) {
 func (p *MockCaptchaProvider) Expiration() time.Duration {
 	return 2 * time.Second
 }
-func (p *MockCaptchaProvider) Draw(content string) (string, error) {
+func (p *MockCaptchaProvider) Draw(_ string) (string, error) {
 	return "MOCK", nil
 }
 

@@ -113,8 +113,6 @@ func (ll *LoginLimiter) RecordFailedAttempt(ip string) {
 		ll.banIP(ip, "excessive failed attempts")
 		return
 	}
-
-	return
 }
 
 // 生成验证码

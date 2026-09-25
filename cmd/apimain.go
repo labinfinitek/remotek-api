@@ -11,6 +11,10 @@ import (
 	"unicode/utf8"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/spf13/cobra"
+	"gorm.io/gorm"
+
 	"github.com/lejianwen/rustdesk-api/v2/config"
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http"
@@ -22,9 +26,6 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 	"github.com/lejianwen/rustdesk-api/v2/utils"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"github.com/spf13/cobra"
-	"gorm.io/gorm"
 )
 
 const DatabaseVersion = 265
@@ -48,10 +49,10 @@ const fileAdminPassword = "data/admin-password.txt"
 var rootCmd = &cobra.Command{
 	Use:   "apimain",
 	Short: "RUSTDESK API SERVER",
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+	PersistentPreRun: func(_ *cobra.Command, _ []string) {
 		InitGlobal()
 	},
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		global.Logger.Info("API SERVER START")
 		if err := http.ApiInit(); err != nil {
 			global.Logger.Fatalf("server API fermato: %v", err)
@@ -99,7 +100,7 @@ func reimpostaPassword(id uint, pwd string) {
 	if err != nil {
 		global.Logger.Fatalf("lettura dell'utente %d: %v", id, err)
 	}
-	if err := service.AllService.UserService.UpdatePassword(u, pwd); err != nil {
+	if err := service.AllService.UpdatePassword(u, pwd); err != nil {
 		global.Logger.Fatalf("password dell'utente %d non aggiornata: %v", id, err)
 	}
 	global.Logger.Infof("password dell'utente %d reimpostata", id)
@@ -137,11 +138,12 @@ func InitGlobal() {
 	})
 
 	//cache
-	if global.Config.Cache.Type == cache.TypeFile {
+	switch global.Config.Cache.Type {
+	case cache.TypeFile:
 		fc := cache.NewFileCache()
 		fc.SetDir(global.Config.Cache.FileDir)
 		global.Cache = fc
-	} else if global.Config.Cache.Type == cache.TypeRedis {
+	case cache.TypeRedis:
 		global.Cache = cache.NewRedis(&redis.Options{
 			Addr:     global.Config.Cache.RedisAddr,
 			Password: global.Config.Cache.RedisPwd,
@@ -149,8 +151,8 @@ func InitGlobal() {
 		})
 	}
 	//gorm
-	if global.Config.Gorm.Type == config.TypeMysql {
-
+	switch global.Config.Gorm.Type {
+	case config.TypeMysql:
 		dsn := fmt.Sprintf("%s:%s@(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local&tls=%s",
 			global.Config.Mysql.Username,
 			global.Config.Mysql.Password,
@@ -164,7 +166,7 @@ func InitGlobal() {
 			MaxIdleConns: global.Config.Gorm.MaxIdleConns,
 			MaxOpenConns: global.Config.Gorm.MaxOpenConns,
 		}, global.Logger)
-	} else if global.Config.Gorm.Type == config.TypePostgresql {
+	case config.TypePostgresql:
 		dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s TimeZone=%s",
 			global.Config.Postgresql.Host,
 			global.Config.Postgresql.Port,
@@ -179,7 +181,7 @@ func InitGlobal() {
 			MaxIdleConns: global.Config.Gorm.MaxIdleConns,
 			MaxOpenConns: global.Config.Gorm.MaxOpenConns,
 		}, global.Logger)
-	} else {
+	default:
 		//sqlite
 		global.DB = orm.NewSqlite(&orm.SqliteConfig{
 			MaxIdleConns: global.Config.Gorm.MaxIdleConns,
