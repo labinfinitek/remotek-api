@@ -54,7 +54,9 @@ var rootCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		global.Logger.Info("API SERVER START")
-		http.ApiInit()
+		if err := http.ApiInit(); err != nil {
+			global.Logger.Fatalf("server API fermato: %v", err)
+		}
 	},
 }
 

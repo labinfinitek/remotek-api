@@ -98,6 +98,12 @@ Base upstream: rustdesk-api v2.7.
   `x/sync` v0.11.0 -> v0.21.0, `x/tools` v0.26.0 -> v0.47.0.
 
 ### Corretto
+- Con la porta dell'API gia' occupata, o un altro errore all'apertura, il
+  processo si ferma con codice 1 e scrive l'errore nel log
+  (`server API fermato: ...`): prima usciva con codice 0 e l'errore andava
+  solo su stderr, fuori dal log, cosi' systemd o Docker lo prendevano per
+  uno stop normale e con `on-failure` non lo riavviavano. Lo stop con
+  SIGTERM o SIGINT esce ancora con 0.
 - Un file di lingua che non si carica ferma l'avvio con un messaggio che lo
   nomina: prima si saltava in silenzio e l'API rispondeva in inglese. Un
   file in `resources/i18n` dal nome di meno di 5 caratteri non manda piu'

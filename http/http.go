@@ -48,7 +48,8 @@ func setTrustedProxies(g *gin.Engine, trustProxy string) error {
 	return g.SetTrustedProxies(strings.Split(trustProxy, ","))
 }
 
-// ApiInit costruisce il router con NewEngine e lo avvia su gin.api-addr.
-func ApiInit() {
-	Run(NewEngine(), global.Config.Gin.ApiAddr)
+// ApiInit costruisce il router con NewEngine e lo avvia su gin.api-addr;
+// restituisce l'errore di Run, nil allo stop normale.
+func ApiInit() error {
+	return Run(NewEngine(), global.Config.Gin.ApiAddr)
 }
