@@ -130,6 +130,13 @@ Base upstream: rustdesk-api v2.7.
   si mostrano quando le traduzioni sono arrivate, o subito se non arrivano;
   la pagina di successo non va piu' in errore cercando un paragrafo che non
   ha.
+- I file del marchio su `/brand/` escono con una `Content-Security-Policy`
+  senza script e in sandbox (`default-src 'none'`; stili dentro il file,
+  immagini e font da `/brand/` o `data:`) e con
+  `X-Content-Type-Options: nosniff`: uno SVG aperto direttamente e' un
+  documento nell'origine del pannello, e uno SVG con uno script lo
+  eseguiva. Nel pannello logo e favicon si vedono come prima; uno SVG che
+  carica font, immagini o fogli di stile da altri siti ora li perde.
 
 ### Corretto
 - `RUSTDESK_API_ADMIN_TITLE` vale anche se il file di configurazione non ha
