@@ -160,6 +160,13 @@ Base upstream: rustdesk-api v2.7.
   carica font, immagini o fogli di stile da altri siti ora li perde.
 
 ### Corretto
+- Se il database non si apre, per esempio con `data/` montata dall'host e
+  non scrivibile dall'utente 10001 dell'immagine Docker, l'avvio si ferma
+  con codice 1 e un messaggio che nomina il file col percorso assoluto e
+  dice di controllare che la cartella esista e sia scrivibile dall'utente
+  del processo: prima l'errore andava solo su stdout e il processo finiva
+  in panic con `unable to open database file: no such file or directory`.
+  Se `data/` manca, l'avvio la crea (permessi 0700) invece di fallire.
 - `RUSTDESK_API_ADMIN_TITLE` vale anche se il file di configurazione non ha
   `admin.title`: prima viper non conosceva la chiave e la ignorava.
 - Se il file di configurazione non si legge o non si decodifica, l'avvio
