@@ -142,7 +142,10 @@ func (ct *Login) Logout(c *gin.Context) {
 	u := service.AllService.UserService.CurUser(c)
 	token, ok := c.Get("token")
 	if ok {
-		service.AllService.UserService.Logout(u, token.(string))
+		if err := service.AllService.UserService.Logout(u, token.(string)); err != nil {
+			response.FailErr(c, 101, "OperationFailed", err)
+			return
+		}
 	}
 	response.Success(c, nil)
 }

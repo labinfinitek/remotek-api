@@ -67,7 +67,9 @@ func LoginBind(rg *gin.RouterGroup) {
 	cont := &admin.Login{}
 	rg.POST("/login", cont.Login)
 	rg.GET("/captcha", cont.Captcha)
-	rg.POST("/logout", cont.Logout)
+	// Il logout vuole l'utente e il token nel contesto: senza BackendUserAuth
+	// risponderebbe successo lasciando valido il token.
+	rg.POST("/logout", middleware.BackendUserAuth(), cont.Logout)
 	rg.GET("/login-options", cont.LoginOptions)
 	rg.POST("/oidc/auth", cont.OidcAuth)
 	rg.GET("/oidc/auth-query", cont.OidcAuthQuery)

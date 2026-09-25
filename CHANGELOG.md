@@ -107,6 +107,14 @@ Base upstream: rustdesk-api v2.7.
   vale come password sbagliata, al login del client e del pannello e nel
   cambio della propria password. Remotek non ha mai avuto database cosi';
   chi ne importa uno reimposta quelle password con `reset-pwd`.
+- Il logout del pannello (`POST /api/admin/logout`) invalida davvero il
+  token: la rotta era registrata prima del controllo dell'autenticazione,
+  quindi rispondeva successo senza cancellare nulla e il token restava
+  valido fino alla scadenza anche dopo "Esci". Ora vuole l'`api-token`
+  (senza, o con uno non valido, risponde `code` 403 come ogni rotta
+  protetta) e cancella il token; se la cancellazione non riesce risponde
+  "Operazione non riuscita." (`code` 101) con l'errore nel log, non piu'
+  successo. Il logout del client (`/api/logout`) non cambia.
 
 ### Corretto
 - Se il file di configurazione non si legge o non si decodifica, l'avvio

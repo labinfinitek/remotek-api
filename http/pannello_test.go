@@ -191,3 +191,61 @@ func TestPannelloBatchCreateFromPeers(t *testing.T) {
 		t.Errorf("righe della rubrica dopo l'errore: %q, attese %q", salvati, want)
 	}
 }
+
+// conToken manda una richiesta a rotta con l'api-token token.
+func conToken(g *gin.Engine, metodo, rotta, token string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(metodo, rotta, nil)
+	req.Header.Set("api-token", token)
+	rec := httptest.NewRecorder()
+	g.ServeHTTP(rec, req)
+	return rec
+}
+
+// TestPannelloLogout prova sul router vero che il logout del pannello
+// invalida il token: dopo POST /api/admin/logout con l'api-token,
+// GET /api/admin/user/current con lo stesso token risponde come a un token
+// che non esiste. Prima la rotta di logout
+// stava fuori da BackendUserAuth: senza utente ne' token nel contesto
+// rispondeva successo e il token restava valido fino alla scadenza.
+func TestPannelloLogout(t *testing.T) {
+	g, _, _ := pannello(t, false)
+	const protetta = "/api/admin/user/current"
+	nonValido := conToken(g, "GET", protetta, "token-che-non-esiste")
+
+	if rec := conToken(g, "GET", protetta, tokenDelPannello); rec.Code != 200 || !strings.HasPrefix(rec.Body.String(), `{"code":0,`) {
+		t.Fatalf("GET %s prima del logout: stato %d, corpo %s", protetta, rec.Code, rec.Body.String())
+	}
+	rec := alPannello(g, "/api/admin/logout", "")
+	if got, want := rec.Body.String(), `{"code":0,"message":"success","data":null}`; rec.Code != 200 || got != want {
+		t.Errorf("POST /api/admin/logout: stato %d\n got  %s\n want %s", rec.Code, got, want)
+	}
+	dopo := conToken(g, "GET", protetta, tokenDelPannello)
+	if dopo.Code != nonValido.Code || dopo.Body.String() != nonValido.Body.String() {
+		t.Errorf("GET %s dopo il logout: stato %d, corpo %s; a un token non valido: stato %d, corpo %s",
+			protetta, dopo.Code, dopo.Body.String(), nonValido.Code, nonValido.Body.String())
+	}
+}
+
+// TestPannelloLogoutFallito prova sul router vero che il logout del pannello
+// non risponde successo se il token non si cancella: un trigger di sqlite
+// rifiuta la cancellazione, il pannello riceve OperationFailed, il testo
+// dell'errore va solo nel log e il token resta valido.
+func TestPannelloLogoutFallito(t *testing.T) {
+	g, _, registro := pannello(t, false)
+	const rifiuto = "cancellazione rifiutata dalla prova"
+	if err := service.DB.Exec(`CREATE TRIGGER rifiuta_logout BEFORE DELETE ON user_tokens
+		BEGIN SELECT RAISE(ABORT, '` + rifiuto + `'); END`).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	rec := alPannello(g, "/api/admin/logout", "")
+	if got, want := rec.Body.String(), `{"code":101,"message":"Operazione non riuscita.","data":null}`; rec.Code != 200 || got != want {
+		t.Errorf("POST /api/admin/logout: stato %d\n got  %s\n want %s", rec.Code, got, want)
+	}
+	if nelLog := registro.String(); !strings.Contains(nelLog, "POST /api/admin/logout: ") || !strings.Contains(nelLog, rifiuto) {
+		t.Errorf("POST /api/admin/logout, nel log mancano rotta o errore:\n%s", nelLog)
+	}
+	if rec := conToken(g, "GET", "/api/admin/user/current", tokenDelPannello); rec.Code != 200 || !strings.HasPrefix(rec.Body.String(), `{"code":0,`) {
+		t.Errorf("GET /api/admin/user/current dopo il logout fallito: stato %d, corpo %s", rec.Code, rec.Body.String())
+	}
+}
