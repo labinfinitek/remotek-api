@@ -51,45 +51,53 @@ func TestLocal_GetLock(t *testing.T) {
 	}
 }
 
+// TestLocal_Lock: dieci goroutine incrementano i sotto Lock e UnLock della
+// stessa chiave; con -race un accesso fuori dal lock fa fallire il test.
 func TestLocal_Lock(t *testing.T) {
 	l := NewLocal()
 	wg := sync.WaitGroup{}
 	m := 10
 	wg.Add(m)
 	i := 0
-	for j := 0; j < m; j++ {
+	for range m {
 		go func() {
 			l.Lock("key")
-			//fmt.Println(j, i)
 			i++
-			fmt.Println(j, i)
 			l.UnLock("key")
 			wg.Done()
 		}()
 	}
-
 	wg.Wait()
-	fmt.Println(i)
-
+	if i != m {
+		t.Fatalf("i = %d, atteso %d", i, m)
+	}
 }
+
+// TestSyncMap: tre LoadOrStore concorrenti sulla stessa chiave, come in
+// GetLock, vedono tutti lo stesso valore e ne salva uno solo.
 func TestSyncMap(t *testing.T) {
 	m := sync.Map{}
 	wg := sync.WaitGroup{}
+	var valori [3]any
+	var caricati [3]bool
 	wg.Add(3)
-	go func() {
-		v, ok := m.LoadOrStore("key", 1)
-		fmt.Println(1, v, ok)
-		wg.Done()
-	}()
-	go func() {
-		v, ok := m.LoadOrStore("key", 2)
-		fmt.Println(2, v, ok)
-		wg.Done()
-	}()
-	go func() {
-		v, ok := m.LoadOrStore("key", 3)
-		fmt.Println(3, v, ok)
-		wg.Done()
-	}()
+	for n := range 3 {
+		go func() {
+			valori[n], caricati[n] = m.LoadOrStore("key", n+1)
+			wg.Done()
+		}()
+	}
 	wg.Wait()
+	salvati := 0
+	for n := range 3 {
+		if valori[n] != valori[0] {
+			t.Errorf("LoadOrStore %d ha visto %v, il primo %v", n, valori[n], valori[0])
+		}
+		if !caricati[n] {
+			salvati++
+		}
+	}
+	if salvati != 1 {
+		t.Errorf("valori salvati %d, atteso 1", salvati)
+	}
 }
