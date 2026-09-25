@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/lejianwen/rustdesk-api/v2/global"
-	requstform "github.com/lejianwen/rustdesk-api/v2/http/request/api"
+	requestform "github.com/lejianwen/rustdesk-api/v2/http/request/api"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
 	"github.com/lejianwen/rustdesk-api/v2/http/response/api"
 	"github.com/lejianwen/rustdesk-api/v2/model"
@@ -61,19 +61,19 @@ func (a *Ab) Ab(c *gin.Context) {
 // @Description 地址更新
 // @Accept  json
 // @Produce  json
-// @Param body body requstform.AddressBookForm true "地址表单"
+// @Param body body requestform.AddressBookForm true "地址表单"
 // @Success 200 {string} string "null"
 // @Failure 500 {object} response.ErrorResponse
 // @Router /ab [post]
 // @Security BearerAuth
 func (a *Ab) UpAb(c *gin.Context) {
-	abf := &requstform.AddressBookForm{}
+	abf := &requestform.AddressBookForm{}
 	err := c.ShouldBindJSON(&abf)
 	if err != nil {
 		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
-	abd := &requstform.AddressBookFormData{}
+	abd := &requestform.AddressBookFormData{}
 	err = json.Unmarshal([]byte(abf.Data), abd)
 	if err != nil {
 		response.ErrorErr(c, "ParamsError", err)
@@ -189,7 +189,7 @@ func (a *Ab) TagAdd(c *gin.Context) {
 // @Security BearerAuth
 func (a *Ab) TagRename(c *gin.Context) {
 
-	t := &requstform.TagRenameForm{}
+	t := &requestform.TagRenameForm{}
 	err := c.ShouldBindJSON(t)
 	if err != nil {
 		response.ErrorErr(c, "ParamsError", err)
@@ -240,7 +240,7 @@ func (a *Ab) TagRename(c *gin.Context) {
 // @Router /ab/tag/update/{guid} [put]
 // @Security BearerAuth
 func (a *Ab) TagUpdate(c *gin.Context) {
-	t := &requstform.TagColorForm{}
+	t := &requestform.TagColorForm{}
 	err := c.ShouldBindJSON(t)
 	if err != nil {
 		response.ErrorErr(c, "ParamsError", err)
@@ -570,7 +570,7 @@ func (a *Ab) Peers(c *gin.Context) {
 func (a *Ab) PeerAdd(c *gin.Context) {
 	// forceAlwaysRelay永远是字符串"false"
 	//f := &gin.H{}
-	f := &requstform.PersonalAddressBookForm{}
+	f := &requestform.PersonalAddressBookForm{}
 	err := c.ShouldBindJSON(f)
 	if err != nil {
 		response.ErrorErr(c, "ParamsError", err)
@@ -673,7 +673,7 @@ func (a *Ab) PeerDel(c *gin.Context) {
 // @Security BearerAuth
 func (a *Ab) PeerUpdate(c *gin.Context) {
 	f := gin.H{}
-	//f := &requstform.PersonalAddressBookForm{}
+	//f := &requestform.PersonalAddressBookForm{}
 	err := c.ShouldBindJSON(&f)
 	if err != nil {
 		response.ErrorErr(c, "ParamsError", err)
