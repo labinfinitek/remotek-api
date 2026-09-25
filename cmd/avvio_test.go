@@ -176,7 +176,7 @@ func TestPrimoAvvio(t *testing.T) {
 	}
 	if u := admin(t, db); u.Username != "admin" || !*u.IsAdmin {
 		t.Errorf("l'utente 1 e' %q, admin %t: atteso admin", u.Username, *u.IsAdmin)
-	} else if ok, _, err := utils.VerifyPassword(u.Password, string(pwd)); !ok || err != nil {
+	} else if ok, err := utils.VerifyPassword(u.Password, string(pwd)); !ok || err != nil {
 		t.Errorf("la password del file non e' quella di admin (%v)", err)
 	}
 	info, err := os.Stat(file)
@@ -233,7 +233,7 @@ func TestComandiResetPassword(t *testing.T) {
 			t.Errorf("%s, %s: rifiutata o fallita, eppure la password di admin e' cambiata", p.args[0], p.caso)
 		}
 		if p.codice == 0 {
-			if ok, _, err := utils.VerifyPassword(dopo, p.args[len(p.args)-1]); !ok || err != nil {
+			if ok, err := utils.VerifyPassword(dopo, p.args[len(p.args)-1]); !ok || err != nil {
 				t.Errorf("%s, %s: admin non ha la password nuova (%v)", p.args[0], p.caso, err)
 			}
 		}

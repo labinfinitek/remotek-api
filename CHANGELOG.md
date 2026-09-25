@@ -101,6 +101,12 @@ Base upstream: rustdesk-api v2.7.
   che c'era gia' viene portato a 0600 all'avvio: contiene nomi utente e
   indirizzi IP, e lo leggeva ogni utente della macchina. Se il file non si apre o i permessi non si
   cambiano, l'avvio si ferma con un messaggio che dice quale file e perche'.
+- Le password salvate come md5(password + "rustdesk-api"), il formato delle
+  versioni molto vecchie di rustdesk-api, non sono piu' accettate: prima il
+  login le riconosceva e le riscriveva in bcrypt. Un hash che non e' bcrypt
+  vale come password sbagliata, al login del client e del pannello e nel
+  cambio della propria password. Remotek non ha mai avuto database cosi';
+  chi ne importa uno reimposta quelle password con `reset-pwd`.
 
 ### Corretto
 - Se il file di configurazione non si legge o non si decodifica, l'avvio
