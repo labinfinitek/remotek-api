@@ -11,12 +11,14 @@ import "github.com/lejianwen/rustdesk-api/v2/model"
 */
 
 /*
-UserPayload
-String name = ”;
-String email = ”;
-String note = ”;
-UserStatus status;
-bool isAdmin = false;
+UserPayload e' l'utente come lo legge il client RustDesk (UserPayload in
+flutter/lib/common/hbbs/hbbs.dart):
+
+	String name = '';
+	String email = '';
+	String note = '';
+	UserStatus status;
+	bool isAdmin = false;
 */
 type UserPayload struct {
 	Name    string                 `json:"name"`
@@ -37,6 +39,9 @@ func (up *UserPayload) FromUser(user *model.User) *UserPayload {
 }
 
 /*
+LoginRes e' la risposta di /api/login; Type e' uno dei kAuthRes* della
+classe HttpType del client RustDesk:
+
 	class HttpType {
 	  static const kAuthReqTypeAccount = "account";
 	  static const kAuthReqTypeMobile = "mobile";

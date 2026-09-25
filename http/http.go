@@ -22,7 +22,7 @@ func NewEngine() *gin.Engine {
 	}
 
 	if global.Config.Gin.Mode == gin.ReleaseMode {
-		//修改gin Recovery日志 输出为logger的输出点
+		// 修改gin Recovery日志 输出为logger的输出点
 		if global.Logger != nil {
 			gin.DefaultErrorWriter = global.Logger.WriterLevel(logrus.ErrorLevel)
 		}

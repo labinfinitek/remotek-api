@@ -20,7 +20,7 @@ type PeerBatchDeleteForm struct {
 	RowIds []uint `json:"row_ids" validate:"required"`
 }
 
-// ToPeer
+// ToPeer copia i campi del modulo in un model.Peer nuovo.
 func (f *PeerForm) ToPeer() *model.Peer {
 	return &model.Peer{
 		RowId:    f.RowId,

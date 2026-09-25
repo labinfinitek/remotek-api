@@ -21,8 +21,8 @@ func (j *AutoJson) Scan(value interface{}) error {
 		return fmt.Errorf("failed Scan AutoJson value: %v", value)
 	}
 	bytes := []byte(strValue)
-	//bytes, ok := value.([]byte)
-	//if !ok {
+	// bytes, ok := value.([]byte)
+	// if !ok {
 	//	return errors.New(fmt.Sprint("Failed Scan AutoJson value:", value))
 	//}
 
@@ -32,7 +32,7 @@ func (j *AutoJson) Scan(value interface{}) error {
 	}
 	result := &json.RawMessage{}
 	err := json.Unmarshal(bytes, result)
-	//解析json错误 返回空
+	// 解析json错误 返回空
 	if err != nil {
 		*j = AutoJson(json.RawMessage{'[', ']'})
 		return nil
