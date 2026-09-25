@@ -32,14 +32,16 @@ func chiaviDi(t *testing.T, path string) map[string]bool {
 
 // TestIDDeiMessaggi verifica che ogni ID che il codice passa a go-i18n sia in
 // en.toml, perche' un ID che non c'e' non arriva mai tradotto all'utente: i
-// letterali di TranslateMsg, TranslateTempMsg, TranslateParamMsg,
-// i18n.Message{ID} e i18n.LocalizeConfig{MessageID}, e le stringhe di
-// errors.New e dei tag label che sono un ID (una parola CamelCase), che i
-// controller passano a TranslateMsg con err.Error() e il validatore traduce.
+// letterali di TranslateMsg, TranslateTempMsg, TranslateParamMsg, ErrorErr,
+// FailErr, i18n.Message{ID} e i18n.LocalizeConfig{MessageID}, e le stringhe
+// di errors.New e dei tag label che sono un ID (una parola CamelCase), che
+// arrivano a TranslateMsg con err.Error() o a ErrorErr nella catena di un
+// errore, e che il validatore traduce.
 func TestIDDeiMessaggi(t *testing.T) {
 	en := chiaviDi(t, "../resources/i18n/en.toml")
 	unaParola := regexp.MustCompile(`^[A-Z][A-Za-z0-9]+$`)
-	traduce := map[string]bool{"TranslateMsg": true, "TranslateTempMsg": true, "TranslateParamMsg": true}
+	// posizione dell'ID tra gli argomenti di chi lo traduce
+	traduce := map[string]int{"TranslateMsg": 1, "TranslateTempMsg": 1, "TranslateParamMsg": 1, "ErrorErr": 1, "FailErr": 2}
 	campoID := map[string]string{"Message": "ID", "LocalizeConfig": "MessageID"}
 	fset := token.NewFileSet()
 	// controlla segnala id se manca da en.toml; se non e' sempre un ID, solo
@@ -73,12 +75,12 @@ func TestIDDeiMessaggi(t *testing.T) {
 			case *ast.CallExpr:
 				switch fun := n.Fun.(type) {
 				case *ast.Ident:
-					if traduce[fun.Name] && len(n.Args) > 1 {
-						letterale(n.Args[1], true)
+					if i, ok := traduce[fun.Name]; ok && len(n.Args) > i {
+						letterale(n.Args[i], true)
 					}
 				case *ast.SelectorExpr:
-					if traduce[fun.Sel.Name] && len(n.Args) > 1 {
-						letterale(n.Args[1], true)
+					if i, ok := traduce[fun.Sel.Name]; ok && len(n.Args) > i {
+						letterale(n.Args[i], true)
 					} else if x, ok := fun.X.(*ast.Ident); ok && x.Name == "errors" && fun.Sel.Name == "New" {
 						letterale(n.Args[0], false)
 					}

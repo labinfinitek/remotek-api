@@ -1,6 +1,7 @@
 package response
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/lejianwen/rustdesk-api/v2/global"
@@ -48,6 +49,21 @@ func Error(c *gin.Context, message string) {
 	})
 }
 
+// ErrorErr risponde come Error, 400 con {"error": ...}, senza il testo di
+// err, che e' interno e va solo nel log (REGOLE 8). Il messaggio e' quello
+// tradotto del primo ID nella catena di err, come errors.New("UsernameExists")
+// avvolto con %w o ErrLdapConnectFailed unito al dettaglio con errors.Join;
+// se la catena non ne ha, quello di id, il messaggio del punto.
+func ErrorErr(c *gin.Context, id string, err error) {
+	Error(c, messaggioPer(c, id, err))
+}
+
+// FailErr risponde come Fail, col codice code, con il messaggio che ErrorErr
+// sceglie per id ed err; anche qui il testo di err va solo nel log.
+func FailErr(c *gin.Context, code int, id string, err error) {
+	Fail(c, code, messaggioPer(c, id, err))
+}
+
 type ServerConfigResponse struct {
 	IdServer    string `json:"id_server"`
 	Key         string `json:"key"`
@@ -90,4 +106,39 @@ func traduci(c *gin.Context, id string, dati map[string]interface{}) string {
 	global.Logger.Warnf("messaggio %q non tradotto, al client va SystemError: %v", id, err)
 	msg, _ = localizer.Localize(&i18n.LocalizeConfig{MessageID: "SystemError"})
 	return msg
+}
+
+// messaggioPer scrive err nel log a livello warn e restituisce il messaggio
+// tradotto che va al client al suo posto. Nel log vanno il metodo, la rotta
+// del router (/api/ab/peer/add/:guid, non il percorso coi valori della
+// richiesta) e l'errore con %q, che tiene su una riga gli a capo di
+// errors.Join.
+func messaggioPer(c *gin.Context, id string, err error) string {
+	localizer := global.Localizer(c.GetHeader("Accept-Language"))
+	if trovato := idNellaCatena(localizer, err); trovato != "" {
+		id = trovato
+	}
+	global.Logger.Warnf("%s %s: al client va %s, errore %q", c.Request.Method, c.FullPath(), id, err)
+	return traduci(c, id, nil)
+}
+
+// idNellaCatena restituisce il testo del primo errore della catena di err,
+// visitata come fa errors.Is (anche dentro errors.Join), che e' l'ID di un
+// messaggio; "" se non ce n'e'. Non passa da traduci, che scriverebbe un warn
+// per ogni testo che non e' un ID.
+func idNellaCatena(localizer *i18n.Localizer, err error) string {
+	for ; err != nil; err = errors.Unwrap(err) {
+		if msg, _ := localizer.Localize(&i18n.LocalizeConfig{MessageID: err.Error()}); msg != "" {
+			return err.Error()
+		}
+		if unito, ok := err.(interface{ Unwrap() []error }); ok {
+			for _, figlio := range unito.Unwrap() {
+				if id := idNellaCatena(localizer, figlio); id != "" {
+					return id
+				}
+			}
+			return ""
+		}
+	}
+	return ""
 }

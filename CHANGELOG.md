@@ -8,6 +8,18 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 Base upstream: rustdesk-api v2.7.
 
 ### Sicurezza
+- Le risposte alle rotte del client RustDesk non contengono piu' il testo
+  di un errore interno (REGOLE 8). In 36 punti (login, sysinfo, audit,
+  utenti e dispositivi del gruppo, rubrica) l'errore si attaccava al
+  messaggio: un corpo JSON rotto a `/api/login` riceveva
+  `Parametri non validi.invalid character ...`, un errore del database
+  nella rubrica il testo del driver. Ora la risposta, con la stessa forma e
+  lo stesso stato HTTP, porta solo il messaggio tradotto, per esempio
+  "Parametri non validi." o "Operazione non riuscita."; `/api/users` e
+  `/api/peers`, che con parametri non validi rispondevano col solo testo
+  dell'errore, rispondono "Parametri non validi.". L'errore va nel log a
+  livello warn, con metodo e rotta. Il pannello e `/api/oidc/*` restano da
+  sistemare.
 - Un errore interno che un controller passa come messaggio non arriva piu'
   al client ne' al pannello (REGOLE 8): per esempio l'errore di rete di un
   provider OIDC irraggiungibile, con il suo indirizzo e la sua risposta, da

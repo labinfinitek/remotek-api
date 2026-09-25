@@ -42,7 +42,7 @@ func (l *Login) Login(c *gin.Context) {
 	if err != nil {
 		loginLimiter.RecordFailedAttempt(clientIp)
 		global.Logger.Warn(fmt.Sprintf("Login Fail: %s %s %s", "ParamsError", c.RemoteIP(), c.ClientIP()))
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 
@@ -111,7 +111,7 @@ func (l *Login) LoginOptions(c *gin.Context) {
 	}
 	common, err := json.Marshal(oidcItems)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "SystemError")+err.Error())
+		response.ErrorErr(c, "SystemError", err)
 		return
 	}
 	var res []string

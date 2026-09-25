@@ -30,9 +30,11 @@ import (
 // Accept-Language se l'API la ha, altrimenti quella configurata (conf, se la
 // riga la fissa; se no l'italiano del file), col nome del campo in quella
 // lingua. Senza Accept-Language, come dal client RustDesk, i due testi che il
-// client confronta alla lettera restano quelli di prima. Lo stato globale
-// e' quello di InitGlobal, ridotto a cio' che serve a queste richieste; il
-// test non scrive nel repo.
+// client confronta alla lettera restano quelli di prima. Un corpo JSON rotto
+// alle rotte del client senza autenticazione riceve ParamsError, e il testo
+// dell'errore di JSON va solo nel log. Lo stato globale e' quello di
+// InitGlobal, ridotto a cio' che serve a queste richieste; il test non
+// scrive nel repo.
 func TestMessaggi(t *testing.T) {
 	t.Setenv("RUSTDESK_API_LANG", "")
 	t.Setenv("RUSTDESK_API_GIN_MODE", "test")
@@ -93,5 +95,24 @@ func TestMessaggi(t *testing.T) {
 	}
 	if !strings.Contains(registro.String(), "dettaglio interno del provider") {
 		t.Errorf("l'errore del provider non e' nel log:\n%s", registro.String())
+	}
+
+	// Ogni /api/login rifiutato conta per il limiter, che di default chiede il
+	// captcha dopo 3 tentativi e banna dopo 10: questo e' il settimo del test,
+	// e il limiter del test non banna.
+	global.Config.Lang = configurata
+	const erroreJSON = "invalid character 'x' looking for beginning of value"
+	for _, percorso := range []string{"/api/sysinfo", "/api/audit/conn", "/api/audit/file", "/api/login"} {
+		registro.Reset()
+		req := httptest.NewRequest("POST", percorso, strings.NewReader(`{"id": x}`))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		g.ServeHTTP(rec, req)
+		if got, want := rec.Body.String(), `{"error":"Parametri non validi."}`; got != want {
+			t.Errorf("POST %s con JSON rotto:\n got  %s\n want %s", percorso, got, want)
+		}
+		if nelLog := registro.String(); !strings.Contains(nelLog, "POST "+percorso+": ") || !strings.Contains(nelLog, erroreJSON) {
+			t.Errorf("POST %s con JSON rotto, nel log mancano rotta o errore:\n%s", percorso, nelLog)
+		}
 	}
 }
