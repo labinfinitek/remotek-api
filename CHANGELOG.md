@@ -144,6 +144,11 @@ Base upstream: rustdesk-api v2.7.
   (`/api/admin/my/address_book/batchCreateFromPeers`): se una riga non si
   salva la risposta e' "Operazione non riuscita." (`code` 101) con l'errore
   nel log, non piu' successo. Le righe create prima dell'errore restano.
+- Pannello, amministrazione della rubrica: la creazione per piu' utenti
+  (`/api/admin/address_book/batchCreate`) e l'aggiunta dai dispositivi
+  (`/api/admin/address_book/batchCreateFromPeers`) rispondono "Operazione
+  non riuscita." (`code` 101) con l'errore nel log se una riga non si
+  salva, non piu' successo. Le righe create prima dell'errore restano.
 
 ### Rimosso
 - Workflow upstream `build.yml` e `build_test.yml` (build e pubblicazione su

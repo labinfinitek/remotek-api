@@ -249,3 +249,52 @@ func TestPannelloLogoutFallito(t *testing.T) {
 		t.Errorf("GET /api/admin/user/current dopo il logout fallito: stato %d, corpo %s", rec.Code, rec.Body.String())
 	}
 }
+
+// TestPannelloAdminBatchCreate prova sul router vero che le due creazioni in
+// blocco della rubrica dall'amministrazione (/api/admin/address_book/
+// batchCreate e batchCreateFromPeers) non rispondono successo se una riga non
+// si salva: un trigger di sqlite rifiuta la seconda riga, il pannello riceve
+// OperationFailed e il testo dell'errore va solo nel log. La riga creata
+// prima dell'errore resta.
+func TestPannelloAdminBatchCreate(t *testing.T) {
+	const rifiuto = "riga rifiutata dalla prova"
+	for _, tc := range []struct {
+		rotta, rifiutata, corpo string // nel corpo UTENTE, PEER_A e PEER_B diventano gli ID
+	}{
+		// una riga per utente: quella dell'utente 999999 si rifiuta
+		{"/api/admin/address_book/batchCreate", "NEW.user_id = 999999", `{"id": "peer-a", "user_ids": [UTENTE, 999999]}`},
+		{"/api/admin/address_book/batchCreateFromPeers", "NEW.id = 'peer-b'", `{"user_id": UTENTE, "peer_ids": [PEER_A, PEER_B]}`},
+	} {
+		t.Run(tc.rotta, func(t *testing.T) {
+			g, utente, registro := pannello(t, true)
+			if err := service.DB.AutoMigrate(&model.Peer{}, &model.AddressBook{}); err != nil {
+				t.Fatal(err)
+			}
+			peers := []*model.Peer{{Id: "peer-a", UserId: utente.Id}, {Id: "peer-b", UserId: utente.Id}}
+			if err := service.DB.Create(&peers).Error; err != nil {
+				t.Fatal(err)
+			}
+			if err := service.DB.Exec(`CREATE TRIGGER rifiuta_riga BEFORE INSERT ON address_books
+				WHEN ` + tc.rifiutata + ` BEGIN SELECT RAISE(ABORT, '` + rifiuto + `'); END`).Error; err != nil {
+				t.Fatal(err)
+			}
+
+			id := func(n uint) string { return strconv.FormatUint(uint64(n), 10) }
+			corpo := strings.NewReplacer("UTENTE", id(utente.Id), "PEER_A", id(peers[0].RowId), "PEER_B", id(peers[1].RowId)).Replace(tc.corpo)
+			rec := alPannello(g, tc.rotta, corpo)
+			if got, want := rec.Body.String(), `{"code":101,"message":"Operazione non riuscita.","data":null}`; rec.Code != 200 || got != want {
+				t.Errorf("POST %s: stato %d\n got  %s\n want %s", tc.rotta, rec.Code, got, want)
+			}
+			if nelLog := registro.String(); !strings.Contains(nelLog, "POST "+tc.rotta+": ") || !strings.Contains(nelLog, rifiuto) {
+				t.Errorf("POST %s, nel log mancano rotta o errore:\n%s", tc.rotta, nelLog)
+			}
+			var salvate []string
+			if err := service.DB.Model(&model.AddressBook{}).Order("row_id").Pluck("id || '/' || user_id", &salvate).Error; err != nil {
+				t.Fatal(err)
+			}
+			if want := []string{"peer-a/" + id(utente.Id)}; !slices.Equal(salvate, want) {
+				t.Errorf("righe della rubrica dopo l'errore: %q, attese %q", salvate, want)
+			}
+		})
+	}
+}

@@ -141,7 +141,10 @@ func (ct *AddressBook) BatchCreate(c *gin.Context) {
 		}
 		ex := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(t.UserId, t.Id, t.CollectionId)
 		if ex.RowId == 0 {
-			service.AllService.AddressBookService.Create(t)
+			if err := service.AllService.AddressBookService.Create(t); err != nil {
+				response.FailErr(c, 101, "OperationFailed", err)
+				return
+			}
 		}
 	}
 
@@ -356,7 +359,10 @@ func (ct *AddressBook) BatchCreateFromPeers(c *gin.Context) {
 		if ex.RowId != 0 {
 			continue
 		}
-		service.AllService.AddressBookService.Create(ab)
+		if err := service.AllService.AddressBookService.Create(ab); err != nil {
+			response.FailErr(c, 101, "OperationFailed", err)
+			return
+		}
 	}
 	response.Success(c, nil)
 }
