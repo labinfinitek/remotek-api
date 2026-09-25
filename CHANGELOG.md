@@ -141,6 +141,11 @@ Base upstream: rustdesk-api v2.7.
   commentate in upstream e rispondevano 404, ora sparisce anche il codice.
   La sezione `oss` della configurazione e le variabili `RUSTDESK_API_OSS_*`
   non si leggono piu': non avevano effetto nemmeno prima.
+- Client Redis e cache (`lib/cache`, su file o su Redis): si costruivano
+  all'avvio ma nessuna parte dell'API li usava. Le sezioni `redis` e `cache`
+  della configurazione e le variabili `RUSTDESK_API_REDIS_*` e
+  `RUSTDESK_API_CACHE_*` non si leggono piu': non avevano effetto nemmeno
+  prima. Redis non serve piu' ne' per l'API ne' per i test.
 
 ### Modificato
 - La lingua predefinita e' l'italiano, nel codice e in `conf/config.yaml`
