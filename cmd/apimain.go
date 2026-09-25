@@ -10,7 +10,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/spf13/cobra"
 	"gorm.io/gorm"
@@ -18,7 +17,6 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/config"
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http"
-	"github.com/lejianwen/rustdesk-api/v2/lib/cache"
 	"github.com/lejianwen/rustdesk-api/v2/lib/jwt"
 	"github.com/lejianwen/rustdesk-api/v2/lib/lock"
 	"github.com/lejianwen/rustdesk-api/v2/lib/logger"
@@ -130,26 +128,6 @@ func InitGlobal() {
 
 	global.InitI18n()
 
-	// redis
-	global.Redis = redis.NewClient(&redis.Options{
-		Addr:     global.Config.Redis.Addr,
-		Password: global.Config.Redis.Password,
-		DB:       global.Config.Redis.Db,
-	})
-
-	// cache
-	switch global.Config.Cache.Type {
-	case cache.TypeFile:
-		fc := cache.NewFileCache()
-		fc.SetDir(global.Config.Cache.FileDir)
-		global.Cache = fc
-	case cache.TypeRedis:
-		global.Cache = cache.NewRedis(&redis.Options{
-			Addr:     global.Config.Cache.RedisAddr,
-			Password: global.Config.Cache.RedisPwd,
-			DB:       global.Config.Cache.RedisDb,
-		})
-	}
 	// gorm
 	switch global.Config.Gorm.Type {
 	case config.TypeMysql:

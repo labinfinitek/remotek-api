@@ -41,8 +41,6 @@ type Config struct {
 	Postgresql Postgresql
 	Gin        Gin
 	Logger     Logger
-	Redis      Redis
-	Cache      Cache
 	Jwt        Jwt
 	Rustdesk   Rustdesk
 	Proxy      Proxy
