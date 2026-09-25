@@ -19,7 +19,8 @@ const (
 	PKCEMethodPlain  string = "plain"
 )
 
-// Validate the oauth type
+// ValidateOauthType restituisce un errore se oauthType non e' uno dei tipi
+// di OAuth che l'API conosce (OauthTypeGithub e seguenti).
 func ValidateOauthType(oauthType string) error {
 	switch oauthType {
 	case OauthTypeGithub, OauthTypeGoogle, OauthTypeOidc, OauthTypeWebauth, OauthTypeLinuxdo:
@@ -41,7 +42,7 @@ type Oauth struct {
 	OauthType    string `json:"oauth_type"`
 	ClientId     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
-	//RedirectUrl  string `json:"redirect_url"`
+	// RedirectUrl  string `json:"redirect_url"`
 	AutoRegister *bool  `json:"auto_register"`
 	Scopes       string `json:"scopes"`
 	Issuer       string `json:"issuer"`
@@ -50,7 +51,9 @@ type Oauth struct {
 	TimeModel
 }
 
-// Helper function to format oauth info, it's used in the update and create method
+// FormatOauthInfo controlla il tipo e completa un provider OAuth prima di
+// crearlo o aggiornarlo: Op dal tipo, Issuer di Google, PKCE spento e S256
+// se non indicati.
 func (oa *Oauth) FormatOauthInfo() error {
 	oauthType := strings.TrimSpace(oa.OauthType)
 	err := ValidateOauthType(oa.OauthType)

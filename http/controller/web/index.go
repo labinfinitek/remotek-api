@@ -2,7 +2,9 @@ package web
 
 import (
 	"fmt"
+
 	"github.com/gin-gonic/gin"
+
 	"github.com/lejianwen/rustdesk-api/v2/global"
 )
 
@@ -24,11 +26,11 @@ window.webclient_magic_queryonline = %d;
 window.ws_host = '%v';
 `, apiServer, apiServer, magicQueryonline, global.Config.Rustdesk.WsHost)
 	//	tmp := `
-	//localStorage.setItem('api-server', "` + apiServer + `")
-	//const ws2_prefix = 'wc-'
-	//localStorage.setItem(ws2_prefix+'api-server', "` + apiServer + `")
+	// localStorage.setItem('api-server', "` + apiServer + `")
+	// const ws2_prefix = 'wc-'
+	// localStorage.setItem(ws2_prefix+'api-server', "` + apiServer + `")
 	//
-	//window.webclient_magic_queryonline = ` + magicQueryonline + ``
+	// window.webclient_magic_queryonline = ` + magicQueryonline + ``
 
 	c.Header("Content-Type", "application/javascript")
 	c.String(200, tmp)

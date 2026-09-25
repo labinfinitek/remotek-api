@@ -96,8 +96,24 @@ Base upstream: rustdesk-api v2.7.
 - Di conseguenza salgono, al minimo richiesto dai moduli sopra:
   `golang.org/x/crypto` v0.33.0 -> v0.53.0, `x/sys` v0.30.0 -> v0.46.0,
   `x/sync` v0.11.0 -> v0.21.0, `x/tools` v0.26.0 -> v0.47.0.
+- Il file di log (`logger.path`, `./runtime/log.txt` in
+  `conf/config.yaml`) nasce con permessi 0600 e non piu' 0644, e un file
+  che c'era gia' viene portato a 0600 all'avvio: contiene nomi utente e
+  indirizzi IP, e lo leggeva ogni utente della macchina. Se il file non si apre o i permessi non si
+  cambiano, l'avvio si ferma con un messaggio che dice quale file e perche'.
 
 ### Corretto
+- Se il file di configurazione non si legge o non si decodifica, l'avvio
+  si ferma con un messaggio che nomina il file, per esempio
+  `lettura della configurazione ./conf/config.yaml: ...` o
+  `configurazione ./conf/config.yaml non valida: ...`, invece di
+  `Fatal error config file: ...` con uno spazio e un a capo in fondo.
+- Con la porta dell'API gia' occupata, o un altro errore all'apertura, il
+  processo si ferma con codice 1 e scrive l'errore nel log
+  (`server API fermato: ...`): prima usciva con codice 0 e l'errore andava
+  solo su stderr, fuori dal log, cosi' systemd o Docker lo prendevano per
+  uno stop normale e con `on-failure` non lo riavviavano. Lo stop con
+  SIGTERM o SIGINT esce ancora con 0.
 - Un file di lingua che non si carica ferma l'avvio con un messaggio che lo
   nomina: prima si saltava in silenzio e l'API rispondeva in inglese. Un
   file in `resources/i18n` dal nome di meno di 5 caratteri non manda piu'

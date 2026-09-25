@@ -8,7 +8,7 @@ type UserForm struct {
 	Id       uint   `json:"id"`
 	Username string `json:"username" validate:"required,gte=2,lte=32"`
 	Email    string `json:"email"` //validate:"required,email" email不强制
-	//Password string           `json:"password" validate:"required,gte=4,lte=20"`
+	// Password string           `json:"password" validate:"required,gte=4,lte=20"`
 	Nickname string           `json:"nickname"`
 	Avatar   string           `json:"avatar"`
 	GroupId  uint             `json:"group_id" validate:"required"`

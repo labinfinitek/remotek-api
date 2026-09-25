@@ -2,6 +2,7 @@ package admin
 
 import (
 	"encoding/json"
+
 	"github.com/lejianwen/rustdesk-api/v2/model"
 )
 
@@ -27,7 +28,7 @@ type AddressBookForm struct {
 }
 
 func (a AddressBookForm) ToAddressBook() *model.AddressBook {
-	//tags转换
+	// tags转换
 	tags, _ := json.Marshal(a.Tags)
 
 	return &model.AddressBook{
@@ -52,7 +53,7 @@ func (a AddressBookForm) ToAddressBook() *model.AddressBook {
 
 }
 func (a AddressBookForm) ToAddressBooks() []*model.AddressBook {
-	//tags转换
+	// tags转换
 	tags, _ := json.Marshal(a.Tags)
 
 	abs := make([]*model.AddressBook, 0, len(a.UserIds))
@@ -92,7 +93,7 @@ type AddressBookQuery struct {
 
 type ShareByWebClientForm struct {
 	Id           string `json:"id" validate:"required"`
-	PasswordType string `json:"password_type" validate:"required,oneof=once fixed"` //只能是once,fixed
+	PasswordType string `json:"password_type" validate:"required,oneof=once fixed"` // 只能是once,fixed
 	Password     string `json:"password" validate:"required"`
 	Expire       int64  `json:"expire"`
 }

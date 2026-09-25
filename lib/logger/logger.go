@@ -1,10 +1,12 @@
 package logger
 
 import (
-	nested "github.com/antonfisher/nested-logrus-formatter"
-	log "github.com/sirupsen/logrus"
+	"fmt"
 	"io"
 	"os"
+
+	nested "github.com/antonfisher/nested-logrus-formatter"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -27,13 +29,18 @@ func New(c *Config) *log.Logger {
 		//FieldsOrder:     []string{"name", "age"},
 	})
 
-	// 日志文件
+	// Il file di log contiene nomi utente e indirizzi IP: 0600, anche se
+	// esisteva gia' con permessi piu' larghi. Chmod li porta a 0600 esatti
+	// anche con una umask insolita.
 	f := c.Path
 	var write io.Writer
 	if f != "" {
-		fwriter, err := os.OpenFile(f, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+		fwriter, err := os.OpenFile(f, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o600)
+		if err == nil {
+			err = fwriter.Chmod(0o600)
+		}
 		if err != nil {
-			panic("open log file fail!")
+			panic(fmt.Errorf("apertura del file di log %s: %w", f, err))
 		}
 		write = io.MultiWriter(fwriter, os.Stdout)
 	} else {

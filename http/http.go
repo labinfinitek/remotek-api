@@ -1,13 +1,15 @@
 package http
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/middleware"
 	"github.com/lejianwen/rustdesk-api/v2/http/router"
-	"github.com/sirupsen/logrus"
-	"net/http"
-	"strings"
 )
 
 // NewEngine costruisce il router completo dell'API senza avviare il server:
@@ -20,7 +22,7 @@ func NewEngine() *gin.Engine {
 	}
 
 	if global.Config.Gin.Mode == gin.ReleaseMode {
-		//修改gin Recovery日志 输出为logger的输出点
+		// 修改gin Recovery日志 输出为logger的输出点
 		if global.Logger != nil {
 			gin.DefaultErrorWriter = global.Logger.WriterLevel(logrus.ErrorLevel)
 		}
@@ -48,7 +50,8 @@ func setTrustedProxies(g *gin.Engine, trustProxy string) error {
 	return g.SetTrustedProxies(strings.Split(trustProxy, ","))
 }
 
-// ApiInit costruisce il router con NewEngine e lo avvia su gin.api-addr.
-func ApiInit() {
-	Run(NewEngine(), global.Config.Gin.ApiAddr)
+// ApiInit costruisce il router con NewEngine e lo avvia su gin.api-addr;
+// restituisce l'errore di Run, nil allo stop normale.
+func ApiInit() error {
+	return Run(NewEngine(), global.Config.Gin.ApiAddr)
 }

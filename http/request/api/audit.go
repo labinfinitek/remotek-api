@@ -2,9 +2,10 @@ package api
 
 import (
 	"encoding/json"
+	"strconv"
+
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/model"
-	"strconv"
 )
 
 type AuditConnForm struct {

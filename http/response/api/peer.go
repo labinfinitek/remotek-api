@@ -3,7 +3,8 @@ package api
 import "github.com/lejianwen/rustdesk-api/v2/model"
 
 /*
-GroupPeerPayload
+GroupPeerPayload e' un dispositivo del gruppo come lo legge il client
+RustDesk (PeerPayload in hbbs.dart):
 https://github.com/rustdesk/rustdesk/blob/master/flutter/lib/common/hbbs/hbbs.dart#L64
 
 		String id = '';
