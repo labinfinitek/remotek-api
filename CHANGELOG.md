@@ -96,6 +96,12 @@ Base upstream: rustdesk-api v2.7.
 - Di conseguenza salgono, al minimo richiesto dai moduli sopra:
   `golang.org/x/crypto` v0.33.0 -> v0.53.0, `x/sys` v0.30.0 -> v0.46.0,
   `x/sync` v0.11.0 -> v0.21.0, `x/tools` v0.26.0 -> v0.47.0.
+- GHSA-2c4m-59x9-fr2g, `github.com/gin-gonic/gin` v1.9.0 -> v1.9.1: nome
+  del file non ripulito nell'header `Content-Disposition` di
+  `Context.FileAttachment`, che il nostro codice non chiama. Salgono con gin,
+  al minimo che chiede: `bytedance/sonic` v1.9.1, `goccy/go-json` v0.10.2,
+  `klauspost/cpuid/v2` v2.2.4, `mattn/go-isatty` v0.0.19,
+  `pelletier/go-toml/v2` v2.0.8, `ugorji/go/codec` v1.2.11, `x/arch` v0.3.0.
 - Il file di log (`logger.path`, `./runtime/log.txt` in
   `conf/config.yaml`) nasce con permessi 0600 e non piu' 0644, e un file
   che c'era gia' viene portato a 0600 all'avvio: contiene nomi utente e
