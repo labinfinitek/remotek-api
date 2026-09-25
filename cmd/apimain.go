@@ -212,7 +212,6 @@ func Migrate(version uint) {
 		&model.UserThird{},
 		&model.Oauth{},
 		&model.LoginLog{},
-		&model.ShareRecord{},
 		&model.AuditConn{},
 		&model.AuditFile{},
 		&model.AddressBookCollection{},

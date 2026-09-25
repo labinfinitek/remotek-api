@@ -12,7 +12,6 @@ import (
 
 // sicuri raccoglie le opzioni che ADR-0008 vuole sicure senza configurazione.
 type sicuri struct {
-	WebClient        int
 	WebSso           bool
 	Register         bool
 	ShowSwagger      int
@@ -37,7 +36,7 @@ func TestDefaultSicuri(t *testing.T) {
 		}
 	}
 
-	want := sicuri{WebClient: 0, WebSso: false, Register: false, ShowSwagger: 0,
+	want := sicuri{WebSso: false, Register: false, ShowSwagger: 0,
 		CaptchaThreshold: 3, BanThreshold: 10, TrustProxy: ""}
 	for _, tc := range []struct{ name, path string }{
 		{"file senza le chiavi", fileSenzaChiavi(t)},
@@ -79,7 +78,7 @@ func leggi(path string) sicuri {
 	var c Config
 	Init(&c, path)
 	return sicuri{
-		WebClient: c.App.WebClient, WebSso: c.App.WebSso, Register: c.App.Register,
+		WebSso: c.App.WebSso, Register: c.App.Register,
 		ShowSwagger: c.App.ShowSwagger, CaptchaThreshold: c.App.CaptchaThreshold,
 		BanThreshold: c.App.BanThreshold, TrustProxy: c.Gin.TrustProxy,
 	}
@@ -119,7 +118,7 @@ func TestErroriDiInit(t *testing.T) {
 	}{
 		{"file che manca", filepath.Join(dir, "manca.yaml"), lettura, fs.ErrNotExist},
 		{"yaml rotto", scrivi("rotto.yaml", "app: [\n"), lettura, nil},
-		{"valore del tipo sbagliato", scrivi("tipo.yaml", "app:\n  web-client: tanti\n"), "configurazione %s non valida: ", nil},
+		{"valore del tipo sbagliato", scrivi("tipo.yaml", "app:\n  show-swagger: tanti\n"), "configurazione %s non valida: ", nil},
 	} {
 		t.Run(tc.caso, func(t *testing.T) {
 			err := panicDiInit(tc.path)

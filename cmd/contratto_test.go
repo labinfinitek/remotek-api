@@ -77,7 +77,6 @@ func TestContract(t *testing.T) {
 	// info non servono. La password casuale di admin creata dalla migrazione
 	// non va nel log ma in data/admin-password.txt, nella sandbox.
 	t.Setenv("RUSTDESK_API_LANG", "en")
-	t.Setenv("RUSTDESK_API_APP_WEB_CLIENT", "0")
 	t.Setenv("RUSTDESK_API_APP_SHOW_SWAGGER", "0")
 	t.Setenv("RUSTDESK_API_APP_WEB_SSO", "true")
 	t.Setenv("RUSTDESK_API_APP_DISABLE_PWD_LOGIN", "false")

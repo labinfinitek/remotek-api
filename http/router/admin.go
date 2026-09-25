@@ -46,7 +46,6 @@ func Init(g *gin.Engine) {
 	// adg.GET("/app-config", rs.AppConfig)
 	// deprecated end
 
-	ShareRecordBind(adg)
 	MyBind(adg)
 
 	RustdeskCmdBind(adg)
@@ -137,8 +136,6 @@ func AddressBookBind(rg *gin.RouterGroup) {
 	aR := rg.Group("/address_book")
 	{
 		cont := &admin.AddressBook{}
-		aR.POST("/shareByWebClient", cont.ShareByWebClient)
-
 		arp := aR.Use(middleware.AdminPrivilege())
 		arp.GET("/list", cont.List)
 		// arp.GET("/detail/:id", cont.Detail)
@@ -249,13 +246,6 @@ func ConfigBind(rg *gin.RouterGroup) {
 
 func MyBind(rg *gin.RouterGroup) {
 	{
-		cont := &my.ShareRecord{}
-		rg.GET("/my/share_record/list", cont.List)
-		rg.POST("/my/share_record/delete", cont.Delete)
-		rg.POST("/my/share_record/batchDelete", cont.BatchDelete)
-	}
-
-	{
 		cont := &my.AddressBook{}
 		rg.GET("/my/address_book/list", cont.List)
 		rg.POST("/my/address_book/create", cont.Create)
@@ -300,15 +290,4 @@ func MyBind(rg *gin.RouterGroup) {
 		rg.POST("/my/login_log/delete", cont.Delete)
 		rg.POST("/my/login_log/batchDelete", cont.BatchDelete)
 	}
-}
-
-func ShareRecordBind(rg *gin.RouterGroup) {
-	aR := rg.Group("/share_record").Use(middleware.AdminPrivilege())
-	{
-		cont := &admin.ShareRecord{}
-		aR.GET("/list", cont.List)
-		aR.POST("/delete", cont.Delete)
-		aR.POST("/batchDelete", cont.BatchDelete)
-	}
-
 }
