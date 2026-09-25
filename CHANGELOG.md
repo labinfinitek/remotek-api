@@ -185,6 +185,11 @@ Base upstream: rustdesk-api v2.7.
   ripiegava su SQLite in silenzio. Chi ha i dati su MySQL o PostgreSQL resta
   sulla versione precedente oppure li porta su SQLite prima di aggiornare;
   con SQLite non cambia niente.
+- Dal binario escono i driver `gorm.io/driver/mysql` e
+  `gorm.io/driver/postgres` con i moduli che servivano solo a loro
+  (`go-sql-driver/mysql`, `jackc/pgx/v5`, `jackc/pgpassfile`,
+  `jackc/pgservicefile`, `jackc/puddle/v2`, `golang.org/x/sync`): 8 moduli
+  in meno, nessuno in piu'.
 - Workflow upstream `build.yml` e `build_test.yml` (build e pubblicazione su
   registry altrui): la CI del fork arriva con `remotek-ci.yml`.
 - Caricamento di file su Aliyun OSS e in locale dal pannello
