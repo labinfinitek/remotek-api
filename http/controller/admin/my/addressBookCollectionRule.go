@@ -72,7 +72,7 @@ func (abcr *AddressBookCollectionRule) Create(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError"))
 		return
 	}
-	//t := f.ToAddressBookCollection()
+	// t := f.ToAddressBookCollection()
 	t := f
 	u := service.AllService.UserService.CurUser(c)
 	t.UserId = u.Id
@@ -97,7 +97,7 @@ func (abcr *AddressBookCollectionRule) CheckForm(u *model.User, t *model.Address
 		return "ParamsError", false
 	}
 
-	//check to_id
+	// check to_id
 	if t.Type == model.ShareAddressBookRuleTypePersonal {
 		if t.ToId == t.UserId {
 			return "CannotShareToSelf", false
@@ -106,15 +106,15 @@ func (abcr *AddressBookCollectionRule) CheckForm(u *model.User, t *model.Address
 		if tou.Id == 0 {
 			return "ItemNotFound", false
 		}
-		//非管理员不能分享给非本组织用户
-		//if tou.GroupId != u.GroupId {
+		// 非管理员不能分享给非本组织用户
+		// if tou.GroupId != u.GroupId {
 		//	return "NoAccess", false
-		//}
+		// }
 	} else if t.Type == model.ShareAddressBookRuleTypeGroup {
-		//非管理员不能分享给其他组
-		//if t.ToId != u.GroupId {
+		// 非管理员不能分享给其他组
+		// if t.ToId != u.GroupId {
 		//	return "NoAccess", false
-		//}
+		// }
 
 		tog := service.AllService.GroupService.InfoById(t.ToId)
 		if tog.Id == 0 {

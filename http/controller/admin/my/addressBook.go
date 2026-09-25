@@ -34,7 +34,7 @@ func (ct *AddressBook) List(c *gin.Context) {
 	u := service.AllService.UserService.CurUser(c)
 	query.UserId = int(u.Id)
 	res := service.AllService.AddressBookService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
-		//预加载地址簿名称
+		// 预加载地址簿名称
 		tx.Preload("Collection", func(txc *gorm.DB) *gorm.DB {
 			return txc.Select("id,name")
 		})

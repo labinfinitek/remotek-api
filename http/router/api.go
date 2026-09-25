@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	// Registra con init() lo swagger "api" servito su /swagger/*any (con ShowSwagger).
 	_ "github.com/lejianwen/rustdesk-api/v2/docs/api"
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/controller/api"
@@ -13,8 +14,8 @@ import (
 
 func ApiInit(g *gin.Engine) {
 
-	//g.Use(middleware.Cors())
-	//swagger
+	// g.Use(middleware.Cors())
+	// swagger
 	if global.Config.App.ShowSwagger == 1 {
 		g.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.InstanceName("api")))
 	}
@@ -45,7 +46,7 @@ func ApiInit(g *gin.Engine) {
 		frg.POST("/oidc/auth", o.OidcAuth)
 		// [method:GET] [uri:/api/oidc/auth-query?code=abc&id=xxxxx&uuid=xxxxx]
 		frg.GET("/oidc/auth-query", o.OidcAuthQuery)
-		//api/oauth/callback
+		// api/oauth/callback
 		frg.GET("/oauth/callback", o.OauthCallback)
 		frg.GET("/oauth/login", o.OauthCallback)
 		frg.GET("/oauth/msg", o.Message)
@@ -56,7 +57,7 @@ func ApiInit(g *gin.Engine) {
 	}
 	{
 		pe := &api.Peer{}
-		//提交系统信息
+		// 提交系统信息
 		frg.POST("/sysinfo", pe.SysInfo)
 		frg.POST("/sysinfo_ver", pe.SysInfoVer)
 	}
@@ -67,9 +68,9 @@ func ApiInit(g *gin.Engine) {
 
 	{
 		au := &api.Audit{}
-		//[method:POST] [uri:/api/audit/conn]
+		// [method:POST] [uri:/api/audit/conn]
 		frg.POST("/audit/conn", au.AuditConn)
-		//[method:POST] [uri:/api/audit/file]
+		// [method:POST] [uri:/api/audit/file]
 		frg.POST("/audit/file", au.AuditFile)
 	}
 
@@ -93,14 +94,14 @@ func ApiInit(g *gin.Engine) {
 
 	{
 		ab := &api.Ab{}
-		//获取地址
+		// 获取地址
 		frg.GET("/ab", ab.Ab)
-		//更新地址
+		// 更新地址
 		frg.POST("/ab", ab.UpAb)
 	}
 
 	PersonalRoutes(frg)
-	//访问静态文件
+	// 访问静态文件
 	g.StaticFS("/upload", http.Dir(global.Config.Gin.ResourcesPath+"/public/upload"))
 }
 
@@ -108,27 +109,27 @@ func PersonalRoutes(frg *gin.RouterGroup) {
 	{
 		ab := &api.Ab{}
 		frg.POST("/ab/personal", ab.Personal)
-		//[method:POST] [uri:/api/ab/settings] Request
+		// [method:POST] [uri:/api/ab/settings] Request
 		frg.POST("/ab/settings", ab.Settings)
 		// [method:POST] [uri:/api/ab/shared/profiles?current=1&pageSize=100]
 		frg.POST("/ab/shared/profiles", ab.SharedProfiles)
-		//[method:POST] [uri:/api/ab/peers?current=1&pageSize=100&ab=1]
+		// [method:POST] [uri:/api/ab/peers?current=1&pageSize=100&ab=1]
 		frg.POST("/ab/peers", ab.Peers)
 		// [method:POST] [uri:/api/ab/tags/1]
 		frg.POST("/ab/tags/:guid", ab.PTags)
-		//[method:POST] api/ab/peer/add/1
+		// [method:POST] api/ab/peer/add/1
 		frg.POST("/ab/peer/add/:guid", ab.PeerAdd)
-		//[method:DELETE] [uri:/api/ab/peer/1]
+		// [method:DELETE] [uri:/api/ab/peer/1]
 		frg.DELETE("/ab/peer/:guid", ab.PeerDel)
-		//[method:PUT] [uri:/api/ab/peer/update/1]
+		// [method:PUT] [uri:/api/ab/peer/update/1]
 		frg.PUT("/ab/peer/update/:guid", ab.PeerUpdate)
-		//[method:POST] [uri:/api/ab/tag/add/1]
+		// [method:POST] [uri:/api/ab/tag/add/1]
 		frg.POST("/ab/tag/add/:guid", ab.TagAdd)
-		//[method:PUT] [uri:/api/ab/tag/rename/1]
+		// [method:PUT] [uri:/api/ab/tag/rename/1]
 		frg.PUT("/ab/tag/rename/:guid", ab.TagRename)
-		//[method:PUT] [uri:/api/ab/tag/update/1]
+		// [method:PUT] [uri:/api/ab/tag/update/1]
 		frg.PUT("/ab/tag/update/:guid", ab.TagUpdate)
-		//[method:DELETE] [uri:/api/ab/tag/1]
+		// [method:DELETE] [uri:/api/ab/tag/1]
 		frg.DELETE("/ab/tag/:guid", ab.TagDel)
 
 	}
