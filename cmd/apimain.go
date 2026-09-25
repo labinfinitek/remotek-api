@@ -136,10 +136,20 @@ func InitGlobal() {
 		global.Logger.Fatalf("gorm.type %q non supportato, l'API non parte: l'unico database e' %q. "+
 			"Chi usava MySQL o PostgreSQL resta sulla versione precedente o porta i dati su SQLite", tipo, config.TypeSqlite)
 	}
-	global.DB = orm.NewSqlite(&orm.SqliteConfig{
+	db, err := orm.NewSqlite(&orm.SqliteConfig{
 		MaxIdleConns: global.Config.Gorm.MaxIdleConns,
 		MaxOpenConns: global.Config.Gorm.MaxOpenConns,
 	}, global.Logger)
+	if err != nil {
+		percorso, errAbs := filepath.Abs(orm.FileSqlite)
+		if errAbs != nil {
+			percorso = orm.FileSqlite
+		}
+		global.Logger.Fatalf("database %s non aperto, l'API non parte: controlla che la cartella %s esista, "+
+			"o si possa creare, e sia scrivibile dall'utente del processo (nell'immagine Docker 10001:10001, "+
+			"vedi README): %v", percorso, filepath.Dir(percorso), err)
+	}
+	global.DB = db
 
 	// validator
 	global.ApiInitValidator()
