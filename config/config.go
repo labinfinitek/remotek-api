@@ -85,7 +85,7 @@ func Init(rowVal *Config, path string) *viper.Viper {
 	v.SetConfigType("yaml")
 	err := v.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("Fatal error config file: %s \n", err))
+		panic(fmt.Errorf("lettura della configurazione %s: %w", path, err))
 	}
 	/*
 		v.WatchConfig()
@@ -103,7 +103,7 @@ func Init(rowVal *Config, path string) *viper.Viper {
 			})
 	*/
 	if err := v.Unmarshal(rowVal); err != nil {
-		panic(fmt.Errorf("Fatal error config: %s \n", err))
+		panic(fmt.Errorf("configurazione %s non valida: %w", path, err))
 	}
 	rowVal.Rustdesk.LoadKeyFile()
 	rowVal.Admin.Init()

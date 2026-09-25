@@ -103,6 +103,11 @@ Base upstream: rustdesk-api v2.7.
   cambiano, l'avvio si ferma con un messaggio che dice quale file e perche'.
 
 ### Corretto
+- Se il file di configurazione non si legge o non si decodifica, l'avvio
+  si ferma con un messaggio che nomina il file, per esempio
+  `lettura della configurazione ./conf/config.yaml: ...` o
+  `configurazione ./conf/config.yaml non valida: ...`, invece di
+  `Fatal error config file: ...` con uno spazio e un a capo in fondo.
 - Con la porta dell'API gia' occupata, o un altro errore all'apertura, il
   processo si ferma con codice 1 e scrive l'errore nel log
   (`server API fermato: ...`): prima usciva con codice 0 e l'errore andava

@@ -1,6 +1,9 @@
 package config
 
 import (
+	"errors"
+	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -95,4 +98,52 @@ func TestLinguaPredefinita(t *testing.T) {
 			t.Errorf("Init(%s): lang %q, atteso \"it\"", path, c.Lang)
 		}
 	}
+}
+
+// TestErroriDiInit verifica che, se la configurazione non si legge o non si
+// decodifica, il panic di Init sia un errore che nomina il file e avvolge
+// la causa con %w, senza maiuscola iniziale e senza a capo aggiunti.
+func TestErroriDiInit(t *testing.T) {
+	dir := t.TempDir()
+	scrivi := func(nome, testo string) string {
+		path := filepath.Join(dir, nome)
+		if err := os.WriteFile(path, []byte(testo), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	lettura := "lettura della configurazione %s: "
+	for _, tc := range []struct {
+		caso, path, formato string
+		causa               error
+	}{
+		{"file che manca", filepath.Join(dir, "manca.yaml"), lettura, fs.ErrNotExist},
+		{"yaml rotto", scrivi("rotto.yaml", "app: [\n"), lettura, nil},
+		{"valore del tipo sbagliato", scrivi("tipo.yaml", "app:\n  web-client: tanti\n"), "configurazione %s non valida: ", nil},
+	} {
+		t.Run(tc.caso, func(t *testing.T) {
+			err := panicDiInit(tc.path)
+			if err == nil {
+				t.Fatal("Init non ha fatto panic con un errore")
+			}
+			causa := errors.Unwrap(err)
+			if causa == nil || (tc.causa != nil && !errors.Is(err, tc.causa)) {
+				t.Fatalf("l'errore %q non avvolge la causa (%v)", err, tc.causa)
+			}
+			if want := fmt.Sprintf(tc.formato, tc.path) + causa.Error(); err.Error() != want {
+				t.Errorf("messaggio\n%q\natteso\n%q", err, want)
+			}
+		})
+	}
+}
+
+// panicDiInit chiama Init su path e restituisce l'errore del panic, nil se
+// Init non fa panic o il panic non e' un errore.
+func panicDiInit(path string) (err error) {
+	defer func() {
+		err, _ = recover().(error)
+	}()
+	var c Config
+	Init(&c, path)
+	return nil
 }
