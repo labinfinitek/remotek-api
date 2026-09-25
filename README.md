@@ -295,8 +295,9 @@ docker build \
    > ```bash
    > RUSTDESK_API_GIN_RESOURCES_PATH=/opt/rustdesk-api/resources ./apimain -c /opt/rustdesk-api/conf/config.yaml
    > ```
-5. 编译，如果想自己编译,先cd到项目根目录，然后windows下直接运行`build.bat`,linux下运行`build.sh`,编译后会在`release`
-   目录下生成对应的可执行文件。直接运行编译后的可执行文件即可。
+5. 编译：在项目根目录运行`go build -o apimain ./cmd`（sqlite 需要 CGO，因此需要 C 编译器；
+   不加`-o`会失败，因为`cmd`已经是目录）。运行二进制时同样需要上面说明中的`conf`和
+   `resources`目录。构建镜像用`docker build`，见[构建镜像](#构建镜像)。
 
 6. 打开浏览器访问`http://<your server[:port]>/_admin/`，用户名为`admin`，初始密码在`data/admin-password.txt`中，请及时更改密码并删除该文件。
 

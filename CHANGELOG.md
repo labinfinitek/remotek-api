@@ -264,6 +264,11 @@ Base upstream: rustdesk-api v2.7.
   master del pannello con `npm install`) e `Dockerfile_full_s6` (binario gia'
   compilato dentro l'immagine `rustdesk-server-s6:latest`): li sostituisce il
   `Dockerfile` che costruisce tutto dal sorgente.
+- `build.sh` e `build.bat` (con `go env -w` cambiavano per sempre
+  l'ambiente Go di chi li lanciava, `GOPROXY` compreso, che puntava a
+  `goproxy.cn`), `debian/` (pacchetto `rustdesk-api-server`) e `systemd/`
+  (`rustdesk-api.service`): nessuno li usava e nessun test li provava.
+  Si compila con `go build -o apimain ./cmd`, l'immagine con `docker build`.
 
 ### Modificato
 - Il prodotto si chiama Remotek dove lo vede chi lo usa: titolo del pannello
