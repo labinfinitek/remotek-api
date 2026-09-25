@@ -175,6 +175,21 @@ Base upstream: rustdesk-api v2.7.
   salva, non piu' successo. Le righe create prima dell'errore restano.
 
 ### Rimosso
+- **Cambio incompatibile per chi usa MySQL o PostgreSQL.** L'API usa solo
+  SQLite (`data/rustdeskapi.db`): via i driver MySQL e PostgreSQL, le
+  sezioni `mysql` e `postgresql` della configurazione e le variabili
+  `RUSTDESK_API_MYSQL_*` e `RUSTDESK_API_POSTGRESQL_*`. `gorm.type` vale
+  solo `sqlite` (vuoto vale lo stesso); con un altro valore, per esempio
+  `mysql`, l'API non parte: esce con codice 1 e lo scrive nel log, prima di
+  creare un database SQLite nuovo e vuoto. Prima un valore sconosciuto
+  ripiegava su SQLite in silenzio. Chi ha i dati su MySQL o PostgreSQL resta
+  sulla versione precedente oppure li porta su SQLite prima di aggiornare;
+  con SQLite non cambia niente.
+- Dal binario escono i driver `gorm.io/driver/mysql` e
+  `gorm.io/driver/postgres` con i moduli che servivano solo a loro
+  (`go-sql-driver/mysql`, `jackc/pgx/v5`, `jackc/pgpassfile`,
+  `jackc/pgservicefile`, `jackc/puddle/v2`, `golang.org/x/sync`): 8 moduli
+  in meno, nessuno in piu'.
 - Workflow upstream `build.yml` e `build_test.yml` (build e pubblicazione su
   registry altrui): la CI del fork arriva con `remotek-ci.yml`.
 - Caricamento di file su Aliyun OSS e in locale dal pannello

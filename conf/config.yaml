@@ -26,24 +26,9 @@ gin:
   resources-path: 'resources'  #对外静态文件目录
   trust-proxy: "" # IP o CIDR dei proxy fidati, separati da virgola; vuoto: nessuno
 gorm:
-  type: "sqlite"
+  type: "sqlite" # l'unico database supportato; un altro valore ferma l'avvio
   max-idle-conns: 10
   max-open-conns: 100
-mysql:
-  username: ""
-  password: ""
-  addr: ""
-  dbname: ""
-  tls: "false" # true / false / skip-verify / custom
-
-postgresql:
-  host: "127.0.0.1"
-  port: "5432"
-  user: ""
-  password: ""
-  dbname: "postgres"
-  sslmode: "disable" # disable, require, verify-ca, verify-full
-  time-zone: "Asia/Shanghai" # Time zone for PostgreSQL connection
 
 rustdesk:
   id-server: "192.168.1.66:21116"

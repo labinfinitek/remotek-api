@@ -33,19 +33,17 @@ type Admin struct {
 	RelayServerPort int    `mapstructure:"relay-server-port"`
 }
 type Config struct {
-	Lang       string `mapstructure:"lang"`
-	Brand      Brand
-	App        App
-	Admin      Admin
-	Gorm       Gorm
-	Mysql      Mysql
-	Postgresql Postgresql
-	Gin        Gin
-	Logger     Logger
-	Jwt        Jwt
-	Rustdesk   Rustdesk
-	Proxy      Proxy
-	Ldap       Ldap
+	Lang     string `mapstructure:"lang"`
+	Brand    Brand
+	App      App
+	Admin    Admin
+	Gorm     Gorm
+	Gin      Gin
+	Logger   Logger
+	Jwt      Jwt
+	Rustdesk Rustdesk
+	Proxy    Proxy
+	Ldap     Ldap
 }
 
 // Init completa la sezione admin: il titolo vuoto e' il nome del marchio.

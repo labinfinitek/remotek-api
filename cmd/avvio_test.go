@@ -1,6 +1,7 @@
 package main
 
-// Test del primo avvio e dei comandi reset-admin-pwd e reset-pwd sul binario
+// Test dell'avvio (primo avvio, gorm.type) e dei comandi reset-admin-pwd e
+// reset-pwd sul binario
 // vero, in un processo figlio: il codice d'uscita e' parte di cio' che si
 // prova, e in questo processo InitGlobal lo puo' chiamare solo TestContract.
 
@@ -238,4 +239,57 @@ func TestComandiResetPassword(t *testing.T) {
 			}
 		}
 	}
+}
+
+// TestSoloSqlite prova sul binario vero che un gorm.type diverso da sqlite,
+// per esempio quello di un'installazione vecchia su MySQL, fermi l'avvio con
+// codice 1 e un messaggio nel log prima di creare data/rustdeskapi.db, e che
+// gorm.type vuoto valga sqlite.
+func TestSoloSqlite(t *testing.T) {
+	for _, tipo := range []string{"mysql", "postgresql", "SQLite"} {
+		t.Run(tipo, func(t *testing.T) {
+			dir := sandbox(t)
+			t.Setenv("RUSTDESK_API_GORM_TYPE", tipo)
+			codice, out := esegui(t, dir)
+			if codice != 1 {
+				t.Errorf("codice %d, atteso 1\n%s", codice, out)
+			}
+			messaggio := "gorm.type \"" + tipo + "\" non supportato, l'API non parte"
+			registro, err := os.ReadFile(filepath.Join(dir, "runtime", "log.txt"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(string(registro), messaggio) {
+				t.Errorf("il log non contiene %q:\n%s", messaggio, registro)
+			}
+			if _, err := os.Stat(filepath.Join(dir, "data", "rustdeskapi.db")); !errors.Is(err, os.ErrNotExist) {
+				t.Errorf("data/rustdeskapi.db creato o illeggibile (%v): l'avvio doveva fermarsi prima", err)
+			}
+		})
+	}
+
+	// gorm.type vuoto: una variabile vuota per viper non c'e', quindi serve
+	// un config.yaml che lo dica.
+	t.Run("vuoto", func(t *testing.T) {
+		dir := sandbox(t)
+		conf, err := os.ReadFile(filepath.Join(dir, "conf", "config.yaml"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		vuoto := strings.Replace(string(conf), `type: "sqlite"`, `type: ""`, 1)
+		if vuoto == string(conf) {
+			t.Fatal(`conf/config.yaml non ha type: "sqlite"`)
+		}
+		err = errors.Join(os.Remove(filepath.Join(dir, "conf")), os.Mkdir(filepath.Join(dir, "conf"), 0o750),
+			os.WriteFile(filepath.Join(dir, "conf", "config.yaml"), []byte(vuoto), 0o600))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if codice, out := esegui(t, dir); codice != 0 {
+			t.Fatalf("codice %d, atteso 0\n%s", codice, out)
+		}
+		if u := admin(t, apriDB(t, dir)); u.Username != "admin" {
+			t.Errorf("l'utente 1 e' %q, atteso admin", u.Username)
+		}
+	})
 }
