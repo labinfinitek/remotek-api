@@ -115,6 +115,11 @@ Base upstream: rustdesk-api v2.7.
   protetta) e cancella il token; se la cancellazione non riesce risponde
   "Operazione non riuscita." (`code` 101) con l'errore nel log, non piu'
   successo. Il logout del client (`/api/logout`) non cambia.
+- Le pagine del login OAuth (successo ed errore) non caricano piu' niente da
+  altri siti: quella di errore prendeva Font Awesome da un CDN terzo
+  (`lf9-cdn-tos.bytecdntp.com`), che riceveva l'IP di chi la apriva. Le due
+  icone sono SVG dentro la pagina, nei colori di prima; quella di successo
+  prima non si vedeva, perche' la pagina non caricava il foglio delle icone.
 
 ### Corretto
 - `RUSTDESK_API_ADMIN_TITLE` vale anche se il file di configurazione non ha

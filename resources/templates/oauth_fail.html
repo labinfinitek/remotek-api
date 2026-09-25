@@ -27,8 +27,10 @@
 
         .checkmark {
             color: #ba363a;
-            font-size: 4rem;
-            margin-bottom: 1rem;
+            display: block;
+            width: 4rem;
+            height: 4rem;
+            margin: 0 auto 1rem;
         }
 
         h1 {
@@ -56,7 +58,6 @@
             background-color: #ba363a;
         }
     </style>
-    <link rel="stylesheet" href="https://lf9-cdn-tos.bytecdntp.com/cdn/expire-1-M/font-awesome/6.0.0/css/all.min.css">
     <script>
         var lang = navigator.language || navigator.userLanguage || 'zh-CN';
         var title = 'OauthFailed'
@@ -67,7 +68,11 @@
 </head>
 <body>
 <div class="success-container">
-    <i class="fas fa-triangle-exclamation checkmark"></i>
+    <svg class="checkmark" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3 22 20.5H2Z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M12 9.5v5" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="12" cy="17.6" r="1.3" fill="#fff"/>
+    </svg>
     <h1 id="h1"></h1>
     <p id="msg"></p>
     <a href="javascript:window.close()" class="return-link" id="btn">Close</a>
