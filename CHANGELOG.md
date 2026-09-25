@@ -102,6 +102,11 @@ Base upstream: rustdesk-api v2.7.
   al minimo che chiede: `bytedance/sonic` v1.9.1, `goccy/go-json` v0.10.2,
   `klauspost/cpuid/v2` v2.2.4, `mattn/go-isatty` v0.0.19,
   `pelletier/go-toml/v2` v2.0.8, `ugorji/go/codec` v1.2.11, `x/arch` v0.3.0.
+- GHSA-6v2p-p543-phr9, `golang.org/x/oauth2` v0.23.0 -> v0.27.0: consumo di
+  memoria eccessivo nel parsing di un token malformato in
+  `golang.org/x/oauth2/jws`, pacchetto che il binario non include (il login
+  OIDC usa `oauth2`, `endpoints` e `github`, dove cambiano solo commenti).
+  Nessun altro modulo sale.
 - Il file di log (`logger.path`, `./runtime/log.txt` in
   `conf/config.yaml`) nasce con permessi 0600 e non piu' 0644, e un file
   che c'era gia' viene portato a 0600 all'avvio: contiene nomi utente e
