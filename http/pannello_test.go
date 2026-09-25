@@ -1,6 +1,8 @@
 package http
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"net/http/httptest"
 	"path/filepath"
 	"strconv"
@@ -122,5 +124,31 @@ func TestPannelloAdmin(t *testing.T) {
 		if nelLog := registro.String(); !strings.Contains(nelLog, "POST "+tc.rotta+": ") || !strings.Contains(nelLog, tc.nelLog) {
 			t.Errorf("POST %s, nel log mancano rotta o errore:\n%s", tc.rotta, nelLog)
 		}
+	}
+}
+
+// TestPannelloVecchiaPasswordMD5 prova sul router vero il cambio della
+// propria password quando nel database c'e' l'hash md5 delle versioni molto
+// vecchie di rustdesk-api: anche con la vecchia password giusta il pannello
+// riceve "Vecchia password errata.", come per una password sbagliata, senza
+// il testo dell'errore di bcrypt, e l'hash resta com'era.
+func TestPannelloVecchiaPasswordMD5(t *testing.T) {
+	g, utente, _ := pannello(t, false)
+	somma := md5.Sum([]byte("vecchia-password" + "rustdesk-api"))
+	vecchio := hex.EncodeToString(somma[:])
+	if err := service.DB.Model(utente).Update("password", vecchio).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	rec := alPannello(g, "/api/admin/user/changeCurPwd", `{"old_password": "vecchia-password", "new_password": "`+strings.Repeat("n", 15)+`"}`)
+	if got, want := rec.Body.String(), `{"code":101,"message":"Vecchia password errata.","data":null}`; rec.Code != 200 || got != want {
+		t.Errorf("POST /api/admin/user/changeCurPwd: stato %d\n got  %s\n want %s", rec.Code, got, want)
+	}
+	salvato := &model.User{}
+	if err := service.DB.First(salvato, utente.Id).Error; err != nil {
+		t.Fatal(err)
+	}
+	if salvato.Password != vecchio {
+		t.Errorf("la password e' cambiata: %q", salvato.Password)
 	}
 }

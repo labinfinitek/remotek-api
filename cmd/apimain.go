@@ -11,6 +11,10 @@ import (
 	"unicode/utf8"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/spf13/cobra"
+	"gorm.io/gorm"
+
 	"github.com/lejianwen/rustdesk-api/v2/config"
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http"
@@ -19,13 +23,9 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/lib/lock"
 	"github.com/lejianwen/rustdesk-api/v2/lib/logger"
 	"github.com/lejianwen/rustdesk-api/v2/lib/orm"
-	"github.com/lejianwen/rustdesk-api/v2/lib/upload"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 	"github.com/lejianwen/rustdesk-api/v2/utils"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"github.com/spf13/cobra"
-	"gorm.io/gorm"
 )
 
 const DatabaseVersion = 265
@@ -49,10 +49,10 @@ const fileAdminPassword = "data/admin-password.txt"
 var rootCmd = &cobra.Command{
 	Use:   "apimain",
 	Short: "RUSTDESK API SERVER",
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+	PersistentPreRun: func(_ *cobra.Command, _ []string) {
 		InitGlobal()
 	},
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		global.Logger.Info("API SERVER START")
 		if err := http.ApiInit(); err != nil {
 			global.Logger.Fatalf("server API fermato: %v", err)
@@ -100,7 +100,7 @@ func reimpostaPassword(id uint, pwd string) {
 	if err != nil {
 		global.Logger.Fatalf("lettura dell'utente %d: %v", id, err)
 	}
-	if err := service.AllService.UserService.UpdatePassword(u, pwd); err != nil {
+	if err := service.AllService.UpdatePassword(u, pwd); err != nil {
 		global.Logger.Fatalf("password dell'utente %d non aggiornata: %v", id, err)
 	}
 	global.Logger.Infof("password dell'utente %d reimpostata", id)
@@ -118,10 +118,10 @@ func main() {
 }
 
 func InitGlobal() {
-	//配置解析
+	// 配置解析
 	global.Viper = config.Init(&global.Config, global.ConfigPath)
 
-	//日志
+	// 日志
 	global.Logger = logger.New(&logger.Config{
 		Path:         global.Config.Logger.Path,
 		Level:        global.Config.Logger.Level,
@@ -130,28 +130,29 @@ func InitGlobal() {
 
 	global.InitI18n()
 
-	//redis
+	// redis
 	global.Redis = redis.NewClient(&redis.Options{
 		Addr:     global.Config.Redis.Addr,
 		Password: global.Config.Redis.Password,
 		DB:       global.Config.Redis.Db,
 	})
 
-	//cache
-	if global.Config.Cache.Type == cache.TypeFile {
+	// cache
+	switch global.Config.Cache.Type {
+	case cache.TypeFile:
 		fc := cache.NewFileCache()
 		fc.SetDir(global.Config.Cache.FileDir)
 		global.Cache = fc
-	} else if global.Config.Cache.Type == cache.TypeRedis {
+	case cache.TypeRedis:
 		global.Cache = cache.NewRedis(&redis.Options{
 			Addr:     global.Config.Cache.RedisAddr,
 			Password: global.Config.Cache.RedisPwd,
 			DB:       global.Config.Cache.RedisDb,
 		})
 	}
-	//gorm
-	if global.Config.Gorm.Type == config.TypeMysql {
-
+	// gorm
+	switch global.Config.Gorm.Type {
+	case config.TypeMysql:
 		dsn := fmt.Sprintf("%s:%s@(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local&tls=%s",
 			global.Config.Mysql.Username,
 			global.Config.Mysql.Password,
@@ -165,7 +166,7 @@ func InitGlobal() {
 			MaxIdleConns: global.Config.Gorm.MaxIdleConns,
 			MaxOpenConns: global.Config.Gorm.MaxOpenConns,
 		}, global.Logger)
-	} else if global.Config.Gorm.Type == config.TypePostgresql {
+	case config.TypePostgresql:
 		dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s TimeZone=%s",
 			global.Config.Postgresql.Host,
 			global.Config.Postgresql.Port,
@@ -180,34 +181,24 @@ func InitGlobal() {
 			MaxIdleConns: global.Config.Gorm.MaxIdleConns,
 			MaxOpenConns: global.Config.Gorm.MaxOpenConns,
 		}, global.Logger)
-	} else {
-		//sqlite
+	default:
+		// sqlite
 		global.DB = orm.NewSqlite(&orm.SqliteConfig{
 			MaxIdleConns: global.Config.Gorm.MaxIdleConns,
 			MaxOpenConns: global.Config.Gorm.MaxOpenConns,
 		}, global.Logger)
 	}
 
-	//validator
+	// validator
 	global.ApiInitValidator()
 
-	//oss
-	global.Oss = &upload.Oss{
-		AccessKeyId:     global.Config.Oss.AccessKeyId,
-		AccessKeySecret: global.Config.Oss.AccessKeySecret,
-		Host:            global.Config.Oss.Host,
-		CallbackUrl:     global.Config.Oss.CallbackUrl,
-		ExpireTime:      global.Config.Oss.ExpireTime,
-		MaxByte:         global.Config.Oss.MaxByte,
-	}
-
-	//jwt
-	//fmt.Println(global.Config.Jwt.PrivateKey)
+	// jwt
+	// fmt.Println(global.Config.Jwt.PrivateKey)
 	global.Jwt = jwt.NewJwt(global.Config.Jwt.Key, global.Config.Jwt.ExpireDuration)
-	//locker
+	// locker
 	global.Lock = lock.NewLocal()
 
-	//service
+	// service
 	service.New(&global.Config, global.DB, global.Logger, global.Jwt, global.Lock)
 
 	global.LoginLimiter = utils.NewLoginLimiter(utils.SecurityPolicy{
@@ -226,7 +217,7 @@ func DatabaseAutoUpdate() {
 	db := global.DB
 
 	if global.Config.Gorm.Type == config.TypeMysql {
-		//检查存不存在数据库，不存在则创建
+		// 检查存不存在数据库，不存在则创建
 		dbName := db.Migrator().CurrentDatabase()
 		if dbName == "" {
 			dbName = global.Config.Mysql.Dbname
@@ -238,7 +229,7 @@ func DatabaseAutoUpdate() {
 				"",
 			)
 
-			//新链接
+			// 新链接
 			dbWithoutDB := orm.NewMysql(&orm.MysqlConfig{
 				Dsn: dsnWithoutDB,
 			}, global.Logger)
@@ -265,7 +256,7 @@ func DatabaseAutoUpdate() {
 	if !db.Migrator().HasTable(&model.Version{}) {
 		Migrate(uint(version))
 	} else {
-		//查找最后一个version
+		// 查找最后一个version
 		var v model.Version
 		db.Last(&v)
 		if v.Version < uint(version) {
@@ -274,11 +265,11 @@ func DatabaseAutoUpdate() {
 
 		// 245迁移
 		if v.Version < 245 {
-			//oauths 表的 oauth_type 字段设置为 op同样的值
+			// oauths 表的 oauth_type 字段设置为 op同样的值
 			db.Exec("update oauths set oauth_type = op")
 			db.Exec("update oauths set issuer = 'https://accounts.google.com' where op = 'google'")
 			db.Exec("update user_thirds set oauth_type = third_type, op = third_type")
-			//通过email迁移旧的google授权
+			// 通过email迁移旧的google授权
 			uts := make([]model.UserThird, 0)
 			db.Where("oauth_type = ?", "google").Find(&uts)
 			for _, ut := range uts {

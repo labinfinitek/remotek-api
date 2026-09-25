@@ -2,9 +2,10 @@ package utils
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type MockCaptchaProvider struct{}
@@ -19,7 +20,7 @@ func (p *MockCaptchaProvider) Generate() (string, string, string, error) {
 func (p *MockCaptchaProvider) Expiration() time.Duration {
 	return 2 * time.Second
 }
-func (p *MockCaptchaProvider) Draw(content string) (string, error) {
+func (p *MockCaptchaProvider) Draw(_ string) (string, error) {
 	return "MOCK", nil
 }
 
@@ -74,7 +75,7 @@ func TestCaptchaFlow(t *testing.T) {
 	}
 
 	// 生成验证码
-	err, capc := limiter.RequireCaptcha()
+	capc, err := limiter.RequireCaptcha()
 	if err != nil {
 		t.Fatalf("生成验证码失败: %v", err)
 	}
@@ -109,7 +110,7 @@ func TestCaptchaMustFlow(t *testing.T) {
 	}
 
 	// 生成验证码
-	err, capc := limiter.RequireCaptcha()
+	capc, err := limiter.RequireCaptcha()
 	if err != nil {
 		t.Fatalf("生成验证码失败: %v", err)
 	}
@@ -141,7 +142,7 @@ func TestAttemptTimeout(t *testing.T) {
 	}
 
 	// 生成验证码
-	err, _ := limiter.RequireCaptcha()
+	_, err := limiter.RequireCaptcha()
 	if err != nil {
 		t.Fatalf("生成验证码失败: %v", err)
 	}
@@ -172,7 +173,7 @@ func TestCaptchaTimeout(t *testing.T) {
 	}
 
 	// 生成验证码
-	err, capc := limiter.RequireCaptcha()
+	capc, err := limiter.RequireCaptcha()
 	if err != nil {
 		t.Fatalf("生成验证码失败: %v", err)
 	}
@@ -265,14 +266,14 @@ func TestB64CaptchaFlow(t *testing.T) {
 	}
 
 	// 生成验证码
-	err, capc := limiter.RequireCaptcha()
+	capc, err := limiter.RequireCaptcha()
 	if err != nil {
 		t.Fatalf("生成验证码失败: %v", err)
 	}
 	fmt.Printf("验证码内容: %#v\n", capc)
 
-	//draw
-	err, b64 := limiter.DrawCaptcha(capc.Content)
+	// draw
+	b64, err := limiter.DrawCaptcha(capc.Content)
 	if err != nil {
 		t.Fatalf("绘制验证码失败: %v", err)
 	}

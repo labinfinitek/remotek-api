@@ -101,6 +101,12 @@ Base upstream: rustdesk-api v2.7.
   che c'era gia' viene portato a 0600 all'avvio: contiene nomi utente e
   indirizzi IP, e lo leggeva ogni utente della macchina. Se il file non si apre o i permessi non si
   cambiano, l'avvio si ferma con un messaggio che dice quale file e perche'.
+- Le password salvate come md5(password + "rustdesk-api"), il formato delle
+  versioni molto vecchie di rustdesk-api, non sono piu' accettate: prima il
+  login le riconosceva e le riscriveva in bcrypt. Un hash che non e' bcrypt
+  vale come password sbagliata, al login del client e del pannello e nel
+  cambio della propria password. Remotek non ha mai avuto database cosi';
+  chi ne importa uno reimposta quelle password con `reset-pwd`.
 
 ### Corretto
 - Se il file di configurazione non si legge o non si decodifica, l'avvio
@@ -130,6 +136,11 @@ Base upstream: rustdesk-api v2.7.
 ### Rimosso
 - Workflow upstream `build.yml` e `build_test.yml` (build e pubblicazione su
   registry altrui): la CI del fork arriva con `remotek-ci.yml`.
+- Caricamento di file su Aliyun OSS e in locale dal pannello
+  (`/api/admin/file/oss_token`, `/notify`, `/upload`): le rotte erano gia'
+  commentate in upstream e rispondevano 404, ora sparisce anche il codice.
+  La sezione `oss` della configurazione e le variabili `RUSTDESK_API_OSS_*`
+  non si leggono piu': non avevano effetto nemmeno prima.
 
 ### Modificato
 - La lingua predefinita e' l'italiano, nel codice e in `conf/config.yaml`

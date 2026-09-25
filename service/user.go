@@ -63,13 +63,8 @@ func (us *UserService) InfoByUsernamePassword(username, password string) *model.
 	if u.Id == 0 {
 		return u
 	}
-	ok, newHash, err := utils.VerifyPassword(u.Password, password)
-	if err != nil || !ok {
+	if ok, err := utils.VerifyPassword(u.Password, password); err != nil || !ok {
 		return &model.User{}
-	}
-	if newHash != "" {
-		DB.Model(u).Update("password", newHash)
-		u.Password = newHash
 	}
 	return u
 }
