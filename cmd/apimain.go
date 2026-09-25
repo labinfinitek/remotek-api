@@ -128,44 +128,18 @@ func InitGlobal() {
 
 	global.InitI18n()
 
-	// gorm
-	switch global.Config.Gorm.Type {
-	case config.TypeMysql:
-		dsn := fmt.Sprintf("%s:%s@(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local&tls=%s",
-			global.Config.Mysql.Username,
-			global.Config.Mysql.Password,
-			global.Config.Mysql.Addr,
-			global.Config.Mysql.Dbname,
-			global.Config.Mysql.Tls,
-		)
-
-		global.DB = orm.NewMysql(&orm.MysqlConfig{
-			Dsn:          dsn,
-			MaxIdleConns: global.Config.Gorm.MaxIdleConns,
-			MaxOpenConns: global.Config.Gorm.MaxOpenConns,
-		}, global.Logger)
-	case config.TypePostgresql:
-		dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s TimeZone=%s",
-			global.Config.Postgresql.Host,
-			global.Config.Postgresql.Port,
-			global.Config.Postgresql.User,
-			global.Config.Postgresql.Password,
-			global.Config.Postgresql.Dbname,
-			global.Config.Postgresql.Sslmode,
-			global.Config.Postgresql.TimeZone,
-		)
-		global.DB = orm.NewPostgresql(&orm.PostgresqlConfig{
-			Dsn:          dsn,
-			MaxIdleConns: global.Config.Gorm.MaxIdleConns,
-			MaxOpenConns: global.Config.Gorm.MaxOpenConns,
-		}, global.Logger)
-	default:
-		// sqlite
-		global.DB = orm.NewSqlite(&orm.SqliteConfig{
-			MaxIdleConns: global.Config.Gorm.MaxIdleConns,
-			MaxOpenConns: global.Config.Gorm.MaxOpenConns,
-		}, global.Logger)
+	// gorm: solo SQLite (A3). Un altro tipo, per esempio mysql di
+	// un'installazione vecchia, ferma l'avvio prima che si crei
+	// data/rustdeskapi.db: partire su un database nuovo e vuoto sembrerebbe una
+	// perdita di dati.
+	if tipo := global.Config.Gorm.Type; tipo != "" && tipo != config.TypeSqlite {
+		global.Logger.Fatalf("gorm.type %q non supportato, l'API non parte: l'unico database e' %q. "+
+			"Chi usava MySQL o PostgreSQL resta sulla versione precedente o porta i dati su SQLite", tipo, config.TypeSqlite)
 	}
+	global.DB = orm.NewSqlite(&orm.SqliteConfig{
+		MaxIdleConns: global.Config.Gorm.MaxIdleConns,
+		MaxOpenConns: global.Config.Gorm.MaxOpenConns,
+	}, global.Logger)
 
 	// validator
 	global.ApiInitValidator()
@@ -193,43 +167,6 @@ func DatabaseAutoUpdate() {
 	version := DatabaseVersion
 
 	db := global.DB
-
-	if global.Config.Gorm.Type == config.TypeMysql {
-		// 检查存不存在数据库，不存在则创建
-		dbName := db.Migrator().CurrentDatabase()
-		if dbName == "" {
-			dbName = global.Config.Mysql.Dbname
-			// 移除 DSN 中的数据库名称，以便初始连接时不指定数据库
-			dsnWithoutDB := fmt.Sprintf("%s:%s@(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-				global.Config.Mysql.Username,
-				global.Config.Mysql.Password,
-				global.Config.Mysql.Addr,
-				"",
-			)
-
-			// 新链接
-			dbWithoutDB := orm.NewMysql(&orm.MysqlConfig{
-				Dsn: dsnWithoutDB,
-			}, global.Logger)
-			// 获取底层的 *sql.DB 对象，并确保在程序退出时关闭连接
-			sqlDBWithoutDB, err := dbWithoutDB.DB()
-			if err != nil {
-				global.Logger.Errorf("获取底层 *sql.DB 对象失败: %v", err)
-				return
-			}
-			defer func() {
-				if err := sqlDBWithoutDB.Close(); err != nil {
-					global.Logger.Errorf("关闭连接失败: %v", err)
-				}
-			}()
-
-			err = dbWithoutDB.Exec("CREATE DATABASE IF NOT EXISTS " + dbName + " DEFAULT CHARSET utf8mb4").Error
-			if err != nil {
-				global.Logger.Error(err)
-				return
-			}
-		}
-	}
 
 	if !db.Migrator().HasTable(&model.Version{}) {
 		Migrate(uint(version))
@@ -319,9 +256,8 @@ func Migrate(version uint) {
 
 // primoAvvio crea i due gruppi predefiniti e admin, con una password casuale
 // di 20 caratteri che va solo in fileAdminPassword. Il file si scrive prima
-// degli insert: se non si puo', gruppi e admin non hanno consumato id (con
-// MySQL e PostgreSQL il rollback non li restituisce), e al riavvio admin ha
-// ancora l'id 1 che cerca reset-admin-pwd.
+// degli insert: se non si puo', non si crea niente, e al riavvio admin
+// nasce con l'id 1 che cerca reset-admin-pwd.
 func primoAvvio(tx *gorm.DB) error {
 	pwd := utils.RandomString(20)
 	if pwd == "" {

@@ -153,8 +153,8 @@ golden: nel fork le righe si spostano (`NoRoute` oggi e' in
 
 Non coperto da questi test: i messaggi in italiano (l'istanza di riferimento
 risponde in inglese e il test fissa `RUSTDESK_API_LANG=en`), la scadenza e
-il rinnovo del token, il login OIDC e LDAP, il pannello admin, MySQL e
-PostgreSQL (il test usa sqlite), l'avvio vero (`main`, cobra, endless) e i
+il rinnovo del token, il login OIDC e LDAP, il pannello admin, l'avvio
+vero (`main`, cobra, endless) e i
 default sicuri, che hanno test propri. Coperti solo in parte, finche' la
 tabella del registratore non avra' i passi che mancano: `/api/peers`
 risponde sempre con l'elenco vuoto, perche' `peers` viene prima di

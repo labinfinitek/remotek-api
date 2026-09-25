@@ -149,7 +149,7 @@ The password must be 15 to 32 characters long (characters, not bytes); the same 
 
 * [Config File](./conf/config.yaml)
 * Modify the configuration in `conf/config.yaml`. 
-* If `gorm.type` is set to `sqlite`, MySQL-related configurations are not required.
+* The only database is SQLite (`data/rustdeskapi.db`): `gorm.type` must be `sqlite` or empty; any other value (for example `mysql` from an old installation) stops the API at startup with exit code 1.
 * Languages: `it`, `en`, `es`, `fr`, `ko`, `ru`, `zh-CN` and `zh-TW`; the default is `it`. A request is answered in the language of its `Accept-Language` header if it is one of these (the admin panel sends its own language, by default the browser's), otherwise in the configured one: the RustDesk client does not send the header.
 
 
@@ -180,16 +180,10 @@ The table below does not list all configurations. Please refer to the configurat
 | ----- GIN Configuration -----                          | ---------------------------------------                                                                                                             | ----------------------------- |
 | RUSTDESK_API_GIN_TRUST_PROXY                           | Trusted proxy IPs or CIDRs, separated by commas; default empty: no proxy is trusted, `X-Forwarded-For` and `X-Real-IP` are ignored.<br>Behind a reverse proxy set it to the proxy address, otherwise captcha and ban count every client as the proxy IP | 192.168.1.2,192.168.1.3       |
 | ----- GORM Configuration -----                         | ---------------------------------------                                                                                                             | ----------------------------- |
-| RUSTDESK_API_GORM_TYPE                                 | Database type (`sqlite` or `mysql`). Default is `sqlite`.                                                                                           | sqlite                        |
+| RUSTDESK_API_GORM_TYPE                                 | Database type: only `sqlite` (empty means `sqlite`); any other value stops the API at startup                                                     | sqlite                        |
 | RUSTDESK_API_GORM_MAX_IDLE_CONNS                       | Maximum idle connections                                                                                                                            | 10                            |
 | RUSTDESK_API_GORM_MAX_OPEN_CONNS                       | Maximum open connections                                                                                                                            | 100                           |
 | RUSTDESK_API_RUSTDESK_PERSONAL                         | Open Personal Api 1:Enable,0:Disable                                                                                                                | 1                             |
-| ----- MYSQL Configuration -----                        | ---------------------------------------                                                                                                             | ----------------------------- |
-| RUSTDESK_API_MYSQL_USERNAME                            | MySQL username                                                                                                                                      | root                          |
-| RUSTDESK_API_MYSQL_PASSWORD                            | MySQL password                                                                                                                                      | 111111                        |
-| RUSTDESK_API_MYSQL_ADDR                                | MySQL address                                                                                                                                       | 192.168.1.66:3306             |
-| RUSTDESK_API_MYSQL_DBNAME                              | MySQL database name                                                                                                                                 | rustdesk                      |
-| RUSTDESK_API_MYSQL_TLS                             | Whether to enable TLS, optional values: `true`, `false`, `skip-verify`, `custom` | `false`                       |
 | ----- RUSTDESK Configuration -----                     | ---------------------------------------                                                                                                             | ----------------------------- |
 | RUSTDESK_API_RUSTDESK_ID_SERVER                        | Rustdesk ID server address                                                                                                                          | 192.168.1.66:21116            |
 | RUSTDESK_API_RUSTDESK_RELAY_SERVER                     | Rustdesk relay server address                                                                                                                       | 192.168.1.66:21117            |
