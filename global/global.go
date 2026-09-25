@@ -19,7 +19,7 @@ import (
 var (
 	DB         *gorm.DB
 	Logger     *logrus.Logger
-	ConfigPath string = ""
+	ConfigPath string
 	Config     config.Config
 	Viper      *viper.Viper
 	Redis      *redis.Client

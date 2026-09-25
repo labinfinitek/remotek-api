@@ -3,7 +3,6 @@ package custom_types
 import (
 	"database/sql/driver"
 	"encoding/json"
-	"errors"
 	"fmt"
 )
 
@@ -19,7 +18,7 @@ func (j *AutoJson) Scan(value interface{}) error {
 	case string:
 		strValue = v
 	default:
-		return errors.New(fmt.Sprintf("Failed Scan AutoJson value: %v", value))
+		return fmt.Errorf("failed Scan AutoJson value: %v", value)
 	}
 	bytes := []byte(strValue)
 	//bytes, ok := value.([]byte)
@@ -27,7 +26,7 @@ func (j *AutoJson) Scan(value interface{}) error {
 	//	return errors.New(fmt.Sprint("Failed Scan AutoJson value:", value))
 	//}
 
-	if bytes == nil || len(bytes) == 0 {
+	if len(bytes) == 0 {
 		*j = AutoJson(json.RawMessage{'[', ']'})
 		return nil
 	}
