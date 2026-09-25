@@ -3,16 +3,17 @@ package global
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+	"gorm.io/gorm"
+
 	"github.com/lejianwen/rustdesk-api/v2/config"
 	"github.com/lejianwen/rustdesk-api/v2/lib/cache"
 	"github.com/lejianwen/rustdesk-api/v2/lib/jwt"
 	"github.com/lejianwen/rustdesk-api/v2/lib/lock"
 	"github.com/lejianwen/rustdesk-api/v2/lib/upload"
 	"github.com/lejianwen/rustdesk-api/v2/utils"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
-	"gorm.io/gorm"
 )
 
 var (

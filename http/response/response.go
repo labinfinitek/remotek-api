@@ -3,10 +3,12 @@ package response
 import (
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/lejianwen/rustdesk-api/v2/global"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+
+	"github.com/lejianwen/rustdesk-api/v2/global"
 )
 
 type Response struct {

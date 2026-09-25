@@ -1,8 +1,9 @@
 package api
 
 import (
-	"github.com/lejianwen/rustdesk-api/v2/model"
 	"time"
+
+	"github.com/lejianwen/rustdesk-api/v2/model"
 )
 
 type WebClientPeerPayload struct {

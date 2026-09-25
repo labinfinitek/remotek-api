@@ -2,10 +2,11 @@ package orm
 
 import (
 	"fmt"
+	"time"
+
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"time"
 )
 
 type MysqlConfig struct {
