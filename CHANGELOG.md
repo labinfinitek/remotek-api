@@ -205,6 +205,10 @@ Base upstream: rustdesk-api v2.7.
   default `./resources/brand`) contiene `logo.svg` e `favicon.svg`, che
   l'API serve su `/brand/`: per cambiare logo si sostituiscono i file, anche
   montandoli nel container. Logo e favicon attuali sono provvisori.
+- Nell'immagine Docker il pannello prende logo e favicon da `/brand/` e il
+  titolo statico da `ARG BRAND_NAME` (default "Remotek"): il `Dockerfile`
+  adatta sei righe del sorgente al commit fissato prima di `npm run build`,
+  e la build si ferma se una non c'e' piu'.
 - `Dockerfile` multi-stage che costruisce l'immagine dal sorgente: binario Go
   statico, pannello rustdesk-api-web di upstream compilato al commit fissato
   `3998c2a` (`ARG PANNELLO_COMMIT`), base Alpine; immagini di base fissate

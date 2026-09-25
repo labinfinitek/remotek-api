@@ -243,7 +243,9 @@ docker build \
   `/api/version` (default `dev`); `REVISION` goes into the OCI label (default
   `unknown`); `PANNELLO_COMMIT` is the full sha of the rustdesk-api-web commit
   (default `3998c2a9213fcd047252776d0f0db33e6717026c`, the last commit of
-  master, the one packaged with v2.7).
+  master, the one packaged with v2.7); `BRAND_NAME` is the static title of
+  the admin panel (default `Remotek`; letters, digits, spaces and `. _ -`
+  only), see [Changing the brand](#changing-the-brand).
 - The process runs as user `remotek` (uid/gid 10001), not root. `/app/data`
   is the volume (database, `admin-password.txt`); `/app/runtime` holds
   `log.txt` (the log also goes to stdout).
@@ -271,6 +273,11 @@ Name and logo live in one place and change without touching the code:
   on `/brand/logo.svg` and `/brand/favicon.svg`, where the admin panel reads
   them. Replace the files, no rebuild needed; in a container, mount them:
   `-v /srv/remotek/brand:/app/resources/brand:ro` (readable by uid 10001).
+- The static title the panel shows before it loads its configuration is set
+  at build time: `docker build --build-arg BRAND_NAME=<name> ...`. Before
+  `npm run build` the `Dockerfile` rewrites a few lines (logo, favicon,
+  title) of the panel source at the pinned commit; if a line is missing the
+  build fails.
 
 Not renamed: the `RUSTDESK_API_` variable prefix, the `rustdesk:` config
 section, the `/api/admin/rustdesk/*` routes, the Go module path.

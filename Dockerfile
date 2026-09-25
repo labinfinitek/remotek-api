@@ -45,7 +45,29 @@ RUN case "$PANNELLO_COMMIT" in \
     esac \
  && [ "${#PANNELLO_COMMIT}" -eq 40 ] \
  && npm ci --registry=https://registry.npmjs.org/ \
-      --replace-registry-host=always --ignore-scripts --no-audit --no-fund \
+      --replace-registry-host=always --ignore-scripts --no-audit --no-fund
+# Marchio: il pannello di upstream ha logo, favicon e titolo nel sorgente.
+# Si riscrivono le righe che li portano: logo e favicon vengono da /brand/,
+# che l'API serve da brand.dir (si cambiano sostituendo i file, senza
+# ricostruire), il titolo statico da BRAND_NAME; quello vero lo mette il
+# pannello leggendo /api/admin/config/admin. Nei .vue il logo e' un :src
+# legato, perche' Vite non lo tratti come un file da importare nella build.
+# adatta ferma la build se una riga non c'e' piu' (commit del pannello
+# cambiato): va rivista. Col fork del pannello (A3) si spostano li'.
+ARG BRAND_NAME=Remotek
+RUN case "$BRAND_NAME" in \
+      ""|*[!A-Za-z0-9._\ -]*) echo "BRAND_NAME: solo lettere, cifre, spazi, . _ -" >&2; exit 1 ;; \
+    esac \
+ && adatta() { grep -qF "$2" "$1" && sed -i "s|$2|$3|" "$1" && grep -qF "$3" "$1" \
+      || { echo "$1: manca la riga da adattare: $2" >&2; return 1; }; } \
+ && adatta index.html '<link rel="icon" href="/favicon.ico" />' \
+      '<link rel="icon" type="image/svg+xml" href="/brand/favicon.svg" />' \
+ && adatta index.html '<title>Rustdesk API Admin</title>' "<title>$BRAND_NAME</title>" \
+ && adatta src/store/app.js "import logo from '@/assets/logo.png'" "const logo = '/brand/logo.svg'" \
+ && adatta src/store/app.js "title: 'Rustdesk API Admin'," "title: '$BRAND_NAME'," \
+ && adatta src/views/login/login.vue 'src="@/assets/logo.png"' ":src=\"'/brand/logo.svg'\"" \
+ && adatta src/views/register/index.vue 'src="@/assets/logo.png"' ":src=\"'/brand/logo.svg'\"" \
+ && rm public/favicon.ico src/assets/logo.png \
  && npm run build
 
 # --- Immagine finale ---
