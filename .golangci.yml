@@ -48,7 +48,10 @@ linters:
         - name: var-naming
           disabled: true # come -ST1003: nomi ereditati (Id, Url, underscore) usati in tutto il repo
     staticcheck:
-      checks: ["all", "-ST1000", "-ST1003"] # niente package doc obbligatoria; nomi con underscore ereditati
+      # -QF1008: i selettori espliciti (service.AllService.AddressBookService.Create)
+      # dicono quale servizio si usa e servono a sostituire AllService con servizi
+      # passati esplicitamente (REGOLE 10.2); abbreviarli lo nasconde.
+      checks: ["all", "-ST1000", "-ST1003", "-QF1008"] # niente package doc obbligatoria; nomi con underscore ereditati; selettori espliciti
   exclusions:
     generated: lax
     presets:
