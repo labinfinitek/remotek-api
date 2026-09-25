@@ -181,8 +181,19 @@ Base upstream: rustdesk-api v2.7.
   nome Go (`ConfirmPassword`, `NewPassword`).
 - Si compila con Go 1.26 (toolchain go1.26.8) e `go.sum` e' versionato: le
   dipendenze di un build sono quelle del commit, non quelle del giorno.
+- Nell'immagine Docker l'API gira come utente `remotek` (uid/gid 10001), non
+  piu' come root. Una cartella del host montata su `/app/data` deve essere
+  scrivibile da 10001 (`chown -R 10001:10001 <cartella>`), anche quella
+  scritta finora dall'immagine di upstream, altrimenti l'API non parte.
+  L'immagine non contiene piu' il web client (`resources/web`), spento di
+  default, ne' `docs/`.
 
 ### Aggiunto
+- `Dockerfile` multi-stage che costruisce l'immagine dal sorgente: binario Go
+  statico, pannello rustdesk-api-web di upstream compilato al commit fissato
+  `3998c2a` (`ARG PANNELLO_COMMIT`), base Alpine; immagini di base fissate
+  per digest, `HEALTHCHECK` su `/api/version`, label OCI, versione da
+  `ARG VERSION`. Prima il `Dockerfile` copiava un binario compilato fuori.
 - Messaggi dell'API in italiano (`resources/i18n/it.toml`): danno del tu e
   usano i termini della traduzione italiana del client RustDesk (Accedi,
   Nome utente, Password errata, Codice di verifica).

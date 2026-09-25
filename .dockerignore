@@ -1,29 +1,34 @@
-# Ignore Docker Compose configuration files
-docker-compose.yaml
-docker-compose-dev.yaml
+# Contesto della build dell'immagine: si esclude tutto e si riammette solo
+# cio' che il Dockerfile usa. Una cartella nuova di sorgenti Go va aggiunta
+# qui: se manca, la build fallisce, invece di portare dentro file per sbaglio
+# (data/ col database, .git, segreti locali).
+*
 
-# Ignore development Dockerfile
-Dockerfile
-Dockerfile.dev
-docker-dev.sh
+# Sorgenti Go del binario (go list -deps ./cmd) e moduli.
+!go.mod
+!go.sum
+!cmd/
+!config/
+!docs/admin/*.go
+!docs/api/*.go
+!global/
+!http/
+!lib/
+!model/
+!service/
+!utils/
+# Layout di arrivo (CLAUDE.md), ammesso da subito.
+!internal/
+!pkg/
+!migrations/
+**/*_test.go
+**/testdata/
 
-# Ignore the data directory
-data/
-
-# Ignore version control system directories
-.git/
-
-# Ignore log and temporary files
-*.log
-*.tmp
-*.swp
-
-# Ignore editor/IDE configuration files
-.vscode/
-.idea/
-
-# Ignore binaries and build cache
-release/
-bin/
-*.exe
-*.out
+# File dell'immagine finale. Il web client (resources/web) resta fuori:
+# e' spento di default. Il pannello (resources/admin) e la versione
+# (resources/version) li produce il Dockerfile.
+!conf/
+!resources/
+resources/web/
+resources/admin/
+resources/version

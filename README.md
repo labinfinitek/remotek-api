@@ -224,6 +224,34 @@
 
 2. 使用`docker compose`，参考[WIKI](https://github.com/lejianwen/rustdesk-api/wiki)
 
+#### 构建镜像
+
+`Dockerfile` 从源码构建全部内容，分三个阶段：Go 二进制（静态链接，sqlite 需要
+CGO）、固定提交的后台前端 [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)、
+最终的 Alpine 镜像。不需要预先编译的二进制，也不需要 `release/` 目录。
+
+```bash
+docker build \
+  --build-arg VERSION=<版本> \
+  --build-arg REVISION="$(git rev-parse HEAD)" \
+  -t remotek-api .
+```
+
+- 构建参数：`VERSION` 写入 `resources/version`，由 `/api/version` 返回（默认
+  `dev`）；`REVISION` 写入 OCI 标签（默认 `unknown`）；`PANNELLO_COMMIT` 是
+  rustdesk-api-web 提交的完整 sha（默认 `3998c2a9213fcd047252776d0f0db33e6717026c`，
+  master 的最后一次提交，即 v2.7 打包的版本）。
+- 进程以用户 `remotek`（uid/gid 10001）运行，不是 root。`/app/data` 是数据卷
+  （数据库、`admin-password.txt`）；`/app/runtime` 存放 `log.txt`（日志同时输出到
+  stdout）。
+- 挂载的宿主机目录必须对 uid 10001 可写，否则 API 无法启动：
+  `sudo chown -R 10001:10001 /data/rustdesk/api`。以 root 运行的镜像写下的数据同样
+  需要这样处理。
+- 镜像中不包含 web client（`resources/web`）：它默认关闭（`app.web-client: 0`）。
+- `HEALTHCHECK` 访问 `http://127.0.0.1:21114/api/version`：如果修改了
+  `RUSTDESK_API_GIN_API_ADDR` 中的端口，请用 `--health-cmd` 覆盖。
+- 基础镜像按 digest 固定：更新时标签和 digest 一起修改。
+
 #### 下载release直接运行
 
 [下载地址](https://github.com/lejianwen/rustdesk-api/releases)
