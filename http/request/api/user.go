@@ -29,13 +29,13 @@ type DeviceInfoInLogin struct {
 }
 
 type LoginForm struct {
-	AutoLogin  bool              `json:"autoLogin" label:"自动登录"`
-	DeviceInfo DeviceInfoInLogin `json:"deviceInfo" label:"设备信息"`
+	AutoLogin  bool              `json:"autoLogin" label:"AutoLogin"`
+	DeviceInfo DeviceInfoInLogin `json:"deviceInfo" label:"DeviceInfo"`
 	Id         string            `json:"id"  label:"id"`
 	Type       string            `json:"type"  label:"type"`
 	Uuid       string            `json:"uuid"  label:"uuid"`
-	Username   string            `json:"username" validate:"required,gte=2,lte=32" label:"用户名"`
-	Password   string            `json:"password,omitempty" validate:"gte=4,lte=32" label:"密码"`
+	Username   string            `json:"username" validate:"required,gte=2,lte=32" label:"Username"`
+	Password   string            `json:"password,omitempty" validate:"gte=4,lte=32" label:"Password"`
 }
 
 type UserListQuery struct {

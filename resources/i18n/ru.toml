@@ -167,3 +167,53 @@ other = "Заблокировано."
 description = "Register success wait admin confirm."
 one = "Регистрация прошла успешно, ожидайте подтверждения администратора."
 other = "Регистрация прошла успешно, ожидайте подтверждения администратора."
+
+[Username]
+description = "Field name: username."
+one = "Имя пользователя"
+other = "Имя пользователя"
+
+[Password]
+description = "Field name: password."
+one = "Пароль"
+other = "Пароль"
+
+[ConfirmPassword]
+description = "Field name: password confirmation."
+one = "Подтверждение пароля"
+other = "Подтверждение пароля"
+
+[OldPassword]
+description = "Field name: old password."
+one = "Старый пароль"
+other = "Старый пароль"
+
+[NewPassword]
+description = "Field name: new password."
+one = "Новый пароль"
+other = "Новый пароль"
+
+[Email]
+description = "Field name: email."
+one = "Эл. почта"
+other = "Эл. почта"
+
+[Captcha]
+description = "Field name: captcha."
+one = "Проверочный код"
+other = "Проверочный код"
+
+[Platform]
+description = "Field name: platform."
+one = "Платформа"
+other = "Платформа"
+
+[AutoLogin]
+description = "Field name: auto login."
+one = "Автоматический вход"
+other = "Автоматический вход"
+
+[DeviceInfo]
+description = "Field name: device info."
+one = "Сведения об устройстве"
+other = "Сведения об устройстве"

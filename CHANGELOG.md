@@ -8,6 +8,13 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 Base upstream: rustdesk-api v2.7.
 
 ### Sicurezza
+- Un errore interno che un controller passa come messaggio non arriva piu'
+  al client ne' al pannello (REGOLE 8): per esempio l'errore di rete di un
+  provider OIDC irraggiungibile, con il suo indirizzo e la sua risposta, da
+  `/api/oidc/auth`, `/api/admin/oidc/auth` e dall'associazione di un account
+  OAuth nel pannello. La risposta porta "Errore di sistema." (`SystemError`)
+  e il testo va nel log a livello warn. Un messaggio che manca in una lingua
+  esce in inglese, non piu' come ID.
 - Password iniziale di admin (ADR-0008): 20 caratteri casuali invece di 8, e
   non piu' nel log, dove finiva a livello info. Sta nel file
   `data/admin-password.txt`, accanto a `rustdeskapi.db` (nel container
@@ -68,6 +75,15 @@ Base upstream: rustdesk-api v2.7.
   `x/sync` v0.11.0 -> v0.21.0, `x/tools` v0.26.0 -> v0.47.0.
 
 ### Corretto
+- Un file di lingua che non si carica ferma l'avvio con un messaggio che lo
+  nomina: prima si saltava in silenzio e l'API rispondeva in inglese. Un
+  file in `resources/i18n` dal nome di meno di 5 caratteri non manda piu'
+  l'avvio in panic.
+- 22 messaggi arrivavano all'utente come ID nudi, per esempio
+  `UserDisabled` al login di un utente disattivato, `LoginBanned` e
+  `NoCaptchaRequired` nel pannello e gli errori di LDAP e OIDC: ora hanno
+  il testo in inglese e in italiano, e un test controlla che ogni ID usato
+  nel codice sia in `en.toml`.
 - Registrazione: il server rifiuta una conferma diversa dalla password. Prima
   salvava la password senza guardare la conferma; il pannello le confrontava
   gia' nel browser.
@@ -77,10 +93,27 @@ Base upstream: rustdesk-api v2.7.
   registry altrui): la CI del fork arriva con `remotek-ci.yml`.
 
 ### Modificato
+- La lingua predefinita e' l'italiano, nel codice e in `conf/config.yaml`
+  (prima `zh-CN` nel file e l'inglese senza file). Il client RustDesk non
+  manda `Accept-Language`: riceve i messaggi in italiano, e
+  `RUSTDESK_API_LANG=en` riporta all'inglese. I due testi che il client
+  confronta alla lettera, `No authed oidc is found` e `SYSINFO_UPDATED`,
+  non cambiano.
+- Messaggi e validatore scelgono la lingua con la stessa regola: quella di
+  `Accept-Language` se l'API la ha, altrimenti `lang`, altrimenti
+  l'inglese. Prima il validatore voleva la stringa esatta, e `it-IT`, che il
+  pannello manda con un browser italiano, finiva in inglese; i messaggi
+  ripiegavano sull'inglese invece che su `lang`. Il validatore ha
+  l'italiano, e i nomi dei campi escono nella lingua della risposta: prima
+  erano in cinese in ogni lingua (`用户名 is a required field`) o erano il
+  nome Go (`ConfirmPassword`, `NewPassword`).
 - Si compila con Go 1.26 (toolchain go1.26.8) e `go.sum` e' versionato: le
   dipendenze di un build sono quelle del commit, non quelle del giorno.
 
 ### Aggiunto
+- Messaggi dell'API in italiano (`resources/i18n/it.toml`): danno del tu e
+  usano i termini della traduzione italiana del client RustDesk (Accedi,
+  Nome utente, Password errata, Codice di verifica).
 - `SECURITY.md`, `REMOTEK.md`, template di pull request; attribuzione delle
   modifiche in `LICENSE`.
 - golangci-lint v2 in CI: bloccante sui pacchetti gia' bonificati, informativo

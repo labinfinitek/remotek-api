@@ -2,8 +2,6 @@ package global
 
 import (
 	"github.com/gin-gonic/gin"
-	ut "github.com/go-playground/universal-translator"
-	"github.com/go-playground/validator/v10"
 	"github.com/go-redis/redis/v8"
 	"github.com/lejianwen/rustdesk-api/v2/config"
 	"github.com/lejianwen/rustdesk-api/v2/lib/cache"
@@ -26,9 +24,6 @@ var (
 	Redis      *redis.Client
 	Cache      cache.Handler
 	Validator  struct {
-		Validate    *validator.Validate
-		UT          *ut.UniversalTranslator
-		VTrans      ut.Translator
 		ValidStruct func(*gin.Context, interface{}) []string
 		ValidVar    func(ctx *gin.Context, field interface{}, tag string) []string
 	}

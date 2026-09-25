@@ -158,3 +158,163 @@ other = "Banned."
 description = "Register success, wait admin confirm."
 one = "Register success, wait admin confirm."
 other = "Register success, wait admin confirm."
+
+[LoginBanned]
+description = "Too many failed logins from this address."
+one = "Too many failed logins from your address: try again later."
+other = "Too many failed logins from your address: try again later."
+
+[LoginFailed]
+description = "Login failed."
+one = "Login failed."
+other = "Login failed."
+
+[NoCaptchaRequired]
+description = "No captcha required."
+one = "No verification code is required."
+other = "No verification code is required."
+
+[UserDisabled]
+description = "User disabled."
+one = "User disabled."
+other = "User disabled."
+
+[UserNotFound]
+description = "User not found."
+one = "User not found."
+other = "User not found."
+
+[UsernameExists]
+description = "Username already exists."
+one = "Username already exists."
+other = "Username already exists."
+
+[IdTokenVerifyError]
+description = "OIDC: ID token verification failed."
+one = "ID token verification failed."
+other = "ID token verification failed."
+
+[IDTokenClaimsError]
+description = "OIDC: cannot read the ID token claims."
+one = "Cannot read the ID token claims."
+other = "Cannot read the ID token claims."
+
+[NonceDoesNotMatch]
+description = "OIDC: nonce does not match."
+one = "Nonce does not match."
+other = "Nonce does not match."
+
+[UrlParseFailed]
+description = "LDAP: invalid server URL."
+one = "Invalid LDAP server URL."
+other = "Invalid LDAP server URL."
+
+[FileReadFailed]
+description = "LDAP: cannot read the CA certificate file."
+one = "Cannot read the LDAP CA certificate file."
+other = "Cannot read the LDAP CA certificate file."
+
+[LdapNotEnabled]
+description = "LDAP not enabled."
+one = "LDAP is not enabled."
+other = "LDAP is not enabled."
+
+[UserDisabledAtLdap]
+description = "LDAP: user disabled."
+one = "User disabled in LDAP."
+other = "User disabled in LDAP."
+
+[MailNotMatch]
+description = "LDAP: email does not match."
+one = "Email does not match."
+other = "Email does not match."
+
+[LdapConnectFailed]
+description = "LDAP: connection failed."
+one = "Cannot connect to the LDAP server."
+other = "Cannot connect to the LDAP server."
+
+[LdapSearchRequestFailed]
+description = "LDAP: search failed."
+one = "LDAP search failed."
+other = "LDAP search failed."
+
+[LdapStartTLSFailed]
+description = "LDAP: TLS failed."
+one = "LDAP TLS connection failed."
+other = "LDAP TLS connection failed."
+
+[LdapBindServiceFailed]
+description = "LDAP: service account bind failed."
+one = "LDAP bind with the service account failed."
+other = "LDAP bind with the service account failed."
+
+[LdapBindFailed]
+description = "LDAP: bind failed."
+one = "LDAP bind failed."
+other = "LDAP bind failed."
+
+[LdapToLocalUserFailed]
+description = "LDAP: cannot map to a local user."
+one = "Cannot map the LDAP user to a local user."
+other = "Cannot map the LDAP user to a local user."
+
+[LdapCreateUserFailed]
+description = "LDAP: cannot create the local user."
+one = "Cannot create the local user for the LDAP user."
+other = "Cannot create the local user for the LDAP user."
+
+[PasswordNotMatch]
+description = "LDAP: wrong password."
+one = "Wrong password."
+other = "Wrong password."
+
+[Username]
+description = "Field name: username."
+one = "Username"
+other = "Username"
+
+[Password]
+description = "Field name: password."
+one = "Password"
+other = "Password"
+
+[ConfirmPassword]
+description = "Field name: password confirmation."
+one = "Confirm password"
+other = "Confirm password"
+
+[OldPassword]
+description = "Field name: old password."
+one = "Old password"
+other = "Old password"
+
+[NewPassword]
+description = "Field name: new password."
+one = "New password"
+other = "New password"
+
+[Email]
+description = "Field name: email."
+one = "Email"
+other = "Email"
+
+[Captcha]
+description = "Field name: captcha."
+one = "Captcha"
+other = "Captcha"
+
+[Platform]
+description = "Field name: platform."
+one = "Platform"
+other = "Platform"
+
+[AutoLogin]
+description = "Field name: auto login."
+one = "Auto login"
+other = "Auto login"
+
+[DeviceInfo]
+description = "Field name: device info."
+one = "Device info"
+other = "Device info"

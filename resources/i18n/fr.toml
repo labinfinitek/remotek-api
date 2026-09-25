@@ -167,3 +167,53 @@ other = "Banni."
 description = "Register success wait admin confirm."
 one = "Inscription réussie, veuillez attendre la confirmation de l'administrateur."
 other = "Inscription réussie, veuillez attendre la confirmation de l'administrateur."
+
+[Username]
+description = "Field name: username."
+one = "Nom d'utilisateur"
+other = "Nom d'utilisateur"
+
+[Password]
+description = "Field name: password."
+one = "Mot de passe"
+other = "Mot de passe"
+
+[ConfirmPassword]
+description = "Field name: password confirmation."
+one = "Confirmation du mot de passe"
+other = "Confirmation du mot de passe"
+
+[OldPassword]
+description = "Field name: old password."
+one = "Ancien mot de passe"
+other = "Ancien mot de passe"
+
+[NewPassword]
+description = "Field name: new password."
+one = "Nouveau mot de passe"
+other = "Nouveau mot de passe"
+
+[Email]
+description = "Field name: email."
+one = "E-mail"
+other = "E-mail"
+
+[Captcha]
+description = "Field name: captcha."
+one = "Code de vérification"
+other = "Code de vérification"
+
+[Platform]
+description = "Field name: platform."
+one = "Plateforme"
+other = "Plateforme"
+
+[AutoLogin]
+description = "Field name: auto login."
+one = "Connexion automatique"
+other = "Connexion automatique"
+
+[DeviceInfo]
+description = "Field name: device info."
+one = "Informations sur l'appareil"
+other = "Informations sur l'appareil"

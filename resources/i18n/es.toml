@@ -167,3 +167,53 @@ other = "Prohibido."
 description = "Register success, wait admin confirm."
 one = "Registro exitoso, espere la confirmación del administrador."
 other = "Registro exitoso, espere la confirmación del administrador."
+
+[Username]
+description = "Field name: username."
+one = "Nombre de usuario"
+other = "Nombre de usuario"
+
+[Password]
+description = "Field name: password."
+one = "Contraseña"
+other = "Contraseña"
+
+[ConfirmPassword]
+description = "Field name: password confirmation."
+one = "Confirmar contraseña"
+other = "Confirmar contraseña"
+
+[OldPassword]
+description = "Field name: old password."
+one = "Contraseña anterior"
+other = "Contraseña anterior"
+
+[NewPassword]
+description = "Field name: new password."
+one = "Nueva contraseña"
+other = "Nueva contraseña"
+
+[Email]
+description = "Field name: email."
+one = "Correo electrónico"
+other = "Correo electrónico"
+
+[Captcha]
+description = "Field name: captcha."
+one = "Código de verificación"
+other = "Código de verificación"
+
+[Platform]
+description = "Field name: platform."
+one = "Plataforma"
+other = "Plataforma"
+
+[AutoLogin]
+description = "Field name: auto login."
+one = "Inicio de sesión automático"
+other = "Inicio de sesión automático"
+
+[DeviceInfo]
+description = "Field name: device info."
+one = "Información del dispositivo"
+other = "Información del dispositivo"

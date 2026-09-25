@@ -61,12 +61,12 @@ type UserQuery struct {
 
 type UserPasswordForm struct {
 	Id       uint   `json:"id" validate:"required"`
-	Password string `json:"password" validate:"required,gte=15,lte=32"`
+	Password string `json:"password" validate:"required,gte=15,lte=32" label:"Password"`
 }
 
 type ChangeCurPasswordForm struct {
-	OldPassword string `json:"old_password" validate:"required,gte=4,lte=32"`
-	NewPassword string `json:"new_password" validate:"required,gte=15,lte=32"`
+	OldPassword string `json:"old_password" validate:"required,gte=4,lte=32" label:"OldPassword"`
+	NewPassword string `json:"new_password" validate:"required,gte=15,lte=32" label:"NewPassword"`
 }
 type GroupUsersQuery struct {
 	IsMy   int  `json:"is_my"`
@@ -77,10 +77,10 @@ type GroupUsersQuery struct {
 // alla password anche per il server, non solo per il pannello che le
 // confronta nel browser.
 type RegisterForm struct {
-	Username        string `json:"username" validate:"required,gte=2,lte=32"`
-	Email           string `json:"email"` // validate:"required,email"
-	Password        string `json:"password" validate:"required,gte=15,lte=32"`
-	ConfirmPassword string `json:"confirm_password" validate:"required,gte=15,lte=32,eqfield=Password"`
+	Username        string `json:"username" validate:"required,gte=2,lte=32" label:"Username"`
+	Email           string `json:"email" label:"Email"` // validate:"required,email"
+	Password        string `json:"password" validate:"required,gte=15,lte=32" label:"Password"`
+	ConfirmPassword string `json:"confirm_password" validate:"required,gte=15,lte=32,eqfield=Password" label:"ConfirmPassword"`
 }
 
 type UserTokenBatchDeleteForm struct {

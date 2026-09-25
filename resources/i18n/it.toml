@@ -1,0 +1,329 @@
+[Test]
+description = "test"
+one = "prova1 "
+other = "Prova2 {{.P0}}"
+
+[ParamsError]
+description = "Params validation failed."
+one = "Parametri non validi."
+other = "Parametri non validi."
+
+[OperationFailed]
+description = "OperationFailed."
+one = "Operazione non riuscita."
+other = "Operazione non riuscita."
+
+[OperationSuccess]
+description = "OperationSuccess."
+one = "Operazione riuscita."
+other = "Operazione riuscita."
+
+[ItemExists]
+description = "Item already exists."
+one = "L'elemento esiste già."
+other = "L'elemento esiste già."
+
+[ItemNotFound]
+description = "Item not found."
+one = "Elemento non trovato."
+other = "Elemento non trovato."
+
+[NoAccess]
+description = "No access."
+one = "Non hai i permessi per questa operazione."
+other = "Non hai i permessi per questa operazione."
+
+[NeedLogin]
+description = "Need login."
+one = "Accedi prima di continuare."
+other = "Accedi prima di continuare."
+
+[UsernameOrPasswordError]
+description = "Username or password error."
+one = "Nome utente o password errati."
+other = "Nome utente o password errati."
+
+[SystemError]
+description = "System error."
+one = "Errore di sistema."
+other = "Errore di sistema."
+
+[ConfigNotFound]
+description = "Config not found."
+one = "Configurazione non trovata."
+other = "Configurazione non trovata."
+
+[OauthExpired]
+description = "Oauth expired."
+one = "Autorizzazione OAuth scaduta, riprova."
+other = "Autorizzazione OAuth scaduta, riprova."
+
+[OauthFailed]
+description = "Oauth failed."
+one = "Autorizzazione OAuth non riuscita."
+other = "Autorizzazione OAuth non riuscita."
+
+[OauthHasBindOtherUser]
+description = "Oauth has bind other user."
+one = "Questo account OAuth è già associato a un altro utente."
+other = "Questo account OAuth è già associato a un altro utente."
+
+[ParamIsEmpty]
+description = "Param is empty."
+one = "Il campo {{.P0}} è vuoto."
+other = "Il campo {{.P0}} è vuoto."
+
+[BindFail]
+description = "Bind fail."
+one = "Associazione non riuscita."
+other = "Associazione non riuscita."
+
+[BindSuccess]
+description = "Bind success."
+one = "Associazione riuscita."
+other = "Associazione riuscita."
+
+[OauthHasBeenSuccess]
+description = "Oauth has been success."
+one = "Autorizzazione OAuth già completata."
+other = "Autorizzazione OAuth già completata."
+
+[OauthSuccess]
+description = "Oauth success."
+one = "Autorizzazione OAuth riuscita."
+other = "Autorizzazione OAuth riuscita."
+
+[OauthRegisterSuccess]
+description = "Oauth register success."
+one = "Registrazione con OAuth riuscita."
+other = "Registrazione con OAuth riuscita."
+
+[OauthRegisterFailed]
+description = "Oauth register failed."
+one = "Registrazione con OAuth non riuscita."
+other = "Registrazione con OAuth non riuscita."
+
+[GetOauthTokenError]
+description = "Get oauth token error."
+one = "Impossibile ottenere il token OAuth."
+other = "Impossibile ottenere il token OAuth."
+
+[GetOauthUserInfoError]
+description = "Get oauth user info error."
+one = "Impossibile ottenere i dati dell'utente OAuth."
+other = "Impossibile ottenere i dati dell'utente OAuth."
+
+[DecodeOauthUserInfoError]
+description = "Decode oauth user info error."
+one = "Impossibile leggere i dati dell'utente OAuth."
+other = "Impossibile leggere i dati dell'utente OAuth."
+
+[OldPasswordError]
+description = "Old password error."
+one = "Vecchia password errata."
+other = "Vecchia password errata."
+
+[DefaultGroup]
+description = "Default group"
+one = "Gruppo predefinito"
+other = "Gruppo predefinito"
+
+[ShareGroup]
+description = "Share group"
+one = "Gruppo condiviso"
+other = "Gruppo condiviso"
+
+[RegisterClosed]
+description = "Register closed."
+one = "La registrazione è chiusa."
+other = "La registrazione è chiusa."
+
+[CaptchaRequired]
+description = "Captcha required."
+one = "Inserisci il codice di verifica."
+other = "Inserisci il codice di verifica."
+
+[CaptchaError]
+description = "Captcha error."
+one = "Codice di verifica errato."
+other = "Codice di verifica errato."
+
+[PwdLoginDisabled]
+description = "Password login disabled."
+one = "L'accesso con password è disattivato."
+other = "L'accesso con password è disattivato."
+
+[CannotShareToSelf]
+description = "Cannot share to self."
+one = "Non puoi condividere con te stesso."
+other = "Non puoi condividere con te stesso."
+
+[Banned]
+description = "Banned."
+one = "Accesso bloccato."
+other = "Accesso bloccato."
+
+[RegisterSuccessWaitAdminConfirm]
+description = "Register success, wait admin confirm."
+one = "Registrazione riuscita: attendi che un amministratore la confermi."
+other = "Registrazione riuscita: attendi che un amministratore la confermi."
+
+[LoginBanned]
+description = "Too many failed logins from this address."
+one = "Troppi accessi non riusciti dal tuo indirizzo: riprova più tardi."
+other = "Troppi accessi non riusciti dal tuo indirizzo: riprova più tardi."
+
+[LoginFailed]
+description = "Login failed."
+one = "Accesso non riuscito."
+other = "Accesso non riuscito."
+
+[NoCaptchaRequired]
+description = "No captcha required."
+one = "Il codice di verifica non serve."
+other = "Il codice di verifica non serve."
+
+[UserDisabled]
+description = "User disabled."
+one = "Utente disattivato."
+other = "Utente disattivato."
+
+[UserNotFound]
+description = "User not found."
+one = "Utente non trovato."
+other = "Utente non trovato."
+
+[UsernameExists]
+description = "Username already exists."
+one = "Il nome utente esiste già."
+other = "Il nome utente esiste già."
+
+[IdTokenVerifyError]
+description = "OIDC: ID token verification failed."
+one = "Verifica del token ID non riuscita."
+other = "Verifica del token ID non riuscita."
+
+[IDTokenClaimsError]
+description = "OIDC: cannot read the ID token claims."
+one = "Impossibile leggere i dati del token ID."
+other = "Impossibile leggere i dati del token ID."
+
+[NonceDoesNotMatch]
+description = "OIDC: nonce does not match."
+one = "Il nonce non corrisponde."
+other = "Il nonce non corrisponde."
+
+[UrlParseFailed]
+description = "LDAP: invalid server URL."
+one = "Indirizzo del server LDAP non valido."
+other = "Indirizzo del server LDAP non valido."
+
+[FileReadFailed]
+description = "LDAP: cannot read the CA certificate file."
+one = "Impossibile leggere il certificato CA di LDAP."
+other = "Impossibile leggere il certificato CA di LDAP."
+
+[LdapNotEnabled]
+description = "LDAP not enabled."
+one = "LDAP non è attivo."
+other = "LDAP non è attivo."
+
+[UserDisabledAtLdap]
+description = "LDAP: user disabled."
+one = "Utente disattivato in LDAP."
+other = "Utente disattivato in LDAP."
+
+[MailNotMatch]
+description = "LDAP: email does not match."
+one = "L'email non corrisponde."
+other = "L'email non corrisponde."
+
+[LdapConnectFailed]
+description = "LDAP: connection failed."
+one = "Impossibile connettersi al server LDAP."
+other = "Impossibile connettersi al server LDAP."
+
+[LdapSearchRequestFailed]
+description = "LDAP: search failed."
+one = "Ricerca LDAP non riuscita."
+other = "Ricerca LDAP non riuscita."
+
+[LdapStartTLSFailed]
+description = "LDAP: TLS failed."
+one = "Connessione TLS a LDAP non riuscita."
+other = "Connessione TLS a LDAP non riuscita."
+
+[LdapBindServiceFailed]
+description = "LDAP: service account bind failed."
+one = "Accesso a LDAP con l'account di servizio non riuscito."
+other = "Accesso a LDAP con l'account di servizio non riuscito."
+
+[LdapBindFailed]
+description = "LDAP: bind failed."
+one = "Accesso a LDAP non riuscito."
+other = "Accesso a LDAP non riuscito."
+
+[LdapToLocalUserFailed]
+description = "LDAP: cannot map to a local user."
+one = "Impossibile collegare l'utente LDAP a un utente locale."
+other = "Impossibile collegare l'utente LDAP a un utente locale."
+
+[LdapCreateUserFailed]
+description = "LDAP: cannot create the local user."
+one = "Impossibile creare l'utente locale per l'utente LDAP."
+other = "Impossibile creare l'utente locale per l'utente LDAP."
+
+[PasswordNotMatch]
+description = "LDAP: wrong password."
+one = "Password errata."
+other = "Password errata."
+
+[Username]
+description = "Field name: username."
+one = "Nome utente"
+other = "Nome utente"
+
+[Password]
+description = "Field name: password."
+one = "Password"
+other = "Password"
+
+[ConfirmPassword]
+description = "Field name: password confirmation."
+one = "Conferma password"
+other = "Conferma password"
+
+[OldPassword]
+description = "Field name: old password."
+one = "Vecchia password"
+other = "Vecchia password"
+
+[NewPassword]
+description = "Field name: new password."
+one = "Nuova password"
+other = "Nuova password"
+
+[Email]
+description = "Field name: email."
+one = "Email"
+other = "Email"
+
+[Captcha]
+description = "Field name: captcha."
+one = "Codice di verifica"
+other = "Codice di verifica"
+
+[Platform]
+description = "Field name: platform."
+one = "Piattaforma"
+other = "Piattaforma"
+
+[AutoLogin]
+description = "Field name: auto login."
+one = "Accesso automatico"
+other = "Accesso automatico"
+
+[DeviceInfo]
+description = "Field name: device info."
+one = "Informazioni sul dispositivo"
+other = "Informazioni sul dispositivo"

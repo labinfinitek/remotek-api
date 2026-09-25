@@ -75,9 +75,9 @@ func TestPasswordNuovaLunghezza(t *testing.T) {
 
 // TestLoginPasswordCorte verifica che i due login, del client (/api/login) e
 // del pannello (/api/admin/login), accettino ancora le password corte create
-// prima del minimo di 15, e che il client rifiuti le stesse di prima con lo
-// stesso messaggio. Passa anche col codice di prima: e' la prova che il login
-// non cambia.
+// prima del minimo di 15, e che il client rifiuti le stesse di prima. Le
+// regole del login non cambiano; nel messaggio il campo non e' piu' 密码 in
+// ogni lingua ma l'etichetta Password, qui senza traduzione.
 func TestLoginPasswordCorte(t *testing.T) {
 	for _, n := range []int{4, 8, 14} {
 		p := strings.Repeat("a", n)
@@ -92,8 +92,8 @@ func TestLoginPasswordCorte(t *testing.T) {
 		}
 	}
 	rifiutate := map[string]string{
-		strings.Repeat("a", 3):  "密码 must be at least 4 characters in length",
-		strings.Repeat("a", 33): "密码 must be at maximum 32 characters in length",
+		strings.Repeat("a", 3):  "Password must be at least 4 characters in length",
+		strings.Repeat("a", 33): "Password must be at maximum 32 characters in length",
 	}
 	for p, want := range rifiutate {
 		if got := valida(t, &api.LoginForm{Username: "collaudo", Password: p}); got != want {

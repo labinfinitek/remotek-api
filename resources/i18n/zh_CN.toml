@@ -160,3 +160,53 @@ other = "已被封禁。"
 description = "Register success, wait for admin confirm."
 one = "注册成功，请等待管理员审核。"
 other = "注册成功，请等待管理员审核。"
+
+[Username]
+description = "Field name: username."
+one = "用户名"
+other = "用户名"
+
+[Password]
+description = "Field name: password."
+one = "密码"
+other = "密码"
+
+[ConfirmPassword]
+description = "Field name: password confirmation."
+one = "确认密码"
+other = "确认密码"
+
+[OldPassword]
+description = "Field name: old password."
+one = "旧密码"
+other = "旧密码"
+
+[NewPassword]
+description = "Field name: new password."
+one = "新密码"
+other = "新密码"
+
+[Email]
+description = "Field name: email."
+one = "邮箱"
+other = "邮箱"
+
+[Captcha]
+description = "Field name: captcha."
+one = "验证码"
+other = "验证码"
+
+[Platform]
+description = "Field name: platform."
+one = "平台"
+other = "平台"
+
+[AutoLogin]
+description = "Field name: auto login."
+one = "自动登录"
+other = "自动登录"
+
+[DeviceInfo]
+description = "Field name: device info."
+one = "设备信息"
+other = "设备信息"

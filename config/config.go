@@ -75,6 +75,9 @@ func Init(rowVal *Config, path string) *viper.Viper {
 	v.SetDefault("app.captcha-threshold", 3)
 	v.SetDefault("app.ban-threshold", 10)
 	v.SetDefault("gin.trust-proxy", "") // nessun proxy fidato: vedi http.setTrustedProxies
+	// Lingua delle risposte quando Accept-Language non ne sceglie una: il
+	// client RustDesk non la manda, quindi e' quella che vede chi lo usa.
+	v.SetDefault("lang", "it")
 	v.AutomaticEnv()
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	v.SetEnvPrefix("RUSTDESK_API")
