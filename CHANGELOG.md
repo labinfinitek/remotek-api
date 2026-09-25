@@ -115,6 +115,28 @@ Base upstream: rustdesk-api v2.7.
   protetta) e cancella il token; se la cancellazione non riesce risponde
   "Operazione non riuscita." (`code` 101) con l'errore nel log, non piu'
   successo. Il logout del client (`/api/logout`) non cambia.
+- Le pagine del login OAuth (successo ed errore) non caricano piu' niente da
+  altri siti: quella di errore prendeva Font Awesome da un CDN terzo
+  (`lf9-cdn-tos.bytecdntp.com`), che riceveva l'IP di chi la apriva. Le due
+  icone sono SVG dentro la pagina, nei colori di prima; quella di successo
+  prima non si vedeva, perche' la pagina non caricava il foglio delle icone.
+- Le pagine del login OAuth non scrivono piu' come HTML il messaggio del
+  server: lo script delle traduzioni si creava con `document.writeln`
+  mettendo il messaggio nell'indirizzo cosi' com'era, e un messaggio con
+  `"` e `>`, come `"></script><img src=x onerror=alert(1)>`, eseguiva
+  JavaScript nell'origine dell'API, la stessa del pannello. Ora lo script si
+  crea con `createElement` e lingua, messaggio e titolo passano da
+  `encodeURIComponent`; il messaggio si vede come testo. Titolo e messaggio
+  si mostrano quando le traduzioni sono arrivate, o subito se non arrivano;
+  la pagina di successo non va piu' in errore cercando un paragrafo che non
+  ha.
+- I file del marchio su `/brand/` escono con una `Content-Security-Policy`
+  senza script e in sandbox (`default-src 'none'`; stili dentro il file,
+  immagini e font da `/brand/` o `data:`) e con
+  `X-Content-Type-Options: nosniff`: uno SVG aperto direttamente e' un
+  documento nell'origine del pannello, e uno SVG con uno script lo
+  eseguiva. Nel pannello logo e favicon si vedono come prima; uno SVG che
+  carica font, immagini o fogli di stile da altri siti ora li perde.
 
 ### Corretto
 - `RUSTDESK_API_ADMIN_TITLE` vale anche se il file di configurazione non ha

@@ -75,3 +75,26 @@ func TestMarchioFile(t *testing.T) {
 		t.Errorf("GET /brand/: stato %d, atteso 404 senza elenco:\n%s", rec.Code, rec.Body)
 	}
 }
+
+// TestMarchioIntestazioni prova che i file di /brand/ escano con una
+// Content-Security-Policy senza script e in sandbox e con
+// X-Content-Type-Options: nosniff, e che le intestazioni restino sul solo
+// gruppo /brand: la pagina OAuth ha i suoi script e non le riceve.
+func TestMarchioIntestazioni(t *testing.T) {
+	t.Setenv("RUSTDESK_API_BRAND_DIR", "")
+	g, _, _ := pannello(t, false)
+	const csp = "default-src 'none'; img-src 'self' data:; font-src 'self' data:; style-src 'unsafe-inline'; sandbox"
+	for _, rotta := range []string{"/brand/logo.svg", "/brand/favicon.svg"} {
+		rec := get(g, rotta, false)
+		if got := rec.Header().Get("Content-Security-Policy"); rec.Code != 200 || got != csp {
+			t.Errorf("GET %s: stato %d, Content-Security-Policy %q\nwant 200 %q", rotta, rec.Code, got, csp)
+		}
+		if got := rec.Header().Get("X-Content-Type-Options"); got != "nosniff" {
+			t.Errorf("GET %s: X-Content-Type-Options %q, want \"nosniff\"", rotta, got)
+		}
+	}
+	rec := get(g, "/api/oidc/callback", false)
+	if rec.Header().Get("Content-Security-Policy") != "" || rec.Header().Get("X-Content-Type-Options") != "" {
+		t.Errorf("GET /api/oidc/callback: intestazioni del marchio fuori da /brand: %v", rec.Header())
+	}
+}

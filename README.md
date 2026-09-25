@@ -268,6 +268,9 @@ docker build \
   `logo.svg`和`favicon.svg`，API 通过`/brand/logo.svg`和`/brand/favicon.svg`提供，
   后台从这里读取。替换文件即可，不需要重新构建，例如在容器中挂载：
   `-v /srv/remotek/brand:/app/resources/brand:ro`（文件对 uid 10001 可读）。
+  `/brand/`下的文件带有不允许脚本并启用沙箱的`Content-Security-Policy`以及
+  `X-Content-Type-Options: nosniff`：SVG 必须自包含（内联样式，图片和字体只能来自
+  `/brand/`或`data:`），不能有脚本，也不能引用其他网站的资源。
 - 后台在浏览器加载完配置之前显示的静态标题在构建时写入：
   `docker build --build-arg BRAND_NAME=<名称> ...`。`Dockerfile`在`npm run build`之前修改
   固定提交的后台源码中的几行（标志、图标、标题）；如果源码中找不到这些行，构建失败。

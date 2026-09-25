@@ -273,6 +273,11 @@ Name and logo live in one place and change without touching the code:
   on `/brand/logo.svg` and `/brand/favicon.svg`, where the admin panel reads
   them. Replace the files, no rebuild needed; in a container, mount them:
   `-v /srv/remotek/brand:/app/resources/brand:ro` (readable by uid 10001).
+  The files under `/brand/` are served with a `Content-Security-Policy`
+  that allows no scripts and runs them in a sandbox, plus
+  `X-Content-Type-Options: nosniff`: an SVG must be self-contained (inline
+  styles, images and fonts from `/brand/` or `data:`), with no scripts and
+  nothing from other sites.
 - The static title the panel shows before it loads its configuration is set
   at build time: `docker build --build-arg BRAND_NAME=<name> ...`. Before
   `npm run build` the `Dockerfile` rewrites a few lines (logo, favicon,
