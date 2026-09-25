@@ -3,5 +3,19 @@
 # "/...": vale per i file .go di quella cartella, non per le sottocartelle.
 # Si allarga a ogni MR di bonifica del Passo 3 e non si accorcia mai: togliere
 # una riga vuol dire accettare che quel pacchetto torni a sporcarsi.
+config
+global
+http
+http/controller/web
+http/request/admin
+http/request/api
+http/response
 http/response/admin
+http/response/api
+lib/jwt
+lib/lock
+lib/logger
+lib/orm
+model
+model/custom_types
 test/contratto
