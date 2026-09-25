@@ -2,14 +2,15 @@ package admin
 
 import (
 	"encoding/json"
-	_ "encoding/json"
+	"strconv"
+
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/request/admin"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
 	"github.com/lejianwen/rustdesk-api/v2/service"
-	"gorm.io/gorm"
-	"strconv"
 )
 
 type AddressBook struct {
@@ -35,7 +36,6 @@ func (ct *AddressBook) Detail(c *gin.Context) {
 		return
 	}
 	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
-	return
 }
 
 // Create 创建地址簿
@@ -192,10 +192,6 @@ func (ct *AddressBook) List(c *gin.Context) {
 		}
 	})
 
-	abCIds := make([]uint, 0)
-	for _, ab := range res.AddressBooks {
-		abCIds = append(abCIds, ab.CollectionId)
-	}
 	response.Success(c, res)
 }
 

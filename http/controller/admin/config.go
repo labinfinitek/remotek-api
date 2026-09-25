@@ -1,13 +1,15 @@
 package admin
 
 import (
+	"os"
+	"strings"
+
 	"github.com/gin-gonic/gin"
+
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
-	"os"
-	"strings"
 )
 
 type Config struct {
@@ -89,7 +91,7 @@ func (co *Config) AdminConfig(c *gin.Context) {
 	}
 
 	//replace {{username}} to username
-	hello = strings.Replace(hello, "{{username}}", u.Username, -1)
+	hello = strings.ReplaceAll(hello, "{{username}}", u.Username)
 	response.Success(c, &gin.H{
 		"title": global.Config.Admin.Title,
 		"hello": hello,

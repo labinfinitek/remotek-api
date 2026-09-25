@@ -1,7 +1,11 @@
 package admin
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/request/admin"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
@@ -9,8 +13,6 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 	"github.com/lejianwen/rustdesk-api/v2/utils"
-	"gorm.io/gorm"
-	"strconv"
 )
 
 type User struct {
@@ -36,7 +38,6 @@ func (ct *User) Detail(c *gin.Context) {
 		return
 	}
 	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
-	return
 }
 
 // Create 管理员
@@ -273,10 +274,6 @@ func (ct *User) ChangeCurPwd(c *gin.Context) {
 func (ct *User) MyOauth(c *gin.Context) {
 	u := service.AllService.UserService.CurUser(c)
 	oal := service.AllService.OauthService.List(1, 100, nil)
-	ops := make([]string, 0)
-	for _, oa := range oal.Oauths {
-		ops = append(ops, oa.Op)
-	}
 	uts := service.AllService.UserService.UserThirdsByUserId(u.Id)
 	var res []*adResp.UserOauthItem
 	for _, oa := range oal.Oauths {
