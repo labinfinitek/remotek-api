@@ -98,7 +98,7 @@ func reimpostaPassword(id uint, pwd string) {
 	if err != nil {
 		global.Logger.Fatalf("lettura dell'utente %d: %v", id, err)
 	}
-	if err := service.AllService.UpdatePassword(u, pwd); err != nil {
+	if err := service.AllService.UserService.UpdatePassword(u, pwd); err != nil {
 		global.Logger.Fatalf("password dell'utente %d non aggiornata: %v", id, err)
 	}
 	global.Logger.Infof("password dell'utente %d reimpostata", id)

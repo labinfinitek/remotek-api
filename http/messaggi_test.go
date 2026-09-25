@@ -62,7 +62,7 @@ func TestMessaggi(t *testing.T) {
 	}
 	service.New(&global.Config, db, global.Logger, nil, lock.NewLocal())
 	global.LoginLimiter = utils.NewLoginLimiter(utils.SecurityPolicy{CaptchaThreshold: global.Config.App.CaptchaThreshold})
-	service.AllService.SetOauthCache("in-corso", &service.OauthCacheItem{Action: service.OauthActionTypeLogin}, 0)
+	service.AllService.OauthService.SetOauthCache("in-corso", &service.OauthCacheItem{Action: service.OauthActionTypeLogin}, 0)
 	g := NewEngine()
 
 	configurata := global.Config.Lang

@@ -2,19 +2,21 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	// Registra con init() lo swagger "admin" servito su /admin/swagger/*any (con ShowSwagger).
 	_ "github.com/lejianwen/rustdesk-api/v2/docs/admin"
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/controller/admin"
 	"github.com/lejianwen/rustdesk-api/v2/http/controller/admin/my"
 	"github.com/lejianwen/rustdesk-api/v2/http/middleware"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func Init(g *gin.Engine) {
 
-	//swagger
-	//g.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// swagger
+	// g.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	if global.Config.App.ShowSwagger == 1 {
 		g.GET("/admin/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.InstanceName("admin")))
 	}
@@ -38,19 +40,19 @@ func Init(g *gin.Engine) {
 	AddressBookCollectionRuleBind(adg)
 	UserTokenBind(adg)
 
-	//deprecated by ConfigBind
-	//rs := &admin.Rustdesk{}
-	//adg.GET("/server-config", rs.ServerConfig)
-	//adg.GET("/app-config", rs.AppConfig)
-	//deprecated end
+	// deprecated by ConfigBind
+	// rs := &admin.Rustdesk{}
+	// adg.GET("/server-config", rs.ServerConfig)
+	// adg.GET("/app-config", rs.AppConfig)
+	// deprecated end
 
 	ShareRecordBind(adg)
 	MyBind(adg)
 
 	RustdeskCmdBind(adg)
 	DeviceGroupBind(adg)
-	//访问静态文件
-	//g.StaticFS("/upload", http.Dir(global.Config.Gin.ResourcesPath+"/upload"))
+	// 访问静态文件
+	// g.StaticFS("/upload", http.Dir(global.Config.Gin.ResourcesPath+"/upload"))
 }
 
 func RustdeskCmdBind(adg *gin.RouterGroup) {
@@ -78,7 +80,7 @@ func UserBind(rg *gin.RouterGroup) {
 		aR.GET("/current", cont.Current)
 		aR.POST("/changeCurPwd", cont.ChangeCurPwd)
 		aR.POST("/myOauth", cont.MyOauth)
-		//aR.GET("/myPeer", cont.MyPeer)
+		// aR.GET("/myPeer", cont.MyPeer)
 		aR.POST("/groupUsers", cont.GroupUsers)
 	}
 	aRP := rg.Group("/user").Use(middleware.AdminPrivilege())
@@ -137,7 +139,7 @@ func AddressBookBind(rg *gin.RouterGroup) {
 
 		arp := aR.Use(middleware.AdminPrivilege())
 		arp.GET("/list", cont.List)
-		//arp.GET("/detail/:id", cont.Detail)
+		// arp.GET("/detail/:id", cont.Detail)
 		arp.POST("/create", cont.Create)
 		arp.POST("/update", cont.Update)
 		arp.POST("/delete", cont.Delete)

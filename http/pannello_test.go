@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"net/http/httptest"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -150,5 +151,43 @@ func TestPannelloVecchiaPasswordMD5(t *testing.T) {
 	}
 	if salvato.Password != vecchio {
 		t.Errorf("la password e' cambiata: %q", salvato.Password)
+	}
+}
+
+// TestPannelloBatchCreateFromPeers prova sul router vero che
+// /api/admin/my/address_book/batchCreateFromPeers non risponde successo se
+// una riga della rubrica non si salva: un trigger di sqlite rifiuta il
+// secondo peer, il pannello riceve OperationFailed e il testo dell'errore va
+// solo nel log. La riga del primo peer, creata prima dell'errore, resta.
+func TestPannelloBatchCreateFromPeers(t *testing.T) {
+	g, utente, registro := pannello(t, false)
+	if err := service.DB.AutoMigrate(&model.Peer{}, &model.AddressBook{}); err != nil {
+		t.Fatal(err)
+	}
+	peers := []*model.Peer{{Id: "peer-a", UserId: utente.Id}, {Id: "peer-b", UserId: utente.Id}}
+	if err := service.DB.Create(&peers).Error; err != nil {
+		t.Fatal(err)
+	}
+	const rifiuto = "riga rifiutata dalla prova"
+	if err := service.DB.Exec(`CREATE TRIGGER rifiuta_peer_b BEFORE INSERT ON address_books
+		WHEN NEW.id = 'peer-b' BEGIN SELECT RAISE(ABORT, '` + rifiuto + `'); END`).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	rotta := "/api/admin/my/address_book/batchCreateFromPeers"
+	corpo := `{"peer_ids": [` + strconv.FormatUint(uint64(peers[0].RowId), 10) + `, ` + strconv.FormatUint(uint64(peers[1].RowId), 10) + `]}`
+	rec := alPannello(g, rotta, corpo)
+	if got, want := rec.Body.String(), `{"code":101,"message":"Operazione non riuscita.","data":null}`; rec.Code != 200 || got != want {
+		t.Errorf("POST %s: stato %d\n got  %s\n want %s", rotta, rec.Code, got, want)
+	}
+	if nelLog := registro.String(); !strings.Contains(nelLog, "POST "+rotta+": ") || !strings.Contains(nelLog, rifiuto) {
+		t.Errorf("POST %s, nel log mancano rotta o errore:\n%s", rotta, nelLog)
+	}
+	var salvati []string
+	if err := service.DB.Model(&model.AddressBook{}).Where("user_id = ?", utente.Id).Order("id").Pluck("id", &salvati).Error; err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"peer-a"}; !slices.Equal(salvati, want) {
+		t.Errorf("righe della rubrica dopo l'errore: %q, attese %q", salvati, want)
 	}
 }
