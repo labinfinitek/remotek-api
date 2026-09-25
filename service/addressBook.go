@@ -2,7 +2,6 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/google/uuid"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"gorm.io/gorm"
 	"strings"
@@ -14,12 +13,6 @@ type AddressBookService struct {
 func (s *AddressBookService) Info(id string) *model.AddressBook {
 	p := &model.AddressBook{}
 	DB.Where("id = ?", id).First(p)
-	return p
-}
-
-func (s *AddressBookService) InfoByUserIdAndId(userid uint, id string) *model.AddressBook {
-	p := &model.AddressBook{}
-	DB.Where("user_id = ? and id = ?", userid, id).First(p)
 	return p
 }
 
@@ -148,19 +141,6 @@ func (s *AddressBookService) UpdateByMap(u *model.AddressBook, data map[string]i
 // UpdateAll 更新
 func (s *AddressBookService) UpdateAll(u *model.AddressBook) error {
 	return DB.Model(u).Select("*").Omit("created_at").Updates(u).Error
-}
-
-// ShareByWebClient 分享
-func (s *AddressBookService) ShareByWebClient(m *model.ShareRecord) error {
-	m.ShareToken = uuid.New().String()
-	return DB.Create(m).Error
-}
-
-// SharedPeer
-func (s *AddressBookService) SharedPeer(shareToken string) *model.ShareRecord {
-	m := &model.ShareRecord{}
-	DB.Where("share_token = ?", shareToken).First(m)
-	return m
 }
 
 // PlatformFromOs

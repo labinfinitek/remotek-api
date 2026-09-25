@@ -2,7 +2,7 @@
 
 [English Doc](README_EN.md)
 
-Remotek 的 API，基于 lejianwen 的 [rustdesk-api](https://github.com/lejianwen/rustdesk-api) v2.7，兼容 RustDesk 客户端，用 Go 实现，包含 Web Admin 和 Web 客户端。
+Remotek 的 API，基于 lejianwen 的 [rustdesk-api](https://github.com/lejianwen/rustdesk-api) v2.7，兼容 RustDesk 客户端，用 Go 实现，包含 Web Admin。
 
 
 <div align=center>
@@ -45,15 +45,8 @@ Remotek 的 API，基于 lejianwen 的 [rustdesk-api](https://github.com/lejianw
     - 登录日志
     - 链接日志
     - 文件传输日志
-    - 快速使用web client
     - i18n
-    - 通过 web client 分享给游客
     - server控制(一些官方的简单的指令 [WIKI](https://github.com/lejianwen/rustdesk-api/wiki/Rustdesk-Command))
-- Web Client
-    - 自动获取API server
-    - 自动获取ID服务器和KEY
-    - 自动获取地址簿
-    - 游客通过临时分享链接直接远程到设备
 - CLI
     - 重置管理员密码
 
@@ -94,7 +87,6 @@ Remotek 的 API，基于 lejianwen 的 [rustdesk-api](https://github.com/lejianw
 
 3. 每个用户可以多个地址簿，也可以将地址簿共享给其他用户
 4. 分组可以自定义，方便管理，暂时支持两种类型: `共享组` 和 `普通组`
-5. 可以直接打开webclient，方便使用；也可以分享给游客，游客可以直接通过webclient远程到设备
 6. Oauth,支持了`Github`, `Google` 以及 `OIDC`, 需要创建一个`OAuth App`，然后配置到后台
     - 对于`Google` 和 `Github`, `Issuer` 和 `Scopes`不需要填写.
     - 对于`OIDC`, `Issuer`是必须的。`Scopes`是可选的，默认为 `openid,profile,email`. 确保可以获取 `sub`,`email` 和`preferred_username`
@@ -117,14 +109,6 @@ Remotek 的 API，基于 lejianwen 的 [rustdesk-api](https://github.com/lejianw
 
  
 11. **LDAP 支持**, 当在API Server上设置了LDAP(已测试AD和LDAP),可以通过LDAP中的用户信息进行登录 https://github.com/lejianwen/rustdesk-api/issues/114 ,如果LDAP验证失败，返回本地用户
-
-### Web Client:
-
-1. 如果已经登录了后台，web client将自动直接登录
-2. 如果没登录后台，点击右上角登录即可，api server已经自动配置好了
-3. 登录后，会自动同步ID服务器和KEY
-4. 登录后，会将地址簿自动保存到web client中，方便使用
-
 
 ### 自动化文档: 使用 Swag 生成 API 文档，方便开发者理解和使用 API。
 
@@ -162,7 +146,6 @@ Remotek 的 API，基于 lejianwen 的 [rustdesk-api](https://github.com/lejianw
 |--------------------------------------------------------|--------------------------------------------------------------------------------|------------------------------|
 | TZ                                                     | 时区                                                                             | Asia/Shanghai                |
 | RUSTDESK_API_LANG                                      | `Accept-Language`未选定语言时使用的语言，只能是`it`或`en`，默认`it`；其他值启动时退出 | `it`,`en`                    |
-| RUSTDESK_API_APP_WEB_CLIENT                            | 是否启用web-client; 1:启用,0:不启用; 默认`0`不启用                                           | 1                            |
 | RUSTDESK_API_APP_REGISTER                              | 是否开启注册; `true`, `false`  默认`false`                                             | `false`                      |
 | RUSTDESK_API_APP_WEB_SSO                               | 是否向客户端提供web后台授权登录(`webauth`); `true`, `false` 默认`false`                         | `false`                      |
 | RUSTDESK_API_APP_SHOW_SWAGGER                          | 是否可见swagger文档;`1`显示，`0`不显示，默认`0`不显示                                            | `1`                          |
@@ -191,8 +174,6 @@ Remotek 的 API，基于 lejianwen 的 [rustdesk-api](https://github.com/lejianw
 | RUSTDESK_API_RUSTDESK_API_SERVER                       | Rustdesk的api服务器地址                                                              | http://192.168.1.66:21114    |
 | RUSTDESK_API_RUSTDESK_KEY                              | Rustdesk的key                                                                   | 123456789                    |
 | RUSTDESK_API_RUSTDESK_KEY_FILE                         | Rustdesk存放key的文件                                                               | `./conf/data/id_ed25519.pub` |
-| RUSTDESK_API_RUSTDESK_WEBCLIENT<br/>_MAGIC_QUERYONLINE | Web client v2 中是否启用新的在线状态查询方法; `1`:启用,`0`:不启用,默认不启用                            | `0`                          |
-| RUSTDESK_API_RUSTDESK_WS_HOST                          | 自定义Websocket Host                                                              | `wss://192.168.1.123:1234`   |
 | ----PROXY配置-----                                       | ----------                                                                     | ----------                   |
 | RUSTDESK_API_PROXY_ENABLE                              | 是否启用代理:`false`, `true`                                                         | `false`                      |
 | RUSTDESK_API_PROXY_HOST                                | 代理地址                                                                           | `http://127.0.0.1:1080`      |
@@ -245,7 +226,6 @@ docker build \
 - 挂载的宿主机目录必须对 uid 10001 可写，否则 API 无法启动：
   `sudo chown -R 10001:10001 /data/rustdesk/api`。以 root 运行的镜像写下的数据同样
   需要这样处理。
-- 镜像中不包含 web client（`resources/web`）：它默认关闭（`app.web-client: 0`）。
 - `HEALTHCHECK` 访问 `http://127.0.0.1:21114/api/version`：如果修改了
   `RUSTDESK_API_GIN_API_ADDR` 中的端口，请用 `--health-cmd` 覆盖。
 - 基础镜像按 digest 固定：更新时标签和 digest 一起修改。
@@ -367,7 +347,6 @@ docker build \
 - [WIKI](https://github.com/lejianwen/rustdesk-api/wiki)
 - [链接超时问题](https://github.com/lejianwen/rustdesk-api/issues/92)
 - [修改客户端ID](https://github.com/abdullah-erturk/RustDesk-ID-Changer)
-- [webclient来源](https://hub.docker.com/r/keyurbhole/flutter_web_desk)
 
 
 ## 鸣谢

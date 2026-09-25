@@ -24,11 +24,9 @@
 **/*_test.go
 **/testdata/
 
-# File dell'immagine finale. Il web client (resources/web) resta fuori:
-# e' spento di default. Il pannello (resources/admin) e la versione
+# File dell'immagine finale. Il pannello (resources/admin) e la versione
 # (resources/version) li produce il Dockerfile.
 !conf/
 !resources/
-resources/web/
 resources/admin/
 resources/version

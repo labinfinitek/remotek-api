@@ -175,6 +175,18 @@ Base upstream: rustdesk-api v2.7.
   salva, non piu' successo. Le righe create prima dell'errore restano.
 
 ### Rimosso
+- **Cambio incompatibile per chi usava il web client.** Via il web client
+  di RustDesk (`resources/web`, spento di default) con `/webclient`,
+  `/webclient2`, `/webclient-config/index.js`, `/api/shared-peer`,
+  `/api/server-config` e `/api/server-config-v2`, la condivisione col web
+  client dal pannello (`/api/admin/address_book/shareByWebClient`) e i
+  registri delle condivisioni (`/api/admin/share_record/*`,
+  `/api/admin/my/share_record/*`): ora rispondono 404 come una rotta che non
+  esiste. Il client RustDesk nativo non ne chiamava nessuna.
+  `app.web-client` (`RUSTDESK_API_APP_WEB_CLIENT`),
+  `rustdesk.webclient-magic-queryonline` e `rustdesk.ws-host` non fanno piu'
+  niente; il pannello riceve sempre `web_client` 0. Una tabella
+  `share_records` gia' nel database resta, innocua: l'API non la usa piu'.
 - **Cambio incompatibile per chi ha `lang` diverso da `it` o `en`.** L'API
   parla solo italiano e inglese: via i file di lingua `es`, `fr`, `ko`,
   `ru`, `zh_CN` e `zh_TW` e le traduzioni del validatore in quelle lingue.

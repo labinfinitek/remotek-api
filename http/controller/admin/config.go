@@ -18,7 +18,7 @@ type Config struct {
 // ServerConfig RUSTDESK服务配置
 // @Tags ADMIN
 // @Summary RUSTDESK服务配置
-// @Description 服务配置,给webclient提供api-server
+// @Description Configurazione dei server RustDesk per il pannello
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} response.Response
@@ -46,8 +46,10 @@ func (co *Config) ServerConfig(c *gin.Context) {
 // @Router /admin/config/app [get]
 // @Security token
 func (co *Config) AppConfig(c *gin.Context) {
+	// Il web client non c'e' piu': web_client resta, fisso a 0, perche' il
+	// pannello lo legge per decidere se mostrare le voci del web client.
 	response.Success(c, &gin.H{
-		"web_client": global.Config.App.WebClient,
+		"web_client": 0,
 	})
 }
 

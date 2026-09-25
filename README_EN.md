@@ -1,7 +1,7 @@
 # Remotek
 
 The API of Remotek, based on [rustdesk-api](https://github.com/lejianwen/rustdesk-api) v2.7 by lejianwen and
-compatible with the RustDesk client: written in Go, it includes both a web UI and web client. RustDesk is a remote
+compatible with the RustDesk client: written in Go, it includes a web UI. RustDesk is a remote
 desktop software that provides self-hosted solutions.
 
 <div align=center>
@@ -43,15 +43,8 @@ desktop software that provides self-hosted solutions.
     - Login Logs
     - Connection Logs
     - File Transfer Logs
-    - Quick access to web client
     - i18n
-    - Share to guest by web client
     - Server control (some simple official commands [WIKI](https://github.com/lejianwen/rustdesk-api/wiki/Rustdesk-Command))
-- Web Client
-    - Automatically obtain API server
-    - Automatically obtain ID server and KEY
-    - Automatically obtain address book
-    - Visitors are remotely to the device via a temporary sharing link
 - CLI
     - Reset admin password
 
@@ -93,7 +86,6 @@ displaying data.Frontend code is available at [rustdesk-api-web](https://github.
 
 3. Each user can have multiple address books, which can also be shared with other users.
 4. Groups can be customized for easy management. Currently, two types are supported: `shared group` and `regular group`.
-5. You can directly launch the client or open the web client for convenience; you can also share it with guests, who can remotely access the device via the web client.
 6. OAuth support: Currently, `GitHub`, `Google` and `OIDC`  are supported. You need to create an `OAuth App` and configure it in
    the admin panel.
     - For `Google` and `Github`, you don't need to fill the `Issuer` and `Scpoes`
@@ -117,14 +109,6 @@ displaying data.Frontend code is available at [rustdesk-api-web](https://github.
 
 11. **LDAP Support**, When you setup the LDAP(test for OpenLDAP and AD), you can login with the LDAP's user. https://github.com/lejianwen/rustdesk-api/issues/114 , if LDAP fail fallback local user
   
-### Web Client:
-
-1. If you're already logged into the admin panel, the web client will log in automatically.
-2. If you're not logged in, simply click the login button in the top right corner, and the API server will be
-   pre-configured.
-3. After logging in, the ID server and key will be automatically synced.
-4. The address book will also be automatically saved to the web client for convenient use.
-
 ### Automated Documentation : API documentation is generated using Swag, making it easier for developers to understand and use the API.
 
 1. Admin panel docs: `<your server[:port]>/admin/swagger/index.html`
@@ -161,7 +145,6 @@ The table below does not list all configurations. Please refer to the configurat
 |--------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|
 | TZ                                                     | timezone                                                                                                                                            | Asia/Shanghai                 |
 | RUSTDESK_API_LANG                                      | Language used when `Accept-Language` does not pick one: `it` or `en`, default `it`; any other value stops startup                                     | `it`,`en`                     |
-| RUSTDESK_API_APP_WEB_CLIENT                            | web client on/off; 1: on, 0 off, default: 0                                                                                                         | 1                             |
 | RUSTDESK_API_APP_REGISTER                              | register enable; `true`, `false`; default:`false`                                                                                                   | `false`                       |
 | RUSTDESK_API_APP_WEB_SSO                               | offer clients the login confirmed from the web admin (`webauth`); `true`, `false`; default: `false`                                                 | `false`                       |
 | RUSTDESK_API_APP_SHOW_SWAGGER                          | swagger visible; 1: yes, 0: no; default: 0                                                                                                          | `0`                           |
@@ -190,8 +173,6 @@ The table below does not list all configurations. Please refer to the configurat
 | RUSTDESK_API_RUSTDESK_API_SERVER                       | Rustdesk API server address                                                                                                                         | http://192.168.1.66:21114     |
 | RUSTDESK_API_RUSTDESK_KEY                              | Rustdesk key                                                                                                                                        | 123456789                     |
 | RUSTDESK_API_RUSTDESK_KEY_FILE                         | Rustdesk key file                                                                                                                                   | `./conf/data/id_ed25519.pub`  |
-| RUSTDESK_API_RUSTDESK<br/>_WEBCLIENT_MAGIC_QUERYONLINE | New online query method is enabled in the web client v2; '1': Enabled, '0': Disabled, not enabled by default                                        | `0`                           |
-| RUSTDESK_API_RUSTDESK_WS_HOST                          | Custom Websocket Host                                                                                                                               | `wss://192.168.1.123:1234`    |
 | ---- PROXY -----                                       | ---------------                                                                                                                                     | ----------                    |
 | RUSTDESK_API_PROXY_ENABLE                              | proxy_enable :`false`, `true`                                                                                                                       | `false`                       |
 | RUSTDESK_API_PROXY_HOST                                | proxy_host                                                                                                                                          | `http://127.0.0.1:1080`       |
@@ -246,8 +227,6 @@ docker build \
 - A bind-mounted directory must be writable by uid 10001, otherwise the API
   does not start: `sudo chown -R 10001:10001 /data/rustdesk/api`. The same
   holds for data written by an image that ran as root.
-- The web client (`resources/web`) is not in the image: it is off by default
-  (`app.web-client: 0`).
 - `HEALTHCHECK` calls `http://127.0.0.1:21114/api/version`: if you change the
   port in `RUSTDESK_API_GIN_API_ADDR`, override it with `--health-cmd`.
 - Base images are pinned by digest: to update one, change tag and digest
@@ -379,7 +358,6 @@ Download the release from [release](https://github.com/lejianwen/rustdesk-api/re
 - [WIKI](https://github.com/lejianwen/rustdesk-api/wiki)
 - [Connection Timeout](https://github.com/lejianwen/rustdesk-api/issues/92)
 - [Change client ID](https://github.com/abdullah-erturk/RustDesk-ID-Changer)
-- [Web client source](https://hub.docker.com/r/keyurbhole/flutter_web_desk)
 
 ## Acknowledgements
 

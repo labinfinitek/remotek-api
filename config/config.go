@@ -15,7 +15,6 @@ const (
 )
 
 type App struct {
-	WebClient        int           `mapstructure:"web-client"`
 	Register         bool          `mapstructure:"register"`
 	RegisterStatus   int           `mapstructure:"register-status"`
 	ShowSwagger      int           `mapstructure:"show-swagger"`
@@ -69,7 +68,6 @@ func Init(rowVal *Config, path string) *viper.Viper {
 	// sia dalle variabili RUSTDESK_API_*, al posto dello zero del tipo. Il file
 	// batte il default, la variabile batte il file. Col default viper conosce
 	// la chiave, quindi la variabile vale anche se il file non la nomina.
-	v.SetDefault("app.web-client", 0)
 	v.SetDefault("app.web-sso", false)
 	v.SetDefault("app.register", false)
 	v.SetDefault("app.show-swagger", 0)
