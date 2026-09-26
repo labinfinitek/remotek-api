@@ -1,0 +1,21 @@
+{
+  "attesa_dal_codice": "400 {\"error\":\"<OauthExpired nella lingua dell'istanza>\"}",
+  "autenticata": false,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "oidc-auth-query-scaduto",
+  "fonte_api": "api/http/controller/api/ouath.go:74-79",
+  "fonte_client": [
+    "client/src/hbbs_http/account.rs:178-202",
+    "client/src/hbbs_http/account.rs:289-300"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "il client mostra l'errore e smette di interrogare",
+  "precondizione": "code che l'istanza non conosce (scaduto dopo 5 minuti o mai esistito)",
+  "registrato_il": "2026-09-26T00:39:16Z",
+  "scrive": false
+}

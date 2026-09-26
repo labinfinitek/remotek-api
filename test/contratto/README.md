@@ -54,7 +54,7 @@ diventa rosso quando la risposta cambia.
 
 ## Stato
 
-Registrati tutti i 45 passi di `scenario.json`, rieseguiti dalla CI (push e
+Registrati tutti i 52 passi di `scenario.json`, rieseguiti dalla CI (push e
 PR verso `remotek`) da `TestContract` in `cmd/contratto_test.go`: tre
 scenari anonimi che l'API implementa (`version`, `login-options`,
 `non-autenticato`); i 404 delle cinque richieste che il client manda e l'API
@@ -65,7 +65,11 @@ gruppo `anonime`, e `audit-alarm-404`, `devices-deploy-404`,
 personale con tag e peer, rubrica legacy, utenti e dispositivi del gruppo,
 logout); i 7 del dispositivo, senza autenticazione (`peer`: heartbeat,
 sysinfo, audit delle connessioni e dei file); il login con la password
-sbagliata (`login-errato`). Il test sta
+sbagliata (`login-errato`); i 5 senza utente che non scrivono nel database
+(`senza-utente`: l'avvio del login OIDC `webauth` e le due risposte di
+`/api/oidc/auth-query` che il client distingue, "in attesa" e "scaduto", un
+`op` sconosciuto, `/api/sysinfo_ver`); i 2 del ban (`ban`: login con la
+password giusta e heartbeat da un IP bannato). Il test sta
 in `package main` perche' li' c'e' `InitGlobal()`: e' provvisorio, finche'
 il bootstrap non esce da `cmd/`. Gira nel processo di `go test`:
 `InitGlobal()` vero, router vero (`http.NewEngine()`) servito da
@@ -93,13 +97,23 @@ non partono. Il seme non e' un test del contratto (non ha golden): e' il
 prerequisito verificato dei passi con utente, che ricevono nome e password
 da `Options.Vars`.
 
-Gruppi attivi: tutti e cinque, nell'ordine dello scenario: `anonime` (4
+Gruppi attivi: tutti e sette, nell'ordine dello scenario: `anonime` (4
 passi), `non-implementate` (4), `utente` (29), `peer` (7), `login-errato`
-(1). Nessun passo resta da registrare. I golden vengono da un utente di
+(1), `senza-utente` (5), `ban` (2). Nessun passo resta da registrare.
+`ban` gira per ultimo e in una chiamata a parte di `Run`: prima il
+sottotest `preparazione-ban` manda login sbagliati via HTTP finche' la
+risposta non e' piu' 400, come il passo di servizio `ban-preparazione` del
+registratore (che nello scenario non c'e'); da li' ogni richiesta del test
+riceve la risposta del ban. Il ban della v2.7 e' un middleware su tutto il
+router (`http/middleware/limiter.go`): risponde 200 con
+`{"code":423,...}` a ogni richiesta dell'IP, heartbeat compresi, per 30
+minuti. I golden vengono da un utente di
 collaudo dell'istanza di riferimento che, quando e' stato registrato il
 gruppo `utente`, aveva le stesse caratteristiche di quello del seme (non
 admin, gruppo predefinito, email vuota, nessuna rubrica condivisa, nessun
-peer); `peer` e `login-errato` sono stati registrati dopo, una volta sola.
+peer); `peer` e `login-errato` sono stati registrati dopo, una volta sola;
+`senza-utente` e `ban` il 2026-09-26, senza login (`ban` con i login
+sbagliati della preparazione).
 Se un giorno una differenza di stato tra l'istanza e il database nuovo del
 test rompesse un passo, la precondizione si aggiunge al seme via HTTP o, se
 non si puo', quel passo si confronta in `forma` nella tabella del
@@ -153,7 +167,8 @@ golden: nel fork le righe si spostano (`NoRoute` oggi e' in
 
 Non coperto da questi test: i messaggi in italiano (l'istanza di riferimento
 risponde in inglese e il test fissa `RUSTDESK_API_LANG=en`), la scadenza e
-il rinnovo del token, il login OIDC e LDAP, il pannello admin, l'avvio
+il rinnovo del token, il login OIDC completato (serve il pannello o un
+provider vero: coperti solo l'avvio e l'attesa) e LDAP, il pannello admin, l'avvio
 vero (`main`, cobra, endless) e i
 default sicuri, che hanno test propri. Coperti solo in parte, finche' la
 tabella del registratore non avra' i passi che mancano: `/api/peers`
@@ -172,8 +187,15 @@ perche' nessun passo successivo rilegge rubrica o peer.
 `estrai` in `meta.json` (variabile <- chiave) salva nel contesto il valore
 della chiave nel corpo della risposta, solo se e' una stringa non vuota, e
 sostituisce i segnaposto dei passi successivi: lo hanno `login` (`token` <-
-`access_token`) e `ab-personal` (`guid` <- `guid`). Se manca vale come
-vuoto.
+`access_token`), `ab-personal` (`guid` <- `guid`) e `oidc-auth-webauth`
+(`codice` <- `code`, segnaposto `__CODICE__` nella query di
+`oidc-auth-query-in-attesa`). Se manca vale come vuoto.
+
+`__MASCHERATO__` nel corpo di un golden e' un valore che il registratore
+non scrive perche' casuale o legato all'istanza (il `code` e l'`url` di
+`oidc-auth-webauth`, che contiene l'indirizzo dell'API): succede solo nei
+passi a confronto `forma`, dove conta il tipo, e `normalizzati` in
+`meta.json` lo elenca.
 
 Scelte fissate in REGOLE 6.1 (ADR-0014): niente flag
 `-update` (i golden li scrive solo il registratore finche' il riferimento e'

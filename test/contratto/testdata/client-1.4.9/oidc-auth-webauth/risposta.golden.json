@@ -1,0 +1,9 @@
+{
+  "content_type": "application/json; charset=utf-8",
+  "corpo": {
+    "code": "__MASCHERATO__",
+    "url": "__MASCHERATO__"
+  },
+  "corpo_tipo": "json",
+  "stato": 200
+}

@@ -1,0 +1,22 @@
+{
+  "attesa_dal_codice": "200 testo '<contenuto di resources/version>\n<ora di avvio del processo>'",
+  "autenticata": false,
+  "client": "1.4.9",
+  "confronto": "forma",
+  "endpoint": "sysinfo-ver",
+  "fonte_api": "api/http/controller/api/peer.go:61-76",
+  "fonte_client": [
+    "client/src/hbbs_http/sync.rs:181-205",
+    "client/src/hbbs_http/sync.rs:276-285",
+    "client/src/common.rs:1087-1090"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "il client 1.4.9 non la chiama mai: il ramo richiede un URL rustdesk.com (sync.rs:181) e heartbeat_url lo esclude (sync.rs:281). Rotta senza autenticazione che dice versione e ora di avvio; forma perche' la versione dipende dall'immagine",
+  "precondizione": "",
+  "registrato_il": "2026-09-26T00:39:16Z",
+  "scrive": false
+}

@@ -1,0 +1,39 @@
+{
+  "attesa_dal_codice": "200 {\"code\":\"<10 caratteri casuali + secondi unix>\",\"url\":\"<rustdesk.api-server>/_admin/#/oauth/<code>\"}",
+  "autenticata": false,
+  "client": "1.4.9",
+  "confronto": "forma",
+  "endpoint": "oidc-auth-webauth",
+  "estrai": {
+    "codice": "code"
+  },
+  "fonte_api": "api/http/controller/api/ouath.go:29-60; api/service/oauth.go:98-106",
+  "fonte_client": [
+    "client/src/hbbs_http/account.rs:160-176",
+    "client/src/common.rs:1398-1429",
+    "client/src/ui_interface.rs:1297-1304",
+    "client/flutter/lib/common/widgets/login.dart:233-241",
+    "client/flutter/lib/common/widgets/login.dart:591-594",
+    "client/flutter/lib/models/user_model.dart:226-238"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [
+    {
+      "percorso": "code",
+      "segnaposto": "__MASCHERATO__",
+      "tipo": "string"
+    },
+    {
+      "percorso": "url",
+      "segnaposto": "__MASCHERATO__",
+      "tipo": "string"
+    }
+  ],
+  "nota": "forma: code e' casuale e url contiene l'api-server dell'istanza; che il code sia valido lo prova oidc-auth-query-in-attesa. Il client apre url nel browser e interroga auth-query ogni secondo (account.rs:226-320)",
+  "precondizione": "app.web-sso=true: login-options elenca oidc/webauth e il client manda come op il nome letto li'",
+  "registrato_il": "2026-09-26T00:39:16Z",
+  "scrive": false
+}

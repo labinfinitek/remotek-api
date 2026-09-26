@@ -1,0 +1,20 @@
+{
+  "attesa_dal_codice": "200 {\"code\":423,\"data\":null,\"message\":\"<Banned nella lingua dell'istanza>\"}",
+  "autenticata": false,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "ban-login",
+  "fonte_api": "api/http/http.go:36; api/http/middleware/limiter.go:10-21",
+  "fonte_client": [
+    "client/flutter/lib/models/user_model.dart:178-202"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "con la password GIUSTA: il middleware Limiter risponde prima del login. Stato 200 senza error ne' access_token: il client non lo riconosce come errore",
+  "precondizione": "IP bannato da ban-preparazione",
+  "registrato_il": "2026-09-26T00:41:07Z",
+  "scrive": false
+}

@@ -1,0 +1,10 @@
+{
+  "content_type": "application/json; charset=utf-8",
+  "corpo": {
+    "code": 423,
+    "data": null,
+    "message": "Banned."
+  },
+  "corpo_tipo": "json",
+  "stato": 200
+}

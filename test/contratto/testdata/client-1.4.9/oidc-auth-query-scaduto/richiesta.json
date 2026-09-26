@@ -1,0 +1,21 @@
+{
+  "corpo": null,
+  "corpo_vuoto": false,
+  "intestazioni": {},
+  "metodo": "GET",
+  "percorso": "/api/oidc/auth-query",
+  "query": [
+    [
+      "code",
+      "remotek-collaudo-scaduto"
+    ],
+    [
+      "id",
+      "999000111"
+    ],
+    [
+      "uuid",
+      "cmVtb3Rlay1jb2xsYXVkby11dWlk"
+    ]
+  ]
+}
