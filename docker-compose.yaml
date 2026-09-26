@@ -4,9 +4,9 @@
 #   docker compose up -d --build
 #
 # L'immagine si costruisce qui dal sorgente (build: .) col nome che avra'
-# quella pubblicata. Il rilascio su ghcr.io arrivera' col tag api-v0.1.0:
-# da allora si potranno togliere build e pull_policy e scaricare l'immagine
-# a una versione fissata. Il tag dev dice che e' una build locale.
+# quella pubblicata. Per usare un rilascio invece del sorgente: togliere
+# build e pull_policy e mettere image: ghcr.io/labinfinitek/remotek-api:X.Y.Z
+# (meglio con @sha256:, dalla release). Il tag dev dice che e' una build locale.
 services:
   remotek-api:
     build: .

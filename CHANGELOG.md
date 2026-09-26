@@ -5,7 +5,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 "Sicurezza" e' obbligatoria per ogni correzione di sicurezza.
 
 ## [Non rilasciato]
-Base upstream: rustdesk-api v2.7.
+
+## [0.1.0] - 2026-09-26
+Base upstream: rustdesk-api v2.7. Primo rilascio: immagine
+`ghcr.io/labinfinitek/remotek-api:0.1.0`.
 
 ### Sicurezza
 - Le risposte alle rotte del client RustDesk non contengono piu' il testo
