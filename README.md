@@ -29,7 +29,8 @@ cambiato rispetto a v2.7 sta in [REMOTEK.md](REMOTEK.md), le novita' in
   compilato nell'immagine a un commit fissato, con il marchio di Remotek.
   Utenti, dispositivi, rubriche, tag, gruppi, OAuth, registri.
 - **Login**: con password; con un provider **OIDC** generico, configurato dal
-  pannello; con **LDAP** (provato con OpenLDAP e Active Directory),
+  pannello; con **LDAP** (upstream lo dichiara provato con OpenLDAP e Active Directory;
+  in Remotek non ancora),
   configurato da file o variabili. Il login GitHub e Google e' in dismissione
   (decisione A3): non va configurato su installazioni nuove.
 - **Lingue**: italiano (predefinito) e inglese.

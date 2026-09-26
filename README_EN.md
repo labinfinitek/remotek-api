@@ -27,7 +27,8 @@ changed since v2.7 is in [REMOTEK.md](REMOTEK.md), news in
   built into the image at a pinned commit, with the Remotek brand. Users,
   devices, address books, tags, groups, OAuth, logs.
 - **Login**: with a password; with a generic **OIDC** provider, configured
-  from the panel; with **LDAP** (tested with OpenLDAP and Active Directory),
+  from the panel; with **LDAP** (upstream reports it tested with OpenLDAP and Active Directory;
+  not yet tested in Remotek),
   configured by file or variables. GitHub and Google login is being retired
   (decision A3): do not configure it on new installations.
 - **Languages**: Italian (default) and English.
