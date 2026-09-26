@@ -1,6 +1,6 @@
 # CI dell'API Remotek (REGOLE 7): segreti, go.sum, test, govulncheck, lint,
-# audit dei workflow. hadolint e SBOM entrano con le MR successive del
-# Passo 3.
+# audit dei workflow, Dockerfile (hadolint e build senza push). Immagine
+# pubblicata, trivy e SBOM stanno in remotek-release.yml, sul tag api-v*.
 #
 # Regole di questo file: azioni pinnate a SHA con la versione in commento
 # (si aggiornano con pinact), permessi minimi per job, nessun cron, nessun tag.
@@ -110,19 +110,8 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
-    services:
-      redis:
-        image: redis:7.4.11-alpine@sha256:520775a41a63e77e06c73e35d2fd9cc15921a609516818796b4ecbb813078bc7
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
     env:
       CGO_ENABLED: "1" # mattn/go-sqlite3 e -race
-      REDIS_ADDR: 127.0.0.1:6379
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -209,6 +198,48 @@ jobs:
       - name: govulncheck
         run: |
           "$(go env GOPATH)/bin/govulncheck" -show verbose ./...
+
+  # Il Dockerfile (REGOLE 7): hadolint, poi docker build senza push, che
+  # prova anche lo stadio del pannello (npm ci e build di rustdesk-api-web),
+  # e un avvio del container: utente 10001, /api/version che risponde. Nessun
+  # registry e nessun permesso di scrittura: l'immagine resta sul runner.
+  immagine:
+    name: immagine
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      # Binario della release di hadolint, verificato con lo sha256 di
+      # checksums.sha256 della stessa release: si cambiano insieme.
+      HADOLINT_VERSION: v2.15.1
+      HADOLINT_SHA256: c7187db94eeeeca956519a6af171adc31453941a1e777961f6e680f697c8c507
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Installa hadolint
+        run: |
+          curl -fsSL --retry 3 -o "${RUNNER_TEMP}/hadolint" \
+            "https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-linux-x86_64"
+          echo "${HADOLINT_SHA256}  ${RUNNER_TEMP}/hadolint" | sha256sum -c -
+          chmod +x "${RUNNER_TEMP}/hadolint"
+      - name: hadolint
+        run: '"${RUNNER_TEMP}/hadolint" Dockerfile'
+      - name: docker build senza push
+        run: docker build --build-arg VERSION=ci --build-arg REVISION="${GITHUB_SHA}" -t remotek-api:ci .
+      - name: Il container parte, come 10001, e risponde
+        run: |
+          set -euo pipefail
+          docker run -d --name api -p 127.0.0.1:21114:21114 remotek-api:ci
+          test "$(docker exec api id -u):$(docker exec api id -g)" = "10001:10001"
+          for _ in $(seq 30); do
+            if curl -fsS http://127.0.0.1:21114/api/version; then echo; exit 0; fi
+            sleep 1
+          done
+          docker logs api
+          echo "::error::/api/version non risponde dopo 30 secondi"
+          exit 1
 
   workflow-audit:
     name: workflow-audit
