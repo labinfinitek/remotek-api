@@ -1,0 +1,8 @@
+{
+  "content_type": "application/json; charset=utf-8",
+  "corpo": {
+    "error": "Oauth expired,please try again."
+  },
+  "corpo_tipo": "json",
+  "stato": 400
+}

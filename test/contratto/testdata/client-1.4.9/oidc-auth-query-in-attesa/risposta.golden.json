@@ -1,0 +1,9 @@
+{
+  "content_type": "application/json; charset=utf-8",
+  "corpo": {
+    "error": "No authed oidc is found",
+    "message": "Authorization in progress, please login and bind"
+  },
+  "corpo_tipo": "json",
+  "stato": 200
+}

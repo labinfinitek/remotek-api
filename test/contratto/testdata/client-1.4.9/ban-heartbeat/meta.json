@@ -1,0 +1,20 @@
+{
+  "attesa_dal_codice": "200 {\"code\":423,\"data\":null,\"message\":\"<Banned nella lingua dell'istanza>\"}",
+  "autenticata": false,
+  "client": "1.4.9",
+  "confronto": "esatto",
+  "endpoint": "ban-heartbeat",
+  "fonte_api": "api/http/http.go:36; api/http/middleware/limiter.go:10-21",
+  "fonte_client": [
+    "client/src/hbbs_http/sync.rs:235-244"
+  ],
+  "istanza": {
+    "etichetta": "vm111-rustdesk-api-upstream",
+    "versione": "2.7"
+  },
+  "normalizzati": [],
+  "nota": "il ban vale per ogni richiesta dell'IP: dietro il NAT di un cliente, dieci password sbagliate fermano per 30 minuti heartbeat e sysinfo di tutti i suoi dispositivi",
+  "precondizione": "IP bannato da ban-preparazione",
+  "registrato_il": "2026-09-26T00:41:07Z",
+  "scrive": false
+}

@@ -180,6 +180,34 @@
     {
       "gruppo": "login-errato",
       "nome": "login-errato"
+    },
+    {
+      "gruppo": "senza-utente",
+      "nome": "oidc-auth-webauth"
+    },
+    {
+      "gruppo": "senza-utente",
+      "nome": "oidc-auth-query-in-attesa"
+    },
+    {
+      "gruppo": "senza-utente",
+      "nome": "oidc-auth-query-scaduto"
+    },
+    {
+      "gruppo": "senza-utente",
+      "nome": "oidc-auth-op-sconosciuto"
+    },
+    {
+      "gruppo": "senza-utente",
+      "nome": "sysinfo-ver"
+    },
+    {
+      "gruppo": "ban",
+      "nome": "ban-login"
+    },
+    {
+      "gruppo": "ban",
+      "nome": "ban-heartbeat"
     }
   ]
 }

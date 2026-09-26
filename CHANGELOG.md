@@ -343,7 +343,8 @@ Base upstream: rustdesk-api v2.7.
   hadolint, build dell'immagine senza push e avvio del container.
 - `test/contratto/`: risposte di riferimento di rustdesk-api v2.7 alle richieste
   del client 1.4.9, rieseguite dalla CI (push e PR verso `remotek`) sul
-  router vero dell'API: tutti i 45 passi dello scenario (anonimi, 404 delle
+  router vero dell'API: tutti i 52 passi dello scenario (anonimi, 404 delle
   cinque richieste che l'API non implementa, utente di collaudo con login,
   rubrica e logout, heartbeat, sysinfo e audit del dispositivo, login con
-  password sbagliata).
+  password sbagliata, avvio e attesa del login OIDC, `sysinfo_ver`, risposta
+  a un IP bannato).

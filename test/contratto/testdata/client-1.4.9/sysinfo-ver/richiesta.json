@@ -1,0 +1,10 @@
+{
+  "corpo": null,
+  "corpo_vuoto": true,
+  "intestazioni": {
+    "Content-Type": "application/json"
+  },
+  "metodo": "POST",
+  "percorso": "/api/sysinfo_ver",
+  "query": []
+}

@@ -20,6 +20,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/lejianwen/rustdesk-api/v2/global"
@@ -81,7 +82,7 @@ func TestContract(t *testing.T) {
 	t.Setenv("RUSTDESK_API_APP_WEB_SSO", "true")
 	t.Setenv("RUSTDESK_API_APP_DISABLE_PWD_LOGIN", "false")
 	t.Setenv("RUSTDESK_API_APP_CAPTCHA_THRESHOLD", "3")
-	t.Setenv("RUSTDESK_API_APP_BAN_THRESHOLD", "10")
+	t.Setenv("RUSTDESK_API_APP_BAN_THRESHOLD", strconv.Itoa(banThreshold))
 	t.Setenv("RUSTDESK_API_RUSTDESK_PERSONAL", "1")
 	t.Setenv("RUSTDESK_API_GIN_MODE", "test")
 	t.Setenv("RUSTDESK_API_LOGGER_LEVEL", "warn")
@@ -116,12 +117,58 @@ func TestContract(t *testing.T) {
 		t.Fatalf("seme dell'utente di collaudo non riuscito: senza, gli scenari non hanno senso")
 	}
 
+	golden := os.DirFS(filepath.Join(root, "test", "contratto", "testdata", "client-1.4.9"))
+	vars := map[string]string{"utente": user, "password": password}
 	contratto.Run(t, contratto.Options{
 		BaseURL: srv.URL,
-		Golden:  os.DirFS(filepath.Join(root, "test", "contratto", "testdata", "client-1.4.9")),
-		Groups:  []string{"anonime", "non-implementate", "utente", "peer", "login-errato"},
-		Vars:    map[string]string{"utente": user, "password": password},
+		Golden:  golden,
+		Groups:  []string{"anonime", "non-implementate", "utente", "peer", "login-errato", "senza-utente"},
+		Vars:    vars,
 	})
+
+	// Il ban per ultimo: da qui ogni richiesta di 127.0.0.1 riceve la
+	// risposta del ban. La precondizione si prepara via HTTP come il seme,
+	// con i login sbagliati del passo di servizio ban-preparazione del
+	// registratore, che nello scenario non c'e'.
+	if !t.Run("preparazione-ban", func(t *testing.T) {
+		c := contratto.NewClient()
+		defer c.CloseIdleConnections()
+		banClient(t, c, srv.URL, user)
+	}) {
+		t.Fatalf("ban non ottenuto: il gruppo ban non avrebbe la sua precondizione")
+	}
+	contratto.Run(t, contratto.Options{BaseURL: srv.URL, Golden: golden, Groups: []string{"ban"}, Vars: vars})
+}
+
+// banThreshold e' RUSTDESK_API_APP_BAN_THRESHOLD fissata in TestContract.
+const banThreshold = 10
+
+// banClient manda login con la password sbagliata, come ban-preparazione del
+// registratore, finche' la risposta non e' piu' 400: il tentativo che fa
+// scattare il ban risponde ancora 400, quello dopo trova il middleware
+// Limiter. Il login di login-errato conta gia' uno, quindi bastano meno di
+// banThreshold+1 invii; se non basta nemmeno quello, il ban non c'e'.
+func banClient(t *testing.T, c *http.Client, baseURL, user string) {
+	t.Helper()
+	for range banThreshold + 1 {
+		status, body := postJSON(t, c, baseURL+"/api/login", "", map[string]any{
+			"username":   user,
+			"password":   "password-sbagliata-di-collaudo",
+			"id":         peerID,
+			"uuid":       peerUUID,
+			"autoLogin":  true,
+			"type":       "account",
+			"deviceInfo": map[string]string{"os": "windows", "type": "client", "name": "REMOTEK-COLLAUDO"},
+		})
+		if status == http.StatusBadRequest {
+			continue
+		}
+		if code, _ := body["code"].(json.Number); status != http.StatusOK || code != "423" {
+			t.Fatalf("login sbagliato: stato %d, code %v, atteso 400 oppure 200 con code 423", status, body["code"])
+		}
+		return
+	}
+	t.Fatalf("nessun ban dopo %d login sbagliati", banThreshold+1)
 }
 
 // seedUser crea l'utente di collaudo con POST /api/admin/user/register: non
