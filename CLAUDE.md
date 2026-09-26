@@ -78,19 +78,11 @@ go test -race -shuffle=on ./...
 `go.mod` chiede Go 1.26 (toolchain go1.26.8): l'ambiente cloud ha un Go piu'
 vecchio e `GOTOOLCHAIN=auto`, quindi scarica da solo la versione giusta.
 
-Test Redis: senza `REDIS_ADDR` si saltano. Nel container c'e' `redis-server`:
-lo si puo' avviare li' (mai altrove) e lanciare i test con
-`REDIS_ADDR=127.0.0.1:6379`. Fa fede la CI, che usa redis 7.4.11.
-
 gitleaks, govulncheck, golangci-lint e zizmor non si lanciano in locale: le
 versioni che contano sono quelle fissate nei workflow, e un secondo elenco da
 tenere allineato si sbaglia. Prima di dichiarare pronta la MR si legge
 l'esito della CI (segreti, go.sum, build/vet/test, test del contratto, lint,
 govulncheck, zizmor) e lo si riporta.
-
-`resources/web/` e' il web client di RustDesk incluso da upstream (15 MB,
-spento di default): non si aggiorna a pezzi, e gli alert Dependabot che lo
-riguardano non si correggono qui. Si segnalano nella MR.
 
 ## Regole del codice
 
@@ -112,8 +104,7 @@ riguardano non si correggono qui. Si segnalano nella MR.
 - Ogni opzione di configurazione ha un default **sicuro nel codice**,
   documentato nel README, con un test per i default di sicurezza. Nessun
   segreto in `conf/`: l'istanza si configura con env `RUSTDESK_API_*`.
-- Test: libreria standard + `go-cmp`; niente testify o mock senza ADR. Test
-  che dipendono da Redis: `t.Skip` senza `REDIS_ADDR`.
+- Test: libreria standard + `go-cmp`; niente testify o mock senza ADR.
 - Dipendenze: `go.sum` versionato, `-mod=readonly`, nessuna dipendenza nuova
   senza una riga di motivo nella MR; salto di major solo con ADR (lo scrive
   il titolare con l'agente, non si decide in una MR).
