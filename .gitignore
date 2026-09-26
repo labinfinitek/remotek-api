@@ -6,3 +6,5 @@ resources/admin
 release
 data/rustdeskapi.db
 data/admin-password.txt
+/remotek-data/
+/apimain

@@ -198,7 +198,18 @@ The table below does not list all configurations. Please refer to the configurat
     lejianwen/rustdesk-api
     ```
 
-2. Using `docker-compose`,look [WIKI](https://github.com/lejianwen/rustdesk-api/wiki)
+2. Using `docker compose`: `docker-compose.yaml` in the repository builds the
+   image from the `Dockerfile` (see [Building the image](#building-the-image))
+   as `ghcr.io/labinfinitek/remotek-api:dev`. Replace the `<...>` placeholders
+   of the `RUSTDESK_API_RUSTDESK_*` variables with your hbbs/hbbr addresses,
+   the address clients use for this API and the hbbs public key. The data
+   directory `./remotek-data` is mounted on `/app/data` and must belong to
+   uid/gid 10001, otherwise the API does not start:
+
+    ```bash
+    mkdir -p remotek-data && sudo chown 10001:10001 remotek-data
+    docker compose up -d --build
+    ```
 
 #### Building the image
 
@@ -307,9 +318,11 @@ Download the release from [release](https://github.com/lejianwen/rustdesk-api/re
    > RUSTDESK_API_GIN_RESOURCES_PATH=/opt/rustdesk-api/resources ./apimain -c /opt/rustdesk-api/conf/config.yaml
    > ```
 
-5. To compile, change to the project root directory. For Windows, run `build.bat`, and for Linux, run `build.sh`. After
-   compiling, the corresponding executables will be generated in the `release` directory. Run the compiled executables
-   directly.
+5. To compile, from the project root: `go build -o apimain ./cmd` (sqlite
+   needs CGO, so a C compiler; without `-o` the build fails, because `cmd`
+   is already a directory). The binary needs `conf` and `resources` as in
+   the note above. For the image use `docker build`, see
+   [Building the image](#building-the-image).
 
 6. Open your browser and visit `http://<your server[:port]>/_admin/` and log in as `admin` with the initial password
    from `data/admin-password.txt`. Please change the password promptly and delete the file.

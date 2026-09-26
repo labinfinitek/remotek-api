@@ -1,17 +1,30 @@
+# Esempio: l'API di Remotek costruita dal Dockerfile del repo.
+#
+#   mkdir -p remotek-data && sudo chown 10001:10001 remotek-data
+#   docker compose up -d --build
+#
+# L'immagine si costruisce qui dal sorgente (build: .) col nome che avra'
+# quella pubblicata. Il rilascio su ghcr.io arrivera' col tag api-v0.1.0:
+# da allora si potranno togliere build e pull_policy e scaricare l'immagine
+# a una versione fissata. Il tag dev dice che e' una build locale.
 services:
-  rustdesk-api:
-    image: lejianwen/rustdesk-api
-    container_name: rustdesk-api
+  remotek-api:
+    build: .
+    image: ghcr.io/labinfinitek/remotek-api:dev
+    pull_policy: build
     environment:
-      - TZ=Asia/Shanghai
-      - RUSTDESK_API_RUSTDESK_ID_SERVER=192.168.1.66:21116
-      - RUSTDESK_API_RUSTDESK_RELAY_SERVER=192.168.1.66:21117
-      - RUSTDESK_API_RUSTDESK_API_SERVER=http://127.0.0.1:21114
-      - RUSTDESK_API_RUSTDESK_KEY=123456789
+      - TZ=Europe/Rome
+      # Segnaposti: vanno sostituiti con gli indirizzi dei propri hbbs e
+      # hbbr, l'indirizzo con cui i client raggiungono questa API e la
+      # chiave pubblica di hbbs (il contenuto di id_ed25519.pub).
+      - RUSTDESK_API_RUSTDESK_ID_SERVER=<host-di-hbbs>:21116
+      - RUSTDESK_API_RUSTDESK_RELAY_SERVER=<host-di-hbbr>:21117
+      - RUSTDESK_API_RUSTDESK_API_SERVER=http://<host-di-questa-api>:21114
+      - RUSTDESK_API_RUSTDESK_KEY=<chiave-pubblica-di-hbbs>
     ports:
       - 21114:21114
     volumes:
-      - ./data/rustdesk/api:/app/data # database
-      # - ./conf:/app/conf # config
-      # - ./resources:/app/resources # 静态资源
+      # Database e admin-password.txt. L'API gira come 10001:10001: la
+      # cartella deve essere sua, altrimenti non parte (vedi README).
+      - ./remotek-data:/app/data
     restart: unless-stopped
