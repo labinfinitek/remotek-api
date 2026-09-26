@@ -329,7 +329,8 @@ Base upstream: rustdesk-api v2.7.
 - golangci-lint v2 in CI: bloccante sui pacchetti gia' bonificati, informativo
   sul resto (703 finding ereditati al primo giro, da azzerare nel Passo 3).
 - CI `remotek-ci.yml`: ricerca di segreti, controllo di `go.mod`/`go.sum`,
-  build, vet e test con `-race`, audit dei workflow.
+  build, vet e test con `-race`, audit dei workflow, e il `Dockerfile`:
+  hadolint, build dell'immagine senza push e avvio del container.
 - `test/contratto/`: risposte di riferimento di rustdesk-api v2.7 alle richieste
   del client 1.4.9, rieseguite dalla CI (push e PR verso `remotek`) sul
   router vero dell'API: tutti i 45 passi dello scenario (anonimi, 404 delle
