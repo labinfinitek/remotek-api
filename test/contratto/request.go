@@ -20,6 +20,7 @@ var placeholders = []struct{ text, key string }{
 	{PlaceholderGUID, "guid"},
 	{PlaceholderUser, "utente"},
 	{PlaceholderPassword, "password"},
+	{PlaceholderCode, "codice"},
 }
 
 // substitute sostituisce in s i segnaposto con i valori di vars, come

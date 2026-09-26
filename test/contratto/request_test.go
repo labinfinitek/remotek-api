@@ -13,11 +13,13 @@ import (
 // testVars e' il contesto dello scenario dei test di questo file. Gli attesi
 // sono l'uscita del registratore con lo stesso contesto: sostituisci(),
 // corpo_in_byte() e le righe di manda() che costruiscono l'URL.
-var testVars = map[string]string{"token": "abc", "guid": "1-2-0", "utente": "collaudo", "password": "segreta"}
+var testVars = map[string]string{
+	"token": "abc", "guid": "1-2-0", "utente": "collaudo", "password": "segreta", "codice": "xyz1790000000",
+}
 
 func TestSubstitute(t *testing.T) {
 	for _, c := range [][2]string{
-		{"__TOKEN__ __GUID__ __UTENTE__ __PASSWORD__", "abc 1-2-0 collaudo segreta"},
+		{"__TOKEN__ __GUID__ __UTENTE__ __PASSWORD__ __CODICE__", "abc 1-2-0 collaudo segreta xyz1790000000"},
 		{"__GUID__/__GUID__", "1-2-0/1-2-0"},
 		{"__UTENTE_ nessuno", "__UTENTE_ nessuno"},
 	} {
@@ -28,7 +30,7 @@ func TestSubstitute(t *testing.T) {
 	for key := range testVars {
 		vars := maps.Clone(testVars)
 		vars[key] = ""
-		_, err := substitute("x __TOKEN__ __GUID__ __UTENTE__ __PASSWORD__", vars)
+		_, err := substitute("x __TOKEN__ __GUID__ __UTENTE__ __PASSWORD__ __CODICE__", vars)
 		if want := "manca '" + key + "' nel contesto dello scenario"; err == nil || err.Error() != want {
 			t.Errorf("substitute senza %s: errore %v, atteso %q", key, err, want)
 		}

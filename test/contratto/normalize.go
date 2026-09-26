@@ -25,6 +25,11 @@ const (
 	PlaceholderUser = "__UTENTE__"
 	// PlaceholderPassword sta nelle richieste al posto della password dell'utente di collaudo.
 	PlaceholderPassword = "__PASSWORD__"
+	// PlaceholderCode sta nelle richieste al posto del code restituito da
+	// /api/oidc/auth. Nelle risposte il code non si normalizza: il passo che
+	// lo restituisce si confronta in forma e il registratore lo scrive come
+	// __MASCHERATO__ (mascherati nella tabella), che per la forma e' una stringa.
+	PlaceholderCode = "__CODICE__"
 )
 
 // Espressioni del registratore (RE_TEMPO e RE_GUID). In guidForm "\n?$"
