@@ -136,14 +136,25 @@ jobs:
           set -euo pipefail
           cd "${RUNNER_TEMP}/rilascio"
           sbom="remotek-api-${VERSIONE}.cdx.json"
-          syft scan "docker:${IMMAGINE}:${VERSIONE}" -o "cyclonedx-json=${sbom}"
+          # Nel binario Go ci sono moduli e versioni ma non le licenze: syft le
+          # legge dai moduli scaricati dal proxy (proxy.golang.org, lo stesso
+          # della build).
+          SYFT_GOLANG_SEARCH_REMOTE_LICENSES=true \
+            syft scan "docker:${IMMAGINE}:${VERSIONE}" -o "cyclonedx-json=${sbom}"
           {
             printf 'componente\tversione\tlicenze\n'
-            jq -r '.components[]? | [.name, (.version // ""),
-                ([.licenses[]? | .license.id // .license.name // .expression] | join(" OR "))] | @tsv' \
+            # Solo i pacchetti (con purl): l'SBOM elenca anche i file
+            # dell'immagine, che non hanno una licenza propria. Le licenze
+            # trovate, senza doppioni, separate da virgola (syft non dice se
+            # valgono insieme o in alternativa); via i "sha256:..." dei file
+            # di licenza che syft non riconosce: quei pacchetti restano da
+            # guardare a mano.
+            jq -r '.components[]? | select(.purl) | [.name, (.version // ""),
+                ([.licenses[]? | .license.id // .license.name // .expression
+                  | select(startswith("sha256:") | not)] | unique | join(", "))] | @tsv' \
               "${sbom}" | sort -u
           } > "remotek-api-${VERSIONE}-licenze.tsv"
-          echo "componenti: $(jq '.components | length' "${sbom}")"
+          echo "pacchetti: $(jq '[.components[]? | select(.purl)] | length' "${sbom}")"
           echo "senza licenza dichiarata: $(awk -F'\t' 'NR > 1 && $3 == ""' "remotek-api-${VERSIONE}-licenze.tsv" | wc -l)"
       - name: Salva l'immagine
         env:
