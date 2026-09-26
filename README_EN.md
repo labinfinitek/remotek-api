@@ -1,222 +1,68 @@
-# Remotek
+# Remotek API
 
-The API of Remotek, based on [rustdesk-api](https://github.com/lejianwen/rustdesk-api) v2.7 by lejianwen and
-compatible with the RustDesk client: written in Go, it includes a web UI. RustDesk is a remote
-desktop software that provides self-hosted solutions.
+*English. Italiano: [README.md](README.md).*
 
-<div align=center>
-<img src="https://img.shields.io/badge/golang-1.22-blue"/>
-<img src="https://img.shields.io/badge/gin-v1.9.0-lightBlue"/>
-<img src="https://img.shields.io/badge/gorm-v1.25.7-green"/>
-<img src="https://img.shields.io/badge/swag-v1.16.3-yellow"/>
-<img src="https://goreportcard.com/badge/github.com/lejianwen/rustdesk-api/v2"/>
-<img src="https://github.com/lejianwen/rustdesk-api/actions/workflows/build.yml/badge.svg"/>
-</div>
+## What it is
 
-## Better used with [lejianwen/rustdesk-server].
-> [lejianwen/rustdesk-server] is a fork of the official RustDesk Server repository.
-> 1. Solves the API connection timeout issue.
-> 2. Can enforce login before initiating a connection.
-> 3. Supports client websocket.
+The API of **Remotek**, Infinitek's remote support service: the part that
+keeps users, address books, devices and logs, next to the ID and relay
+servers (`hbbs` and `hbbr` from the [official RustDesk server](https://github.com/rustdesk/rustdesk-server),
+which are not in this repository). It is compatible with the RustDesk 1.4.9
+client and with the Remotek client.
 
+It is a fork of [rustdesk-api](https://github.com/lejianwen/rustdesk-api) v2.7
+by lejianwen (MIT). Upstream is unmaintained: this fork is the project. What
+changed since v2.7 is in [REMOTEK.md](REMOTEK.md), news in
+[CHANGELOG.md](CHANGELOG.md).
 
-# Features
+## What it does today
 
-- PC API
-    - Personal API
-    - Login
-    - Address Book
-    - Groups
-    - Authorized login, 
-      - supports `GitHub`, `Google` and `OIDC` login, 
-      - supports `web admin` authorized login, 
-      - supports LDAP(test AD and openladp) if API Server config
-    - i18n
-- Web Admin
-    - User Management
-    - Device Management
-    - Address Book Management
-    - Tag Management
-    - Group Management
-    - OAuth Management
-    - LDAP Config by config file or ENV
-    - Login Logs
-    - Connection Logs
-    - File Transfer Logs
-    - i18n
-    - Server control (some simple official commands [WIKI](https://github.com/lejianwen/rustdesk-api/wiki/Rustdesk-Command))
-- CLI
-    - Reset admin password
+- **Address book** for the client: personal address book and address books
+  shared between users, with tags and sharing rules.
+- **Groups** of users (regular and shared) and device groups.
+- **Devices**: clients send their system information, the panel shows it.
+- **Audit**: log of connections and file transfers sent by the clients.
+- **Login log**: every login, from the client and from the panel.
+- **Admin panel** on `/_admin/`: [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)
+  built into the image at a pinned commit, with the Remotek brand. Users,
+  devices, address books, tags, groups, OAuth, logs.
+- **Login**: with a password; with a generic **OIDC** provider, configured
+  from the panel; with **LDAP** (tested with OpenLDAP and Active Directory),
+  configured by file or variables. GitHub and Google login is being retired
+  (decision A3): do not configure it on new installations.
+- **Languages**: Italian (default) and English.
+- **Configurable brand**: name, logo and favicon without touching the code.
 
-## Overview
+## Installation
 
-### API Service
-Basic implementation of the PC client's primary interfaces.Supports the Personal version api, which can be enabled by configuring the `rustdesk.personal` file or the `RUSTDESK_API_RUSTDESK_PERSONAL` environment variable.
+The image is built from the repository's `Dockerfile`. The release on
+`ghcr.io/labinfinitek/remotek-api` will come with the `api-v0.1.0` tag: until
+then the image is built locally.
 
-<table>
-    <tr>
-      <td width="50%" align="center" colspan="2"><b>Login</b></td>
-    </tr>
-    <tr>
-        <td width="50%" align="center" colspan="2"><img src="docs/en_img/pc_login.png"></td>
-    </tr>
-     <tr>
-      <td width="50%" align="center"><b>Address Book</b></td>
-      <td width="50%" align="center"><b>Groups</b></td>
-    </tr>
-    <tr>
-        <td width="50%" align="center"><img src="docs/en_img/pc_ab.png"></td>
-        <td width="50%" align="center"><img src="docs/en_img/pc_gr.png"></td>
-    </tr>
-</table>
+### With docker compose
 
-### Web Admin
+`docker-compose.yaml` builds the image from source as
+`ghcr.io/labinfinitek/remotek-api:dev` and runs it on port 21114.
 
-* The frontend and backend are separated to provide a user-friendly management interface, primarily for managing and
-displaying data.Frontend code is available at [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)
+1. In the file, replace the `<...>` placeholders of the four
+   `RUSTDESK_API_RUSTDESK_*` variables: addresses of `hbbs` and `hbbr`, the
+   address clients use to reach this API, the public key of `hbbs` (the
+   content of `id_ed25519.pub`). The time zone is `TZ=Europe/Rome`.
+2. Create the data directory, which must belong to `10001:10001`, the user
+   the API runs as; otherwise the API does not start and says why:
 
-* Admin panel URL: `http://<your server[:port]>/_admin/`
-* For the initial installation, the admin username is `admin` and the password is 20 random characters, written only to `data/admin-password.txt` (next to `rustdeskapi.db`; `/app/data/admin-password.txt` in the container) with permissions `0600`: it is not printed to the console or the log. Change it from the admin panel and delete the file; you can also change it via the [command line](#CLI).
+   ```bash
+   mkdir -p remotek-data && sudo chown 10001:10001 remotek-data
+   docker compose up -d --build
+   ```
 
+3. The panel is at `http://<host>:21114/_admin/`: see [First start](#first-start-and-administration).
 
-1. Admin interface:
-   ![web_admin](docs/en_img/web_admin.png)
-2. Regular user interface:
-   ![web_user](docs/en_img/web_admin_user.png)
+`remotek-data/` (`/app/data` in the container) holds the SQLite database
+`rustdeskapi.db` and `admin-password.txt`. The log goes to stdout
+(`docker compose logs`) and to `/app/runtime/log.txt`, inside the container.
 
-3. Each user can have multiple address books, which can also be shared with other users.
-4. Groups can be customized for easy management. Currently, two types are supported: `shared group` and `regular group`.
-6. OAuth support: Currently, `GitHub`, `Google` and `OIDC`  are supported. You need to create an `OAuth App` and configure it in
-   the admin panel.
-    - For `Google` and `Github`, you don't need to fill the `Issuer` and `Scpoes`
-    - For `OIDC`, you must set the `Issuer`. And `Scopes` is optional which default is `openid,email,profile`, please make sure this `Oauth App` can access `sub`, `email` and `preferred_username`
-    - Create a `GitHub OAuth App`
-      at `Settings` -> `Developer settings` -> `OAuth Apps` -> `New OAuth App` [here](https://github.com/settings/developers).
-    - Set the `Authorization callback URL` to `http://<your server[:port]>/api/oidc/callback`,
-      e.g., `http://127.0.0.1:21114/api/oidc/callback`.
-   
-7. Login logs
-8. Connection logs
-9. File transfer logs
-10. Server control
-  - `Simple mode`, some simple commands have been GUI-ized and can be executed directly in the backend
-    ![rustdesk_command_simple](./docs/en_img/rustdesk_command_simple.png)
-
-  - `Advanced mode`, commands can be executed directly in the backend
-    * Official commands can be used
-    * Custom commands can be added
-    * Custom commands can be executed
-
-11. **LDAP Support**, When you setup the LDAP(test for OpenLDAP and AD), you can login with the LDAP's user. https://github.com/lejianwen/rustdesk-api/issues/114 , if LDAP fail fallback local user
-  
-### Automated Documentation : API documentation is generated using Swag, making it easier for developers to understand and use the API.
-
-1. Admin panel docs: `<your server[:port]>/admin/swagger/index.html`
-2. PC client docs: `<your server[:port]>/swagger/index.html`
-   ![api_swag](docs/api_swag.png)
-
-### CLI
-```bash
-# help
-./apimain -h
-```
-
-#### Reset admin password
-```bash
-./apimain reset-admin-pwd <pwd>
-```
-The password must be 15 to 32 characters long (characters, not bytes); the same holds for `reset-pwd <userId> <pwd>`. When the password is refused, the user does not exist or the update fails, the command exits with a non-zero code.
-
-## Installation and Setup
-
-### Configuration
-
-* [Config File](./conf/config.yaml)
-* Modify the configuration in `conf/config.yaml`. 
-* The only database is SQLite (`data/rustdeskapi.db`): `gorm.type` must be `sqlite` or empty; any other value (for example `mysql` from an old installation) stops the API at startup with exit code 1.
-* Languages: only `it` and `en`; the default is `it`, and an empty value means English. Any other `lang` (for example `zh-CN` from an old config file) makes the API exit with status 1 at startup. A request is answered in the language of its `Accept-Language` header if it is one of these (the admin panel sends its own language, by default the browser's), otherwise in the configured one: the RustDesk client does not send the header.
-
-
-### Environment Variables
-The environment variables correspond one-to-one with the configurations in the `conf/config.yaml` file. The prefix for variable names is `RUSTDESK_API`.
-The table below does not list all configurations. Please refer to the configurations in `conf/config.yaml`.
-
-| Variable Name                                          | Description                                                                                                                                         | Example                       |
-|--------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|
-| TZ                                                     | timezone                                                                                                                                            | Asia/Shanghai                 |
-| RUSTDESK_API_LANG                                      | Language used when `Accept-Language` does not pick one: `it` or `en`, default `it`; any other value stops startup                                     | `it`,`en`                     |
-| RUSTDESK_API_APP_REGISTER                              | register enable; `true`, `false`; default:`false`                                                                                                   | `false`                       |
-| RUSTDESK_API_APP_WEB_SSO                               | offer clients the login confirmed from the web admin (`webauth`); `true`, `false`; default: `false`                                                 | `false`                       |
-| RUSTDESK_API_APP_SHOW_SWAGGER                          | swagger visible; 1: yes, 0: no; default: 0                                                                                                          | `0`                           |
-| RUSTDESK_API_APP_TOKEN_EXPIRE                          | token expire duration                                                                                                                               | `168h`                        |
-| RUSTDESK_API_APP_DISABLE_PWD_LOGIN                     | disable password login                                                                                                                              | `false`                       |
-| RUSTDESK_API_APP_REGISTER_STATUS                       | register user default status ; 1 enabled , 2 disabled ; default 1                                                                                   | `1`                           |
-| RUSTDESK_API_APP_CAPTCHA_THRESHOLD                     | captcha threshold; -1 disabled, 0 always enable, >0 threshold  ;default `3`                                                                         | `3`                           |
-| RUSTDESK_API_APP_BAN_THRESHOLD                         | ban ip threshold; 0 disabled; >0 after this many failed logins from one IP within 10 minutes, every request from that IP is refused for 30 minutes; default `10` | `10`                          |
-| ----- BRAND Configuration-----                         | ----------                                                                                                                                          | ----------                    |
-| RUSTDESK_API_BRAND_NAME                                | Product name: admin title, `{{brand}}` in the welcome message, OAuth login pages; default `Remotek`                                                 | `Remotek`                     |
-| RUSTDESK_API_BRAND_DIR                                 | Directory of `logo.svg` and `favicon.svg`, served on `/brand/`; default `./resources/brand`                                                         | `./resources/brand`           |
-| ----- ADMIN Configuration-----                         | ----------                                                                                                                                          | ----------                    |
-| RUSTDESK_API_ADMIN_TITLE                               | Admin title; empty means `brand.name`                                                                                                               | `Remotek`                     |
-| RUSTDESK_API_ADMIN_HELLO                               | Admin welcome message, you can use `html`                                                                                                           |                               |
-| RUSTDESK_API_ADMIN_HELLO_FILE                          | Admin welcome message file,<br>will override `RUSTDESK_API_ADMIN_HELLO`                                                                             | `./conf/admin/hello.html`     |
-| ----- GIN Configuration -----                          | ---------------------------------------                                                                                                             | ----------------------------- |
-| RUSTDESK_API_GIN_TRUST_PROXY                           | Trusted proxy IPs or CIDRs, separated by commas; default empty: no proxy is trusted, `X-Forwarded-For` and `X-Real-IP` are ignored.<br>Behind a reverse proxy set it to the proxy address, otherwise captcha and ban count every client as the proxy IP | 192.168.1.2,192.168.1.3       |
-| ----- GORM Configuration -----                         | ---------------------------------------                                                                                                             | ----------------------------- |
-| RUSTDESK_API_GORM_TYPE                                 | Database type: only `sqlite` (empty means `sqlite`); any other value stops the API at startup                                                     | sqlite                        |
-| RUSTDESK_API_GORM_MAX_IDLE_CONNS                       | Maximum idle connections                                                                                                                            | 10                            |
-| RUSTDESK_API_GORM_MAX_OPEN_CONNS                       | Maximum open connections                                                                                                                            | 100                           |
-| RUSTDESK_API_RUSTDESK_PERSONAL                         | Open Personal Api 1:Enable,0:Disable                                                                                                                | 1                             |
-| ----- RUSTDESK Configuration -----                     | ---------------------------------------                                                                                                             | ----------------------------- |
-| RUSTDESK_API_RUSTDESK_ID_SERVER                        | Rustdesk ID server address                                                                                                                          | 192.168.1.66:21116            |
-| RUSTDESK_API_RUSTDESK_RELAY_SERVER                     | Rustdesk relay server address                                                                                                                       | 192.168.1.66:21117            |
-| RUSTDESK_API_RUSTDESK_API_SERVER                       | Rustdesk API server address                                                                                                                         | http://192.168.1.66:21114     |
-| RUSTDESK_API_RUSTDESK_KEY                              | Rustdesk key                                                                                                                                        | 123456789                     |
-| RUSTDESK_API_RUSTDESK_KEY_FILE                         | Rustdesk key file                                                                                                                                   | `./conf/data/id_ed25519.pub`  |
-| ---- PROXY -----                                       | ---------------                                                                                                                                     | ----------                    |
-| RUSTDESK_API_PROXY_ENABLE                              | proxy_enable :`false`, `true`                                                                                                                       | `false`                       |
-| RUSTDESK_API_PROXY_HOST                                | proxy_host                                                                                                                                          | `http://127.0.0.1:1080`       |
-| ----JWT----                                            | --------                                                                                                                                            | --------                      |
-| RUSTDESK_API_JWT_KEY                                   | Custom JWT KEY, if empty JWT is not enabled.<br/>If `MUST_LOGIN` from `lejianwen/rustdesk-server` is not used, it is recommended to leave it empty. |                               |
-| RUSTDESK_API_JWT_EXPIRE_DURATION                       | JWT expire duration                                                                                                                                 | `168h`                        |
-
-### Installation Steps
-
-#### Running via Docker
-
-1. Run directly with Docker. Configuration can be modified by mounting the config file `/app/conf/config.yaml`, or by
-   using environment variables to override settings.
-    
-    ```bash
-    docker run -d --name rustdesk-api -p 21114:21114 \
-    -v /data/rustdesk/api:/app/data \
-    -e RUSTDESK_API_LANG=en \
-    -e RUSTDESK_API_RUSTDESK_ID_SERVER=192.168.1.66:21116 \
-    -e RUSTDESK_API_RUSTDESK_RELAY_SERVER=192.168.1.66:21117 \
-    -e RUSTDESK_API_RUSTDESK_API_SERVER=http://192.168.1.66:21114 \
-    -e RUSTDESK_API_RUSTDESK_KEY=abc123456 \
-    lejianwen/rustdesk-api
-    ```
-
-2. Using `docker compose`: `docker-compose.yaml` in the repository builds the
-   image from the `Dockerfile` (see [Building the image](#building-the-image))
-   as `ghcr.io/labinfinitek/remotek-api:dev`. Replace the `<...>` placeholders
-   of the `RUSTDESK_API_RUSTDESK_*` variables with your hbbs/hbbr addresses,
-   the address clients use for this API and the hbbs public key. The data
-   directory `./remotek-data` is mounted on `/app/data` and must belong to
-   uid/gid 10001, otherwise the API does not start:
-
-    ```bash
-    mkdir -p remotek-data && sudo chown 10001:10001 remotek-data
-    docker compose up -d --build
-    ```
-
-#### Building the image
-
-`Dockerfile` builds everything from source, in three stages: the Go binary
-(static, CGO for sqlite), the admin panel [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)
-at a pinned commit, and the final Alpine image. No prebuilt binary or
-`release/` directory is needed.
+### Building the image
 
 ```bash
 docker build \
@@ -225,162 +71,180 @@ docker build \
   -t remotek-api .
 ```
 
-- Build arguments: `VERSION` is written to `resources/version` and returned by
-  `/api/version` (default `dev`); `REVISION` goes into the OCI label (default
-  `unknown`); `PANNELLO_COMMIT` is the full sha of the rustdesk-api-web commit
-  (default `3998c2a9213fcd047252776d0f0db33e6717026c`, the last commit of
-  master, the one packaged with v2.7); `BRAND_NAME` is the static title of
-  the admin panel (default `Remotek`; letters, digits, spaces and `. _ -`
-  only), see [Changing the brand](#changing-the-brand).
-- The process runs as user `remotek` (uid/gid 10001), not root. `/app/data`
-  is the volume (database, `admin-password.txt`); `/app/runtime` holds
-  `log.txt` (the log also goes to stdout).
-- A bind-mounted directory must be writable by uid 10001, otherwise the API
-  does not start: `sudo chown -R 10001:10001 /data/rustdesk/api`. The same
-  holds for data written by an image that ran as root.
-- `HEALTHCHECK` calls `http://127.0.0.1:21114/api/version`: if you change the
-  port in `RUSTDESK_API_GIN_API_ADDR`, override it with `--health-cmd`.
-- Base images are pinned by digest: to update one, change tag and digest
-  together.
+Three stages: static Go binary (CGO for SQLite), rustdesk-api-web panel at the
+pinned commit, final Alpine image. Base images are pinned by digest.
+Arguments:
 
-#### Changing the brand
+| Argument | Default | Use |
+|---|---|---|
+| `VERSION` | `dev` | written to `resources/version`, returned by `/api/version` |
+| `REVISION` | `unknown` | OCI label `org.opencontainers.image.revision` |
+| `PANNELLO_COMMIT` | `3998c2a9213fcd047252776d0f0db33e6717026c` | full sha of the rustdesk-api-web commit |
+| `BRAND_NAME` | `Remotek` | static title of the panel; letters, digits, spaces and `. _ -` |
 
-Name and logo live in one place and change without touching the code:
+The `HEALTHCHECK` calls `http://127.0.0.1:21114/api/version`: if you change
+`gin.api-addr`, override it with `--health-cmd`.
 
-- Name: `brand.name` (`RUSTDESK_API_BRAND_NAME`, default `Remotek`). It is
-  the admin title (when `admin.title` is empty, returned by
-  `GET /api/admin/config/admin`), `{{brand}}` in the welcome message
-  (replaced like `{{username}}`, see `conf/admin/hello.html`) and the title
-  of the OAuth/OIDC login pages. Restart the API to apply it.
-- Logo and favicon: `logo.svg` and `favicon.svg` in `brand.dir`
-  (`RUSTDESK_API_BRAND_DIR`, default `./resources/brand`), served by the API
-  on `/brand/logo.svg` and `/brand/favicon.svg`, where the admin panel reads
-  them. Replace the files, no rebuild needed; in a container, mount them:
-  `-v /srv/remotek/brand:/app/resources/brand:ro` (readable by uid 10001).
-  The files under `/brand/` are served with a `Content-Security-Policy`
-  that allows no scripts and runs them in a sandbox, plus
-  `X-Content-Type-Options: nosniff`: an SVG must be self-contained (inline
-  styles, images and fonts from `/brand/` or `data:`), with no scripts and
-  nothing from other sites.
-- The static title the panel shows before it loads its configuration is set
-  at build time: `docker build --build-arg BRAND_NAME=<name> ...`. Before
-  `npm run build` the `Dockerfile` rewrites a few lines (logo, favicon,
-  title) of the panel source at the pinned commit; if a line is missing the
-  build fails.
+### Development
 
-Not renamed: the `RUSTDESK_API_` variable prefix, the `rustdesk:` config
-section, the `/api/admin/rustdesk/*` routes, the Go module path.
+You need Go 1.26 (`go.mod`) and a C compiler, because the SQLite driver uses
+CGO. From the repository root:
 
-#### Running from Release
-
-Download the release from [release](https://github.com/lejianwen/rustdesk-api/releases).
-
-#### Source Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/lejianwen/rustdesk-api.git
-   cd rustdesk-api
-   ```
-
-2. Install dependencies:
-
-    ```bash
-    go mod tidy
-    # Install Swag if you need to generate documentation; otherwise, you can skip this step
-    go install github.com/swaggo/swag/cmd/swag@latest
-    ```
-
-3. Build the admin front-end (the front-end code is
-   in [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)):
-   ```bash
-   cd resources
-   mkdir -p admin
-   git clone https://github.com/lejianwen/rustdesk-api-web
-   cd rustdesk-api-web
-   npm install
-   npm run build
-   cp -ar dist/* ../admin/
-   ```
-
-4. Run:
-    ```bash
-    # Run directly
-   go run cmd/apimain.go
-   # To regenerate the Swagger docs first (requires swag in PATH)
-   go generate -tags tools ./tools
-   ```
-   > **Note:** When using `go run` or the compiled binary, the `conf` and `resources`
-   > directories must exist relative to the current working directory. If you run
-   > the program from another location, specify absolute paths with `-c` and the
-   > `RUSTDESK_API_GIN_RESOURCES_PATH` environment variable. Example:
-   > ```bash
-   > RUSTDESK_API_GIN_RESOURCES_PATH=/opt/rustdesk-api/resources ./apimain -c /opt/rustdesk-api/conf/config.yaml
-   > ```
-
-5. To compile, from the project root: `go build -o apimain ./cmd` (sqlite
-   needs CGO, so a C compiler; without `-o` the build fails, because `cmd`
-   is already a directory). The binary needs `conf` and `resources` as in
-   the note above. For the image use `docker build`, see
-   [Building the image](#building-the-image).
-
-6. Open your browser and visit `http://<your server[:port]>/_admin/` and log in as `admin` with the initial password
-   from `data/admin-password.txt`. Please change the password promptly and delete the file.
-
-#### Running with my forked server-s6 image
-
-- Connection timeout issue resolved
-- Can enforce login before initiating a connection
-- github https://github.com/lejianwen/rustdesk-server
-
-```yaml
- networks:
-   rustdesk-net:
-     external: false
- services:
-   rustdesk:
-     ports:
-       - 21114:21114
-       - 21115:21115
-       - 21116:21116
-       - 21116:21116/udp
-       - 21117:21117
-       - 21118:21118
-       - 21119:21119
-     image: lejianwen/rustdesk-server-s6:latest
-     environment:
-       - RELAY=<relay_server[:port]>
-       - ENCRYPTED_ONLY=1
-       - MUST_LOGIN=N
-       - TZ=Asia/Shanghai
-       - RUSTDESK_API_RUSTDESK_ID_SERVER=<id_server[:21116]>
-       - RUSTDESK_API_RUSTDESK_RELAY_SERVER=<relay_server[:21117]>
-       - RUSTDESK_API_RUSTDESK_API_SERVER=http://<api_server[:21114]>
-       - RUSTDESK_API_KEY_FILE=/data/id_ed25519.pub
-       - RUSTDESK_API_JWT_KEY=xxxxxx # jwt key
-     volumes:
-       - /data/rustdesk/server:/data
-       - /data/rustdesk/api:/app/data #将数据库挂载
-     networks:
-       - rustdesk-net
-     restart: unless-stopped
-       
+```bash
+go build -o apimain ./cmd   # without -o it fails: cmd is already a directory
+./apimain                   # reads ./conf/config.yaml, or -c <file>
+go test ./...
 ```
-## Others
 
-- [WIKI](https://github.com/lejianwen/rustdesk-api/wiki)
-- [Connection Timeout](https://github.com/lejianwen/rustdesk-api/issues/92)
-- [Change client ID](https://github.com/abdullah-erturk/RustDesk-ID-Changer)
+The API looks for `conf/` and `resources/` in the current directory: from
+another directory use `-c <path>/conf/config.yaml` and
+`RUSTDESK_API_GIN_RESOURCES_PATH=<path>/resources`. The panel is not in the
+repository (the `Dockerfile` builds it into `resources/admin/`): without it,
+`/_admin/` has no pages. The swagger docs are regenerated with
+`go generate -tags tools ./tools` (needs `swag` in `PATH`).
 
-## Acknowledgements
+## Configuration
 
-Thanks to everyone who contributed!
+The configuration lives in `conf/config.yaml` (`/app/conf/config.yaml` in the
+image) and every key can be overridden by an environment variable: prefix
+`RUSTDESK_API_`, then the key in upper case with `.` and `-` replaced by `_`
+(`app.captcha-threshold` becomes `RUSTDESK_API_APP_CAPTCHA_THRESHOLD`). The
+variable beats the file, the file beats the code default. A variable only
+works for keys that are in the file or have a code default (those marked \*):
+the `conf/config.yaml` of the repository and of the image has them all, a
+shorter file of your own does not.
 
-<a href="https://github.com/lejianwen/rustdesk-api/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=lejianwen/rustdesk-api" />
-</a>
+The default is the value in `conf/config.yaml`; \* means the code has the same
+default when the key is missing from the file.
 
-## Thanks for your support! If you find this project useful, please give it a ⭐️. Thank you!
+| Key | Variable | Default | Values and notes |
+|---|---|---|---|
+| `lang` \* | `RUSTDESK_API_LANG` | `it` | `it`, `en`, empty (= English); any other value stops startup. Language of the answers when `Accept-Language` does not pick one (the RustDesk client does not send it) |
+| `brand.name` \* | `RUSTDESK_API_BRAND_NAME` | `Remotek` | product name; empty = `Remotek` |
+| `brand.dir` \* | `RUSTDESK_API_BRAND_DIR` | `./resources/brand` | directory of `logo.svg` and `favicon.svg`, served on `/brand/` |
+| `app.register` \* | `RUSTDESK_API_APP_REGISTER` | `false` | open registration of new users |
+| `app.register-status` | `RUSTDESK_API_APP_REGISTER_STATUS` | `1` | status of new registrations: `1` enabled, `2` disabled |
+| `app.captcha-threshold` \* | `RUSTDESK_API_APP_CAPTCHA_THRESHOLD` | `3` | failed logins from one IP, within 10 minutes, after which the captcha is required; `0` always, negative never |
+| `app.ban-threshold` \* | `RUSTDESK_API_APP_BAN_THRESHOLD` | `10` | failed logins from one IP, within 10 minutes, after which every request from it is refused for 30 minutes; `0` never |
+| `app.show-swagger` \* | `RUSTDESK_API_APP_SHOW_SWAGGER` | `0` | `1` publishes `/swagger/index.html` and `/admin/swagger/index.html` |
+| `app.token-expire` | `RUSTDESK_API_APP_TOKEN_EXPIRE` | `168h` | session lifetime (Go duration: `72h`, `30m`) |
+| `app.web-sso` \* | `RUSTDESK_API_APP_WEB_SSO` | `false` | offers the client the login confirmed from the panel (`webauth`) |
+| `app.disable-pwd-login` | `RUSTDESK_API_APP_DISABLE_PWD_LOGIN` | `false` | `true` removes password login, OIDC and LDAP remain |
+| `admin.title` \* | `RUSTDESK_API_ADMIN_TITLE` | empty | panel title; empty = `brand.name` |
+| `admin.hello` | `RUSTDESK_API_ADMIN_HELLO` | empty | panel welcome message (HTML); when not empty, `admin.hello-file` is not read |
+| `admin.hello-file` | `RUSTDESK_API_ADMIN_HELLO_FILE` | `./conf/admin/hello.html` | welcome file; `{{username}}` and `{{brand}}` are replaced |
+| `admin.id-server-port` | `RUSTDESK_API_ADMIN_ID_SERVER_PORT` | `21116` | `hbbs` port for the panel's commands, sent to `127.0.0.1` on this port minus one |
+| `admin.relay-server-port` | `RUSTDESK_API_ADMIN_RELAY_SERVER_PORT` | `21117` | `hbbr` port for the panel's commands, on `127.0.0.1` |
+| `gin.api-addr` | `RUSTDESK_API_GIN_API_ADDR` | `0.0.0.0:21114` | listen address |
+| `gin.mode` | `RUSTDESK_API_GIN_MODE` | `release` | `release`, `debug`, `test` |
+| `gin.resources-path` | `RUSTDESK_API_GIN_RESOURCES_PATH` | `resources` | directory of panel, languages and templates; without the language files startup stops |
+| `gin.trust-proxy` \* | `RUSTDESK_API_GIN_TRUST_PROXY` | empty | trusted proxy IPs or CIDRs, comma separated; empty = none, `X-Forwarded-For` and `X-Real-IP` ignored. Behind a reverse proxy it must be set, otherwise captcha and ban count every client as the proxy IP. An invalid value stops startup |
+| `gorm.type` | `RUSTDESK_API_GORM_TYPE` | `sqlite` | only `sqlite` (empty is the same); any other value stops startup. The database is `data/rustdeskapi.db` |
+| `gorm.max-idle-conns` | `RUSTDESK_API_GORM_MAX_IDLE_CONNS` | `10` | idle connections kept open |
+| `gorm.max-open-conns` | `RUSTDESK_API_GORM_MAX_OPEN_CONNS` | `100` | maximum open connections |
+| `rustdesk.id-server` | `RUSTDESK_API_RUSTDESK_ID_SERVER` | example address | `host:21116` of `hbbs`, to be set; shown by the panel |
+| `rustdesk.relay-server` | `RUSTDESK_API_RUSTDESK_RELAY_SERVER` | example address | `host:21117` of `hbbr`, to be set |
+| `rustdesk.api-server` | `RUSTDESK_API_RUSTDESK_API_SERVER` | `http://127.0.0.1:21114` | address of this API as clients and browsers see it; gives the OIDC callback `<api-server>/api/oidc/callback` |
+| `rustdesk.key` | `RUSTDESK_API_RUSTDESK_KEY` | empty | public key of `hbbs`; empty = `rustdesk.key-file` is read |
+| `rustdesk.key-file` | `RUSTDESK_API_RUSTDESK_KEY_FILE` | `/data/id_ed25519.pub` | key file; if it cannot be read, the key stays empty without an error |
+| `rustdesk.personal` | `RUSTDESK_API_RUSTDESK_PERSONAL` | `1` | `1` personal address book on, `0` off |
+| `logger.path` | `RUSTDESK_API_LOGGER_PATH` | `./runtime/log.txt` | log file (0600), besides stdout; empty = stdout only. If it cannot be opened, startup stops |
+| `logger.level` | `RUSTDESK_API_LOGGER_LEVEL` | `info` | `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic`; an invalid value means `debug` |
+| `logger.report-caller` | `RUSTDESK_API_LOGGER_REPORT_CALLER` | `true` | source file and line in every log line |
+| `proxy.enable` | `RUSTDESK_API_PROXY_ENABLE` | `false` | HTTP proxy for the API's requests to the OAuth/OIDC provider |
+| `proxy.host` | `RUSTDESK_API_PROXY_HOST` | `http://127.0.0.1:1080` | proxy address |
+| `jwt.key` | `RUSTDESK_API_JWT_KEY` | empty | empty: random session tokens (16 bytes, hex); set: JWT tokens signed with this key. With the official server leave it empty |
+| `jwt.expire-duration` | `RUSTDESK_API_JWT_EXPIRE_DURATION` | `168h` | JWT lifetime |
+| `ldap.enable` | `RUSTDESK_API_LDAP_ENABLE` | `false` | LDAP login; if LDAP refuses or does not answer, the local user is tried |
+| `ldap.url` | `RUSTDESK_API_LDAP_URL` | `ldap://ldap.example.com:389` | `ldap://` or `ldaps://` |
+| `ldap.tls-ca-file` | `RUSTDESK_API_LDAP_TLS_CA_FILE` | empty | server CA, with `ldaps://` |
+| `ldap.tls-verify` | `RUSTDESK_API_LDAP_TLS_VERIFY` | `false` | with `ldaps://`, `false` does not verify the certificate: set it to `true` |
+| `ldap.base-dn` | `RUSTDESK_API_LDAP_BASE_DN` | `dc=example,dc=com` | base DN |
+| `ldap.bind-dn` | `RUSTDESK_API_LDAP_BIND_DN` | `cn=admin,dc=example,dc=com` | service user for searches |
+| `ldap.bind-password` | `RUSTDESK_API_LDAP_BIND_PASSWORD` | example value | password of the service user: from the variable, not in the file |
+| `ldap.user.base-dn` | `RUSTDESK_API_LDAP_USER_BASE_DN` | `ou=users,dc=example,dc=com` | where to search for users |
+| `ldap.user.filter` | `RUSTDESK_API_LDAP_USER_FILTER` | `(cn=*)` | filter added to the search |
+| `ldap.user.username` | `RUSTDESK_API_LDAP_USER_USERNAME` | `uid` | username attribute (`sAMAccountName` in AD) |
+| `ldap.user.email` | `RUSTDESK_API_LDAP_USER_EMAIL` | `mail` | email attribute |
+| `ldap.user.first-name` | `RUSTDESK_API_LDAP_USER_FIRST_NAME` | `givenName` | first name attribute |
+| `ldap.user.last-name` | `RUSTDESK_API_LDAP_USER_LAST_NAME` | `sn` | last name attribute |
+| `ldap.user.enable-attr` | `RUSTDESK_API_LDAP_USER_ENABLE_ATTR` | empty | attribute that says whether the user is enabled (`userAccountControl` in AD); empty = all enabled |
+| `ldap.user.enable-attr-value` | `RUSTDESK_API_LDAP_USER_ENABLE_ATTR_VALUE` | empty | value of `enable-attr` for an enabled user (ignored in AD) |
+| `ldap.user.sync` | `RUSTDESK_API_LDAP_USER_SYNC` | `false` | `true` updates the local user at every login, `false` only when it is created |
+| `ldap.user.admin-group` | `RUSTDESK_API_LDAP_USER_ADMIN_GROUP` | `cn=admin,dc=example,dc=com` | DN of the administrators' group |
+| `ldap.user.allow-group` | `RUSTDESK_API_LDAP_USER_ALLOW_GROUP` | `cn=users,dc=example,dc=com` | DN of the group allowed to log in; empty = everyone |
 
+The OIDC provider is configured from the panel (OAuth, type `oidc`): it needs
+the `Issuer`, `Scopes` default to `openid,profile,email`, callback URL
+`<rustdesk.api-server>/api/oidc/callback`.
 
-[lejianwen/rustdesk-server]: https://github.com/lejianwen/rustdesk-server
+## First start and administration
+
+**Initial password.** On first start the API creates the `admin` user with a
+random 20-character password and writes it only to `data/admin-password.txt`
+(permissions 0600, next to `rustdeskapi.db`; `/app/data/admin-password.txt`
+in the container); the log says where it is, it does not print it. With
+docker compose: `sudo cat remotek-data/admin-password.txt`. Log in on
+`/_admin/`, change the password from the panel and delete the file.
+
+**Commands.** From the binary (in the container: `docker compose exec remotek-api ./apimain ...`):
+
+```bash
+./apimain reset-admin-pwd <password>        # admin password
+./apimain reset-pwd <userId> <password>     # password of another user
+./apimain -h                                # help
+```
+
+The password must be 15 to 32 characters long (characters, not bytes), like
+every new password set from the panel or at registration. When the password
+is refused, the user does not exist or the update fails, the command exits
+with a non-zero code.
+
+**Connecting the client.** In the RustDesk or Remotek client, under
+Settings > Network: ID server, relay server, API server (`rustdesk.api-server`)
+and key, the same values as the `RUSTDESK_API_RUSTDESK_*` variables.
+
+**Changing the brand.** Name, logo and favicon change without touching the
+code:
+
+- name: `brand.name` (`RUSTDESK_API_BRAND_NAME`). It is the panel title when
+  `admin.title` is empty, `{{brand}}` in the welcome message and the title of
+  the OAuth/OIDC login pages; it applies after a restart;
+- logo and favicon: `logo.svg` and `favicon.svg` in `brand.dir`, served on
+  `/brand/logo.svg` and `/brand/favicon.svg`. Replace the files, no rebuild
+  needed; in the container mount them, readable by 10001:
+  `-v /srv/remotek/brand:/app/resources/brand:ro`. An SVG must be
+  self-contained: no scripts, nothing from other sites;
+- the title the panel shows before it loads its configuration is set at
+  build time: `docker build --build-arg BRAND_NAME=<name> ...`.
+
+Not renamed: the `RUSTDESK_API_` prefix, the `rustdesk:` section, the
+`/api/admin/rustdesk/*` routes, the Go module path.
+
+## Security
+
+- **Non-root process**: in the image the API runs as `remotek`
+  (10001:10001). A data directory that 10001 cannot write stops startup with a
+  message that gives the fix (`chown -R 10001:10001`).
+- **Secure defaults**, also in the code when missing from the file:
+  registration off, login from the panel (`web-sso`) off, swagger off, captcha
+  after 3 failed logins and ban after 10, no trusted proxy.
+- **Credentials**: initial password only in the 0600 file, never in the log;
+  new passwords of 15-32 characters; without `jwt.key`, random session tokens.
+- **Log** 0600: it contains usernames and IP addresses.
+- **No external resources** in the pages the API generates (OAuth/OIDC login
+  result). Files under `/brand/` are served with a `Content-Security-Policy`
+  that runs no scripts and with `X-Content-Type-Options: nosniff`.
+- **LDAP**: with `ldaps://` set `ldap.tls-verify: true`; the default `false`
+  does not verify the certificate.
+- Report vulnerabilities as described in [SECURITY.md](SECURITY.md), not with
+  public issues.
+
+## Origin and licence
+
+Remotek API is based on [rustdesk-api](https://github.com/lejianwen/rustdesk-api)
+by lejianwen, version v2.7, released under the MIT licence. This fork is MIT
+too: [LICENSE](LICENSE) is unchanged, with the attribution to lejianwen. The
+panel is [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web), by
+the same author, built from source. The changes since v2.7 are listed in
+[REMOTEK.md](REMOTEK.md).
