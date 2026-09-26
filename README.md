@@ -38,9 +38,12 @@ cambiato rispetto a v2.7 sta in [REMOTEK.md](REMOTEK.md), le novita' in
 
 ## Installazione
 
-L'immagine si costruisce dal `Dockerfile` del repo. Il rilascio su
-`ghcr.io/labinfinitek/remotek-api` arrivera' col tag `api-v0.1.0`: fino ad
-allora l'immagine si costruisce in locale.
+Ogni rilascio (tag `api-vX.Y.Z`) pubblica l'immagine costruita dal
+`Dockerfile` come `ghcr.io/labinfinitek/remotek-api:X.Y.Z` (e `:X.Y`), con
+attestazione di provenienza, SBOM e inventario delle licenze nella
+[release](https://github.com/labinfinitek/remotek-api/releases). Si verifica
+con `gh attestation verify oci://ghcr.io/labinfinitek/remotek-api:X.Y.Z --owner labinfinitek`.
+Il `docker-compose.yaml` del repo invece costruisce l'immagine dal sorgente.
 
 ### Con docker compose
 
