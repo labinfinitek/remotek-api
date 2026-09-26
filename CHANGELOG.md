@@ -316,6 +316,13 @@ Base upstream: rustdesk-api v2.7.
   default, ne' `docs/`.
 
 ### Aggiunto
+- Rilascio con `remotek-release.yml` sul tag `api-vX.Y.Z`: immagine
+  costruita dal `Dockerfile`, scansionata con trivy (una vulnerabilita' alta
+  o critica con correzione disponibile ferma il rilascio), pubblicata come
+  `ghcr.io/labinfinitek/remotek-api:X.Y.Z` e `:X.Y` con attestazione di
+  provenienza (`gh attestation verify oci://... --owner labinfinitek`);
+  GitHub Release con le note di questo file, SBOM CycloneDX dell'immagine e
+  inventario delle licenze.
 - Marchio in un posto solo: `brand.name` (`RUSTDESK_API_BRAND_NAME`,
   default "Remotek") e' il nome nel titolo del pannello, in `{{brand}}` del
   benvenuto e nelle pagine OAuth; `brand.dir` (`RUSTDESK_API_BRAND_DIR`,
