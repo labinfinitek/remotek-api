@@ -20,7 +20,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # La versione di Go e' quella della riga toolchain di go.mod: mai download a sorpresa.
+  # La versione di Go e' quella di go.mod (riga toolchain, o riga go se
+  # toolchain manca): mai download a sorpresa.
   GOTOOLCHAIN: local
   # go.mod e go.sum si cambiano solo con un commit, mai durante un build.
   GOFLAGS: -mod=readonly
@@ -66,9 +67,12 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-      - name: Versione di Go uguale alla riga toolchain di go.mod
+      # setup-go legge la riga go; go mod tidy toglie la riga toolchain
+      # quando coincide con la riga go.
+      - name: Versione di Go uguale a quella di go.mod
         run: |
           atteso="$(sed -n 's/^toolchain //p' go.mod)"
+          [ -n "${atteso}" ] || atteso="go$(sed -n 's/^go //p' go.mod)"
           trovato="$(go env GOVERSION)"
           echo "go.mod: ${atteso} - runner: ${trovato}"
           test -n "${atteso}" && test "${atteso}" = "${trovato}"

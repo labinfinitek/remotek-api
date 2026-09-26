@@ -117,6 +117,16 @@ Base upstream: rustdesk-api v2.7.
   v0.0.0-20221128193559-754e69321358 -> v0.1.1: panic su una challenge NTLM
   malformata. Il modulo arriva con `go-ldap/ldap/v3`, che resta v3.4.10; il
   login LDAP usa il bind semplice, non quello NTLM. Nessun altro modulo sale.
+- CVE-2026-56854, CVE-2026-56855, CVE-2026-78662, `golang.org/x/crypto`
+  v0.53.0 -> v0.56.0, e CVE-2026-46602, CVE-2026-46603, CVE-2026-33813,
+  CVE-2026-46601, CVE-2026-46604, `golang.org/x/image` v0.41.0 -> v0.45.0:
+  negazione del servizio in `x/crypto/ssh` e nei decodificatori TIFF, WebP
+  e VP8L, che il codice non raggiunge (govulncheck; il nostro codice usa
+  solo `x/crypto/bcrypt`, il captcha `font` e `math/fixed` di `x/image`).
+  Si alzano perche' trivy, che guarda i moduli e non le
+  chiamate, ferma il rilascio dell'immagine su tre di loro (HIGH). Salgono
+  con loro, al minimo che chiedono: `x/text` v0.41.0, `x/net` v0.57.0,
+  `x/sys` v0.47.0, `x/tools` v0.48.0, `x/mod` v0.38.0, `x/sync` v0.22.0.
 - Il file di log (`logger.path`, `./runtime/log.txt` in
   `conf/config.yaml`) nasce con permessi 0600 e non piu' 0644, e un file
   che c'era gia' viene portato a 0600 all'avvio: contiene nomi utente e
