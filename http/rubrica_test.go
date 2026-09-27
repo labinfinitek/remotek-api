@@ -4,6 +4,7 @@ package http
 // un errore del database e' una risposta d'errore, non una rubrica vuota.
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http/httptest"
 	"strconv"
@@ -244,4 +245,58 @@ func TestRubricaPermessoNonLetto(t *testing.T) {
 	t.Run("regola del gruppo non letta", func(t *testing.T) {
 		prova(t, lettura, "to_id = ? [2 ", "regola del gruppo", "DELETE", cancella, voce, "")
 	})
+}
+
+// TestRubricaLegacySoloPersonale prova che POST /api/ab, la rubrica legacy,
+// cambia solo la rubrica personale (collezione 0), la sola che GET /api/ab
+// manda: la voce e il tag della rubrica ufficio dell'utente, che la
+// richiesta non contiene, restano, e una voce che nella richiesta dice di
+// stare in ufficio va nella personale. Nella personale la voce e il tag che
+// la richiesta non contiene se ne vanno, come prima. Prima si cancellavano
+// anche quelli di ufficio, che il client legacy non ha mai visto, e la voce
+// finiva in ufficio.
+func TestRubricaLegacySoloPersonale(t *testing.T) {
+	_, _, invia, _ := rubricheDiProva(t, model.ShareAddressBookRuleRuleRead)
+	ufficio := &model.AddressBookCollection{}
+	if err := service.DB.Where("name = ?", "ufficio").First(ufficio).Error; err != nil {
+		t.Fatal(err)
+	}
+	crea(t, &model.AddressBook{Id: "999000444", UserId: ufficio.UserId, CollectionId: ufficio.Id})
+	crea(t, &model.Tag{Name: "riunioni", UserId: ufficio.UserId, CollectionId: ufficio.Id})
+	dati, err := json.Marshal(map[string]any{
+		"peers":      []map[string]any{{"id": "999000333", "collection_id": ufficio.Id}},
+		"tag_colors": `{"nuovo":1}`,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	corpo, err := json.Marshal(map[string]string{"data": string(dati)})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if rec := invia("POST", "/api/ab", string(corpo)); rec.Code != 200 || rec.Body.String() != "null" {
+		t.Fatalf("POST /api/ab: %d %s, attesi 200 null", rec.Code, rec.Body)
+	}
+	for _, tc := range []struct {
+		cosa, tabella, dove string
+		attese              int64
+	}{
+		{"voce di ufficio", "address_books", "id = '999000444' AND collection_id = " + strconv.FormatUint(uint64(ufficio.Id), 10), 1},
+		{"tag di ufficio", "tags", "name = 'riunioni' AND collection_id = " + strconv.FormatUint(uint64(ufficio.Id), 10), 1},
+		{"voce nuova, nella personale", "address_books", "id = '999000333' AND collection_id = 0", 1},
+		{"voce nuova, in tutto", "address_books", "id = '999000333'", 1},
+		{"tag nuovo, nella personale", "tags", "name = 'nuovo' AND collection_id = 0", 1},
+		{"voce personale non inviata", "address_books", "id = '999000111'", 0},
+		{"tag personale non inviato", "tags", "name = 'lavoro'", 0},
+		{"voce del proprietario della condivisa", "address_books", "id = '999000222'", 1},
+	} {
+		var n int64
+		if err := service.DB.Raw("SELECT count(*) FROM " + tc.tabella + " WHERE " + tc.dove).Scan(&n).Error; err != nil {
+			t.Fatal(err)
+		}
+		if n != tc.attese {
+			t.Errorf("%s dopo POST /api/ab: %d righe, attese %d (%s)", tc.cosa, n, tc.attese, statoRubrica(t))
+		}
+	}
 }

@@ -79,6 +79,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   permessi, le rotte rispondono 400 "Errore di sistema." con l'errore nel
   log, e non concedono niente; prima rispondevano "Non hai i permessi per
   questa operazione." e l'errore si perdeva.
+- Rubrica legacy del client (`POST /api/ab`): cambia solo la rubrica
+  personale, la sola che `GET /api/ab` manda; prima cancellava anche le
+  voci e i tag delle altre rubriche dell'utente, che il client legacy non
+  vede.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

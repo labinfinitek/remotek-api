@@ -26,7 +26,8 @@ func (s *TagService) ListByUserIdAndCollectionId(userId, cid uint) (*model.TagLi
 
 // UpdateTags porta i tag dell'utente a tags (nome e colore): aggiunge quelli
 // nuovi, aggiorna i colori e cancella gli altri, in una transazione che su
-// errore o panic si annulla.
+// errore o panic si annulla. Tocca solo i tag della rubrica personale
+// (collezione 0).
 func (s *TagService) UpdateTags(userId uint, tags map[string]uint) error {
 	return DB.Transaction(func(tx *gorm.DB) error {
 		return updateTags(tx, userId, tags)
@@ -37,7 +38,7 @@ func (s *TagService) UpdateTags(userId uint, tags map[string]uint) error {
 func updateTags(tx *gorm.DB, userId uint, tags map[string]uint) error {
 	// 先查询所有tag
 	var allTags []*model.Tag
-	if err := tx.Where("user_id = ?", userId).Find(&allTags).Error; err != nil {
+	if err := tx.Where("user_id = ? and collection_id = ?", userId, 0).Find(&allTags).Error; err != nil {
 		return fmt.Errorf("lettura dei tag: %w", err)
 	}
 	for _, t := range allTags {

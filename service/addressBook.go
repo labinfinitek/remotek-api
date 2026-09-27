@@ -32,7 +32,8 @@ func (s *AddressBookService) AddAddressBook(ab *model.AddressBook) error {
 
 // UpdateAddressBook porta la rubrica dell'utente a abs: aggiunge le voci
 // nuove, aggiorna quelle che ci sono e cancella le altre, in una transazione
-// che su errore o panic si annulla.
+// che su errore o panic si annulla. Tocca solo la rubrica personale
+// (collezione 0), la sola che GET /api/ab manda al client legacy.
 func (s *AddressBookService) UpdateAddressBook(abs []*model.AddressBook, userId uint) error {
 	return DB.Transaction(func(tx *gorm.DB) error {
 		return s.updateAddressBook(tx, abs, userId)
@@ -45,7 +46,7 @@ func (s *AddressBookService) UpdateAddressBook(abs []*model.AddressBook, userId 
 func (s *AddressBookService) updateAddressBook(tx *gorm.DB, abs []*model.AddressBook, userId uint) error {
 	// 1. 获取数据库中的数据
 	var dbABs []*model.AddressBook
-	if err := tx.Where("user_id = ?", userId).Find(&dbABs).Error; err != nil {
+	if err := tx.Where("user_id = ? and collection_id = ?", userId, 0).Find(&dbABs).Error; err != nil {
 		return fmt.Errorf("lettura della rubrica: %w", err)
 	}
 	// 2. 比较peers和数据库中的数据
@@ -63,6 +64,7 @@ func (s *AddressBookService) updateAddressBook(tx *gorm.DB, abs []*model.Address
 	for id, ab := range aBIds {
 		dbAB, ok := dbABIds[id]
 		ab.UserId = userId
+		ab.CollectionId = 0
 		if !ok {
 			// 添加
 			if ab.Platform == "" || ab.Username == "" || ab.Hostname == "" {
