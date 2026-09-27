@@ -1,11 +1,17 @@
 package http
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+
+	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 )
@@ -33,5 +39,51 @@ func TestCallbackErroreDelProvider(t *testing.T) {
 	}
 	if nelLog := registro.String(); !strings.Contains(nelLog, "GET /api/oidc/callback: alla pagina va OauthFailed") || !strings.Contains(nelLog, "dettaglio interno del provider") {
 		t.Errorf("GET /api/oidc/callback, provider in errore: nel log mancano rotta o errore:\n%s", nelLog)
+	}
+}
+
+// assegnazione legge lo script di /api/oidc/msg: una o due assegnazioni
+// ";nome = valore;".
+var assegnazione = regexp.MustCompile(`^;(title|msg) = (.*);$`)
+
+// traduzioniDaMsg chiede a /api/oidc/msg la traduzione di id come msg, e
+// restituisce il valore assegnato riletto con json.Unmarshal.
+func traduzioniDaMsg(t *testing.T, g http.Handler, lingua, id string) string {
+	t.Helper()
+	rec := httptest.NewRecorder()
+	g.ServeHTTP(rec, httptest.NewRequest("GET", "/api/oidc/msg?lang="+lingua+"&msg="+url.QueryEscape(id), nil))
+	m := assegnazione.FindStringSubmatch(rec.Body.String())
+	if m == nil || m[1] != "msg" {
+		t.Fatalf("/api/oidc/msg, %s: script inatteso %q", id, rec.Body.String())
+	}
+	var valore string
+	if err := json.Unmarshal([]byte(m[2]), &valore); err != nil {
+		t.Fatalf("/api/oidc/msg, %s: %q non e' un letterale JSON: %v", id, m[2], err)
+	}
+	return valore
+}
+
+// TestMessaggioConApostrofo prova /api/oidc/msg con gli ID la cui traduzione
+// italiana ha un apostrofo, che tra apici chiudeva la stringa JavaScript: il
+// valore assegnato, riletto come JSON, e' la traduzione esatta. Il titolo
+// esce con la stessa forma.
+func TestMessaggioConApostrofo(t *testing.T) {
+	g, _, _ := pannello(t, false)
+	localizer := global.Localizer("it")
+	for _, id := range []string{"DecodeOauthUserInfoError", "GetOauthUserInfoError", "ItemExists", "LdapBindServiceFailed",
+		"LdapCreateUserFailed", "LdapToLocalUserFailed", "MailNotMatch", "PwdLoginDisabled"} {
+		atteso, err := localizer.LocalizeMessage(&i18n.Message{ID: id})
+		if err != nil || !strings.Contains(atteso, "'") {
+			t.Fatalf("%s: traduzione %q senza apostrofo (err %v)", id, atteso, err)
+		}
+		if got := traduzioniDaMsg(t, g, "it", id); got != atteso {
+			t.Errorf("/api/oidc/msg, %s: %q, atteso %q", id, got, atteso)
+		}
+	}
+
+	rec := httptest.NewRecorder()
+	g.ServeHTTP(rec, httptest.NewRequest("GET", "/api/oidc/msg?lang=it&title=OauthFailed&msg=ItemExists", nil))
+	if got, want := rec.Body.String(), `;title = "Autorizzazione OAuth non riuscita.";;msg = "L'elemento esiste già.";`; got != want {
+		t.Errorf("/api/oidc/msg con titolo:\n got  %s\n want %s", got, want)
 	}
 }

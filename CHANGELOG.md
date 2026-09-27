@@ -28,6 +28,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   dell'errore (che nel secondo caso mostrava grezzo) ma l'ID del messaggio.
   L'errore va nel log a livello warn, con metodo e rotta.
 
+### Corretto
+- La pagina del login OAuth mostra le frasi tradotte anche quando hanno un
+  apostrofo: `/api/oidc/msg` le scriveva tra apici nello script, e con 8
+  messaggi italiani ("L'elemento esiste già.", "L'accesso con password è
+  disattivato." e altri) lo script non partiva e la pagina mostrava l'ID.
+
 ## [0.1.0] - 2026-09-26
 Base upstream: rustdesk-api v2.7. Primo rilascio: immagine
 `ghcr.io/labinfinitek/remotek-api:0.1.0`.

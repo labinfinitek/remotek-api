@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,7 +11,6 @@ import (
 	apiResp "github.com/lejianwen/rustdesk-api/v2/http/response/api"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
-	"github.com/lejianwen/rustdesk-api/v2/utils"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 )
 
@@ -275,6 +275,11 @@ type MessageParams struct {
 	Msg   string `json:"msg" form:"msg"`
 }
 
+// Message risponde alle pagine OAuth con lo script che assegna a title e msg
+// le traduzioni degli ID nella query. I valori sono letterali JSON, che sono
+// stringhe JavaScript valide qualunque cosa contengano: tra apici, un
+// apostrofo della traduzione ("L'elemento esiste già.") chiudeva la
+// stringa, lo script non partiva e la pagina mostrava l'ID.
 func (o *Oauth) Message(c *gin.Context) {
 	mp := &MessageParams{}
 	if err := c.ShouldBindQuery(mp); err != nil {
@@ -282,25 +287,22 @@ func (o *Oauth) Message(c *gin.Context) {
 	}
 	localizer := global.Localizer(mp.Lang)
 	res := ""
-	if mp.Title != "" {
-		title, err := localizer.LocalizeMessage(&i18n.Message{
-			ID: mp.Title,
-		})
-		if err == nil {
-			res = utils.StringConcat(";title='", title, "';")
+	for _, v := range []struct{ nome, id string }{{"title", mp.Title}, {"msg", mp.Msg}} {
+		if v.id == "" {
+			continue
 		}
-
-	}
-	if mp.Msg != "" {
-		msg, err := localizer.LocalizeMessage(&i18n.Message{
-			ID: mp.Msg,
-		})
-		if err == nil {
-			res = utils.StringConcat(res, "msg = '", msg, "';")
+		testo, err := localizer.LocalizeMessage(&i18n.Message{ID: v.id})
+		if err != nil {
+			continue
 		}
+		letterale, err := json.Marshal(testo)
+		if err != nil {
+			continue
+		}
+		res += ";" + v.nome + " = " + string(letterale) + ";"
 	}
 
-	//返回js内容
+	// lo script lo carica la pagina con un tag <script>
 	c.Header("Content-Type", "application/javascript")
 	c.String(http.StatusOK, res)
 }
