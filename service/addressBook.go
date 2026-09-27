@@ -315,18 +315,22 @@ func (s *AddressBookService) CreateRule(t *model.AddressBookCollectionRule) erro
 	return DB.Create(t).Error
 }
 
-func (s *AddressBookService) ListRules(page uint, size uint, f func(tx *gorm.DB)) *model.AddressBookCollectionRuleList {
-	res := &model.AddressBookCollectionRuleList{}
+func (s *AddressBookService) ListRules(page uint, size uint, f func(tx *gorm.DB)) (res *model.AddressBookCollectionRuleList, err error) {
+	res = &model.AddressBookCollectionRuleList{}
 	res.Page = int64(page)
 	res.PageSize = int64(size)
 	tx := DB.Model(&model.AddressBookCollectionRule{})
 	if f != nil {
 		f(tx)
 	}
-	tx.Count(&res.Total)
+	if err = tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio delle regole: %w", err)
+	}
 	tx.Scopes(Paginate(page, size))
-	tx.Find(&res.AddressBookCollectionRule)
-	return res
+	if err = tx.Find(&res.AddressBookCollectionRule).Error; err != nil {
+		return nil, fmt.Errorf("regole: %w", err)
+	}
+	return res, nil
 }
 
 func (s *AddressBookService) UpdateRule(t *model.AddressBookCollectionRule) error {

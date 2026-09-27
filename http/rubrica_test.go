@@ -112,8 +112,9 @@ func TestRubricaLetturaFallita(t *testing.T) {
 }
 
 // TestPannelloRubricaLetturaFallita prova sul router vero che gli elenchi
-// della rubrica del pannello (voci, rubriche e tag, dell'amministrazione e
-// della sezione dell'utente) e il cambio dei tag di piu' voci, se il
+// della rubrica del pannello (voci, rubriche, regole di condivisione e tag,
+// dell'amministrazione e della sezione dell'utente) e il cambio dei tag di
+// piu' voci, se il
 // database non legge, rispondono code 101 "Errore di sistema." e scrivono
 // l'errore nel log. Prima gli elenchi rispondevano successo con l'elenco
 // vuoto, e il cambio dei tag "Elemento non trovato.".
@@ -124,12 +125,14 @@ func TestPannelloRubricaLetturaFallita(t *testing.T) {
 		{"POST", "/api/admin/my/address_book/batchUpdateTags", `{"row_ids":[1],"tags":["casa"]}`, "address_books"},
 		{"GET", "/api/admin/address_book_collection/list?user_id=1", "", "address_book_collections"},
 		{"GET", "/api/admin/my/address_book_collection/list", "", "address_book_collections"},
+		{"GET", "/api/admin/address_book_collection_rule/list?user_id=1", "", "address_book_collection_rules"},
+		{"GET", "/api/admin/my/address_book_collection_rule/list", "", "address_book_collection_rules"},
 		{"GET", "/api/admin/tag/list?user_id=1", "", "tags"},
 		{"GET", "/api/admin/my/tag/list", "", "tags"},
 	} {
 		t.Run(tc.rotta, func(t *testing.T) {
 			g, utente, registro := pannello(t, true)
-			if err := service.DB.AutoMigrate(&model.AddressBook{}, &model.AddressBookCollection{}); err != nil {
+			if err := service.DB.AutoMigrate(&model.AddressBook{}, &model.AddressBookCollection{}, &model.AddressBookCollectionRule{}); err != nil {
 				t.Fatal(err)
 			}
 			crea(t, &model.AddressBook{Id: "999000111", UserId: utente.Id})

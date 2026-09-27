@@ -100,6 +100,9 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   cancellazione della rubrica e le voci create dai dispositivi rispondono
   "Errore di sistema." invece di "Elemento non trovato.", con l'errore nel
   log.
+- Regole di condivisione delle rubriche nel pannello: se il database non le
+  legge, gli elenchi (amministrazione e sezione dell'utente) rispondono
+  "Errore di sistema." con l'errore nel log, invece di un elenco vuoto.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

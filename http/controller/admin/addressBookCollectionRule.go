@@ -38,7 +38,7 @@ func (abcr *AddressBookCollectionRule) List(c *gin.Context) {
 		return
 	}
 
-	res := service.AllService.AddressBookService.ListRules(query.Page, query.PageSize, func(tx *gorm.DB) {
+	res, err := service.AllService.AddressBookService.ListRules(query.Page, query.PageSize, func(tx *gorm.DB) {
 		if query.UserId > 0 {
 			tx.Where("user_id = ?", query.UserId)
 		}
@@ -46,6 +46,10 @@ func (abcr *AddressBookCollectionRule) List(c *gin.Context) {
 			tx.Where("collection_id = ?", query.CollectionId)
 		}
 	})
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	response.Success(c, res)
 }
 
