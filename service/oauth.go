@@ -335,12 +335,6 @@ func (os *OauthService) InfoByOp(op string) *model.Oauth {
 	return oauthInfo
 }
 
-// Helper function to get scopes by operation
-func (os *OauthService) getScopesByOp(op string) []string {
-	scopes := os.InfoByOp(op).Scopes
-	return os.constructScopes(scopes)
-}
-
 // Helper function to construct scopes
 func (os *OauthService) constructScopes(scopes string) []string {
 	scopes = strings.TrimSpace(scopes)

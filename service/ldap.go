@@ -540,26 +540,3 @@ func (ls *LdapService) isUserEnabled(cfg *config.Ldap, ldapUser *LdapUser) bool 
 	ldapUser.Enabled = ldapUser.EnableAttrValue == enableAttrValue
 	return ldapUser.Enabled
 }
-
-// getAttrOfDn retrieves the value of an attribute for a given DN.
-func (ls *LdapService) getAttrOfDn(cfg *config.Ldap, dn, attr string) string {
-	searchRequest := ldap.NewSearchRequest(
-		ldap.EscapeFilter(dn),
-		ldap.ScopeBaseObject,
-		ldap.NeverDerefAliases,
-		0,     // unlimited search results
-		0,     // no server-side time limit
-		false, // typesOnly
-		"(objectClass=*)",
-		[]string{attr},
-		nil,
-	)
-	sr, err := ls.searchResult(cfg, searchRequest)
-	if err != nil {
-		return ""
-	}
-	if len(sr.Entries) == 0 {
-		return ""
-	}
-	return sr.Entries[0].GetAttributeValue(attr)
-}

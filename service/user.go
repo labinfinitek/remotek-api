@@ -515,13 +515,6 @@ func (us *UserService) formatUsername(username string) string {
 	return username
 }
 
-// Helper functions, getUserCount
-func (us *UserService) getUserCount() int64 {
-	var count int64
-	DB.Model(&model.User{}).Count(&count)
-	return count
-}
-
 // helper functions, getAdminUserCount
 func (us *UserService) getAdminUserCount() int64 {
 	var count int64
