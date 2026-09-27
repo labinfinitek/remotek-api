@@ -2,6 +2,8 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"gorm.io/gorm"
 	"strings"
@@ -44,14 +46,24 @@ func (s *AddressBookService) AddAddressBook(ab *model.AddressBook) error {
 	return DB.Create(ab).Error
 }
 
-// UpdateAddressBook
+// UpdateAddressBook porta la rubrica dell'utente a abs: aggiunge le voci
+// nuove, aggiorna quelle che ci sono e cancella le altre, in una transazione
+// che su errore o panic si annulla.
 func (s *AddressBookService) UpdateAddressBook(abs []*model.AddressBook, userId uint) error {
-	//比较peers和数据库中的数据，如果peers中的数据在数据库中不存在，则添加，如果存在则更新，如果数据库中的数据在peers中不存在，则删除
-	// 开始事务
-	tx := DB.Begin()
+	return DB.Transaction(func(tx *gorm.DB) error {
+		return s.updateAddressBook(tx, abs, userId)
+	})
+}
+
+// updateAddressBook e' UpdateAddressBook dentro la transazione tx. Ogni query
+// passa da tx: con una connessione sola, una query su DB aspetterebbe per
+// sempre la connessione che tx tiene.
+func (s *AddressBookService) updateAddressBook(tx *gorm.DB, abs []*model.AddressBook, userId uint) error {
 	//1. 获取数据库中的数据
 	var dbABs []*model.AddressBook
-	tx.Where("user_id = ?", userId).Find(&dbABs)
+	if err := tx.Where("user_id = ?", userId).Find(&dbABs).Error; err != nil {
+		return fmt.Errorf("lettura della rubrica: %w", err)
+	}
 	//2. 比较peers和数据库中的数据
 	//2.1 获取peers中的id
 	aBIds := make(map[string]*model.AddressBook)
@@ -70,29 +82,36 @@ func (s *AddressBookService) UpdateAddressBook(abs []*model.AddressBook, userId 
 		if !ok {
 			//添加
 			if ab.Platform == "" || ab.Username == "" || ab.Hostname == "" {
-				peer := AllService.PeerService.FindById(ab.Id)
-				if peer.RowId != 0 {
-					ab.Platform = AllService.AddressBookService.PlatformFromOs(peer.Os)
+				peer := &model.Peer{}
+				switch err := tx.Where("id = ?", ab.Id).First(peer).Error; {
+				case err == nil:
+					ab.Platform = s.PlatformFromOs(peer.Os)
 					ab.Username = peer.Username
 					ab.Hostname = peer.Hostname
+				case !errors.Is(err, gorm.ErrRecordNotFound):
+					return fmt.Errorf("dispositivo della voce nuova: %w", err)
 				}
 			}
-			tx.Create(ab)
+			if err := tx.Create(ab).Error; err != nil {
+				return fmt.Errorf("voce nuova della rubrica: %w", err)
+			}
 		} else {
 			//更新
-			tx.Model(&model.AddressBook{}).Where("row_id = ?", dbAB.RowId).Updates(ab)
+			if err := tx.Model(&model.AddressBook{}).Where("row_id = ?", dbAB.RowId).Updates(ab).Error; err != nil {
+				return fmt.Errorf("aggiornamento della rubrica: %w", err)
+			}
 		}
 	}
 	//2.4 删除
 	for id, dbAB := range dbABIds {
 		_, ok := aBIds[id]
 		if !ok {
-			tx.Delete(dbAB)
+			if err := tx.Delete(dbAB).Error; err != nil {
+				return fmt.Errorf("cancellazione dalla rubrica: %w", err)
+			}
 		}
 	}
-	tx.Commit()
 	return nil
-
 }
 
 func (s *AddressBookService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.AddressBookList) {
@@ -258,13 +277,21 @@ func (s *AddressBookService) UpdateCollection(t *model.AddressBookCollection) er
 	return DB.Model(t).Updates(t).Error
 }
 
+// DeleteCollection cancella le regole e le voci della collezione t, poi t,
+// in una transazione che su errore o panic si annulla.
 func (s *AddressBookService) DeleteCollection(t *model.AddressBookCollection) error {
-	//删除集合下的所有规则、地址簿，再删除集合
-	tx := DB.Begin()
-	tx.Where("collection_id = ?", t.Id).Delete(&model.AddressBookCollectionRule{})
-	tx.Where("collection_id = ?", t.Id).Delete(&model.AddressBook{})
-	tx.Delete(t)
-	return tx.Commit().Error
+	return DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("collection_id = ?", t.Id).Delete(&model.AddressBookCollectionRule{}).Error; err != nil {
+			return fmt.Errorf("regole della collezione: %w", err)
+		}
+		if err := tx.Where("collection_id = ?", t.Id).Delete(&model.AddressBook{}).Error; err != nil {
+			return fmt.Errorf("voci della collezione: %w", err)
+		}
+		if err := tx.Delete(t).Error; err != nil {
+			return fmt.Errorf("collezione: %w", err)
+		}
+		return nil
+	})
 }
 
 func (s *AddressBookService) RuleInfoById(u uint) *model.AddressBookCollectionRule {

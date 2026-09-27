@@ -42,6 +42,25 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 - Le opzioni di login del client e del pannello, se l'elenco dei provider
   non si legge dal database, rispondono "Errore di sistema." e l'errore va
   nel log, invece di un elenco vuoto.
+- Rubrica del client (`POST /api/ab`): se una voce o un tag non si salva,
+  non cambia niente e la risposta e' 400 "Operazione non riuscita.", con
+  l'errore nel log; prima era 200 `null` anche con i tag salvati a meta'
+  (quelli vecchi cancellati, i nuovi no). Lo stesso per la cancellazione
+  di una collezione dal pannello, che poteva cancellarne regole e voci e
+  lasciare la collezione. La voce nuova senza piattaforma, utente o nome
+  del computer legge il dispositivo dentro la transazione: con una
+  connessione sola al database (ADR-0007) la richiesta si sarebbe fermata
+  per sempre, e con lei l'API.
+- Login OIDC con autoregistrazione: se l'associazione al provider non si
+  salva, l'utente nuovo non resta e la pagina dice che la registrazione non
+  e' riuscita; prima restava un utente senza associazione e la pagina
+  diceva successo. Il nome utente libero si cerca prima della transazione,
+  nel database e, con LDAP acceso, in LDAP: con una connessione sola al
+  database la registrazione si sarebbe fermata per sempre.
+- Pannello, cancellazione di un utente: se la conferma della transazione
+  non riesce la risposta e' "Operazione non riuscita.", non piu' successo
+  con l'utente ancora nel database, e un errore imprevisto a meta' annulla
+  la transazione invece di lasciarla aperta.
 
 ### Rimosso
 - **Cambio incompatibile per chi usava il login GitHub, Google o Linux.do.**

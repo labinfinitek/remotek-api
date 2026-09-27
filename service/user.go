@@ -229,39 +229,28 @@ func (us *UserService) Logout(u *model.User, token string) error {
 	return nil
 }
 
-// Delete 删除用户和oauth信息
+// Delete cancella l'utente con le sue associazioni ai provider e le sue
+// voci, collezioni e regole della rubrica, in una transazione che su errore
+// o panic si annulla; poi scollega i suoi dispositivi.
 func (us *UserService) Delete(u *model.User) error {
 	userCount := us.getAdminUserCount()
 	if userCount <= 1 && us.IsAdmin(u) {
 		return errors.New("The last admin user cannot be deleted")
 	}
-	tx := DB.Begin()
-	// 删除用户
-	if err := tx.Delete(u).Error; err != nil {
-		tx.Rollback()
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Delete(u).Error; err != nil {
+			return fmt.Errorf("utente %d: %w", u.Id, err)
+		}
+		for _, m := range []any{&model.UserThird{}, &model.AddressBook{}, &model.AddressBookCollection{}, &model.AddressBookCollectionRule{}} {
+			if err := tx.Where("user_id = ?", u.Id).Delete(m).Error; err != nil {
+				return fmt.Errorf("%T dell'utente %d: %w", m, u.Id, err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
 		return err
 	}
-	// 删除关联的 OAuth 信息
-	if err := tx.Where("user_id = ?", u.Id).Delete(&model.UserThird{}).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	//  删除关联的ab
-	if err := tx.Where("user_id = ?", u.Id).Delete(&model.AddressBook{}).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	//  删除关联的abc
-	if err := tx.Where("user_id = ?", u.Id).Delete(&model.AddressBookCollection{}).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	//  删除关联的abcr
-	if err := tx.Where("user_id = ?", u.Id).Delete(&model.AddressBookCollectionRule{}).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	tx.Commit()
 	// 删除关联的peer
 	if err := AllService.PeerService.EraseUserId(u.Id); err != nil {
 		Logger.Warn("User deleted successfully, but failed to unlink peer.")
@@ -376,25 +365,32 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (e
 		}
 	}
 
-	tx := DB.Begin()
 	ut = &model.UserThird{}
 	ut.FromOauthUser(0, oauthUser, oauthType, op)
 	// The initial username should be formatted
 	username := us.formatUsername(oauthUser.Username)
+	// Il nome libero si cerca prima della transazione: la ricerca passa da DB
+	// e, con LDAP acceso, dalla rete, e con una connessione sola DB
+	// aspetterebbe per sempre la connessione della transazione.
 	usernameUnique := us.GenerateUsernameByOauth(username)
 	user := &model.User{
 		Username: usernameUnique,
 		GroupId:  1,
 	}
 	oauthUser.ToUser(user, false)
-	tx.Create(user)
-	if user.Id == 0 {
-		tx.Rollback()
-		return errors.New("OauthRegisterFailed"), user
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(user).Error; err != nil {
+			return fmt.Errorf("utente: %w", err)
+		}
+		ut.UserId = user.Id
+		if err := tx.Create(ut).Error; err != nil {
+			return fmt.Errorf("associazione al provider: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return errors.Join(errors.New("OauthRegisterFailed"), err), nil
 	}
-	ut.UserId = user.Id
-	tx.Create(ut)
-	tx.Commit()
 	return nil, user
 }
 
