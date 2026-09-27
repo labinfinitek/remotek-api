@@ -212,9 +212,9 @@ func (ct *AddressBook) BatchCreateFromPeers(c *gin.Context) {
 	u := service.AllService.UserService.CurUser(c)
 
 	if f.CollectionId != 0 {
-		collection := service.AllService.AddressBookService.CollectionInfoById(f.CollectionId)
-		if collection.Id == 0 {
-			response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+		collection, err := service.AllService.AddressBookService.CollectionInfoById(f.CollectionId)
+		if err != nil {
+			response.FailErr(c, 101, "SystemError", err)
 			return
 		}
 		if collection.UserId != u.Id {

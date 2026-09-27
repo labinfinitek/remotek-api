@@ -94,6 +94,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   "Elemento non trovato.", con l'errore nel log. Nel pannello la
   creazione di una voce, anche in blocco o dai dispositivi, risponde
   "Errore di sistema." e non crea niente; prima creava un doppione.
+- Rubriche diverse dalla personale: se il database non legge la rubrica,
+  le rotte del client su di essa rispondono 400 "Errore di sistema."
+  invece di "Parametri non validi.", e nel pannello dettaglio, modifica e
+  cancellazione della rubrica e le voci create dai dispositivi rispondono
+  "Errore di sistema." invece di "Elemento non trovato.", con l'errore nel
+  log.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

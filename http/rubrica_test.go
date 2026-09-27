@@ -27,7 +27,8 @@ import (
 // condiviso. Da' ai servizi un Jwt senza chiave, che per RustAuth vale il
 // token del database. Restituisce il router, il registro del log, una
 // funzione che manda una richiesta col token di pannello, come il client, e
-// un Replacer che mette nella rotta il guid di PERSONALE e CONDIVISA.
+// un Replacer che mette nella rotta il guid di PERSONALE, UFFICIO,
+// CONDIVISA e SCONOSCIUTA, una rubrica dell'utente che non c'e'.
 func rubricheDiProva(t *testing.T, regola int) (*gin.Engine, *strings.Builder, func(metodo, rotta, corpo string) *httptest.ResponseRecorder, *strings.Replacer) {
 	t.Helper()
 	g, utente, registro := pannello(t, false)
@@ -46,7 +47,8 @@ func rubricheDiProva(t *testing.T, regola int) (*gin.Engine, *strings.Builder, f
 	crea(t, proprietario)
 	crea(t, &model.AddressBook{Id: "999000111", UserId: utente.Id})
 	crea(t, &model.Tag{Name: "lavoro", UserId: utente.Id})
-	crea(t, &model.AddressBookCollection{UserId: utente.Id, Name: "ufficio"})
+	ufficio := &model.AddressBookCollection{UserId: utente.Id, Name: "ufficio"}
+	crea(t, ufficio)
 	condivisa := &model.AddressBookCollection{UserId: proprietario.Id, Name: "condivisa"}
 	crea(t, condivisa)
 	crea(t, &model.AddressBookCollectionRule{UserId: proprietario.Id, CollectionId: condivisa.Id, Rule: regola,
@@ -63,7 +65,8 @@ func rubricheDiProva(t *testing.T, regola int) (*gin.Engine, *strings.Builder, f
 		return rec
 	}
 	id := func(n uint) string { return strconv.FormatUint(uint64(n), 10) }
-	guid := strings.NewReplacer("PERSONALE", "1-"+id(utente.Id)+"-0", "CONDIVISA", "1-"+id(proprietario.Id)+"-"+id(condivisa.Id))
+	guid := strings.NewReplacer("PERSONALE", "1-"+id(utente.Id)+"-0", "UFFICIO", "1-"+id(utente.Id)+"-"+id(ufficio.Id),
+		"CONDIVISA", "1-"+id(proprietario.Id)+"-"+id(condivisa.Id), "SCONOSCIUTA", "1-"+id(utente.Id)+"-999999")
 	return g, registro, invia, guid
 }
 
@@ -443,6 +446,107 @@ func TestPannelloVoceNonLetta(t *testing.T) {
 			}
 			if nelLog := registro.String(); tc.rifiuta && (!strings.Contains(nelLog, "POST "+tc.rotta+": ") || !strings.Contains(nelLog, "lettura rifiutata dal test")) {
 				t.Errorf("POST %s, nel log mancano rotta o errore:\n%s", tc.rotta, nelLog)
+			}
+		})
+	}
+}
+
+// TestRubricaCollezioneNonLetta prova sul router vero le rotte del client
+// su una rubrica diversa dalla personale, che CheckGuid legge per vedere se
+// c'e' ed e' dell'utente del guid: se il database non la legge rispondono
+// 400 {"error": "Errore di sistema."}, scrivono l'errore nel log e non
+// cambiano niente. Prima rispondevano "Parametri non validi.", come a un
+// guid sbagliato. Una rubrica che non c'e' ha la risposta di prima.
+func TestRubricaCollezioneNonLetta(t *testing.T) {
+	for _, tc := range []struct {
+		metodo, rotta, corpo string
+		rifiuta              bool // le letture delle rubriche non riescono
+		risposta             string
+	}{
+		{"POST", "/api/ab/peers?ab=UFFICIO", "", true, `{"error":"Errore di sistema."}`},
+		{"POST", "/api/ab/peer/add/UFFICIO", `{"id":"999000333"}`, true, `{"error":"Errore di sistema."}`},
+		{"POST", "/api/ab/peers?ab=SCONOSCIUTA", "", false, `{"error":"Parametri non validi."}`},
+		{"POST", "/api/ab/peer/add/SCONOSCIUTA", `{"id":"999000333"}`, false, `{"error":"Parametri non validi."}`},
+	} {
+		caso := ", rubrica che non c'e'"
+		if tc.rifiuta {
+			caso = ", rubrica non letta"
+		}
+		t.Run(tc.metodo+" "+tc.rotta+caso, func(t *testing.T) {
+			_, registro, invia, guid := rubricheDiProva(t, model.ShareAddressBookRuleRuleRead)
+			prima := statoRubrica(t)
+			if tc.rifiuta {
+				rifiutaLetture(t, "address_book_collections", "")
+			}
+			registro.Reset()
+			rec := invia(tc.metodo, guid.Replace(tc.rotta), tc.corpo)
+			if rec.Code != 400 || rec.Body.String() != tc.risposta {
+				t.Errorf("%s %s: %d %s, attesi 400 e %s", tc.metodo, tc.rotta, rec.Code, rec.Body, tc.risposta)
+			}
+			if dopo := statoRubrica(t); dopo != prima {
+				t.Errorf("%s %s ha cambiato la rubrica:\n prima %s\n dopo  %s", tc.metodo, tc.rotta, prima, dopo)
+			}
+			percorso, _, _ := strings.Cut(strings.Replace(tc.rotta, "UFFICIO", ":guid", 1), "?")
+			if nelLog := registro.String(); tc.rifiuta && (!strings.Contains(nelLog, tc.metodo+" "+percorso+": ") || !strings.Contains(nelLog, "lettura rifiutata dal test")) {
+				t.Errorf("%s %s, nel log mancano rotta o errore:\n%s", tc.metodo, tc.rotta, nelLog)
+			}
+		})
+	}
+}
+
+// TestPannelloCollezioneNonLetta prova sul router vero le rotte del pannello
+// che leggono una rubrica per id: se il database non la legge rispondono
+// code 101 "Errore di sistema.", con l'errore nel log, e non cambiano
+// niente. Prima rispondevano "Elemento non trovato.". Una rubrica che non
+// c'e' ha la risposta di prima.
+func TestPannelloCollezioneNonLetta(t *testing.T) {
+	const erroreDiSistema = `{"code":101,"message":"Errore di sistema.","data":null}`
+	const nonTrovato = `{"code":101,"message":"Elemento non trovato.","data":null}`
+	for _, tc := range []struct {
+		metodo, rotta, corpo string
+		rifiuta              bool // le letture delle rubriche non riescono
+		risposta             string
+	}{
+		{"GET", "/api/admin/address_book_collection/detail/RUBRICA", "", true, erroreDiSistema},
+		{"POST", "/api/admin/address_book_collection/delete", `{"id":RUBRICA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book_collection/update", `{"id":RUBRICA,"name":"nuovo"}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book_collection/delete", `{"id":RUBRICA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/address_book/batchCreateFromPeers", `{"peer_ids":[DISPOSITIVO],"user_id":UTENTE,"collection_id":RUBRICA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book/batchCreateFromPeers", `{"peer_ids":[DISPOSITIVO],"collection_id":RUBRICA}`, true, erroreDiSistema},
+		{"GET", "/api/admin/address_book_collection/detail/999999", "", false, nonTrovato},
+		{"POST", "/api/admin/address_book_collection/delete", `{"id":999999}`, false, nonTrovato},
+		{"POST", "/api/admin/my/address_book_collection/update", `{"id":999999,"name":"nuovo"}`, false, nonTrovato},
+		{"POST", "/api/admin/my/address_book/batchCreateFromPeers", `{"peer_ids":[DISPOSITIVO],"collection_id":999999}`, false, nonTrovato},
+	} {
+		caso := ", rubrica che non c'e'"
+		if tc.rifiuta {
+			caso = ", rubrica non letta"
+		}
+		t.Run(tc.metodo+" "+tc.rotta+caso, func(t *testing.T) {
+			g, utente, registro := pannello(t, true)
+			if err := service.DB.AutoMigrate(&model.AddressBook{}, &model.AddressBookCollection{}, &model.AddressBookCollectionRule{}, &model.Peer{}); err != nil {
+				t.Fatal(err)
+			}
+			rubrica := &model.AddressBookCollection{UserId: utente.Id, Name: "ufficio"}
+			crea(t, rubrica)
+			dispositivo := &model.Peer{Id: "999000111", UserId: utente.Id}
+			crea(t, dispositivo)
+			prima := statoRubrica(t) + fmt.Sprint(" rubriche ", righe(t, "address_book_collections"))
+			if tc.rifiuta {
+				rifiutaLetture(t, "address_book_collections", "")
+			}
+			id := func(n uint) string { return strconv.FormatUint(uint64(n), 10) }
+			sostituisci := strings.NewReplacer("RUBRICA", id(rubrica.Id), "UTENTE", id(utente.Id), "DISPOSITIVO", id(dispositivo.RowId))
+			rec := richiesta(g, tc.metodo, sostituisci.Replace(tc.rotta), "", sostituisci.Replace(tc.corpo))
+			if got := rec.Body.String(); rec.Code != 200 || got != tc.risposta {
+				t.Errorf("%s %s: stato %d\n got  %s\n want %s", tc.metodo, tc.rotta, rec.Code, got, tc.risposta)
+			}
+			if dopo := statoRubrica(t) + fmt.Sprint(" rubriche ", righe(t, "address_book_collections")); dopo != prima {
+				t.Errorf("%s %s ha cambiato la rubrica:\n prima %s\n dopo  %s", tc.metodo, tc.rotta, prima, dopo)
+			}
+			percorso := strings.Replace(tc.rotta, "/RUBRICA", "/:id", 1)
+			if nelLog := registro.String(); tc.rifiuta && (!strings.Contains(nelLog, tc.metodo+" "+percorso+": ") || !strings.Contains(nelLog, "lettura rifiutata dal test")) {
+				t.Errorf("%s %s, nel log mancano rotta o errore:\n%s", tc.metodo, tc.rotta, nelLog)
 			}
 		})
 	}

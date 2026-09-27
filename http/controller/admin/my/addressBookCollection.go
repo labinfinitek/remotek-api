@@ -107,9 +107,9 @@ func (abc *AddressBookCollection) Update(c *gin.Context) {
 	//	response.Fail(c, 101, response.TranslateMsg(c, "NoAccess"))
 	//	return
 	// }
-	ex := service.AllService.AddressBookService.CollectionInfoById(f.Id)
-	if ex.Id == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	ex, err := service.AllService.AddressBookService.CollectionInfoById(f.Id)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 	if ex.UserId != u.Id {
@@ -117,7 +117,7 @@ func (abc *AddressBookCollection) Update(c *gin.Context) {
 		return
 	}
 
-	err := service.AllService.AddressBookService.UpdateCollection(f)
+	err = service.AllService.AddressBookService.UpdateCollection(f)
 	if err != nil {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
@@ -148,9 +148,9 @@ func (abc *AddressBookCollection) Delete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	ex := service.AllService.AddressBookService.CollectionInfoById(f.Id)
-	if ex.Id == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	ex, err := service.AllService.AddressBookService.CollectionInfoById(f.Id)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
@@ -158,7 +158,7 @@ func (abc *AddressBookCollection) Delete(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "NoAccess"))
 		return
 	}
-	err := service.AllService.AddressBookService.DeleteCollection(ex)
+	err = service.AllService.AddressBookService.DeleteCollection(ex)
 	if err == nil {
 		response.Success(c, nil)
 		return

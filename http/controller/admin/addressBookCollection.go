@@ -30,12 +30,12 @@ type AddressBookCollection struct {
 func (abc *AddressBookCollection) Detail(c *gin.Context) {
 	id := c.Param("id")
 	iid, _ := strconv.Atoi(id)
-	t := service.AllService.AddressBookService.CollectionInfoById(uint(iid))
-	if t.Id > 0 {
-		response.Success(c, t)
+	t, err := service.AllService.AddressBookService.CollectionInfoById(uint(iid))
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.Success(c, t)
 }
 
 // Create 创建地址簿名称
@@ -163,12 +163,12 @@ func (abc *AddressBookCollection) Delete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	ex := service.AllService.AddressBookService.CollectionInfoById(f.Id)
-	if ex.Id == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	ex, err := service.AllService.AddressBookService.CollectionInfoById(f.Id)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
-	err := service.AllService.AddressBookService.DeleteCollection(ex)
+	err = service.AllService.AddressBookService.DeleteCollection(ex)
 	if err == nil {
 		response.Success(c, nil)
 		return

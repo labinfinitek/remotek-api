@@ -298,9 +298,8 @@ func (ct *AddressBook) BatchCreateFromPeers(c *gin.Context) {
 	}
 
 	if f.CollectionId != 0 {
-		collection := service.AllService.AddressBookService.CollectionInfoById(f.CollectionId)
-		if collection.Id == 0 {
-			response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+		if _, err := service.AllService.AddressBookService.CollectionInfoById(f.CollectionId); err != nil {
+			response.FailErr(c, 101, "SystemError", err)
 			return
 		}
 	}

@@ -207,10 +207,14 @@ func (s *AddressBookService) ListCollectionByUserId(userId uint) (*model.Address
 		tx.Where("user_id = ?", userId)
 	})
 }
-func (s *AddressBookService) CollectionInfoById(id uint) *model.AddressBookCollection {
+
+// CollectionInfoById restituisce la collezione id; ErrNotFound se non c'e'.
+func (s *AddressBookService) CollectionInfoById(id uint) (*model.AddressBookCollection, error) {
 	p := &model.AddressBookCollection{}
-	DB.Where("id = ?", id).First(p)
-	return p
+	if err := DB.Where("id = ?", id).First(p).Error; err != nil {
+		return nil, fmt.Errorf("collezione %d: %w", id, nonTrovato(err))
+	}
+	return p, nil
 }
 
 func (s *AddressBookService) CollectionReadRules(user *model.User) (res []*model.AddressBookCollectionRule, err error) {
@@ -333,10 +337,12 @@ func (s *AddressBookService) DeleteRule(t *model.AddressBookCollectionRule) erro
 	return DB.Delete(t).Error
 }
 
-// CheckCollectionOwner 检查Collection的所有者
+// CheckCollectionOwner dice se la collezione cid e' dell'utente uid. Una
+// collezione che non si legge vale come non sua: il pannello rifiuta, ma
+// l'errore non arriva ancora al log.
 func (s *AddressBookService) CheckCollectionOwner(uid uint, cid uint) bool {
-	p := s.CollectionInfoById(cid)
-	return p.UserId == uid
+	p, err := s.CollectionInfoById(cid)
+	return err == nil && p.UserId == uid
 }
 
 func (s *AddressBookService) BatchUpdateTags(abs []*model.AddressBook, tags []string) error {

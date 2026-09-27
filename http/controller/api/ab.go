@@ -544,14 +544,15 @@ func (a *Ab) CheckGuid(cu *model.User, guid string) (gid, uid, cid uint, err err
 		return
 	}
 	if cid > 0 {
-		c := service.AllService.AddressBookService.CollectionInfoById(cid)
-		if c == nil || c.Id == 0 {
+		c, errc := service.AllService.AddressBookService.CollectionInfoById(cid)
+		switch {
+		case errors.Is(errc, service.ErrNotFound):
 			err = errors.New("ParamsError")
-			return
-		}
-		if c.UserId != uid {
+		case errc != nil:
+			// una collezione che non si legge non e' un guid sbagliato
+			err = errors.Join(errors.New("SystemError"), errc)
+		case c.UserId != uid:
 			err = errors.New("ParamsError")
-			return
 		}
 	}
 	return
