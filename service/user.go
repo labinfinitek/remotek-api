@@ -422,7 +422,7 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (*
 // GenerateUsernameByOauth 生成用户名
 func (us *UserService) GenerateUsernameByOauth(name string) string {
 	for us.IsUsernameExists(name) {
-		name += strconv.Itoa(rand.Intn(10)) // Append a random digit (0-9)
+		name += strconv.Itoa(rand.Intn(10)) //nolint:gosec // G404: una cifra in coda a un nome gia' preso, non un segreto
 	}
 	return name
 }

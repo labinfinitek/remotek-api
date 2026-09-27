@@ -80,8 +80,11 @@ func (ls *LdapService) connectAndBind(cfg *config.Ldap, username, password strin
 
 	var conn *ldap.Conn
 	if u.Scheme == "ldaps" {
-		// WARNING: InsecureSkipVerify: true is not recommended for production
-		tlsConfig := &tls.Config{InsecureSkipVerify: !cfg.TlsVerify}
+		// ldap.tls-verify e' false di default, e allora con ldaps:// il TLS non
+		// verifica il server. Il default si cambia in un compito sec a parte,
+		// gia' in coda, non in questa bonifica: README e conf dicono di
+		// impostarlo a true.
+		tlsConfig := &tls.Config{InsecureSkipVerify: !cfg.TlsVerify} //nolint:gosec // G402: default di ldap.tls-verify, compito sec in coda
 		if cfg.TlsCaFile != "" {
 			caCert, err := os.ReadFile(cfg.TlsCaFile)
 			if err != nil {
