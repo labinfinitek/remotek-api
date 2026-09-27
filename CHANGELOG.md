@@ -6,6 +6,15 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Corretto
+- Cancellazione in blocco dei dispositivi dal pannello
+  (`/api/admin/peer/batchDelete`): se gli uuid dei dispositivi non si
+  leggono dal database non cancella niente e risponde "Operazione non
+  riuscita.", con l'errore nel log; dispositivi e token di sessione dei loro
+  uuid si cancellano in una transazione. Prima cancellava i dispositivi e
+  rispondeva successo, e se i token non si cancellavano i dispositivi
+  restavano cancellati: i token dei dispositivi cancellati restavano validi.
+
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,
 sotto Rimosso: via il login GitHub, Google e Linux.do (resta OIDC generico)

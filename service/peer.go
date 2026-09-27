@@ -1,6 +1,8 @@
 package service
 
 import (
+	"fmt"
+
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"gorm.io/gorm"
 )
@@ -136,15 +138,24 @@ func (ps *PeerService) GetUuidListByIDs(ids []uint) ([]string, error) {
 	return newUuids, err
 }
 
-// BatchDelete 批量删除, 同时也应该删除token
+// BatchDelete cancella i dispositivi ids e i token di sessione dei loro uuid,
+// in una transazione che su errore o panic si annulla. Se gli uuid non si
+// leggono non cancella niente: i token dei dispositivi cancellati
+// resterebbero validi.
 func (ps *PeerService) BatchDelete(ids []uint) error {
 	uuids, err := ps.GetUuidListByIDs(ids)
-	err = DB.Where("row_id in (?)", ids).Delete(&model.Peer{}).Error
 	if err != nil {
-		return err
+		return fmt.Errorf("uuid dei dispositivi da cancellare: %w", err)
 	}
-	// 删除token
-	return AllService.UserService.FlushTokenByUuids(uuids)
+	return DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("row_id in (?)", ids).Delete(&model.Peer{}).Error; err != nil {
+			return fmt.Errorf("dispositivi: %w", err)
+		}
+		if err := tx.Where("device_uuid in (?)", uuids).Delete(&model.UserToken{}).Error; err != nil {
+			return fmt.Errorf("token di sessione dei dispositivi: %w", err)
+		}
+		return nil
+	})
 }
 
 // Update 更新
