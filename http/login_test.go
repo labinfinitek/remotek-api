@@ -122,7 +122,11 @@ func TestLoginSenzaToken(t *testing.T) {
 		{"login del pannello", "POST", "/api/admin/login", `{"username":"prova","password":"` + passwordDiProva + `"}`,
 			`{"code":101,"message":"Operazione non riuscita.","data":null}`, func(*testing.T, *model.User) {}},
 		{"registrazione dal pannello", "POST", "/api/admin/user/register", `{"username":"nuovo","email":"","password":"` + password + `","confirm_password":"` + password + `"}`,
-			`{"code":101,"message":"Operazione non riuscita.","data":null}`, func(*testing.T, *model.User) { global.Config.App.Register = true }},
+			`{"code":101,"message":"Operazione non riuscita.","data":null}`, func(t *testing.T, _ *model.User) {
+				prec := global.Config.App.Register
+				global.Config.App.Register = true
+				t.Cleanup(func() { global.Config.App.Register = prec })
+			}},
 	} {
 		t.Run(tc.nome, func(t *testing.T) {
 			g, utente, registro := pannello(t, false)
