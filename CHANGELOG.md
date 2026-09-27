@@ -54,6 +54,18 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   hanno 5 secondi per indirizzo (IPv6, poi IPv4); un server che accetta la
   connessione e non risponde fa rispondere "Operazione non riuscita."
   invece di tenere ferma la richiesta senza limite.
+- Audit del client (`/api/audit/conn`, `/api/audit/file`): se il database
+  non salva la connessione o il trasferimento di file, l'errore va nel log
+  a livello error, con metodo e rotta; la risposta resta quella di sempre,
+  che il client ignora. Prima l'errore si perdeva.
+- Heartbeat del client (`/api/heartbeat`): se il database non aggiorna
+  l'ultimo contatto del dispositivo, l'errore va nel log a livello warn,
+  con metodo e rotta; la risposta resta `{}`. Prima si perdeva.
+- Logout del client (`/api/logout`): se il token o il dispositivo non si
+  aggiornano nel database, risponde 400 "Operazione non riuscita." e
+  l'errore va nel log; prima rispondeva 200 `null` col token ancora
+  valido. Il client 1.4.9 non legge la risposta del logout ed esce
+  comunque; nel caso normale la risposta resta `200 null`.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

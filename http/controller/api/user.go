@@ -1,10 +1,12 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+
 	apiResp "github.com/lejianwen/rustdesk-api/v2/http/response/api"
 	"github.com/lejianwen/rustdesk-api/v2/service"
-	"net/http"
 )
 
 type User struct {
@@ -20,7 +22,7 @@ type User struct {
 // @Failure 500 {object} response.Response
 // @Router /currentUser [get]
 // @Security token
-//func (u *User) currentUser(c *gin.Context) {
+// func (u *User) currentUser(c *gin.Context) {
 //	user := service.AllService.UserService.CurUser(c)
 //	up := (&apiResp.UserPayload{}).FromName(user)
 //	c.JSON(http.StatusOK, up)

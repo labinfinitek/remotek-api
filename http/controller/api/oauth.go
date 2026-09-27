@@ -5,19 +5,21 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/request/api"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
 	apiResp "github.com/lejianwen/rustdesk-api/v2/http/response/api"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
 )
 
 type Oauth struct {
 }
 
-// OidcAuth
+// OidcAuth avvia il login OIDC del client e restituisce il codice del
+// login e l'indirizzo del provider.
 // @Tags Oauth
 // @Summary OidcAuth
 // @Description OidcAuth
@@ -53,7 +55,7 @@ func (o *Oauth) OidcAuth(c *gin.Context) {
 		Verifier:   verifier,
 		Nonce:      nonce,
 	}, 5*60)
-	//fmt.Println("code url", code, url)
+	// fmt.Println("code url", code, url)
 	c.JSON(http.StatusOK, gin.H{
 		"code": state,
 		"url":  url,
@@ -116,7 +118,8 @@ func (o *Oauth) OidcAuthQueryPre(c *gin.Context) (*model.User, *model.UserToken)
 	return u, ut
 }
 
-// OidcAuthQuery
+// OidcAuthQuery restituisce al client il token del login OIDC, quando il
+// provider ha risposto.
 // @Tags Oauth
 // @Summary OidcAuthQuery
 // @Description OidcAuthQuery
@@ -158,7 +161,7 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 	}
 	cacheKey := state
 	oauthService := service.AllService.OauthService
-	//从缓存中获取
+	// 从缓存中获取
 	oauthCache := oauthService.GetOauthCache(cacheKey)
 	if oauthCache == nil {
 		c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
@@ -184,9 +187,9 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 	}
 	userId := oauthCache.UserId
 	openid := oauthUser.OpenId
-	if action == service.OauthActionTypeBind {
-
-		//fmt.Println("bind", ty, userData)
+	switch action {
+	case service.OauthActionTypeBind:
+		// fmt.Println("bind", ty, userData)
 		// 检查此openid是否已经绑定过
 		utr := oauthService.UserThirdInfo(op, openid)
 		if utr.UserId > 0 {
@@ -195,7 +198,7 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 			})
 			return
 		}
-		//绑定
+		// 绑定
 		user = service.AllService.UserService.InfoById(userId)
 		if user == nil {
 			c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
@@ -203,7 +206,7 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 			})
 			return
 		}
-		//绑定
+		// 绑定
 		err := oauthService.BindOauthUser(userId, oauthUser, op)
 		if err != nil {
 			c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
@@ -214,10 +217,8 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 		c.HTML(http.StatusOK, "oauth_success.html", gin.H{
 			"message": "BindSuccess",
 		})
-		return
-
-	} else if action == service.OauthActionTypeLogin {
-		//登录
+	case service.OauthActionTypeLogin:
+		// 登录
 		if userId != 0 {
 			c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
 				"message": "OauthHasBeenSuccess",
@@ -228,13 +229,13 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 		if user == nil {
 			oauthConfig := oauthService.InfoByOp(op)
 			if !*oauthConfig.AutoRegister {
-				//c.String(http.StatusInternalServerError, "还未绑定用户，请先绑定")
+				// c.String(http.StatusInternalServerError, "还未绑定用户，请先绑定")
 				oauthCache.UpdateFromOauthUser(oauthUser)
 				c.Redirect(http.StatusFound, "/_admin/#/oauth/bind/"+cacheKey)
 				return
 			}
 
-			//自动注册
+			// 自动注册
 			user, err = service.AllService.UserService.RegisterByOauth(oauthUser, op)
 			if err != nil {
 				c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
@@ -261,14 +262,11 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 		c.HTML(http.StatusOK, "oauth_success.html", gin.H{
 			"message": "OauthSuccess",
 		})
-		return
-	} else {
+	default:
 		c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
 			"message": "ParamsError",
 		})
-		return
 	}
-
 }
 
 type MessageParams struct {

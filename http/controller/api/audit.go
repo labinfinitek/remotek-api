@@ -1,19 +1,23 @@
 package api
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+
+	"github.com/lejianwen/rustdesk-api/v2/global"
 	request "github.com/lejianwen/rustdesk-api/v2/http/request/api"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
-	"time"
 )
 
 type Audit struct {
 }
 
-// AuditConn
+// AuditConn salva nell'audit l'apertura, l'autenticazione e la chiusura
+// delle connessioni al dispositivo.
 // @Tags 审计
 // @Summary 审计连接
 // @Description 审计连接
@@ -34,15 +38,20 @@ func (a *Audit) AuditConn(c *gin.Context) {
 	c.ShouldBindBodyWith(ttt, binding.JSON)
 	fmt.Println(ttt)*/
 	ac := af.ToAuditConn()
-	if af.Action == model.AuditActionNew {
-		service.AllService.AuditService.CreateAuditConn(ac)
-	} else if af.Action == model.AuditActionClose {
+	switch af.Action {
+	case model.AuditActionNew:
+		if err := service.AllService.AuditService.CreateAuditConn(ac); err != nil {
+			auditNonSalvato(c, err)
+		}
+	case model.AuditActionClose:
 		ex := service.AllService.AuditService.InfoByPeerIdAndConnId(af.Id, af.ConnId)
 		if ex.Id != 0 {
 			ex.CloseTime = time.Now().Unix()
-			service.AllService.AuditService.UpdateAuditConn(ex)
+			if err := service.AllService.AuditService.UpdateAuditConn(ex); err != nil {
+				auditNonSalvato(c, err)
+			}
 		}
-	} else if af.Action == "" {
+	case "":
 		ex := service.AllService.AuditService.InfoByPeerIdAndConnId(af.Id, af.ConnId)
 		if ex.Id != 0 {
 			up := &model.AuditConn{
@@ -52,13 +61,22 @@ func (a *Audit) AuditConn(c *gin.Context) {
 				SessionId: ac.SessionId,
 				Type:      ac.Type,
 			}
-			service.AllService.AuditService.UpdateAuditConn(up)
+			if err := service.AllService.AuditService.UpdateAuditConn(up); err != nil {
+				auditNonSalvato(c, err)
+			}
 		}
 	}
 	response.Success(c, "")
 }
 
-// AuditFile
+// auditNonSalvato scrive nel log, a livello error, l'audit che il database
+// non ha salvato. Al client va successo lo stesso: ignora la risposta, e un
+// errore non gli farebbe rimandare niente.
+func auditNonSalvato(c *gin.Context, err error) {
+	global.Logger.Errorf("%s %s: audit non salvato: %v", c.Request.Method, c.FullPath(), err)
+}
+
+// AuditFile salva nell'audit un trasferimento di file.
 // @Tags 审计
 // @Summary 审计文件
 // @Description 审计文件
@@ -75,10 +93,12 @@ func (a *Audit) AuditFile(c *gin.Context) {
 		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
-	//ttt := &gin.H{}
-	//c.ShouldBindBodyWith(ttt, binding.JSON)
-	//fmt.Println(ttt)
+	// ttt := &gin.H{}
+	// c.ShouldBindBodyWith(ttt, binding.JSON)
+	// fmt.Println(ttt)
 	af := aff.ToAuditFile()
-	service.AllService.AuditService.CreateAuditFile(af)
+	if err := service.AllService.AuditService.CreateAuditFile(af); err != nil {
+		auditNonSalvato(c, err)
+	}
 	response.Success(c, "")
 }

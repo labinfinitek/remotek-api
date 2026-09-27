@@ -122,7 +122,11 @@ func TestLoginSenzaToken(t *testing.T) {
 		{"login del pannello", "POST", "/api/admin/login", `{"username":"prova","password":"` + passwordDiProva + `"}`,
 			`{"code":101,"message":"Operazione non riuscita.","data":null}`, func(*testing.T, *model.User) {}},
 		{"registrazione dal pannello", "POST", "/api/admin/user/register", `{"username":"nuovo","email":"","password":"` + password + `","confirm_password":"` + password + `"}`,
-			`{"code":101,"message":"Operazione non riuscita.","data":null}`, func(*testing.T, *model.User) { global.Config.App.Register = true }},
+			`{"code":101,"message":"Operazione non riuscita.","data":null}`, func(t *testing.T, _ *model.User) {
+				prec := global.Config.App.Register
+				global.Config.App.Register = true
+				t.Cleanup(func() { global.Config.App.Register = prec })
+			}},
 	} {
 		t.Run(tc.nome, func(t *testing.T) {
 			g, utente, registro := pannello(t, false)
@@ -244,5 +248,35 @@ func TestRinnovoToken(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+// TestLogoutDelClient prova sul router vero il logout del client (POST
+// /api/logout) quando il token non si cancella: la risposta e' 400
+// "Operazione non riuscita.", l'errore va nel log e il token resta. Il
+// client 1.4.9 non legge la risposta ed esce comunque
+// (flutter/lib/models/user_model.dart, logOut). Prima la risposta era
+// 200 null, come se il token non valesse piu', e l'errore si perdeva.
+func TestLogoutDelClient(t *testing.T) {
+	g, _, registro := pannello(t, false)
+	precJwt := global.Jwt
+	global.Jwt = jwt.NewJwt("", time.Hour) // senza chiave: RustAuth cerca il token nel database
+	t.Cleanup(func() { global.Jwt = precJwt })
+	rifiuta(t, "BEFORE DELETE ON user_tokens")
+
+	req := httptest.NewRequest("POST", "/api/logout", strings.NewReader(`{"id":"999000111","uuid":"dXVpZA=="}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+tokenDelPannello)
+	rec := httptest.NewRecorder()
+	g.ServeHTTP(rec, req)
+
+	if got, want := rec.Body.String(), `{"error":"Operazione non riuscita."}`; rec.Code != 400 || got != want {
+		t.Errorf("POST /api/logout: %d %s, attesi 400 e %s", rec.Code, got, want)
+	}
+	if nelLog := registro.String(); !strings.Contains(nelLog, "POST /api/logout: ") || !strings.Contains(nelLog, "rifiutato dal test") {
+		t.Errorf("POST /api/logout, nel log mancano rotta o errore:\n%s", nelLog)
+	}
+	if n := righe(t, "user_tokens"); n != 1 {
+		t.Errorf("token dopo il logout non riuscito: %d, atteso 1", n)
 	}
 }

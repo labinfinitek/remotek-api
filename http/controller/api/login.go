@@ -3,14 +3,16 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/request/api"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
 	apiResp "github.com/lejianwen/rustdesk-api/v2/http/response/api"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
-	"net/http"
 )
 
 type Login struct {
@@ -38,7 +40,7 @@ func (l *Login) Login(c *gin.Context) {
 
 	f := &api.LoginForm{}
 	err := c.ShouldBindJSON(f)
-	//fmt.Println(f)
+	// fmt.Println(f)
 	if err != nil {
 		loginLimiter.RecordFailedAttempt(clientIp)
 		global.Logger.Warn(fmt.Sprintf("Login Fail: %s %s %s", "ParamsError", c.RemoteIP(), c.ClientIP()))
@@ -89,7 +91,8 @@ func (l *Login) Login(c *gin.Context) {
 	})
 }
 
-// LoginOptions
+// LoginOptions restituisce i modi di login che il client offre: i provider
+// OIDC e, con app.web-sso, webauth.
 // @Tags 登录
 // @Summary 登录选项
 // @Description 登录选项
@@ -124,7 +127,8 @@ func (l *Login) LoginOptions(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-// Logout
+// Logout cancella il token di sessione del client e scollega il suo
+// dispositivo dall'utente.
 // @Tags 登录
 // @Summary 登出
 // @Description 登出
@@ -137,7 +141,12 @@ func (l *Login) Logout(c *gin.Context) {
 	u := service.AllService.UserService.CurUser(c)
 	token, ok := c.Get("token")
 	if ok {
-		service.AllService.UserService.Logout(u, token.(string))
+		if err := service.AllService.UserService.Logout(u, token.(string)); err != nil {
+			// Il client 1.4.9 non legge la risposta ed esce comunque
+			// (user_model.dart, logOut): l'errore dice il vero, il token vale ancora.
+			response.ErrorErr(c, "OperationFailed", err)
+			return
+		}
 	}
 	c.JSON(http.StatusOK, nil)
 
