@@ -56,6 +56,11 @@ var rootCmd = &cobra.Command{
 			global.Logger.Fatalf("server API fermato: %v", err)
 		}
 	},
+	// Dopo lo stop normale del server e alla fine di reset-admin-pwd e
+	// reset-pwd, che ereditano da rootCmd.
+	PersistentPostRun: func(_ *cobra.Command, _ []string) {
+		chiudiDB()
+	},
 }
 
 var resetPwdCmd = &cobra.Command{
@@ -136,23 +141,28 @@ func InitGlobal() {
 		global.Logger.Fatalf("gorm.type %q non supportato, l'API non parte: l'unico database e' %q. "+
 			"Chi usava MySQL o PostgreSQL resta sulla versione precedente o porta i dati su SQLite", tipo, config.TypeSqlite)
 	}
-	db, err := orm.NewSqlite(&orm.SqliteConfig{
-		MaxIdleConns: global.Config.Gorm.MaxIdleConns,
-		MaxOpenConns: global.Config.Gorm.MaxOpenConns,
-	}, global.Logger)
+	db, err := orm.NewSqlite(global.Logger)
 	if err != nil {
 		percorso, errAbs := filepath.Abs(orm.FileSqlite)
 		if errAbs != nil {
 			percorso = orm.FileSqlite
 		}
-		if errors.Is(err, orm.ErrNonScrivibile) {
+		switch {
+		case errors.Is(err, orm.ErrNonScrivibile):
 			global.Logger.Fatalf("database %s non scrivibile, l'API non parte: %v. Il file e la cartella %s devono "+
 				"essere dell'utente del processo: nell'immagine Docker 10001:10001, quindi sull'host "+
 				"chown -R 10001:10001 della cartella dati montata (vedi README)", percorso, err, filepath.Dir(percorso))
+		case errors.Is(err, orm.ErrNonWAL):
+			global.Logger.Fatalf("database %s non in WAL, l'API non parte: %v. Con synchronous NORMAL fuori dal WAL "+
+				"una caduta di corrente puo' corrompere il database", percorso, err)
+		case errors.Is(err, orm.ErrDanneggiato):
+			global.Logger.Fatalf("database %s danneggiato, l'API non parte: %v. Ripristina l'ultimo backup "+
+				"(vedi README)", percorso, err)
+		default:
+			global.Logger.Fatalf("database %s non aperto, l'API non parte: controlla che la cartella %s esista, "+
+				"o si possa creare, e sia scrivibile dall'utente del processo (nell'immagine Docker 10001:10001, "+
+				"vedi README): %v", percorso, filepath.Dir(percorso), err)
 		}
-		global.Logger.Fatalf("database %s non aperto, l'API non parte: controlla che la cartella %s esista, "+
-			"o si possa creare, e sia scrivibile dall'utente del processo (nell'immagine Docker 10001:10001, "+
-			"vedi README): %v", percorso, filepath.Dir(percorso), err)
 	}
 	global.DB = db
 
@@ -175,8 +185,26 @@ func InitGlobal() {
 		BanDuration:      30 * time.Minute,
 	})
 	global.LoginLimiter.RegisterProvider(utils.B64StringCaptchaProvider{})
+	if err := togliVincoloDispositivi(); err != nil {
+		global.Logger.Fatalf("migrazione del database non riuscita, al riavvio si ripete: %v", err)
+	}
 	DatabaseAutoUpdate()
 	avvisaProviderNonSupportati()
+}
+
+// chiudiDB chiude il database aperto da InitGlobal. L'ultima connessione
+// che si chiude fa il checkpoint del WAL e cancella -wal e -shm: dopo uno
+// stop pulito in data/ resta il solo rustdeskapi.db. Chi esce con Fatalf
+// non chiude, come una caduta: SQLite riprende il WAL alla prossima
+// apertura.
+func chiudiDB() {
+	sqlDB, err := global.DB.DB()
+	if err == nil {
+		err = sqlDB.Close()
+	}
+	if err != nil {
+		global.Logger.Errorf("chiusura del database: %v", err)
+	}
 }
 
 // avvisaProviderNonSupportati scrive un warn per ogni provider OAuth che il
@@ -192,6 +220,30 @@ func avvisaProviderNonSupportati() {
 		global.Logger.Warnf("provider OAuth %q di tipo %q ignorato: il login usa solo il tipo oidc. "+
 			"Dal pannello cancellalo o rifallo di tipo OIDC (Google: vedi README)", p.Op, p.OauthType)
 	}
+}
+
+// togliVincoloDispositivi toglie da peers la chiave esterna fk_peers_user
+// verso users, che l'upstream creava fino al 2024-10-14 (gorm senza
+// DisableForeignKeyConstraintWhenMigrating e Peer con User): con
+// foreign_keys acceso (ADR-0007) un dispositivo senza utente, user_id 0,
+// non si salverebbe. E' l'unico vincolo mai creato: nessun altro modello
+// aveva associazioni. DropConstraint ricrea la tabella senza indici, che
+// AutoMigrate rimette nella stessa transazione.
+func togliVincoloDispositivi() error {
+	if !global.DB.Migrator().HasConstraint(&model.Peer{}, "fk_peers_user") {
+		return nil
+	}
+	err := global.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Migrator().DropConstraint(&model.Peer{}, "fk_peers_user"); err != nil {
+			return err
+		}
+		return tx.AutoMigrate(&model.Peer{})
+	})
+	if err != nil {
+		return fmt.Errorf("chiave esterna fk_peers_user di peers: %w", err)
+	}
+	global.Logger.Info("tolta da peers la chiave esterna fk_peers_user delle versioni di upstream fino al 2024-10-14")
+	return nil
 }
 
 func DatabaseAutoUpdate() {

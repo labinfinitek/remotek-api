@@ -65,8 +65,18 @@ The repository's `docker-compose.yaml` builds the image from source instead.
 3. The panel is at `http://<host>:21114/_admin/`: see [First start](#first-start-and-administration).
 
 `remotek-data/` (`/app/data` in the container) holds the SQLite database
-`rustdeskapi.db` and `admin-password.txt`. The log goes to stdout
+`rustdeskapi.db` and `admin-password.txt`; while the API runs,
+`rustdeskapi.db-wal` and `rustdeskapi.db-shm` (SQLite in WAL mode) sit next
+to the database, and on a clean stop (SIGTERM, `docker compose stop`) they
+are folded back into it and removed. The log goes to stdout
 (`docker compose logs`) and to `/app/runtime/log.txt`, inside the container.
+
+Backup: with the API running use `sqlite3 rustdeskapi.db "VACUUM INTO '<file>'"`
+(or `sqlite3`'s `.backup`), never a copy of `rustdeskapi.db` alone, which
+would miss the writes still in the `-wal`; with the API stopped, after a
+clean stop `rustdeskapi.db` is enough, otherwise copy the whole directory. To
+restore, with the API stopped, put the backup in place of `rustdeskapi.db`
+and delete `-wal` and `-shm` if present.
 
 ### Building the image
 
@@ -146,8 +156,6 @@ default when the key is missing from the file.
 | `gin.resources-path` | `RUSTDESK_API_GIN_RESOURCES_PATH` | `resources` | directory of panel, languages and templates; without the language files startup stops |
 | `gin.trust-proxy` \* | `RUSTDESK_API_GIN_TRUST_PROXY` | empty | trusted proxy IPs or CIDRs, comma separated; empty = none, `X-Forwarded-For` and `X-Real-IP` ignored. Behind a reverse proxy it must be set, otherwise captcha and ban count every client as the proxy IP. An invalid value stops startup |
 | `gorm.type` | `RUSTDESK_API_GORM_TYPE` | `sqlite` | only `sqlite` (empty is the same); any other value stops startup. The database is `data/rustdeskapi.db` |
-| `gorm.max-idle-conns` | `RUSTDESK_API_GORM_MAX_IDLE_CONNS` | `10` | idle connections kept open |
-| `gorm.max-open-conns` | `RUSTDESK_API_GORM_MAX_OPEN_CONNS` | `100` | maximum open connections |
 | `rustdesk.id-server` | `RUSTDESK_API_RUSTDESK_ID_SERVER` | example address | `host:21116` of `hbbs`, to be set; shown by the panel |
 | `rustdesk.relay-server` | `RUSTDESK_API_RUSTDESK_RELAY_SERVER` | example address | `host:21117` of `hbbr`, to be set |
 | `rustdesk.api-server` | `RUSTDESK_API_RUSTDESK_API_SERVER` | `http://127.0.0.1:21114` | address of this API as clients and browsers see it; gives the OIDC callback `<api-server>/api/oidc/callback` |

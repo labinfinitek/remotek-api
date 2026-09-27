@@ -67,8 +67,18 @@ Il `docker-compose.yaml` del repo invece costruisce l'immagine dal sorgente.
 3. Il pannello e' su `http://<host>:21114/_admin/`: vedi [Primo avvio](#primo-avvio-e-amministrazione).
 
 In `remotek-data/` (`/app/data` nel container) stanno il database SQLite
-`rustdeskapi.db` e `admin-password.txt`. Il log va su stdout
-(`docker compose logs`) e in `/app/runtime/log.txt`, dentro il container.
+`rustdeskapi.db` e `admin-password.txt`; mentre l'API gira, accanto al
+database ci sono anche `rustdeskapi.db-wal` e `rustdeskapi.db-shm` (SQLite in
+WAL), che allo stop pulito (SIGTERM, `docker compose stop`) rientrano nel
+database e spariscono. Il log va su stdout (`docker compose logs`) e in
+`/app/runtime/log.txt`, dentro il container.
+
+Backup: ad API accesa con `sqlite3 rustdeskapi.db "VACUUM INTO '<file>'"` (o
+`.backup` di `sqlite3`), mai copiando il solo `rustdeskapi.db`, a cui
+mancherebbero le scritture ancora nel `-wal`; ad API ferma, dopo uno stop
+pulito basta `rustdeskapi.db`, altrimenti si copia tutta la cartella. Per
+ripristinare, ad API ferma, il backup va al posto di `rustdeskapi.db` e
+`-wal` e `-shm`, se ci sono, si cancellano.
 
 ### Costruire l'immagine
 
@@ -149,8 +159,6 @@ stesso default se la chiave manca dal file.
 | `gin.resources-path` | `RUSTDESK_API_GIN_RESOURCES_PATH` | `resources` | cartella di pannello, lingue e modelli; senza i file di lingua l'avvio si ferma |
 | `gin.trust-proxy` \* | `RUSTDESK_API_GIN_TRUST_PROXY` | vuoto | IP o CIDR dei proxy fidati, separati da virgola; vuoto = nessuno, `X-Forwarded-For` e `X-Real-IP` ignorati. Dietro un reverse proxy va impostato, altrimenti captcha e ban contano ogni client come l'IP del proxy. Un valore non valido ferma l'avvio |
 | `gorm.type` | `RUSTDESK_API_GORM_TYPE` | `sqlite` | solo `sqlite` (vuoto vale uguale); un altro valore ferma l'avvio. Il database e' `data/rustdeskapi.db` |
-| `gorm.max-idle-conns` | `RUSTDESK_API_GORM_MAX_IDLE_CONNS` | `10` | connessioni inattive tenute aperte |
-| `gorm.max-open-conns` | `RUSTDESK_API_GORM_MAX_OPEN_CONNS` | `100` | connessioni aperte al massimo |
 | `rustdesk.id-server` | `RUSTDESK_API_RUSTDESK_ID_SERVER` | indirizzo d'esempio | `host:21116` di `hbbs`, da impostare; lo mostra il pannello |
 | `rustdesk.relay-server` | `RUSTDESK_API_RUSTDESK_RELAY_SERVER` | indirizzo d'esempio | `host:21117` di `hbbr`, da impostare |
 | `rustdesk.api-server` | `RUSTDESK_API_RUSTDESK_API_SERVER` | `http://127.0.0.1:21114` | indirizzo di questa API come lo vedono client e browser; da' la callback OIDC `<api-server>/api/oidc/callback` |

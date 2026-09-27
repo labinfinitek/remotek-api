@@ -13,13 +13,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
 	"github.com/lejianwen/rustdesk-api/v2/config"
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/lib/lock"
+	"github.com/lejianwen/rustdesk-api/v2/lib/orm"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 	"github.com/lejianwen/rustdesk-api/v2/utils"
@@ -42,7 +41,7 @@ func pannello(t *testing.T, admin bool) (*gin.Engine, *model.User, *strings.Buil
 	global.Logger.SetOutput(registro)
 	global.InitI18n()
 	global.ApiInitValidator()
-	db, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "api.db")), &gorm.Config{Logger: logger.Discard})
+	db, err := orm.ApriSqlite(filepath.Join(t.TempDir(), "api.db"), logger.Discard)
 	if err == nil {
 		err = db.AutoMigrate(&model.User{}, &model.UserToken{}, &model.Tag{}, &model.Oauth{}, &model.UserThird{})
 	}

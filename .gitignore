@@ -4,7 +4,7 @@ runtime/*
 !runtime/.gitkeep
 resources/admin
 release
-data/rustdeskapi.db
+data/rustdeskapi.db*
 data/admin-password.txt
 /remotek-data/
 /apimain

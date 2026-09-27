@@ -21,19 +21,15 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/service"
 )
 
-// unaConnessione lascia al database dei servizi una connessione sola e gli
-// da' 5 secondi. Con una connessione sola una query su DB fatta dentro una
-// transazione aspetta per sempre la connessione che la transazione tiene:
-// con la scadenza l'attesa finisce in errore e il test fallisce invece di
-// restare appeso. Restituisce il contesto della scadenza: scaduto vuol dire
-// che una richiesta si e' fermata ad aspettare la connessione.
+// unaConnessione da' 5 secondi al database dei servizi, che come in
+// produzione ha una connessione sola (orm.ApriSqlite). Con una connessione
+// sola una query su DB fatta dentro una transazione aspetta per sempre la
+// connessione che la transazione tiene: con la scadenza l'attesa finisce in
+// errore e il test fallisce invece di restare appeso. Restituisce il
+// contesto della scadenza: scaduto vuol dire che una richiesta si e' fermata
+// ad aspettare la connessione.
 func unaConnessione(t *testing.T) context.Context {
 	t.Helper()
-	sqlDB, err := service.DB.DB()
-	if err != nil {
-		t.Fatal(err)
-	}
-	sqlDB.SetMaxOpenConns(1)
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	t.Cleanup(cancel)
 	service.DB = service.DB.WithContext(ctx)

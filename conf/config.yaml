@@ -26,8 +26,6 @@ gin:
   trust-proxy: "" # IP o CIDR dei proxy fidati, separati da virgola; vuoto: nessuno
 gorm:
   type: "sqlite" # l'unico database supportato; un altro valore ferma l'avvio
-  max-idle-conns: 10
-  max-open-conns: 100
 
 rustdesk:
   id-server: "192.168.1.66:21116"

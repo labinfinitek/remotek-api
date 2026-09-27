@@ -61,6 +61,25 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   non riesce la risposta e' "Operazione non riuscita.", non piu' successo
   con l'utente ancora nel database, e un errore imprevisto a meta' annulla
   la transazione invece di lasciarla aperta.
+- Un database creato da rustdesk-api prima del 14 ottobre 2024 ha in
+  `peers` una chiave esterna verso `users` (`fk_peers_user`) che l'API non
+  crea piu': con le chiavi esterne controllate (ADR-0007) rifiuterebbe i
+  dispositivi senza utente, e `/api/sysinfo` di un dispositivo nuovo
+  risponderebbe "Operazione non riuscita.". All'avvio l'API la toglie, una
+  volta sola, tenendo dispositivi e indici, e lo scrive nel log.
+- Il database SQLite passa in WAL, con `synchronous` NORMAL, e l'API lo usa
+  con una connessione sola (ADR-0007): prima era in `delete`, dove NORMAL a
+  una caduta di corrente puo' corrompere il database, e fino a 100
+  connessioni scrivevano insieme, aspettandosi a vicenda fino all'errore
+  `database is locked`. Il database in `delete` di un'installazione
+  esistente passa a WAL al primo avvio, senza perdere righe. All'avvio,
+  dopo la scrittura di prova, l'API si ferma con codice 1 se il database non
+  e' in WAL o se SQLite lo trova danneggiato (`PRAGMA integrity_check`, o
+  gia' all'apertura), e nel secondo caso dice di ripristinare l'ultimo
+  backup. Allo stop normale e alla fine di `reset-admin-pwd` e `reset-pwd`
+  il database si chiude e in `data/` resta il solo `rustdeskapi.db`; mentre
+  l'API gira ci sono anche `-wal` e `-shm`, e il backup si fa con
+  `VACUUM INTO`, non copiando il solo `.db` (README).
 
 ### Rimosso
 - **Cambio incompatibile per chi usava il login GitHub, Google o Linux.do.**
@@ -81,6 +100,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   acceso e solo GitHub o Linux.do, prima di aggiornare va configurato un
   provider OIDC: senza, nel pannello si rientra solo riaccendendo la
   password.
+- **Cambio incompatibile per chi impostava `gorm.max-idle-conns` o
+  `gorm.max-open-conns`** (`RUSTDESK_API_GORM_MAX_IDLE_CONNS`,
+  `RUSTDESK_API_GORM_MAX_OPEN_CONNS`): le due chiavi non ci sono piu',
+  perche' con uno scrittore solo (ADR-0007) l'API usa una connessione al
+  database, che non si configura. Un valore rimasto nel file o
+  nell'ambiente si ignora, senza errore.
 
 ## [0.1.0] - 2026-09-26
 Base upstream: rustdesk-api v2.7. Primo rilascio: immagine

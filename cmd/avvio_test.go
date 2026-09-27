@@ -35,6 +35,7 @@ func TestMain(m *testing.M) {
 	}
 	if len(os.Args) == 1 {
 		InitGlobal()
+		chiudiDB()
 		return
 	}
 	rootCmd.SetArgs(os.Args[1:])
@@ -85,7 +86,10 @@ func esegui(t *testing.T, dir string, args ...string) (int, string) {
 	return cmd.ProcessState.ExitCode(), string(out)
 }
 
-// apriDB apre, senza log, il database sqlite del figlio.
+// apriDB apre, senza log, il database sqlite del figlio. Nessuna connessione
+// resta aperta tra una query e l'altra: col WAL una connessione di questo
+// processo aperta mentre gira il figlio fa si' che la chiusura del figlio
+// non sia l'ultima, e -wal e -shm restano.
 func apriDB(t *testing.T, dir string) *gorm.DB {
 	t.Helper()
 	db, err := gorm.Open(sqlite.Open(filepath.Join(dir, "data", "rustdeskapi.db")), &gorm.Config{Logger: logger.Discard})
@@ -96,6 +100,7 @@ func apriDB(t *testing.T, dir string) *gorm.DB {
 	if err != nil {
 		t.Fatal(err)
 	}
+	sqlDB.SetMaxIdleConns(0)
 	t.Cleanup(func() { sqlDB.Close() })
 	return db
 }
@@ -202,8 +207,8 @@ func TestPrimoAvvio(t *testing.T) {
 // TestComandiResetPassword prova reset-admin-pwd e reset-pwd sul binario
 // vero: rifiutano password sotto i 15 o sopra i 32 caratteri, contati come
 // caratteri e non come byte, ed escono con codice 1 quando rifiutano o
-// falliscono, senza toccare la password; una password valida la impostano
-// ed escono con 0.
+// falliscono, senza toccare la password; una password valida la impostano,
+// chiudono il database ed escono con 0.
 func TestComandiResetPassword(t *testing.T) {
 	dir := sandbox(t)
 	db := apriDB(t, dir)
@@ -228,6 +233,9 @@ func TestComandiResetPassword(t *testing.T) {
 		codice, out := esegui(t, dir, p.args...)
 		if codice != p.codice || !strings.Contains(out, p.uscita) {
 			t.Errorf("%s, %s: codice %d, attesi %d e %q\n%s", p.args[0], p.caso, codice, p.codice, p.uscita, out)
+		}
+		if p.codice == 0 {
+			senzaTraccia(t, dir)
 		}
 		dopo := admin(t, db).Password
 		if p.codice != 0 && dopo != prima {
