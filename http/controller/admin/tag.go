@@ -97,7 +97,7 @@ func (ct *Tag) List(c *gin.Context) {
 		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
-	res := service.AllService.TagService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
+	res, err := service.AllService.TagService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
 		tx.Preload("Collection", func(txc *gorm.DB) *gorm.DB {
 			return txc.Select("id,name")
 		})
@@ -108,6 +108,10 @@ func (ct *Tag) List(c *gin.Context) {
 			tx.Where("collection_id = ?", query.CollectionId)
 		}
 	})
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	response.Success(c, res)
 }
 

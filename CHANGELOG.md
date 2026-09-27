@@ -66,6 +66,23 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   l'errore va nel log; prima rispondeva 200 `null` col token ancora
   valido. Il client 1.4.9 non legge la risposta del logout ed esce
   comunque; nel caso normale la risposta resta `200 null`.
+- Rubrica del client: se il database non legge voci, tag o rubriche,
+  `GET /api/ab`, `/api/ab/peers`, `/api/ab/tags/{guid}` e
+  `/api/ab/shared/profiles` rispondono 400 "Errore di sistema." e l'errore
+  va nel log. Prima rispondevano 200 con le liste vuote: il client 1.4.9
+  mostrava la rubrica vuota senza avvisi e la salvava nella cache, un
+  client legacy la svuotava e poi la rimandava vuota con `POST /api/ab`,
+  che la cancellava dal database. Nel pannello gli elenchi di voci, tag e
+  rubriche rispondono "Errore di sistema." invece di un elenco vuoto, e il
+  cambio dei tag di piu' voci invece di "Elemento non trovato.".
+- Rubrica condivisa del client: se il database non legge le regole dei
+  permessi, le rotte rispondono 400 "Errore di sistema." con l'errore nel
+  log, e non concedono niente; prima rispondevano "Non hai i permessi per
+  questa operazione." e l'errore si perdeva.
+- Rubrica legacy del client (`POST /api/ab`): cambia solo la rubrica
+  personale, la sola che `GET /api/ab` manda; prima cancellava anche le
+  voci e i tag delle altre rubriche dell'utente, che il client legacy non
+  vede.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

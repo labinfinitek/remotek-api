@@ -14,12 +14,6 @@ import (
 type AddressBookService struct {
 }
 
-func (s *AddressBookService) Info(id string) *model.AddressBook {
-	p := &model.AddressBook{}
-	DB.Where("id = ?", id).First(p)
-	return p
-}
-
 func (s *AddressBookService) InfoByUserIdAndIdAndCid(userid uint, id string, cid uint) *model.AddressBook {
 	p := &model.AddressBook{}
 	DB.Where("user_id = ? and id = ? and collection_id = ?", userid, id, cid).First(p)
@@ -30,18 +24,6 @@ func (s *AddressBookService) InfoByRowId(id uint) *model.AddressBook {
 	DB.Where("row_id = ?", id).First(p)
 	return p
 }
-func (s *AddressBookService) ListByUserId(userId, page, pageSize uint) (res *model.AddressBookList) {
-	res = s.List(page, pageSize, func(tx *gorm.DB) {
-		tx.Where("user_id = ?", userId)
-	})
-	return
-}
-func (s *AddressBookService) ListByUserIds(userIds []uint, page, pageSize uint) (res *model.AddressBookList) {
-	res = s.List(page, pageSize, func(tx *gorm.DB) {
-		tx.Where("user_id in (?)", userIds)
-	})
-	return
-}
 
 // AddAddressBook aggiunge la voce ab alla rubrica.
 func (s *AddressBookService) AddAddressBook(ab *model.AddressBook) error {
@@ -50,7 +32,8 @@ func (s *AddressBookService) AddAddressBook(ab *model.AddressBook) error {
 
 // UpdateAddressBook porta la rubrica dell'utente a abs: aggiunge le voci
 // nuove, aggiorna quelle che ci sono e cancella le altre, in una transazione
-// che su errore o panic si annulla.
+// che su errore o panic si annulla. Tocca solo la rubrica personale
+// (collezione 0), la sola che GET /api/ab manda al client legacy.
 func (s *AddressBookService) UpdateAddressBook(abs []*model.AddressBook, userId uint) error {
 	return DB.Transaction(func(tx *gorm.DB) error {
 		return s.updateAddressBook(tx, abs, userId)
@@ -63,7 +46,7 @@ func (s *AddressBookService) UpdateAddressBook(abs []*model.AddressBook, userId 
 func (s *AddressBookService) updateAddressBook(tx *gorm.DB, abs []*model.AddressBook, userId uint) error {
 	// 1. 获取数据库中的数据
 	var dbABs []*model.AddressBook
-	if err := tx.Where("user_id = ?", userId).Find(&dbABs).Error; err != nil {
+	if err := tx.Where("user_id = ? and collection_id = ?", userId, 0).Find(&dbABs).Error; err != nil {
 		return fmt.Errorf("lettura della rubrica: %w", err)
 	}
 	// 2. 比较peers和数据库中的数据
@@ -81,6 +64,7 @@ func (s *AddressBookService) updateAddressBook(tx *gorm.DB, abs []*model.Address
 	for id, ab := range aBIds {
 		dbAB, ok := dbABIds[id]
 		ab.UserId = userId
+		ab.CollectionId = 0
 		if !ok {
 			// 添加
 			if ab.Platform == "" || ab.Username == "" || ab.Hostname == "" {
@@ -116,7 +100,7 @@ func (s *AddressBookService) updateAddressBook(tx *gorm.DB, abs []*model.Address
 	return nil
 }
 
-func (s *AddressBookService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.AddressBookList) {
+func (s *AddressBookService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.AddressBookList, err error) {
 	res = &model.AddressBookList{}
 	res.Page = int64(page)
 	res.PageSize = int64(pageSize)
@@ -124,10 +108,14 @@ func (s *AddressBookService) List(page, pageSize uint, where func(tx *gorm.DB)) 
 	if where != nil {
 		where(tx)
 	}
-	tx.Count(&res.Total)
+	if err = tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio delle voci della rubrica: %w", err)
+	}
 	tx.Scopes(Paginate(page, pageSize))
-	tx.Find(&res.AddressBooks)
-	return
+	if err = tx.Find(&res.AddressBooks).Error; err != nil {
+		return nil, fmt.Errorf("voci della rubrica: %w", err)
+	}
+	return res, nil
 }
 
 func (s *AddressBookService) FromPeer(peer *model.Peer) (a *model.AddressBook) {
@@ -181,13 +169,12 @@ func (s *AddressBookService) PlatformFromOs(os string) string {
 	}
 	return ""
 }
-func (s *AddressBookService) ListByUserIdAndCollectionId(userId, cid, page, pageSize uint) (res *model.AddressBookList) {
-	res = s.List(page, pageSize, func(tx *gorm.DB) {
+func (s *AddressBookService) ListByUserIdAndCollectionId(userId, cid, page, pageSize uint) (*model.AddressBookList, error) {
+	return s.List(page, pageSize, func(tx *gorm.DB) {
 		tx.Where("user_id = ? and collection_id = ?", userId, cid)
 	})
-	return
 }
-func (s *AddressBookService) ListCollection(page, pageSize uint, where func(tx *gorm.DB)) (res *model.AddressBookCollectionList) {
+func (s *AddressBookService) ListCollection(page, pageSize uint, where func(tx *gorm.DB)) (res *model.AddressBookCollectionList, err error) {
 	res = &model.AddressBookCollectionList{}
 	res.Page = int64(page)
 	res.PageSize = int64(pageSize)
@@ -195,21 +182,26 @@ func (s *AddressBookService) ListCollection(page, pageSize uint, where func(tx *
 	if where != nil {
 		where(tx)
 	}
-	tx.Count(&res.Total)
+	if err = tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio delle collezioni: %w", err)
+	}
 	tx.Scopes(Paginate(page, pageSize))
-	tx.Find(&res.AddressBookCollection)
-	return
+	if err = tx.Find(&res.AddressBookCollection).Error; err != nil {
+		return nil, fmt.Errorf("collezioni: %w", err)
+	}
+	return res, nil
 }
-func (s *AddressBookService) ListCollectionByIds(ids []uint) (res []*model.AddressBookCollection) {
-	DB.Where("id in ?", ids).Find(&res)
-	return res
+func (s *AddressBookService) ListCollectionByIds(ids []uint) (res []*model.AddressBookCollection, err error) {
+	if err = DB.Where("id in ?", ids).Find(&res).Error; err != nil {
+		return nil, fmt.Errorf("collezioni per id: %w", err)
+	}
+	return res, nil
 }
 
-func (s *AddressBookService) ListCollectionByUserId(userId uint) (res *model.AddressBookCollectionList) {
-	res = s.ListCollection(1, 100, func(tx *gorm.DB) {
+func (s *AddressBookService) ListCollectionByUserId(userId uint) (*model.AddressBookCollectionList, error) {
+	return s.ListCollection(1, 100, func(tx *gorm.DB) {
 		tx.Where("user_id = ?", userId)
 	})
-	return
 }
 func (s *AddressBookService) CollectionInfoById(id uint) *model.AddressBookCollection {
 	p := &model.AddressBookCollection{}
@@ -217,59 +209,60 @@ func (s *AddressBookService) CollectionInfoById(id uint) *model.AddressBookColle
 	return p
 }
 
-func (s *AddressBookService) CollectionReadRules(user *model.User) (res []*model.AddressBookCollectionRule) {
+func (s *AddressBookService) CollectionReadRules(user *model.User) (res []*model.AddressBookCollectionRule, err error) {
 	// personalRules
 	var personalRules []*model.AddressBookCollectionRule
 	tx2 := DB.Model(&model.AddressBookCollectionRule{})
-	tx2.Where("type = ? and to_id = ? and rule > 0", model.ShareAddressBookRuleTypePersonal, user.Id).Find(&personalRules)
+	if err = tx2.Where("type = ? and to_id = ? and rule > 0", model.ShareAddressBookRuleTypePersonal, user.Id).Find(&personalRules).Error; err != nil {
+		return nil, fmt.Errorf("regole per l'utente %d: %w", user.Id, err)
+	}
 	res = append(res, personalRules...)
 
 	// group
 	var groupRules []*model.AddressBookCollectionRule
 	tx3 := DB.Model(&model.AddressBookCollectionRule{})
-	tx3.Where("type = ? and to_id = ? and rule > 0", model.ShareAddressBookRuleTypeGroup, user.GroupId).Find(&groupRules)
+	if err = tx3.Where("type = ? and to_id = ? and rule > 0", model.ShareAddressBookRuleTypeGroup, user.GroupId).Find(&groupRules).Error; err != nil {
+		return nil, fmt.Errorf("regole per il gruppo %d: %w", user.GroupId, err)
+	}
 	res = append(res, groupRules...)
-	return
+	return res, nil
 }
 
-func (s *AddressBookService) UserMaxRule(user *model.User, uid, cid uint) int {
+// UserMaxRule restituisce il permesso piu' alto dell'utente user sulla
+// rubrica cid dell'utente uid. Se una regola non si legge restituisce 0 e
+// l'errore: un permesso che non si legge non si concede.
+func (s *AddressBookService) UserMaxRule(user *model.User, uid, cid uint) (int, error) {
 	// ismy?
 	if user.Id == uid {
-		return model.ShareAddressBookRuleRuleFullControl
+		return model.ShareAddressBookRuleRuleFullControl, nil
 	}
 	massima := 0
 	personalRules := &model.AddressBookCollectionRule{}
 	tx := DB.Model(personalRules)
-	tx.Where("type = ? and collection_id = ? and to_id = ?", model.ShareAddressBookRuleTypePersonal, cid, user.Id).First(&personalRules)
-	if personalRules.Id != 0 {
+	switch err := tx.Where("type = ? and collection_id = ? and to_id = ?", model.ShareAddressBookRuleTypePersonal, cid, user.Id).First(&personalRules).Error; {
+	case err == nil:
 		massima = personalRules.Rule
 		if massima == model.ShareAddressBookRuleRuleFullControl {
-			return massima
+			return massima, nil
 		}
+	case !errors.Is(err, gorm.ErrRecordNotFound):
+		return 0, fmt.Errorf("regola dell'utente %d sulla rubrica %d: %w", user.Id, cid, err)
 	}
 
 	groupRules := &model.AddressBookCollectionRule{}
 	tx2 := DB.Model(groupRules)
-	tx2.Where("type = ? and collection_id = ? and to_id = ?", model.ShareAddressBookRuleTypeGroup, cid, user.GroupId).First(&groupRules)
-	if groupRules.Id != 0 {
+	switch err := tx2.Where("type = ? and collection_id = ? and to_id = ?", model.ShareAddressBookRuleTypeGroup, cid, user.GroupId).First(&groupRules).Error; {
+	case err == nil:
 		if groupRules.Rule > massima {
 			massima = groupRules.Rule
 		}
 		if massima == model.ShareAddressBookRuleRuleFullControl {
-			return massima
+			return massima, nil
 		}
+	case !errors.Is(err, gorm.ErrRecordNotFound):
+		return 0, fmt.Errorf("regola del gruppo %d sulla rubrica %d: %w", user.GroupId, cid, err)
 	}
-	return massima
-}
-
-func (s *AddressBookService) CheckUserReadPrivilege(user *model.User, uid, cid uint) bool {
-	return s.UserMaxRule(user, uid, cid) >= model.ShareAddressBookRuleRuleRead
-}
-func (s *AddressBookService) CheckUserWritePrivilege(user *model.User, uid, cid uint) bool {
-	return s.UserMaxRule(user, uid, cid) >= model.ShareAddressBookRuleRuleReadWrite
-}
-func (s *AddressBookService) CheckUserFullControlPrivilege(user *model.User, uid, cid uint) bool {
-	return s.UserMaxRule(user, uid, cid) >= model.ShareAddressBookRuleRuleFullControl
+	return massima, nil
 }
 
 func (s *AddressBookService) CreateCollection(t *model.AddressBookCollection) error {

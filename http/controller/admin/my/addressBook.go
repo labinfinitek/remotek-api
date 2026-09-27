@@ -35,7 +35,7 @@ func (ct *AddressBook) List(c *gin.Context) {
 	}
 	u := service.AllService.UserService.CurUser(c)
 	query.UserId = int(u.Id)
-	res := service.AllService.AddressBookService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
+	res, err := service.AllService.AddressBookService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
 		// 预加载地址簿名称
 		tx.Preload("Collection", func(txc *gorm.DB) *gorm.DB {
 			return txc.Select("id,name")
@@ -54,6 +54,10 @@ func (ct *AddressBook) List(c *gin.Context) {
 			tx.Where("collection_id = ?", query.CollectionId)
 		}
 	})
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	response.Success(c, res)
 }
 
@@ -253,15 +257,19 @@ func (ct *AddressBook) BatchUpdateTags(c *gin.Context) {
 	}
 	u := service.AllService.UserService.CurUser(c)
 
-	abs := service.AllService.AddressBookService.List(1, 999, func(tx *gorm.DB) {
+	abs, err := service.AllService.AddressBookService.List(1, 999, func(tx *gorm.DB) {
 		tx.Where("row_id in ?", f.RowIds)
 		tx.Where("user_id = ?", u.Id)
 	})
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	if abs.Total == 0 {
 		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
 		return
 	}
-	err := service.AllService.AddressBookService.BatchUpdateTags(abs.AddressBooks, f.Tags)
+	err = service.AllService.AddressBookService.BatchUpdateTags(abs.AddressBooks, f.Tags)
 	if err != nil {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
