@@ -14,12 +14,6 @@ import (
 type AddressBookService struct {
 }
 
-func (s *AddressBookService) Info(id string) *model.AddressBook {
-	p := &model.AddressBook{}
-	DB.Where("id = ?", id).First(p)
-	return p
-}
-
 func (s *AddressBookService) InfoByUserIdAndIdAndCid(userid uint, id string, cid uint) *model.AddressBook {
 	p := &model.AddressBook{}
 	DB.Where("user_id = ? and id = ? and collection_id = ?", userid, id, cid).First(p)
@@ -29,18 +23,6 @@ func (s *AddressBookService) InfoByRowId(id uint) *model.AddressBook {
 	p := &model.AddressBook{}
 	DB.Where("row_id = ?", id).First(p)
 	return p
-}
-func (s *AddressBookService) ListByUserId(userId, page, pageSize uint) (res *model.AddressBookList) {
-	res = s.List(page, pageSize, func(tx *gorm.DB) {
-		tx.Where("user_id = ?", userId)
-	})
-	return
-}
-func (s *AddressBookService) ListByUserIds(userIds []uint, page, pageSize uint) (res *model.AddressBookList) {
-	res = s.List(page, pageSize, func(tx *gorm.DB) {
-		tx.Where("user_id in (?)", userIds)
-	})
-	return
 }
 
 // AddAddressBook aggiunge la voce ab alla rubrica.

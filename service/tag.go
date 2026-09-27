@@ -11,23 +11,12 @@ import (
 type TagService struct {
 }
 
-func (s *TagService) Info(id uint) *model.Tag {
-	p := &model.Tag{}
-	DB.Where("id = ?", id).First(p)
-	return p
-}
 func (s *TagService) InfoByUserIdAndNameAndCollectionId(userid uint, name string, cid uint) *model.Tag {
 	p := &model.Tag{}
 	DB.Where("user_id = ? and name = ? and collection_id = ?", userid, name, cid).First(p)
 	return p
 }
 
-func (s *TagService) ListByUserId(userId uint) (res *model.TagList) {
-	res = s.List(1, 1000, func(tx *gorm.DB) {
-		tx.Where("user_id = ?", userId)
-	})
-	return
-}
 func (s *TagService) ListByUserIdAndCollectionId(userId, cid uint) (res *model.TagList) {
 	res = s.List(1, 1000, func(tx *gorm.DB) {
 		tx.Where("user_id = ? and collection_id = ?", userId, cid)
