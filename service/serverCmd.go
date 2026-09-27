@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"net"
@@ -55,6 +56,12 @@ func (is *ServerCmdService) SendCmd(port int, cmd string, arg string) (string, e
 	return "", err
 }
 
+// tempoComandoServer e' il tempo massimo dei comandi al server rustdesk,
+// dalla connessione alla risposta: senza, un server che accetta la
+// connessione e non risponde terrebbe ferma la richiesta del pannello. I
+// test lo accorciano.
+var tempoComandoServer = 5 * time.Second
+
 // SendSocketCmd
 func (is *ServerCmdService) SendSocketCmd(ty string, port int, cmd string) (string, error) {
 	addr := "[::1]"
@@ -63,12 +70,20 @@ func (is *ServerCmdService) SendSocketCmd(ty string, port int, cmd string) (stri
 		tcp = "tcp"
 		addr = "127.0.0.1"
 	}
-	conn, err := net.Dial(tcp, fmt.Sprintf("%s:%v", addr, port))
+	scadenza := time.Now().Add(tempoComandoServer)
+	ctx, cancel := context.WithDeadline(context.Background(), scadenza)
+	defer cancel()
+	var dialer net.Dialer
+	conn, err := dialer.DialContext(ctx, tcp, fmt.Sprintf("%s:%v", addr, port))
 	if err != nil {
 		Logger.Debugf("%s connect to id server failed: %v", ty, err)
 		return "", err
 	}
 	defer conn.Close()
+	// La stessa scadenza vale per l'invio e per la risposta.
+	if err := conn.SetDeadline(scadenza); err != nil {
+		return "", err
+	}
 	//发送命令
 	_, err = conn.Write([]byte(cmd))
 	if err != nil {

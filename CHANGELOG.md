@@ -50,6 +50,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   che non risponde fa dire alla pagina "Autorizzazione OAuth non
   riuscita.", con l'errore nel log, invece di tenerla ferma senza limite:
   senza proxy il client HTTP non aveva timeout.
+- Comandi al server rustdesk dal pannello: connessione, invio e risposta
+  hanno 5 secondi per indirizzo (IPv6, poi IPv4); un server che accetta la
+  connessione e non risponde fa rispondere "Operazione non riuscita."
+  invece di tenere ferma la richiesta senza limite.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,
