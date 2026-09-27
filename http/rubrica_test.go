@@ -70,8 +70,8 @@ func rubricheDiProva(t *testing.T, regola int) (*gin.Engine, *strings.Builder, f
 // TestRubricaLetturaFallita prova sul router vero che le rotte del client che
 // leggono voci, tag e rubriche, se il database non le legge, rispondono 400
 // {"error": "Errore di sistema."}, la forma d'errore del contratto, e
-// scrivono l'errore nel log: il client 1.4.9 mostra pull_ab_failed e tiene
-// la rubrica che ha. Prima rispondevano 200 con le liste vuote, che il
+// scrivono l'errore nel log: il client 1.4.9 mostra pull_ab_failed e non
+// salva la cache. Prima rispondevano 200 con le liste vuote, che il
 // client prende per una rubrica vuota vera e salva nella cache, e che un
 // client legacy svuota e rimanda vuota con POST /api/ab. Senza ostacoli le
 // stesse richieste rispondono 200 coi dati.
