@@ -6,6 +6,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+## [0.2.0] - 2026-09-27
+Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,
+sotto Rimosso: via il login GitHub, Google e Linux.do (resta OIDC generico)
+e via le chiavi `gorm.max-idle-conns` e `gorm.max-open-conns`. Il database
+passa in WAL al primo avvio, senza perdere righe (Corretto).
+
 ### Sicurezza
 - Il login `webauth` (il client apre il pannello e un utente del pannello
   conferma) esiste solo con `app.web-sso` acceso: spento, `/api/oidc/auth`
