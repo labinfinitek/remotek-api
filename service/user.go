@@ -245,7 +245,7 @@ func (us *UserService) Logout(u *model.User, token string) error {
 func (us *UserService) Delete(u *model.User) error {
 	userCount := us.getAdminUserCount()
 	if userCount <= 1 && us.IsAdmin(u) {
-		return errors.New("The last admin user cannot be deleted")
+		return errors.New("the last admin user cannot be deleted")
 	}
 	err := DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Delete(u).Error; err != nil {
@@ -277,7 +277,7 @@ func (us *UserService) Update(u *model.User) error {
 		adminCount := us.getAdminUserCount()
 		// 如果这是唯一的管理员，确保不能禁用或取消管理员权限
 		if adminCount <= 1 && (!us.IsAdmin(u) || u.Status == model.COMMON_STATUS_DISABLED) {
-			return errors.New("The last admin user cannot be disabled or demoted")
+			return errors.New("the last admin user cannot be disabled or demoted")
 		}
 	}
 	return DB.Model(u).Updates(u).Error
@@ -368,7 +368,7 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (*
 		// call this, if find user by email, it will update the email to local database
 		user, ldapErr := AllService.LdapService.GetUserInfoByEmailLocal(email)
 		// If we enable ldap, and the error is not ErrLdapUserNotFound, return the error because we could not sure if the user is not found in ldap
-		if !(errors.Is(ldapErr, ErrLdapNotEnabled) || errors.Is(ldapErr, ErrLdapUserNotFound) || ldapErr == nil) {
+		if !errors.Is(ldapErr, ErrLdapNotEnabled) && !errors.Is(ldapErr, ErrLdapUserNotFound) && ldapErr != nil {
 			return user, ldapErr
 		}
 		if user.Id == 0 {

@@ -236,14 +236,14 @@ func (s *AddressBookService) UserMaxRule(user *model.User, uid, cid uint) int {
 	if user.Id == uid {
 		return model.ShareAddressBookRuleRuleFullControl
 	}
-	max := 0
+	massima := 0
 	personalRules := &model.AddressBookCollectionRule{}
 	tx := DB.Model(personalRules)
 	tx.Where("type = ? and collection_id = ? and to_id = ?", model.ShareAddressBookRuleTypePersonal, cid, user.Id).First(&personalRules)
 	if personalRules.Id != 0 {
-		max = personalRules.Rule
-		if max == model.ShareAddressBookRuleRuleFullControl {
-			return max
+		massima = personalRules.Rule
+		if massima == model.ShareAddressBookRuleRuleFullControl {
+			return massima
 		}
 	}
 
@@ -251,14 +251,14 @@ func (s *AddressBookService) UserMaxRule(user *model.User, uid, cid uint) int {
 	tx2 := DB.Model(groupRules)
 	tx2.Where("type = ? and collection_id = ? and to_id = ?", model.ShareAddressBookRuleTypeGroup, cid, user.GroupId).First(&groupRules)
 	if groupRules.Id != 0 {
-		if groupRules.Rule > max {
-			max = groupRules.Rule
+		if groupRules.Rule > massima {
+			massima = groupRules.Rule
 		}
-		if max == model.ShareAddressBookRuleRuleFullControl {
-			return max
+		if massima == model.ShareAddressBookRuleRuleFullControl {
+			return massima
 		}
 	}
-	return max
+	return massima
 }
 
 func (s *AddressBookService) CheckUserReadPrivilege(user *model.User, uid, cid uint) bool {
