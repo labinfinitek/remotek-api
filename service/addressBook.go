@@ -346,12 +346,22 @@ func (s *AddressBookService) DeleteRule(t *model.AddressBookCollectionRule) erro
 	return DB.Delete(t).Error
 }
 
-// CheckCollectionOwner dice se la collezione cid e' dell'utente uid. Una
-// collezione che non si legge vale come non sua: il pannello rifiuta, ma
-// l'errore non arriva ancora al log.
-func (s *AddressBookService) CheckCollectionOwner(uid uint, cid uint) bool {
+// CheckCollectionOwner dice se la collezione cid e' dell'utente uid. La
+// collezione 0, la rubrica personale, e' di ogni utente; una collezione che
+// non c'e' non e' di nessuno. Se la collezione non si legge restituisce
+// false e l'errore: chi la chiede non la ottiene.
+func (s *AddressBookService) CheckCollectionOwner(uid uint, cid uint) (bool, error) {
+	if cid == 0 {
+		return true, nil
+	}
 	p, err := s.CollectionInfoById(cid)
-	return err == nil && p.UserId == uid
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return false, nil
+	case err != nil:
+		return false, err
+	}
+	return p.UserId == uid, nil
 }
 
 func (s *AddressBookService) BatchUpdateTags(abs []*model.AddressBook, tags []string) error {

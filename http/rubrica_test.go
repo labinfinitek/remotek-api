@@ -685,3 +685,32 @@ func TestPannelloRegolaDoppia(t *testing.T) {
 		{"POST", "/api/admin/my/address_book_collection_rule/update", `{"id":REGOLA,` + regola + `,"rule":2}`, false, `{"code":0,"message":"success","data":null}`},
 	})
 }
+
+// TestPannelloProprietarioNonLetto prova sul router vero le rotte del
+// pannello che, prima di mettere una voce, un tag o una regola in una
+// rubrica, guardano se la rubrica e' dell'utente: se il database non la
+// legge rispondono code 101 "Errore di sistema.", con l'errore nel log, e non
+// salvano niente. Prima rispondevano "Parametri non validi.", come a chi
+// sceglie la rubrica di un altro, e l'errore si perdeva. Una rubrica di un
+// altro o che non c'e' ha la risposta di prima.
+func TestPannelloProprietarioNonLetto(t *testing.T) {
+	const erroreDiSistema = `{"code":101,"message":"Errore di sistema.","data":null}`
+	const parametri = `{"code":101,"message":"Parametri non validi.","data":null}`
+	const voce = `"id":"999000111","user_id":UTENTE,"alias":"nuovo","collection_id":`
+	const tag = `{"id":TAG,"name":"lavoro","color":2,"user_id":UTENTE,"collection_id":`
+	const regola = `{"user_id":UTENTE,"type":1,"to_id":AMICO,"rule":2,"collection_id":`
+	provaPannello(t, "address_book_collections", "", []casoDelPannello{
+		{"POST", "/api/admin/address_book/create", `{` + voce + `RUBRICA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/address_book/update", `{"row_id":VOCE,` + voce + `RUBRICA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book/create", `{` + voce + `RUBRICA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book/update", `{"row_id":VOCE,` + voce + `RUBRICA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/tag/update", tag + `RUBRICA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/address_book_collection_rule/create", regola + `RUBRICA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book_collection_rule/create", regola + `RUBRICA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/address_book/create", `{` + voce + `ALTRUI}`, false, parametri},
+		{"POST", "/api/admin/my/address_book/update", `{"row_id":VOCE,` + voce + `999999}`, false, parametri},
+		{"POST", "/api/admin/my/tag/update", tag + `ALTRUI}`, false, parametri},
+		{"POST", "/api/admin/address_book_collection_rule/create", regola + `999999}`, false, parametri},
+		{"POST", "/api/admin/my/address_book_collection_rule/create", regola + `ALTRUI}`, false, parametri},
+	})
+}

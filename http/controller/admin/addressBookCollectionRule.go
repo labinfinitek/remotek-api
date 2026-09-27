@@ -123,7 +123,10 @@ func (abcr *AddressBookCollectionRule) CheckForm(t *model.AddressBookCollectionR
 	if t.UserId == 0 {
 		return errors.New("ParamsError")
 	}
-	if t.CollectionId > 0 && !service.AllService.AddressBookService.CheckCollectionOwner(t.UserId, t.CollectionId) {
+	switch sua, err := service.AllService.AddressBookService.CheckCollectionOwner(t.UserId, t.CollectionId); {
+	case err != nil:
+		return err
+	case !sua:
 		return errors.New("ParamsError")
 	}
 

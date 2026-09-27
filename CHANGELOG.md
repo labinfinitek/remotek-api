@@ -106,6 +106,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   dettaglio, modifica e cancellazione di una regola rispondevano "Elemento
   non trovato.", e creazione e modifica prendevano la lettura fallita per
   "nessuna regola uguale" e salvavano la regola doppia.
+- Pannello, voci, tag e regole in una rubrica diversa dalla personale: se il
+  database non legge la rubrica scelta, creazione e modifica rispondono
+  "Errore di sistema." con l'errore nel log, e non salvano niente come
+  prima; prima rispondevano "Parametri non validi.", come a chi sceglie la
+  rubrica di un altro, e l'errore si perdeva.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,
