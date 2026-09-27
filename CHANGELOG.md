@@ -35,6 +35,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   il token non si legge o il dispositivo non si scollega dall'utente,
   risponde "Operazione non riuscita." e l'errore va nel log; prima
   rispondeva successo e il dispositivo restava dell'utente.
+- Il rinnovo della scadenza del token di sessione, che le rotte del client
+  e del pannello fanno quando al token manca meno di un terzo di
+  `app.token-expire`, se non si salva va nel log a livello warn, con
+  metodo e rotta; la richiesta va avanti come prima. Prima l'errore si
+  perdeva.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

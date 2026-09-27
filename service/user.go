@@ -539,15 +539,23 @@ func (us *UserService) UserTokenExpireTimestamp() int64 {
 	return time.Now().Add(exp).Unix()
 }
 
-func (us *UserService) RefreshAccessToken(ut *model.UserToken) {
+// RefreshAccessToken porta la scadenza del token ut a quella di un token
+// nuovo.
+func (us *UserService) RefreshAccessToken(ut *model.UserToken) error {
 	ut.ExpiredAt = us.UserTokenExpireTimestamp()
-	DB.Model(ut).Update("expired_at", ut.ExpiredAt)
+	if err := DB.Model(ut).Update("expired_at", ut.ExpiredAt).Error; err != nil {
+		return fmt.Errorf("scadenza del token %d: %w", ut.Id, err)
+	}
+	return nil
 }
 
-func (us *UserService) AutoRefreshAccessToken(ut *model.UserToken) {
+// AutoRefreshAccessToken rinnova il token ut se gli manca meno di un terzo
+// di app.token-expire.
+func (us *UserService) AutoRefreshAccessToken(ut *model.UserToken) error {
 	if ut.ExpiredAt-time.Now().Unix() < Config.App.TokenExpire.Milliseconds()/3000 {
-		us.RefreshAccessToken(ut)
+		return us.RefreshAccessToken(ut)
 	}
+	return nil
 }
 
 func (us *UserService) BatchDeleteUserToken(ids []uint) error {

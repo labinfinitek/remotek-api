@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -196,5 +197,52 @@ func TestLogoutDispositivo(t *testing.T) {
 				t.Errorf("dispositivo dopo il logout: dell'utente %d, atteso %d", got, proprietario)
 			}
 		})
+	}
+}
+
+// TestRinnovoToken prova sul router vero il rinnovo della scadenza del token
+// di sessione, che le rotte del client e del pannello fanno quando al token
+// manca meno di un terzo della durata: senza ostacoli la scadenza si
+// allunga; se non si salva la risposta e' quella di sempre, il token vale
+// fino alla scadenza di prima e l'errore va nel log, con metodo e rotta.
+// Prima si perdeva.
+func TestRinnovoToken(t *testing.T) {
+	for _, tc := range []struct{ nome, ostacolo string }{
+		{"senza ostacoli", ""},
+		{"scadenza rifiutata", "BEFORE UPDATE ON user_tokens"},
+	} {
+		for _, r := range []struct{ metodo, rotta, intestazione, valore string }{
+			{"POST", "/api/currentUser", "Authorization", "Bearer " + tokenDelPannello},
+			{"GET", "/api/admin/user/current", "api-token", tokenDelPannello},
+		} {
+			t.Run(tc.nome+" "+r.rotta, func(t *testing.T) {
+				g, _, registro := pannello(t, false)
+				precJwt := global.Jwt
+				global.Jwt = jwt.NewJwt("", time.Hour) // senza chiave: RustAuth cerca il token nel database
+				t.Cleanup(func() { global.Jwt = precJwt })
+				if tc.ostacolo != "" {
+					rifiuta(t, tc.ostacolo)
+				}
+				req := httptest.NewRequest(r.metodo, r.rotta, nil)
+				req.Header.Set(r.intestazione, r.valore)
+				rec := httptest.NewRecorder()
+				g.ServeHTTP(rec, req)
+
+				if rec.Code != 200 || !strings.Contains(rec.Body.String(), `"prova"`) {
+					t.Errorf("%s %s: %d %s, attesi 200 e l'utente", r.metodo, r.rotta, rec.Code, rec.Body)
+				}
+				var scadenza int64
+				if err := service.DB.Raw("SELECT expired_at FROM user_tokens").Scan(&scadenza).Error; err != nil {
+					t.Fatal(err)
+				}
+				// pannello crea il token con 24 ore, token-expire e' 168h.
+				if rinnovato := scadenza > time.Now().Add(100*time.Hour).Unix(); rinnovato != (tc.ostacolo == "") {
+					t.Errorf("%s %s: scadenza rinnovata %t, attesa %t", r.metodo, r.rotta, rinnovato, tc.ostacolo == "")
+				}
+				if nelLog := registro.String(); tc.ostacolo != "" && (!strings.Contains(nelLog, r.metodo+" "+r.rotta+": ") || !strings.Contains(nelLog, "rifiutato dal test")) {
+					t.Errorf("%s %s, nel log mancano rotta o errore:\n%s", r.metodo, r.rotta, nelLog)
+				}
+			})
+		}
 	}
 }
