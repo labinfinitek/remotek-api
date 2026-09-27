@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/lejianwen/rustdesk-api/v2/model"
@@ -16,11 +17,6 @@ func (ps *PeerService) FindById(id string) *model.Peer {
 	DB.Where("id = ?", id).First(p)
 	return p
 }
-func (ps *PeerService) FindByUuid(uuid string) *model.Peer {
-	p := &model.Peer{}
-	DB.Where("uuid = ?", uuid).First(p)
-	return p
-}
 func (ps *PeerService) InfoByRowId(id uint) *model.Peer {
 	p := &model.Peer{}
 	DB.Where("row_id = ?", id).First(p)
@@ -34,23 +30,22 @@ func (ps *PeerService) FindByUserIdAndUuid(uuid string, userId uint) *model.Peer
 	return p
 }
 
-// UuidBindUserId 绑定用户id
-func (ps *PeerService) UuidBindUserId(deviceId string, uuid string, userId uint) {
-	peer := ps.FindByUuid(uuid)
-	// 如果存在则更新
-	if peer.RowId > 0 {
-		peer.UserId = userId
-		ps.Update(peer)
-	} else {
-		// 不存在则创建
-		/*if deviceId != "" {
-			DB.Create(&model.Peer{
-				Id:     deviceId,
-				Uuid:   uuid,
-				UserId: userId,
-			})
-		}*/
+// UuidBindUserId lega all'utente userId il dispositivo con uuid. Se il
+// dispositivo non c'e' non fa niente: lo crea il suo /api/sysinfo.
+func (ps *PeerService) UuidBindUserId(uuid string, userId uint) error {
+	peer := &model.Peer{}
+	err := DB.Where("uuid = ?", uuid).First(peer).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
 	}
+	if err != nil {
+		return fmt.Errorf("lettura del dispositivo: %w", err)
+	}
+	peer.UserId = userId
+	if err := ps.Update(peer); err != nil {
+		return fmt.Errorf("aggiornamento del dispositivo: %w", err)
+	}
+	return nil
 }
 
 // UuidUnbindUserId 解绑用户id, 用于用户注销

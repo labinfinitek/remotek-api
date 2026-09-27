@@ -68,7 +68,7 @@ func (l *Login) Login(c *gin.Context) {
 		return
 	}
 
-	ut := service.AllService.UserService.Login(u, &model.LoginLog{
+	ut, err := service.AllService.UserService.Login(u, &model.LoginLog{
 		UserId:   u.Id,
 		Client:   f.DeviceInfo.Type,
 		DeviceId: f.Id,
@@ -77,6 +77,10 @@ func (l *Login) Login(c *gin.Context) {
 		Type:     model.LoginLogTypeAccount,
 		Platform: f.DeviceInfo.Os,
 	})
+	if err != nil {
+		response.ErrorErr(c, "OperationFailed", err)
+		return
+	}
 
 	c.JSON(http.StatusOK, apiResp.LoginRes{
 		AccessToken: ut.Token,

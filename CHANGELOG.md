@@ -22,6 +22,15 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   ferma il login con "Autorizzazione OAuth non riuscita." e va nel log:
   prima valeva "non trovato", e nasceva un utente doppio o la pagina diceva
   successo senza login.
+- Login del client (`/api/login`, `/api/oidc/auth-query`) e del pannello
+  (login e registrazione): se il token di sessione o la riga del registro
+  degli accessi non si salvano, la risposta e' d'errore ("Operazione non
+  riuscita.", "Accesso non riuscito." nel login OIDC) e l'errore va nel
+  log; token e registro si salvano in una transazione. Prima la risposta
+  dava un token che il database non aveva, e il client usciva alla prima
+  richiesta (401), o lasciava il login fuori dal registro. Se il
+  dispositivo del login non si lega all'utente il login vale lo stesso e
+  l'errore va nel log.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

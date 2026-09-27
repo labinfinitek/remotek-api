@@ -109,8 +109,12 @@ func tokenCasuale(r io.Reader) (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
-// Login 登录
-func (us *UserService) Login(u *model.User, llog *model.LoginLog) *model.UserToken {
+// Login crea il token di sessione dell'utente u e registra l'accesso llog,
+// in una transazione che su errore o panic si annulla: chi entra non riceve
+// un token che il database non ha. Poi lega all'utente il dispositivo di
+// llog, se c'e'; se non ci riesce il login vale lo stesso e l'errore va nel
+// log.
+func (us *UserService) Login(u *model.User, llog *model.LoginLog) (*model.UserToken, error) {
 	token := us.GenerateToken(u)
 	ut := &model.UserToken{
 		UserId:     u.Id,
@@ -119,13 +123,25 @@ func (us *UserService) Login(u *model.User, llog *model.LoginLog) *model.UserTok
 		DeviceId:   llog.DeviceId,
 		ExpiredAt:  us.UserTokenExpireTimestamp(),
 	}
-	DB.Create(ut)
-	llog.UserTokenId = ut.UserId
-	DB.Create(llog)
-	if llog.Uuid != "" {
-		AllService.PeerService.UuidBindUserId(llog.DeviceId, llog.Uuid, u.Id)
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(ut).Error; err != nil {
+			return fmt.Errorf("token di sessione: %w", err)
+		}
+		llog.UserTokenId = ut.UserId
+		if err := tx.Create(llog).Error; err != nil {
+			return fmt.Errorf("registro degli accessi: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("login dell'utente %d: %w", u.Id, err)
 	}
-	return ut
+	if llog.Uuid != "" {
+		if err := AllService.PeerService.UuidBindUserId(llog.Uuid, u.Id); err != nil {
+			Logger.Warnf("login dell'utente %d: il dispositivo non si lega all'utente: %v", u.Id, err)
+		}
+	}
+	return ut, nil
 }
 
 // CurUser 获取当前用户
