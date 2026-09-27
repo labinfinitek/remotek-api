@@ -137,7 +137,12 @@ func (l *Login) Logout(c *gin.Context) {
 	u := service.AllService.UserService.CurUser(c)
 	token, ok := c.Get("token")
 	if ok {
-		service.AllService.UserService.Logout(u, token.(string))
+		if err := service.AllService.UserService.Logout(u, token.(string)); err != nil {
+			// Il client 1.4.9 non legge la risposta ed esce comunque
+			// (user_model.dart, logOut): l'errore dice il vero, il token vale ancora.
+			response.ErrorErr(c, "OperationFailed", err)
+			return
+		}
 	}
 	c.JSON(http.StatusOK, nil)
 
