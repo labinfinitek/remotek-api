@@ -176,6 +176,22 @@ func InitGlobal() {
 	})
 	global.LoginLimiter.RegisterProvider(utils.B64StringCaptchaProvider{})
 	DatabaseAutoUpdate()
+	avvisaProviderNonSupportati()
+}
+
+// avvisaProviderNonSupportati scrive un warn per ogni provider OAuth che il
+// login ignora perche' non e' oidc, come github, google e linuxdo (A3): resta
+// nel database e nel pannello, dove si cancella o si rifa' come OIDC.
+func avvisaProviderNonSupportati() {
+	provider, err := service.AllService.OauthService.NonSupportati()
+	if err != nil {
+		global.Logger.Errorf("controllo dei provider OAuth non riuscito, l'avvio continua: %v", err)
+		return
+	}
+	for _, p := range provider {
+		global.Logger.Warnf("provider OAuth %q di tipo %q ignorato: il login usa solo il tipo oidc. "+
+			"Dal pannello cancellalo o rifallo di tipo OIDC (Google: vedi README)", p.Op, p.OauthType)
+	}
 }
 
 func DatabaseAutoUpdate() {
@@ -197,19 +213,7 @@ func DatabaseAutoUpdate() {
 		if v.Version < 245 {
 			// oauths 表的 oauth_type 字段设置为 op同样的值
 			db.Exec("update oauths set oauth_type = op")
-			db.Exec("update oauths set issuer = 'https://accounts.google.com' where op = 'google'")
 			db.Exec("update user_thirds set oauth_type = third_type, op = third_type")
-			// 通过email迁移旧的google授权
-			uts := make([]model.UserThird, 0)
-			db.Where("oauth_type = ?", "google").Find(&uts)
-			for _, ut := range uts {
-				if ut.UserId > 0 {
-					db.Model(&model.User{}).Where("id = ?", ut.UserId).Update("email", ut.OpenId)
-				}
-			}
-		}
-		if v.Version < 246 {
-			db.Exec("update oauths set issuer = 'https://accounts.google.com' where op = 'google' and issuer is null")
 		}
 	}
 

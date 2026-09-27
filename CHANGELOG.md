@@ -39,6 +39,29 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 - Le pagine del login OAuth dichiarano la lingua configurata (`lang`,
   vuota vale l'inglese) nell'attributo `lang` e la usano se il browser non
   dice la sua, invece di `zh-CN`.
+- Le opzioni di login del client e del pannello, se l'elenco dei provider
+  non si legge dal database, rispondono "Errore di sistema." e l'errore va
+  nel log, invece di un elenco vuoto.
+
+### Rimosso
+- **Cambio incompatibile per chi usava il login GitHub, Google o Linux.do.**
+  Resta il provider OIDC generico, con LDAP (decisione A3). Un provider di
+  quei tipi gia' nel database resta, e il pannello lo mostra e lo cancella,
+  ma il login lo ignora: non compare in `/api/login-options` ne' tra le
+  opzioni del pannello (non conta per `auto_oidc`), chi lo sceglie riceve
+  "Configurazione non trovata." come per un provider che non esiste, e
+  all'avvio un warn nel log lo nomina col suo op. Crearne o modificarne uno
+  dal pannello, il cui menu offre ancora GitHub, Google e LinuxDo, risponde
+  "Questo tipo di provider non è più supportato: usa OIDC.". Chi aveva
+  Google cancella il vecchio provider (l'op e' unico) e lo rifa' di tipo
+  OIDC con IdP `google` e Issuer `https://accounts.google.com`: con lo stesso
+  op gli utenti gia' associati restano associati. Chi aveva GitHub o
+  Linux.do, che non sono OIDC, cancella il provider: gli utenti nati da quel
+  login (autoregistrazione) non hanno una password, e l'amministratore
+  gliela imposta dal pannello o con `reset-pwd`. Con `app.disable-pwd-login`
+  acceso e solo GitHub o Linux.do, prima di aggiornare va configurato un
+  provider OIDC: senza, nel pannello si rientra solo riaccendendo la
+  password.
 
 ## [0.1.0] - 2026-09-26
 Base upstream: rustdesk-api v2.7. Primo rilascio: immagine

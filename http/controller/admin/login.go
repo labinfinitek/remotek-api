@@ -169,7 +169,11 @@ func (ct *Login) LoginOptions(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "LoginBanned"))
 		return
 	}
-	ops := service.AllService.OauthService.GetOauthProviders()
+	ops, err := service.AllService.OauthService.GetOauthProviders()
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	response.Success(c, gin.H{
 		"ops":          ops,
 		"register":     global.Config.App.Register,

@@ -31,8 +31,10 @@ cambiato rispetto a v2.7 sta in [REMOTEK.md](REMOTEK.md), le novita' in
 - **Login**: con password; con un provider **OIDC** generico, configurato dal
   pannello; con **LDAP** (upstream lo dichiara provato con OpenLDAP e Active Directory;
   in Remotek non ancora),
-  configurato da file o variabili. Il login GitHub e Google e' in dismissione
-  (decisione A3): non va configurato su installazioni nuove.
+  configurato da file o variabili. Google resta usabile come provider OIDC
+  generico: nel pannello tipo `OIDC`, IdP (l'op) per esempio `google`, Issuer
+  `https://accounts.google.com`. I tipi GitHub, Google e LinuxDo che il menu
+  del pannello offre ancora non sono piu' supportati (decisione A3).
 - **Lingue**: italiano (predefinito) e inglese.
 - **Marchio configurabile**: nome, logo e favicon senza toccare il codice.
 

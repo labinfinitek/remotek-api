@@ -95,7 +95,11 @@ func (l *Login) Login(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /login-options [get]
 func (l *Login) LoginOptions(c *gin.Context) {
-	ops := service.AllService.OauthService.GetOauthProviders()
+	ops, err := service.AllService.OauthService.GetOauthProviders()
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return
+	}
 	if global.Config.App.WebSso {
 		ops = append(ops, model.OauthTypeWebauth)
 	}

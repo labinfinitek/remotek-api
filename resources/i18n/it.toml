@@ -78,6 +78,11 @@ description = "Oauth state missing."
 one = "Il provider OAuth non ha restituito lo stato del login: ripeti il login."
 other = "Il provider OAuth non ha restituito lo stato del login: ripeti il login."
 
+[OauthTypeRemoved]
+description = "Oauth type removed."
+one = "Questo tipo di provider non è più supportato: usa OIDC."
+other = "Questo tipo di provider non è più supportato: usa OIDC."
+
 [BindFail]
 description = "Bind fail."
 one = "Associazione non riuscita."
