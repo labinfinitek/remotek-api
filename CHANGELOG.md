@@ -36,6 +36,9 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 - La pagina del login OAuth senza `state` dice "Il provider OAuth non ha
   restituito lo stato del login: ripeti il login." invece di "Il campo
   <no value> è vuoto.".
+- Le pagine del login OAuth dichiarano la lingua configurata (`lang`,
+  vuota vale l'inglese) nell'attributo `lang` e la usano se il browser non
+  dice la sua, invece di `zh-CN`.
 
 ## [0.1.0] - 2026-09-26
 Base upstream: rustdesk-api v2.7. Primo rilascio: immagine

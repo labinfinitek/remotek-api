@@ -1,6 +1,7 @@
 package router
 
 import (
+	"cmp"
 	"html/template"
 	"net/http"
 
@@ -23,9 +24,15 @@ func ApiInit(g *gin.Engine) {
 		g.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.InstanceName("api")))
 	}
 	// Le pagine del login OAuth (resources/templates) prendono il nome del
-	// marchio da {{brand}}: la funzione va registrata prima di LoadHTMLGlob.
+	// marchio da {{brand}} e da {{lang}} la lingua configurata (vuota vale
+	// l'inglese), per l'attributo lang e se il browser non dice la sua: le
+	// funzioni vanno registrate prima di LoadHTMLGlob.
 	brand := global.Config.Brand.Name
-	g.SetFuncMap(template.FuncMap{"brand": func() string { return brand }})
+	lang := cmp.Or(global.Config.Lang, "en")
+	g.SetFuncMap(template.FuncMap{
+		"brand": func() string { return brand },
+		"lang":  func() string { return lang },
+	})
 	g.LoadHTMLGlob("resources/templates/*")
 
 	frg := g.Group("/api")

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="{{lang}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -59,7 +59,7 @@
         }
     </style>
     <script>
-        var lang = navigator.language || navigator.userLanguage || 'zh-CN';
+        var lang = navigator.language || navigator.userLanguage || '{{lang}}';
         var title = 'OauthFailed'
         var msg = '{{.message}}'
         var btn = 'Close'
