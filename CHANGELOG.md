@@ -61,6 +61,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   non riesce la risposta e' "Operazione non riuscita.", non piu' successo
   con l'utente ancora nel database, e un errore imprevisto a meta' annulla
   la transazione invece di lasciarla aperta.
+- Un database creato da rustdesk-api prima del 14 ottobre 2024 ha in
+  `peers` una chiave esterna verso `users` (`fk_peers_user`) che l'API non
+  crea piu': con le chiavi esterne controllate (ADR-0007) rifiuterebbe i
+  dispositivi senza utente, e `/api/sysinfo` di un dispositivo nuovo
+  risponderebbe "Operazione non riuscita.". All'avvio l'API la toglie, una
+  volta sola, tenendo dispositivi e indici, e lo scrive nel log.
 
 ### Rimosso
 - **Cambio incompatibile per chi usava il login GitHub, Google o Linux.do.**

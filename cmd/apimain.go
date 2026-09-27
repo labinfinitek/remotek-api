@@ -175,6 +175,9 @@ func InitGlobal() {
 		BanDuration:      30 * time.Minute,
 	})
 	global.LoginLimiter.RegisterProvider(utils.B64StringCaptchaProvider{})
+	if err := togliVincoloDispositivi(); err != nil {
+		global.Logger.Fatalf("migrazione del database non riuscita, al riavvio si ripete: %v", err)
+	}
 	DatabaseAutoUpdate()
 	avvisaProviderNonSupportati()
 }
@@ -192,6 +195,30 @@ func avvisaProviderNonSupportati() {
 		global.Logger.Warnf("provider OAuth %q di tipo %q ignorato: il login usa solo il tipo oidc. "+
 			"Dal pannello cancellalo o rifallo di tipo OIDC (Google: vedi README)", p.Op, p.OauthType)
 	}
+}
+
+// togliVincoloDispositivi toglie da peers la chiave esterna fk_peers_user
+// verso users, che l'upstream creava fino al 2024-10-14 (gorm senza
+// DisableForeignKeyConstraintWhenMigrating e Peer con User): con
+// foreign_keys acceso (ADR-0007) un dispositivo senza utente, user_id 0,
+// non si salverebbe. E' l'unico vincolo mai creato: nessun altro modello
+// aveva associazioni. DropConstraint ricrea la tabella senza indici, che
+// AutoMigrate rimette nella stessa transazione.
+func togliVincoloDispositivi() error {
+	if !global.DB.Migrator().HasConstraint(&model.Peer{}, "fk_peers_user") {
+		return nil
+	}
+	err := global.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Migrator().DropConstraint(&model.Peer{}, "fk_peers_user"); err != nil {
+			return err
+		}
+		return tx.AutoMigrate(&model.Peer{})
+	})
+	if err != nil {
+		return fmt.Errorf("chiave esterna fk_peers_user di peers: %w", err)
+	}
+	global.Logger.Info("tolta da peers la chiave esterna fk_peers_user delle versioni di upstream fino al 2024-10-14")
+	return nil
 }
 
 func DatabaseAutoUpdate() {
