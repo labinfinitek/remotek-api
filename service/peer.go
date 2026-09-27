@@ -126,7 +126,7 @@ func (ps *PeerService) GetUuidListByIDs(ids []uint) ([]string, error) {
 	err := DB.Model(&model.Peer{}).
 		Where("row_id in (?)", ids).
 		Pluck("uuid", &uuids).Error
-	//过滤uuids中的空字符串
+	// 过滤uuids中的空字符串
 	var newUuids []string
 	for _, uuid := range uuids {
 		if uuid != "" {

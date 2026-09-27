@@ -23,7 +23,7 @@ import (
 type OauthService struct {
 }
 
-// Define a struct to parse the .well-known/openid-configuration response
+// OidcEndpoint is the response of .well-known/openid-configuration.
 type OidcEndpoint struct {
 	Issuer   string `json:"issuer"`
 	AuthURL  string `json:"authorization_endpoint"`
@@ -33,7 +33,7 @@ type OidcEndpoint struct {
 
 type OauthCacheItem struct {
 	UserId     uint   `json:"user_id"`
-	Id         string `json:"id"` //rustdesk的设备ID
+	Id         string `json:"id"` // rustdesk的设备ID
 	Op         string `json:"op"`
 	Action     string `json:"action"`
 	Uuid       string `json:"uuid"`
@@ -103,7 +103,7 @@ func (os *OauthService) BeginAuth(op string) (state, verifier, nonce, url string
 			return state, verifier, nonce, "", errors.New("ConfigNotFound")
 		}
 		url = Config.Rustdesk.ApiServer + "/_admin/#/oauth/" + state
-		//url = "http://localhost:8888/_admin/#/oauth/" + code
+		// url = "http://localhost:8888/_admin/#/oauth/" + code
 		return state, verifier, nonce, url, nil
 	}
 	oauthInfo, oauthConfig, _, err := os.GetOauthConfig(op)
@@ -148,7 +148,6 @@ func (os *OauthService) FetchOidcProvider(issuer string) (*oidc.Provider, error)
 
 // GetOauthConfig retrieves the OAuth2 configuration based on the provider name
 func (os *OauthService) GetOauthConfig(op string) (oauthInfo *model.Oauth, oauthConfig *oauth2.Config, provider *oidc.Provider, err error) {
-	//err, oauthInfo, oauthConfig = os.getOauthConfigGeneral(op)
 	oauthInfo = os.InfoByOp(op)
 	// Un provider che non e' oidc, come github, google e linuxdo tolti (A3),
 	// resta nel database ma al login risponde come un op che non esiste.
@@ -171,7 +170,9 @@ func (os *OauthService) GetOauthConfig(op string) (oauthInfo *model.Oauth, oauth
 }
 
 func getHTTPClientWithProxy() *http.Client {
-	//add timeout 30s
+	// Timeout di 60 secondi, solo col proxy: senza, il client e'
+	// http.DefaultClient, che non ne ha (il callback OIDC ha il suo,
+	// tempoProviderOidc).
 	timeout := time.Duration(60) * time.Second
 	if Config.Proxy.Enable {
 		if Config.Proxy.Host == "" {
@@ -217,8 +218,9 @@ func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.
 		return errors.New("GetOauthTokenError")
 	}
 
-	// Senza id_token la verifica si salta, nonce compreso: la tolleranza era
-	// per GitHub e Linux.do, che non sono OIDC e sono usciti (A3).
+	// Senza id_token si saltano la verifica del token e quella del nonce: la
+	// tolleranza era per GitHub e Linux.do, che non sono OIDC e sono usciti
+	// (A3).
 	rawIDToken, ok := token.Extra("id_token").(string)
 	if ok && rawIDToken != "" {
 		// 验证 ID Token
@@ -281,7 +283,7 @@ func (os *OauthService) oidcCallback(oauthConfig *oauth2.Config, provider *oidc.
 	return user.ToOauthUser(), nil
 }
 
-// Callback: Get user information by code and op(Oauth provider)
+// Callback gets the user information by code and op (the OAuth provider).
 func (os *OauthService) Callback(code, verifier, op, nonce string) (oauthUser *model.OauthUser, err error) {
 	_, oauthConfig, provider, err := os.GetOauthConfig(op)
 	if err != nil {
@@ -296,7 +298,7 @@ func (os *OauthService) UserThirdInfo(op string, openId string) *model.UserThird
 	return ut
 }
 
-// BindOauthUser: Bind third party account
+// BindOauthUser binds a third party account.
 func (os *OauthService) BindOauthUser(userId uint, oauthUser *model.OauthUser, op string) error {
 	utr := &model.UserThird{}
 	oauthType, err := os.GetTypeByOp(op)
@@ -307,17 +309,17 @@ func (os *OauthService) BindOauthUser(userId uint, oauthUser *model.OauthUser, o
 	return DB.Create(utr).Error
 }
 
-// UnBindOauthUser: Unbind third party account
+// UnBindOauthUser unbinds a third party account.
 func (os *OauthService) UnBindOauthUser(userId uint, op string) error {
 	return os.UnBindThird(op, userId)
 }
 
-// UnBindThird: Unbind third party account
+// UnBindThird unbinds a third party account.
 func (os *OauthService) UnBindThird(op string, userId uint) error {
 	return DB.Where("user_id = ? and op = ?", userId, op).Delete(&model.UserThird{}).Error
 }
 
-// DeleteUserByUserId: When user is deleted, delete all third party bindings
+// DeleteUserByUserId deletes all the third party bindings of a deleted user.
 func (os *OauthService) DeleteUserByUserId(userId uint) error {
 	return DB.Where("user_id = ?", userId).Delete(&model.UserThird{}).Error
 }

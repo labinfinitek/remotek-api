@@ -63,7 +63,7 @@ func (us *UserService) InfoByUsernamePassword(username, password string) *model.
 	return u
 }
 
-// InfoByAccesstoken 根据accesstoken取用户信息
+// InfoByAccessToken 根据accesstoken取用户信息
 func (us *UserService) InfoByAccessToken(token string) (*model.User, *model.UserToken) {
 	u := &model.User{}
 	ut := &model.UserToken{}
@@ -313,7 +313,7 @@ func (us *UserService) IsAdmin(u *model.User) bool {
 	return u != nil && *u.IsAdmin
 }
 
-// RouteNames
+// RouteNames restituisce i nomi delle rotte del pannello che l'utente u vede.
 func (us *UserService) RouteNames(u *model.User) []string {
 	if us.IsAdmin(u) {
 		return model.AdminRouteNames
@@ -358,7 +358,7 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (*
 	if err != nil {
 		return nil, err
 	}
-	//check if this email has been registered
+	// check if this email has been registered
 	email := oauthUser.Email
 	// only email is not empty
 	if email != "" {
@@ -427,7 +427,8 @@ func (us *UserService) GenerateUsernameByOauth(name string) string {
 	return name
 }
 
-// UserThirdsByUserId
+// UserThirdsByUserId restituisce le associazioni ai provider dell'utente
+// userId.
 func (us *UserService) UserThirdsByUserId(userId uint) (res []*model.UserThird) {
 	DB.Where("user_id = ?", userId).Find(&res)
 	return res
@@ -527,7 +528,7 @@ func (us *UserService) getAdminUserCount() int64 {
 func (us *UserService) UserTokenExpireTimestamp() int64 {
 	exp := Config.App.TokenExpire
 	if exp == 0 {
-		//默认七天
+		// 默认七天
 		exp = 604800
 	}
 	return time.Now().Add(exp).Unix()

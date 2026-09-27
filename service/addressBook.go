@@ -43,7 +43,7 @@ func (s *AddressBookService) ListByUserIds(userIds []uint, page, pageSize uint) 
 	return
 }
 
-// AddAddressBook
+// AddAddressBook aggiunge la voce ab alla rubrica.
 func (s *AddressBookService) AddAddressBook(ab *model.AddressBook) error {
 	return DB.Create(ab).Error
 }
@@ -61,28 +61,28 @@ func (s *AddressBookService) UpdateAddressBook(abs []*model.AddressBook, userId 
 // passa da tx: con una connessione sola, una query su DB aspetterebbe per
 // sempre la connessione che tx tiene.
 func (s *AddressBookService) updateAddressBook(tx *gorm.DB, abs []*model.AddressBook, userId uint) error {
-	//1. 获取数据库中的数据
+	// 1. 获取数据库中的数据
 	var dbABs []*model.AddressBook
 	if err := tx.Where("user_id = ?", userId).Find(&dbABs).Error; err != nil {
 		return fmt.Errorf("lettura della rubrica: %w", err)
 	}
-	//2. 比较peers和数据库中的数据
-	//2.1 获取peers中的id
+	// 2. 比较peers和数据库中的数据
+	// 2.1 获取peers中的id
 	aBIds := make(map[string]*model.AddressBook)
 	for _, ab := range abs {
 		aBIds[ab.Id] = ab
 	}
-	//2.2 获取数据库中的id
+	// 2.2 获取数据库中的id
 	dbABIds := make(map[string]*model.AddressBook)
 	for _, dbAb := range dbABs {
 		dbABIds[dbAb.Id] = dbAb
 	}
-	//2.3 比较peers和数据库中的数据
+	// 2.3 比较peers和数据库中的数据
 	for id, ab := range aBIds {
 		dbAB, ok := dbABIds[id]
 		ab.UserId = userId
 		if !ok {
-			//添加
+			// 添加
 			if ab.Platform == "" || ab.Username == "" || ab.Hostname == "" {
 				peer := &model.Peer{}
 				switch err := tx.Where("id = ?", ab.Id).First(peer).Error; {
@@ -98,13 +98,13 @@ func (s *AddressBookService) updateAddressBook(tx *gorm.DB, abs []*model.Address
 				return fmt.Errorf("voce nuova della rubrica: %w", err)
 			}
 		} else {
-			//更新
+			// 更新
 			if err := tx.Model(&model.AddressBook{}).Where("row_id = ?", dbAB.RowId).Updates(ab).Error; err != nil {
 				return fmt.Errorf("aggiornamento della rubrica: %w", err)
 			}
 		}
 	}
-	//2.4 删除
+	// 2.4 删除
 	for id, dbAB := range dbABIds {
 		_, ok := aBIds[id]
 		if !ok {
@@ -164,7 +164,8 @@ func (s *AddressBookService) UpdateAll(u *model.AddressBook) error {
 	return DB.Model(u).Select("*").Omit("created_at").Updates(u).Error
 }
 
-// PlatformFromOs
+// PlatformFromOs restituisce la piattaforma della rubrica (Android, Windows,
+// Linux, Mac OS) del sistema operativo os di un dispositivo, o "".
 func (s *AddressBookService) PlatformFromOs(os string) string {
 	if strings.Contains(os, "Android") || strings.Contains(os, "android") {
 		return "Android"
@@ -223,7 +224,7 @@ func (s *AddressBookService) CollectionReadRules(user *model.User) (res []*model
 	tx2.Where("type = ? and to_id = ? and rule > 0", model.ShareAddressBookRuleTypePersonal, user.Id).Find(&personalRules)
 	res = append(res, personalRules...)
 
-	//group
+	// group
 	var groupRules []*model.AddressBookCollectionRule
 	tx3 := DB.Model(&model.AddressBookCollectionRule{})
 	tx3.Where("type = ? and to_id = ? and rule > 0", model.ShareAddressBookRuleTypeGroup, user.GroupId).Find(&groupRules)

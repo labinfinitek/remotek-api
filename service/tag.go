@@ -47,30 +47,30 @@ func (s *TagService) UpdateTags(userId uint, tags map[string]uint) error {
 
 // updateTags e' UpdateTags dentro la transazione tx.
 func updateTags(tx *gorm.DB, userId uint, tags map[string]uint) error {
-	//先查询所有tag
+	// 先查询所有tag
 	var allTags []*model.Tag
 	if err := tx.Where("user_id = ?", userId).Find(&allTags).Error; err != nil {
 		return fmt.Errorf("lettura dei tag: %w", err)
 	}
 	for _, t := range allTags {
 		if _, ok := tags[t.Name]; !ok {
-			//删除
+			// 删除
 			if err := tx.Delete(t).Error; err != nil {
 				return fmt.Errorf("cancellazione di un tag: %w", err)
 			}
 		} else {
 			if tags[t.Name] != t.Color {
-				//更新
+				// 更新
 				t.Color = tags[t.Name]
 				if err := tx.Save(t).Error; err != nil {
 					return fmt.Errorf("colore di un tag: %w", err)
 				}
 			}
-			//移除
+			// 移除
 			delete(tags, t.Name)
 		}
 	}
-	//新增
+	// 新增
 	for tag, color := range tags {
 		t := &model.Tag{}
 		t.Name = tag

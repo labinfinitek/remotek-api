@@ -23,7 +23,7 @@ func (as *AuditService) AuditConnList(page, pageSize uint, where func(tx *gorm.D
 	return
 }
 
-// Create 创建
+// CreateAuditConn 创建
 func (as *AuditService) CreateAuditConn(u *model.AuditConn) error {
 	res := DB.Create(u).Error
 	return res
@@ -32,26 +32,28 @@ func (as *AuditService) DeleteAuditConn(u *model.AuditConn) error {
 	return DB.Delete(u).Error
 }
 
-// Update 更新
+// UpdateAuditConn 更新
 func (as *AuditService) UpdateAuditConn(u *model.AuditConn) error {
 	return DB.Model(u).Updates(u).Error
 }
 
-// InfoByPeerIdAndConnId
+// InfoByPeerIdAndConnId restituisce la connessione connId del dispositivo
+// peerId, vuota se non la legge.
 func (as *AuditService) InfoByPeerIdAndConnId(peerId string, connId int64) (res *model.AuditConn) {
 	res = &model.AuditConn{}
 	DB.Where("peer_id = ? and conn_id = ?", peerId, connId).First(res)
 	return
 }
 
-// ConnInfoById
+// ConnInfoById restituisce la connessione id, vuota se non la legge.
 func (as *AuditService) ConnInfoById(id uint) (res *model.AuditConn) {
 	res = &model.AuditConn{}
 	DB.Where("id = ?", id).First(res)
 	return
 }
 
-// FileInfoById
+// FileInfoById restituisce il trasferimento di file id, vuoto se non lo
+// legge.
 func (as *AuditService) FileInfoById(id uint) (res *model.AuditFile) {
 	res = &model.AuditFile{}
 	DB.Where("id = ?", id).First(res)
@@ -72,7 +74,7 @@ func (as *AuditService) AuditFileList(page, pageSize uint, where func(tx *gorm.D
 	return
 }
 
-// CreateAuditFile
+// CreateAuditFile salva il trasferimento di file u.
 func (as *AuditService) CreateAuditFile(u *model.AuditFile) error {
 	res := DB.Create(u).Error
 	return res
@@ -81,7 +83,7 @@ func (as *AuditService) DeleteAuditFile(u *model.AuditFile) error {
 	return DB.Delete(u).Error
 }
 
-// Update 更新
+// UpdateAuditFile 更新
 func (as *AuditService) UpdateAuditFile(u *model.AuditFile) error {
 	return DB.Model(u).Updates(u).Error
 }
