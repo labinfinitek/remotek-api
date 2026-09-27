@@ -300,3 +300,55 @@ func TestRubricaLegacySoloPersonale(t *testing.T) {
 		}
 	}
 }
+
+// TestRubricaTagNonLetto prova sul router vero le rotte del client che
+// cercano un tag per nome: se il database non lo legge rispondono 400
+// {"error": "Errore di sistema."}, scrivono l'errore nel log e non cambiano
+// niente. Prima una lettura fallita valeva "il tag non c'e'": l'aggiunta
+// creava un tag doppio, la rinomina rinominava su un nome gia' usato, le
+// altre rispondevano "Elemento non trovato.". Un tag che c'e' o non c'e'
+// davvero ha le risposte di prima.
+func TestRubricaTagNonLetto(t *testing.T) {
+	const erroreDiSistema = `{"error":"Errore di sistema."}`
+	for _, tc := range []struct {
+		nome, metodo, rotta, corpo string
+		dove                       string // il nome del tag che non si legge; vuoto, nessuno
+		risposta                   string
+	}{
+		{"aggiunta, tag non letto", "POST", "/api/ab/tag/add/PERSONALE", `{"name":"lavoro","color":1}`, "lavoro", erroreDiSistema},
+		{"rinomina, tag non letto", "PUT", "/api/ab/tag/rename/PERSONALE", `{"old":"lavoro","new":"nuovo"}`, "lavoro", erroreDiSistema},
+		{"rinomina, nome nuovo non letto", "PUT", "/api/ab/tag/rename/PERSONALE", `{"old":"lavoro","new":"casa"}`, "casa", erroreDiSistema},
+		{"colore, tag non letto", "PUT", "/api/ab/tag/update/PERSONALE", `{"name":"lavoro","color":5}`, "lavoro", erroreDiSistema},
+		{"cancellazione, tag non letto", "DELETE", "/api/ab/tag/PERSONALE", `["lavoro"]`, "lavoro", erroreDiSistema},
+		{"aggiunta, tag che c'e'", "POST", "/api/ab/tag/add/PERSONALE", `{"name":"lavoro","color":1}`, "", `{"error":"L'elemento esiste già."}`},
+		{"rinomina, tag che non c'e'", "PUT", "/api/ab/tag/rename/PERSONALE", `{"old":"sconosciuto","new":"nuovo"}`, "", `{"error":"Elemento non trovato."}`},
+		{"rinomina, nome nuovo che c'e'", "PUT", "/api/ab/tag/rename/PERSONALE", `{"old":"lavoro","new":"casa"}`, "", `{"error":"L'elemento esiste già."}`},
+		{"colore, tag che non c'e'", "PUT", "/api/ab/tag/update/PERSONALE", `{"name":"sconosciuto","color":5}`, "", `{"error":"Elemento non trovato."}`},
+		{"cancellazione, tag che non c'e'", "DELETE", "/api/ab/tag/PERSONALE", `["sconosciuto"]`, "", `{"error":"Elemento non trovato."}`},
+	} {
+		t.Run(tc.nome, func(t *testing.T) {
+			_, registro, invia, guid := rubricheDiProva(t, model.ShareAddressBookRuleRuleRead)
+			prova := &model.User{}
+			if err := service.DB.Where("username = ?", "prova").First(prova).Error; err != nil {
+				t.Fatal(err)
+			}
+			crea(t, &model.Tag{Name: "casa", UserId: prova.Id})
+			prima := statoRubrica(t)
+			if tc.dove != "" {
+				rifiutaLetture(t, "tags", tc.dove)
+			}
+			registro.Reset()
+			rec := invia(tc.metodo, guid.Replace(tc.rotta), tc.corpo)
+			if rec.Code != 400 || rec.Body.String() != tc.risposta {
+				t.Errorf("%s %s: %d %s, attesi 400 e %s", tc.metodo, tc.rotta, rec.Code, rec.Body, tc.risposta)
+			}
+			if dopo := statoRubrica(t); dopo != prima {
+				t.Errorf("%s %s ha cambiato la rubrica:\n prima %s\n dopo  %s", tc.metodo, tc.rotta, prima, dopo)
+			}
+			percorso := strings.Replace(tc.rotta, "PERSONALE", ":guid", 1)
+			if nelLog := registro.String(); tc.dove != "" && (!strings.Contains(nelLog, tc.metodo+" "+percorso+": ") || !strings.Contains(nelLog, "lettura rifiutata dal test")) {
+				t.Errorf("%s %s, nel log mancano rotta o errore:\n%s", tc.metodo, tc.rotta, nelLog)
+			}
+		})
+	}
+}

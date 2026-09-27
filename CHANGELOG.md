@@ -83,6 +83,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   personale, la sola che `GET /api/ab` manda; prima cancellava anche le
   voci e i tag delle altre rubriche dell'utente, che il client legacy non
   vede.
+- Tag della rubrica del client: se il database non legge il tag cercato
+  per nome, aggiunta, rinomina, colore e cancellazione rispondono 400
+  "Errore di sistema." con l'errore nel log, e non cambiano niente. Prima
+  la lettura fallita valeva "il tag non c'e'": l'aggiunta creava un tag
+  doppio, la rinomina rinominava su un nome gia' usato, le altre
+  rispondevano "Elemento non trovato.".
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

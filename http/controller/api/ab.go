@@ -178,9 +178,12 @@ func (a *Ab) TagAdd(c *gin.Context) {
 		return
 	}
 
-	tag := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, t.Name, cid)
-	if tag != nil && tag.Id != 0 {
+	switch _, err := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, t.Name, cid); {
+	case err == nil:
 		response.Error(c, response.TranslateMsg(c, "ItemExists"))
+		return
+	case !errors.Is(err, service.ErrNotFound):
+		response.ErrorErr(c, "SystemError", err)
 		return
 	}
 	t.UserId = uid
@@ -225,14 +228,17 @@ func (a *Ab) TagRename(c *gin.Context) {
 		return
 	}
 
-	tag := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, t.Old, cid)
-	if tag == nil || tag.Id == 0 {
-		response.Error(c, response.TranslateMsg(c, "ItemNotFound"))
+	tag, err := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, t.Old, cid)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
 		return
 	}
-	ntag := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, t.New, cid)
-	if ntag != nil && ntag.Id != 0 {
+	switch _, err := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, t.New, cid); {
+	case err == nil:
 		response.Error(c, response.TranslateMsg(c, "ItemExists"))
+		return
+	case !errors.Is(err, service.ErrNotFound):
+		response.ErrorErr(c, "SystemError", err)
 		return
 	}
 	tag.Name = t.New
@@ -275,9 +281,9 @@ func (a *Ab) TagUpdate(c *gin.Context) {
 		return
 	}
 
-	tag := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, t.Name, cid)
-	if tag == nil || tag.Id == 0 {
-		response.Error(c, response.TranslateMsg(c, "ItemNotFound"))
+	tag, err := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, t.Name, cid)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
 		return
 	}
 	tag.Color = t.Color
@@ -323,9 +329,9 @@ func (a *Ab) TagDel(c *gin.Context) {
 	}
 
 	for _, name := range *t {
-		tag := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, name, cid)
-		if tag == nil || tag.Id == 0 {
-			response.Error(c, response.TranslateMsg(c, "ItemNotFound"))
+		tag, err := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, name, cid)
+		if err != nil {
+			response.ErrorErr(c, "SystemError", err)
 			return
 		}
 		err = service.AllService.TagService.Delete(tag)
