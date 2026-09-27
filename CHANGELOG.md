@@ -54,6 +54,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   hanno 5 secondi per indirizzo (IPv6, poi IPv4); un server che accetta la
   connessione e non risponde fa rispondere "Operazione non riuscita."
   invece di tenere ferma la richiesta senza limite.
+- Audit del client (`/api/audit/conn`, `/api/audit/file`): se il database
+  non salva la connessione o il trasferimento di file, l'errore va nel log
+  a livello error, con metodo e rotta; la risposta resta quella di sempre,
+  che il client ignora. Prima l'errore si perdeva.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,
