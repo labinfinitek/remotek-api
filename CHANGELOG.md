@@ -14,6 +14,14 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   uuid si cancellano in una transazione. Prima cancellava i dispositivi e
   rispondeva successo, e se i token non si cancellavano i dispositivi
   restavano cancellati: i token dei dispositivi cancellati restavano validi.
+- Login OIDC con autoregistrazione: se l'utente del provider ha l'email di
+  un utente locale e l'associazione al provider non si salva, la pagina
+  dice "Registrazione con OAuth non riuscita." e il login non si lega
+  all'utente; prima riusciva senza associazione. Un errore del database
+  nel leggere l'associazione, il suo utente o l'utente con la stessa email
+  ferma il login con "Autorizzazione OAuth non riuscita." e va nel log:
+  prima valeva "non trovato", e nasceva un utente doppio o la pagina diceva
+  successo senza login.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

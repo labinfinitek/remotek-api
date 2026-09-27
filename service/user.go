@@ -34,13 +34,6 @@ func (us *UserService) InfoByUsername(un string) *model.User {
 	return u
 }
 
-// InfoByEmail 根据邮箱取用户信息
-func (us *UserService) InfoByEmail(email string) *model.User {
-	u := &model.User{}
-	DB.Where("email = ?", email).First(u)
-	return u
-}
-
 // InfoByOpenid 根据openid取用户信息
 func (us *UserService) InfoByOpenid(openid string) *model.User {
 	u := &model.User{}
@@ -324,13 +317,25 @@ func (us *UserService) InfoByOauthId(op string, openId string) *model.User {
 	return u
 }
 
-// RegisterByOauth 注册
+// RegisterByOauth restituisce l'utente locale di oauthUser, l'utente del
+// provider op: quello della sua associazione al provider; se non c'e',
+// quello con la stessa email, a cui aggiunge l'associazione; altrimenti uno
+// nuovo, creato con l'associazione in una transazione. Un errore del
+// database ferma tutto: una lettura che fallisce non vale "non trovato", che
+// farebbe un utente doppio.
 func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (error, *model.User) {
 	Lock.Lock("registerByOauth")
 	defer Lock.UnLock("registerByOauth")
-	ut := AllService.OauthService.UserThirdInfo(op, oauthUser.OpenId)
-	if ut.Id != 0 {
-		return nil, us.InfoById(ut.UserId)
+	ut := &model.UserThird{}
+	switch err := DB.Where("open_id = ? and op = ?", oauthUser.OpenId, op).First(ut).Error; {
+	case err == nil:
+		user := &model.User{}
+		if err := DB.Where("id = ?", ut.UserId).First(user).Error; err != nil {
+			return fmt.Errorf("utente %d dell'associazione al provider: %w", ut.UserId, err), nil
+		}
+		return nil, user
+	case !errors.Is(err, gorm.ErrRecordNotFound):
+		return fmt.Errorf("associazione al provider: %w", err), nil
 	}
 	err, oauthType := AllService.OauthService.GetTypeByOp(op)
 	if err != nil {
@@ -351,11 +356,19 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (e
 		}
 		if user.Id == 0 {
 			// this means the user is not found in ldap, maybe ldao is not enabled
-			user = us.InfoByEmail(email)
+			user = &model.User{}
+			switch err := DB.Where("email = ?", email).First(user).Error; {
+			case errors.Is(err, gorm.ErrRecordNotFound):
+				user = nil
+			case err != nil:
+				return fmt.Errorf("utente con l'email del provider: %w", err), nil
+			}
 		}
-		if user.Id != 0 {
+		if user != nil {
 			ut.FromOauthUser(user.Id, oauthUser, oauthType, op)
-			DB.Create(ut)
+			if err := DB.Create(ut).Error; err != nil {
+				return errors.Join(errors.New("OauthRegisterFailed"), fmt.Errorf("associazione al provider dell'utente %d con la stessa email: %w", user.Id, err)), nil
+			}
 			return nil, user
 		}
 	}
