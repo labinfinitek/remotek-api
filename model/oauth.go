@@ -19,12 +19,20 @@ const (
 	PKCEMethodPlain  string = "plain"
 )
 
-// ValidateOauthType restituisce un errore se oauthType non e' uno dei tipi
-// di OAuth che l'API conosce (OauthTypeGithub e seguenti).
+// ErrOauthTypeRemoved e' l'errore di un provider di tipo github, google o
+// linuxdo, tolti (A3): il testo e' l'ID del messaggio per il pannello.
+var ErrOauthTypeRemoved = errors.New("OauthTypeRemoved")
+
+// ValidateOauthType restituisce nil se oauthType e' oidc, l'unico tipo di
+// provider che l'API usa, ErrOauthTypeRemoved per un tipo tolto e un altro
+// errore per il resto. Anche webauth: e' il login confermato dal pannello,
+// che BeginAuth serve prima di leggere i provider, non un provider da salvare.
 func ValidateOauthType(oauthType string) error {
 	switch oauthType {
-	case OauthTypeGithub, OauthTypeGoogle, OauthTypeOidc, OauthTypeWebauth, OauthTypeLinuxdo:
+	case OauthTypeOidc:
 		return nil
+	case OauthTypeGithub, OauthTypeGoogle, OauthTypeLinuxdo:
+		return ErrOauthTypeRemoved
 	default:
 		return errors.New("invalid Oauth type")
 	}

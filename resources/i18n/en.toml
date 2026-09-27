@@ -78,6 +78,11 @@ description = "Oauth state missing."
 one = "The OAuth provider did not return the login state: start the login again."
 other = "The OAuth provider did not return the login state: start the login again."
 
+[OauthTypeRemoved]
+description = "Oauth type removed."
+one = "This provider type is no longer supported: use OIDC."
+other = "This provider type is no longer supported: use OIDC."
+
 [BindFail]
 description = "Bind fail."
 one = "Bind fail."

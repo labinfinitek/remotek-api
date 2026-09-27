@@ -177,7 +177,9 @@ func (os *OauthService) LinuxdoProvider() *oidc.Provider {
 func (os *OauthService) GetOauthConfig(op string) (err error, oauthInfo *model.Oauth, oauthConfig *oauth2.Config, provider *oidc.Provider) {
 	//err, oauthInfo, oauthConfig = os.getOauthConfigGeneral(op)
 	oauthInfo = os.InfoByOp(op)
-	if oauthInfo.Id == 0 || oauthInfo.ClientId == "" || oauthInfo.ClientSecret == "" {
+	// Un provider che non e' oidc, come github, google e linuxdo tolti (A3),
+	// resta nel database ma al login risponde come un op che non esiste.
+	if oauthInfo.Id == 0 || oauthInfo.OauthType != model.OauthTypeOidc || oauthInfo.ClientId == "" || oauthInfo.ClientSecret == "" {
 		return errors.New("ConfigNotFound"), nil, nil, nil
 	}
 	oauthConfig = &oauth2.Config{
@@ -482,11 +484,24 @@ func (os *OauthService) Update(oauthInfo *model.Oauth) error {
 	return DB.Model(oauthInfo).Updates(oauthInfo).Error
 }
 
-// GetOauthProviders 获取所有的provider
-func (os *OauthService) GetOauthProviders() []string {
+// GetOauthProviders restituisce gli op dei provider di tipo oidc, gli unici
+// che il login usa: un provider di un altro tipo non si offre.
+func (os *OauthService) GetOauthProviders() ([]string, error) {
 	var res []string
-	DB.Model(&model.Oauth{}).Pluck("op", &res)
-	return res
+	if err := DB.Model(&model.Oauth{}).Where("oauth_type = ?", model.OauthTypeOidc).Pluck("op", &res).Error; err != nil {
+		return nil, fmt.Errorf("elenco dei provider OAuth: %w", err)
+	}
+	return res, nil
+}
+
+// NonSupportati restituisce i provider del database che il login ignora
+// perche' non sono di tipo oidc, come quelli github, google e linuxdo.
+func (os *OauthService) NonSupportati() ([]*model.Oauth, error) {
+	var res []*model.Oauth
+	if err := DB.Where("oauth_type IS NULL OR oauth_type <> ?", model.OauthTypeOidc).Order("id").Find(&res).Error; err != nil {
+		return nil, fmt.Errorf("lettura dei provider OAuth non supportati: %w", err)
+	}
+	return res, nil
 }
 
 // getGithubPrimaryEmail: Get the primary email of the user from Github
