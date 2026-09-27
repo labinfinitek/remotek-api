@@ -80,7 +80,9 @@ func (o *Oauth) OidcAuthQueryPre(c *gin.Context) (*model.User, *model.UserToken)
 
 	// 如果 UserId 为 0，说明还在授权中
 	if v.UserId == 0 {
-		//fix: 1.4.2 webclient oidc
+		// Risposta che il client nativo 1.4.9 interroga ogni secondo: cerca
+		// alla lettera "No authed oidc is found" in error e continua
+		// (src/hbbs_http/account.rs:291). Golden oidc-auth-query-in-attesa.
 		c.JSON(http.StatusOK, gin.H{"message": "Authorization in progress, please login and bind", "error": "No authed oidc is found"})
 		return nil, nil
 	}
