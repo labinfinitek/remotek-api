@@ -67,12 +67,12 @@ func (abcr *AddressBookCollectionRule) List(c *gin.Context) {
 func (abcr *AddressBookCollectionRule) Detail(c *gin.Context) {
 	id := c.Param("id")
 	iid, _ := strconv.Atoi(id)
-	t := service.AllService.AddressBookService.RuleInfoById(uint(iid))
-	if t.Id > 0 {
-		response.Success(c, t)
+	t, err := service.AllService.AddressBookService.RuleInfoById(uint(iid))
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.Success(c, t)
 }
 
 // Create 创建地址簿规则
@@ -215,12 +215,12 @@ func (abcr *AddressBookCollectionRule) Delete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	ex := service.AllService.AddressBookService.RuleInfoById(f.Id)
-	if ex.Id == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	ex, err := service.AllService.AddressBookService.RuleInfoById(f.Id)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
-	err := service.AllService.AddressBookService.DeleteRule(ex)
+	err = service.AllService.AddressBookService.DeleteRule(ex)
 	if err == nil {
 		response.Success(c, nil)
 		return

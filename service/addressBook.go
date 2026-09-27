@@ -298,11 +298,15 @@ func (s *AddressBookService) DeleteCollection(t *model.AddressBookCollection) er
 	})
 }
 
-func (s *AddressBookService) RuleInfoById(u uint) *model.AddressBookCollectionRule {
+// RuleInfoById restituisce la regola id; ErrNotFound se non c'e'.
+func (s *AddressBookService) RuleInfoById(id uint) (*model.AddressBookCollectionRule, error) {
 	p := &model.AddressBookCollectionRule{}
-	DB.Where("id = ?", u).First(p)
-	return p
+	if err := DB.Where("id = ?", id).First(p).Error; err != nil {
+		return nil, fmt.Errorf("regola %d: %w", id, nonTrovato(err))
+	}
+	return p, nil
 }
+
 func (s *AddressBookService) RulePersonalInfoByToIdAndCid(toid, cid uint) *model.AddressBookCollectionRule {
 	return s.RuleInfoByToIdAndCid(model.ShareAddressBookRuleTypePersonal, toid, cid)
 }

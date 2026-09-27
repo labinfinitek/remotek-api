@@ -168,9 +168,9 @@ func (abcr *AddressBookCollectionRule) Update(c *gin.Context) {
 	}
 	u := service.AllService.UserService.CurUser(c)
 
-	ex := service.AllService.AddressBookService.RuleInfoById(f.Id)
-	if ex.Id == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	ex, err := service.AllService.AddressBookService.RuleInfoById(f.Id)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 	if ex.UserId != u.Id {
@@ -183,7 +183,7 @@ func (abcr *AddressBookCollectionRule) Update(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, msg))
 		return
 	}
-	err := service.AllService.AddressBookService.UpdateRule(t)
+	err = service.AllService.AddressBookService.UpdateRule(t)
 	if err != nil {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
@@ -214,9 +214,9 @@ func (abcr *AddressBookCollectionRule) Delete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	ex := service.AllService.AddressBookService.RuleInfoById(f.Id)
-	if ex.Id == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	ex, err := service.AllService.AddressBookService.RuleInfoById(f.Id)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
@@ -225,7 +225,7 @@ func (abcr *AddressBookCollectionRule) Delete(c *gin.Context) {
 		return
 	}
 
-	err := service.AllService.AddressBookService.DeleteRule(ex)
+	err = service.AllService.AddressBookService.DeleteRule(ex)
 	if err == nil {
 		response.Success(c, nil)
 		return
