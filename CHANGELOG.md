@@ -6,6 +6,21 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Sicurezza
+- Il login `webauth` (il client apre il pannello e un utente del pannello
+  conferma) esiste solo con `app.web-sso` acceso: spento, `/api/oidc/auth`
+  del client e l'associazione dal pannello rispondono come a un provider
+  che non esiste (400 "Configurazione non trovata."), non piu' solo senza
+  la voce in `/api/login-options`. La conferma dal pannello
+  (`/api/admin/oauth/confirm`) accetta solo un login `webauth` non ancora
+  confermato: prima confermava qualsiasi codice, e un utente del pannello
+  che apriva `/_admin/#/oauth/<code>` di un login OIDC avviato da un altro
+  dispositivo gli dava il proprio token senza passare dal provider.
+  `/api/admin/oauth/bindConfirm` accetta solo un login che il provider ha
+  gia' autenticato. `/api/admin/oauth/info`, `confirm` e `bindConfirm` non
+  mandano piu' al browser verifier PKCE, nonce e dati dell'utente del
+  provider, solo i campi che le pagine del pannello mostrano.
+
 ## [0.1.0] - 2026-09-26
 Base upstream: rustdesk-api v2.7. Primo rilascio: immagine
 `ghcr.io/labinfinitek/remotek-api:0.1.0`.

@@ -100,6 +100,11 @@ func (os *OauthService) BeginAuth(op string) (error error, state, verifier, nonc
 	verifier = ""
 	nonce = ""
 	if op == model.OauthTypeWebauth {
+		// Con app.web-sso spento webauth non esiste: stessa risposta di un op
+		// che non c'e', non solo la voce tolta da /api/login-options.
+		if !Config.App.WebSso {
+			return errors.New("ConfigNotFound"), state, verifier, nonce, ""
+		}
 		url = Config.Rustdesk.ApiServer + "/_admin/#/oauth/" + state
 		//url = "http://localhost:8888/_admin/#/oauth/" + code
 		return nil, state, verifier, nonce, url
