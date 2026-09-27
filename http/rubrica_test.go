@@ -352,3 +352,98 @@ func TestRubricaTagNonLetto(t *testing.T) {
 		})
 	}
 }
+
+// TestRubricaVoceNonLetta prova sul router vero la cancellazione e la
+// modifica di una voce della rubrica dal client: se il database non legge
+// la voce rispondono 400 {"error": "Errore di sistema."}, scrivono l'errore
+// nel log e non cambiano niente; prima rispondevano "Elemento non trovato.".
+// Una voce che non c'e' ha la risposta di prima.
+func TestRubricaVoceNonLetta(t *testing.T) {
+	for _, tc := range []struct {
+		metodo, rotta, corpo string
+		rifiuta              bool // le letture delle voci non riescono
+		risposta             string
+	}{
+		{"DELETE", "/api/ab/peer/PERSONALE", `["999000111"]`, true, `{"error":"Errore di sistema."}`},
+		{"PUT", "/api/ab/peer/update/PERSONALE", `{"id":"999000111","alias":"nuovo"}`, true, `{"error":"Errore di sistema."}`},
+		{"DELETE", "/api/ab/peer/PERSONALE", `["999000999"]`, false, `{"error":"Elemento non trovato."}`},
+		{"PUT", "/api/ab/peer/update/PERSONALE", `{"id":"999000999","alias":"nuovo"}`, false, `{"error":"Elemento non trovato."}`},
+	} {
+		caso := ", voce che non c'e'"
+		if tc.rifiuta {
+			caso = ", voce non letta"
+		}
+		t.Run(tc.metodo+" "+tc.rotta+caso, func(t *testing.T) {
+			_, registro, invia, guid := rubricheDiProva(t, model.ShareAddressBookRuleRuleRead)
+			prima := statoRubrica(t)
+			if tc.rifiuta {
+				rifiutaLetture(t, "address_books", "")
+			}
+			registro.Reset()
+			rec := invia(tc.metodo, guid.Replace(tc.rotta), tc.corpo)
+			if rec.Code != 400 || rec.Body.String() != tc.risposta {
+				t.Errorf("%s %s: %d %s, attesi 400 e %s", tc.metodo, tc.rotta, rec.Code, rec.Body, tc.risposta)
+			}
+			if dopo := statoRubrica(t); dopo != prima {
+				t.Errorf("%s %s ha cambiato la rubrica:\n prima %s\n dopo  %s", tc.metodo, tc.rotta, prima, dopo)
+			}
+			percorso := strings.Replace(tc.rotta, "PERSONALE", ":guid", 1)
+			if nelLog := registro.String(); tc.rifiuta && (!strings.Contains(nelLog, tc.metodo+" "+percorso+": ") || !strings.Contains(nelLog, "lettura rifiutata dal test")) {
+				t.Errorf("%s %s, nel log mancano rotta o errore:\n%s", tc.metodo, tc.rotta, nelLog)
+			}
+		})
+	}
+}
+
+// TestPannelloVoceNonLetta prova sul router vero le rotte del pannello che,
+// prima di creare una voce della rubrica, guardano se c'e' gia': se il
+// database non la legge rispondono code 101 "Errore di sistema.", con
+// l'errore nel log, e non creano niente. Prima la lettura fallita valeva
+// "la voce non c'e'" e nasceva un doppione. Una voce che c'e' davvero ha la
+// risposta di prima.
+func TestPannelloVoceNonLetta(t *testing.T) {
+	const erroreDiSistema = `{"code":101,"message":"Errore di sistema.","data":null}`
+	for _, tc := range []struct {
+		rotta, corpo string
+		rifiuta      bool // le letture delle voci non riescono
+		risposta     string
+	}{
+		{"/api/admin/address_book/create", `{"id":"999000111","user_id":UTENTE}`, true, erroreDiSistema},
+		{"/api/admin/my/address_book/create", `{"id":"999000111"}`, true, erroreDiSistema},
+		{"/api/admin/address_book/batchCreate", `{"id":"999000111","user_ids":[UTENTE]}`, true, erroreDiSistema},
+		{"/api/admin/address_book/batchCreateFromPeers", `{"peer_ids":[DISPOSITIVO],"user_id":UTENTE}`, true, erroreDiSistema},
+		{"/api/admin/my/address_book/batchCreateFromPeers", `{"peer_ids":[DISPOSITIVO]}`, true, erroreDiSistema},
+		{"/api/admin/address_book/create", `{"id":"999000111","user_id":UTENTE}`, false, `{"code":101,"message":"L'elemento esiste già.","data":null}`},
+		{"/api/admin/my/address_book/create", `{"id":"999000111"}`, false, `{"code":101,"message":"L'elemento esiste già.","data":null}`},
+		{"/api/admin/address_book/batchCreate", `{"id":"999000111","user_ids":[UTENTE]}`, false, `{"code":0,"message":"success","data":null}`},
+		{"/api/admin/my/address_book/batchCreateFromPeers", `{"peer_ids":[DISPOSITIVO]}`, false, `{"code":0,"message":"success","data":null}`},
+	} {
+		caso := ", voce che c'e'"
+		if tc.rifiuta {
+			caso = ", voce non letta"
+		}
+		t.Run(tc.rotta+caso, func(t *testing.T) {
+			g, utente, registro := pannello(t, true)
+			if err := service.DB.AutoMigrate(&model.AddressBook{}, &model.Peer{}); err != nil {
+				t.Fatal(err)
+			}
+			dispositivo := &model.Peer{Id: "999000111", UserId: utente.Id}
+			crea(t, dispositivo)
+			crea(t, &model.AddressBook{Id: "999000111", UserId: utente.Id})
+			if tc.rifiuta {
+				rifiutaLetture(t, "address_books", "")
+			}
+			id := func(n uint) string { return strconv.FormatUint(uint64(n), 10) }
+			rec := alPannello(g, tc.rotta, strings.NewReplacer("UTENTE", id(utente.Id), "DISPOSITIVO", id(dispositivo.RowId)).Replace(tc.corpo))
+			if got := rec.Body.String(); rec.Code != 200 || got != tc.risposta {
+				t.Errorf("POST %s: stato %d\n got  %s\n want %s", tc.rotta, rec.Code, got, tc.risposta)
+			}
+			if n := righe(t, "address_books"); n != 1 {
+				t.Errorf("voci dopo POST %s: %d, attesa 1", tc.rotta, n)
+			}
+			if nelLog := registro.String(); tc.rifiuta && (!strings.Contains(nelLog, "POST "+tc.rotta+": ") || !strings.Contains(nelLog, "lettura rifiutata dal test")) {
+				t.Errorf("POST %s, nel log mancano rotta o errore:\n%s", tc.rotta, nelLog)
+			}
+		})
+	}
+}

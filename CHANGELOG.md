@@ -89,6 +89,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   la lettura fallita valeva "il tag non c'e'": l'aggiunta creava un tag
   doppio, la rinomina rinominava su un nome gia' usato, le altre
   rispondevano "Elemento non trovato.".
+- Voci della rubrica: se il database non legge la voce, cancellazione e
+  modifica dal client rispondono 400 "Errore di sistema." invece di
+  "Elemento non trovato.", con l'errore nel log. Nel pannello la
+  creazione di una voce, anche in blocco o dai dispositivi, risponde
+  "Errore di sistema." e non crea niente; prima creava un doppione.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

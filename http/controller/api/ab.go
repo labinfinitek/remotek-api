@@ -699,9 +699,9 @@ func (a *Ab) PeerDel(c *gin.Context) {
 	}
 
 	for _, id := range *f {
-		ab := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(uid, id, cid)
-		if ab == nil || ab.RowId == 0 {
-			response.Error(c, response.TranslateMsg(c, "ItemNotFound"))
+		ab, err := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(uid, id, cid)
+		if err != nil {
+			response.ErrorErr(c, "SystemError", err)
 			return
 		}
 		err = service.AllService.AddressBookService.Delete(ab)
@@ -755,9 +755,9 @@ func (a *Ab) PeerUpdate(c *gin.Context) {
 	}
 	fidstr := fid.(string)
 
-	ab := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(uid, fidstr, cid)
-	if ab == nil || ab.RowId == 0 {
-		response.Error(c, response.TranslateMsg(c, "ItemNotFound"))
+	ab, err := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(uid, fidstr, cid)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
 		return
 	}
 	// 允许的字段
