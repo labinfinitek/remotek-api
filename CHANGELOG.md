@@ -58,6 +58,9 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   non salva la connessione o il trasferimento di file, l'errore va nel log
   a livello error, con metodo e rotta; la risposta resta quella di sempre,
   che il client ignora. Prima l'errore si perdeva.
+- Heartbeat del client (`/api/heartbeat`): se il database non aggiorna
+  l'ultimo contatto del dispositivo, l'errore va nel log a livello warn,
+  con metodo e rotta; la risposta resta `{}`. Prima si perdeva.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,
