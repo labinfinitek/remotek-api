@@ -2,7 +2,6 @@ package model
 
 import (
 	"errors"
-	"strconv"
 	"strings"
 )
 
@@ -10,11 +9,8 @@ const OIDC_DEFAULT_SCOPES = "openid,profile,email"
 
 const (
 	// make sure the value shouldbe lowercase
-	OauthTypeGithub  string = "github"
-	OauthTypeGoogle  string = "google"
 	OauthTypeOidc    string = "oidc"
 	OauthTypeWebauth string = "webauth"
-	OauthTypeLinuxdo string = "linuxdo"
 	PKCEMethodS256   string = "S256"
 	PKCEMethodPlain  string = "plain"
 )
@@ -31,18 +27,12 @@ func ValidateOauthType(oauthType string) error {
 	switch oauthType {
 	case OauthTypeOidc:
 		return nil
-	case OauthTypeGithub, OauthTypeGoogle, OauthTypeLinuxdo:
+	case "github", "google", "linuxdo":
 		return ErrOauthTypeRemoved
 	default:
 		return errors.New("invalid Oauth type")
 	}
 }
-
-const (
-	UserEndpointGithub  string = "https://api.github.com/user"
-	UserEndpointLinuxdo string = "https://connect.linux.do/api/user"
-	IssuerGoogle        string = "https://accounts.google.com"
-)
 
 type Oauth struct {
 	IdModel
@@ -60,32 +50,18 @@ type Oauth struct {
 }
 
 // FormatOauthInfo controlla il tipo e completa un provider OAuth prima di
-// crearlo o aggiornarlo: Op dal tipo, Issuer di Google, PKCE spento e S256
-// se non indicati.
+// crearlo o aggiornarlo: Op "oidc" se vuoto, PKCE spento e S256 se non
+// indicati.
 func (oa *Oauth) FormatOauthInfo() error {
 	oauthType := strings.TrimSpace(oa.OauthType)
 	err := ValidateOauthType(oa.OauthType)
 	if err != nil {
 		return err
 	}
-	switch oauthType {
-	case OauthTypeGithub:
-		oa.Op = OauthTypeGithub
-	case OauthTypeGoogle:
-		oa.Op = OauthTypeGoogle
-	case OauthTypeLinuxdo:
-		oa.Op = OauthTypeLinuxdo
-	}
 	// check if the op is empty, set the default value
 	op := strings.TrimSpace(oa.Op)
 	if op == "" && oauthType == OauthTypeOidc {
 		oa.Op = OauthTypeOidc
-	}
-	// check the issuer, if the oauth type is google and the issuer is empty, set the issuer to the default value
-	issuer := strings.TrimSpace(oa.Issuer)
-	// If the oauth type is google and the issuer is empty, set the issuer to the default value
-	if oauthType == OauthTypeGoogle && issuer == "" {
-		oa.Issuer = IssuerGoogle
 	}
 	if oa.PkceEnable == nil {
 		oa.PkceEnable = new(bool)
@@ -144,44 +120,6 @@ func (ou *OidcUser) ToOauthUser() *OauthUser {
 		Email:         ou.Email,
 		VerifiedEmail: ou.VerifiedEmail,
 		Picture:       ou.Picture,
-	}
-}
-
-type GithubUser struct {
-	OauthUserBase
-	Id            int    `json:"id"`
-	Login         string `json:"login"`
-	AvatarUrl     string `json:"avatar_url"`
-	VerifiedEmail bool   `json:"verified_email"`
-}
-
-func (gu *GithubUser) ToOauthUser() *OauthUser {
-	username := strings.ToLower(gu.Login)
-	return &OauthUser{
-		OpenId:        strconv.Itoa(gu.Id),
-		Name:          gu.Name,
-		Username:      username,
-		Email:         gu.Email,
-		VerifiedEmail: gu.VerifiedEmail,
-		Picture:       gu.AvatarUrl,
-	}
-}
-
-type LinuxdoUser struct {
-	OauthUserBase
-	Id       int    `json:"id"`
-	Username string `json:"username"`
-	Avatar   string `json:"avatar_url"`
-}
-
-func (lu *LinuxdoUser) ToOauthUser() *OauthUser {
-	return &OauthUser{
-		OpenId:        strconv.Itoa(lu.Id),
-		Name:          lu.Name,
-		Username:      strings.ToLower(lu.Username),
-		Email:         lu.Email,
-		VerifiedEmail: true, // linux.do 用户邮箱默认已验证
-		Picture:       lu.Avatar,
 	}
 }
 

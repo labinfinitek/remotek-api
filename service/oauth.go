@@ -9,9 +9,6 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/utils"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/github"
-
-	// "golang.org/x/oauth2/google"
 	"gorm.io/gorm"
 	// "io"
 	"fmt"
@@ -149,30 +146,6 @@ func (os *OauthService) FetchOidcProvider(issuer string) (error, *oidc.Provider)
 	return nil, provider
 }
 
-func (os *OauthService) GithubProvider() *oidc.Provider {
-	return (&oidc.ProviderConfig{
-		IssuerURL:     "",
-		AuthURL:       github.Endpoint.AuthURL,
-		TokenURL:      github.Endpoint.TokenURL,
-		DeviceAuthURL: github.Endpoint.DeviceAuthURL,
-		UserInfoURL:   model.UserEndpointGithub,
-		JWKSURL:       "",
-		Algorithms:    nil,
-	}).NewProvider(context.Background())
-}
-
-func (os *OauthService) LinuxdoProvider() *oidc.Provider {
-	return (&oidc.ProviderConfig{
-		IssuerURL:     "",
-		AuthURL:       "https://connect.linux.do/oauth2/authorize",
-		TokenURL:      "https://connect.linux.do/oauth2/token",
-		DeviceAuthURL: "",
-		UserInfoURL:   model.UserEndpointLinuxdo,
-		JWKSURL:       "",
-		Algorithms:    nil,
-	}).NewProvider(context.Background())
-}
-
 // GetOauthConfig retrieves the OAuth2 configuration based on the provider name
 func (os *OauthService) GetOauthConfig(op string) (err error, oauthInfo *model.Oauth, oauthConfig *oauth2.Config, provider *oidc.Provider) {
 	//err, oauthInfo, oauthConfig = os.getOauthConfigGeneral(op)
@@ -188,34 +161,12 @@ func (os *OauthService) GetOauthConfig(op string) (err error, oauthInfo *model.O
 		RedirectURL:  Config.Rustdesk.ApiServer + "/api/oidc/callback",
 	}
 
-	// Maybe should validate the oauthConfig here
-	oauthType := oauthInfo.OauthType
-	err = model.ValidateOauthType(oauthType)
+	err, provider = os.FetchOidcProvider(oauthInfo.Issuer)
 	if err != nil {
 		return err, nil, nil, nil
 	}
-	switch oauthType {
-	case model.OauthTypeGithub:
-		oauthConfig.Endpoint = github.Endpoint
-		oauthConfig.Scopes = []string{"read:user", "user:email"}
-		provider = os.GithubProvider()
-	case model.OauthTypeLinuxdo:
-		provider = os.LinuxdoProvider()
-		oauthConfig.Endpoint = provider.Endpoint()
-		oauthConfig.Scopes = []string{"profile"}
-	//case model.OauthTypeGoogle: //google单独出来，可以少一次FetchOidcEndpoint请求
-	//	oauthConfig.Endpoint = google.Endpoint
-	//	oauthConfig.Scopes = os.constructScopes(oauthInfo.Scopes)
-	case model.OauthTypeOidc, model.OauthTypeGoogle:
-		err, provider = os.FetchOidcProvider(oauthInfo.Issuer)
-		if err != nil {
-			return err, nil, nil, nil
-		}
-		oauthConfig.Endpoint = provider.Endpoint()
-		oauthConfig.Scopes = os.constructScopes(oauthInfo.Scopes)
-	default:
-		return errors.New("unsupported OAuth type"), nil, nil, nil
-	}
+	oauthConfig.Endpoint = provider.Endpoint()
+	oauthConfig.Scopes = os.constructScopes(oauthInfo.Scopes)
 	return nil, oauthInfo, oauthConfig, provider
 }
 
@@ -239,7 +190,7 @@ func getHTTPClientWithProxy() *http.Client {
 	}
 	return http.DefaultClient
 }
-func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.Provider, code string, verifier string, nonce string, userData interface{}) (err error, client *http.Client) {
+func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.Provider, code string, verifier string, nonce string, userData interface{}) error {
 
 	// 设置代理客户端
 	httpClient := getHTTPClientWithProxy()
@@ -254,10 +205,11 @@ func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.
 
 	if err != nil {
 		Logger.Warn("oauthConfig.Exchange() failed: ", err)
-		return errors.New("GetOauthTokenError"), nil
+		return errors.New("GetOauthTokenError")
 	}
 
-	// 获取 ID Token， github没有id_token
+	// Senza id_token la verifica si salta, nonce compreso: la tolleranza era
+	// per GitHub e Linux.do, che non sono OIDC e sono usciti (A3).
 	rawIDToken, ok := token.Extra("id_token").(string)
 	if ok && rawIDToken != "" {
 		// 验证 ID Token
@@ -265,7 +217,7 @@ func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.
 		idToken, err2 := v.Verify(ctx, rawIDToken)
 		if err2 != nil {
 			Logger.Warn("IdTokenVerifyError: ", err2)
-			return errors.New("IdTokenVerifyError"), nil
+			return errors.New("IdTokenVerifyError")
 		}
 		if nonce != "" {
 			// 验证 nonce
@@ -274,22 +226,22 @@ func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.
 			}
 			if err2 = idToken.Claims(&claims); err2 != nil {
 				Logger.Warn("Failed to parse ID Token claims: ", err)
-				return errors.New("IDTokenClaimsError"), nil
+				return errors.New("IDTokenClaimsError")
 			}
 
 			if claims.Nonce != nonce {
 				Logger.Warn("Nonce does not match")
-				return errors.New("NonceDoesNotMatch"), nil
+				return errors.New("NonceDoesNotMatch")
 			}
 		}
 	}
 
 	// 获取用户信息
-	client = oauthConfig.Client(ctx, token)
+	client := oauthConfig.Client(ctx, token)
 	resp, err := client.Get(provider.UserInfoEndpoint())
 	if err != nil {
 		Logger.Warn("failed getting user info: ", err)
-		return errors.New("GetOauthUserInfoError"), nil
+		return errors.New("GetOauthUserInfoError")
 	}
 	defer func() {
 		if closeErr := resp.Body.Close(); closeErr != nil {
@@ -300,40 +252,16 @@ func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.
 	// 解析用户信息
 	if err = json.NewDecoder(resp.Body).Decode(userData); err != nil {
 		Logger.Warn("failed decoding user info: ", err)
-		return errors.New("DecodeOauthUserInfoError"), nil
+		return errors.New("DecodeOauthUserInfoError")
 	}
 
-	return nil, client
-}
-
-// githubCallback github回调
-func (os *OauthService) githubCallback(oauthConfig *oauth2.Config, provider *oidc.Provider, code, verifier, nonce string) (error, *model.OauthUser) {
-	var user = &model.GithubUser{}
-	err, client := os.callbackBase(oauthConfig, provider, code, verifier, nonce, user)
-	if err != nil {
-		return err, nil
-	}
-	err = os.getGithubPrimaryEmail(client, user)
-	if err != nil {
-		return err, nil
-	}
-	return nil, user.ToOauthUser()
-}
-
-// linuxdoCallback linux.do回调
-func (os *OauthService) linuxdoCallback(oauthConfig *oauth2.Config, provider *oidc.Provider, code, verifier, nonce string) (error, *model.OauthUser) {
-	var user = &model.LinuxdoUser{}
-	err, _ := os.callbackBase(oauthConfig, provider, code, verifier, nonce, user)
-	if err != nil {
-		return err, nil
-	}
-	return nil, user.ToOauthUser()
+	return nil
 }
 
 // oidcCallback oidc回调, 通过code获取用户信息
 func (os *OauthService) oidcCallback(oauthConfig *oauth2.Config, provider *oidc.Provider, code, verifier, nonce string) (error, *model.OauthUser) {
 	var user = &model.OidcUser{}
-	if err, _ := os.callbackBase(oauthConfig, provider, code, verifier, nonce, user); err != nil {
+	if err := os.callbackBase(oauthConfig, provider, code, verifier, nonce, user); err != nil {
 		return err, nil
 	}
 	return nil, user.ToOauthUser()
@@ -341,23 +269,11 @@ func (os *OauthService) oidcCallback(oauthConfig *oauth2.Config, provider *oidc.
 
 // Callback: Get user information by code and op(Oauth provider)
 func (os *OauthService) Callback(code, verifier, op, nonce string) (err error, oauthUser *model.OauthUser) {
-	err, oauthInfo, oauthConfig, provider := os.GetOauthConfig(op)
-	// oauthType is already validated in GetOauthConfig
+	err, _, oauthConfig, provider := os.GetOauthConfig(op)
 	if err != nil {
 		return err, nil
 	}
-	oauthType := oauthInfo.OauthType
-	switch oauthType {
-	case model.OauthTypeGithub:
-		err, oauthUser = os.githubCallback(oauthConfig, provider, code, verifier, nonce)
-	case model.OauthTypeLinuxdo:
-		err, oauthUser = os.linuxdoCallback(oauthConfig, provider, code, verifier, nonce)
-	case model.OauthTypeOidc, model.OauthTypeGoogle:
-		err, oauthUser = os.oidcCallback(oauthConfig, provider, code, verifier, nonce)
-	default:
-		return errors.New("unsupported OAuth type"), nil
-	}
-	return err, oauthUser
+	return os.oidcCallback(oauthConfig, provider, code, verifier, nonce)
 }
 
 func (os *OauthService) UserThirdInfo(op string, openId string) *model.UserThird {
@@ -502,41 +418,4 @@ func (os *OauthService) NonSupportati() ([]*model.Oauth, error) {
 		return nil, fmt.Errorf("lettura dei provider OAuth non supportati: %w", err)
 	}
 	return res, nil
-}
-
-// getGithubPrimaryEmail: Get the primary email of the user from Github
-func (os *OauthService) getGithubPrimaryEmail(client *http.Client, githubUser *model.GithubUser) error {
-	// the client is already set with the token
-	resp, err := client.Get("https://api.github.com/user/emails")
-	if err != nil {
-		return fmt.Errorf("failed to fetch emails: %w", err)
-	}
-	defer resp.Body.Close()
-
-	// check the response status code
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to fetch emails: %s", resp.Status)
-	}
-
-	// decode the response
-	var emails []struct {
-		Email    string `json:"email"`
-		Primary  bool   `json:"primary"`
-		Verified bool   `json:"verified"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&emails); err != nil {
-		return fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	// find the primary verified email
-	for _, e := range emails {
-		if e.Primary && e.Verified {
-			githubUser.Email = e.Email
-			githubUser.VerifiedEmail = e.Verified
-			return nil
-		}
-	}
-
-	return fmt.Errorf("no primary verified email found")
 }
