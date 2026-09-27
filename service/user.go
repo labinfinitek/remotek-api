@@ -339,7 +339,7 @@ func (us *UserService) InfoByOauthId(op string, openId string) *model.User {
 // nuovo, creato con l'associazione in una transazione. Un errore del
 // database ferma tutto: una lettura che fallisce non vale "non trovato", che
 // farebbe un utente doppio.
-func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (error, *model.User) {
+func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (*model.User, error) {
 	Lock.Lock("registerByOauth")
 	defer Lock.UnLock("registerByOauth")
 	ut := &model.UserThird{}
@@ -347,15 +347,15 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (e
 	case err == nil:
 		user := &model.User{}
 		if err := DB.Where("id = ?", ut.UserId).First(user).Error; err != nil {
-			return fmt.Errorf("utente %d dell'associazione al provider: %w", ut.UserId, err), nil
+			return nil, fmt.Errorf("utente %d dell'associazione al provider: %w", ut.UserId, err)
 		}
-		return nil, user
+		return user, nil
 	case !errors.Is(err, gorm.ErrRecordNotFound):
-		return fmt.Errorf("associazione al provider: %w", err), nil
+		return nil, fmt.Errorf("associazione al provider: %w", err)
 	}
-	err, oauthType := AllService.OauthService.GetTypeByOp(op)
+	oauthType, err := AllService.OauthService.GetTypeByOp(op)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	//check if this email has been registered
 	email := oauthUser.Email
@@ -368,7 +368,7 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (e
 		user, ldapErr := AllService.LdapService.GetUserInfoByEmailLocal(email)
 		// If we enable ldap, and the error is not ErrLdapUserNotFound, return the error because we could not sure if the user is not found in ldap
 		if !(errors.Is(ldapErr, ErrLdapNotEnabled) || errors.Is(ldapErr, ErrLdapUserNotFound) || ldapErr == nil) {
-			return ldapErr, user
+			return user, ldapErr
 		}
 		if user.Id == 0 {
 			// this means the user is not found in ldap, maybe ldao is not enabled
@@ -377,15 +377,15 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (e
 			case errors.Is(err, gorm.ErrRecordNotFound):
 				user = nil
 			case err != nil:
-				return fmt.Errorf("utente con l'email del provider: %w", err), nil
+				return nil, fmt.Errorf("utente con l'email del provider: %w", err)
 			}
 		}
 		if user != nil {
 			ut.FromOauthUser(user.Id, oauthUser, oauthType, op)
 			if err := DB.Create(ut).Error; err != nil {
-				return errors.Join(errors.New("OauthRegisterFailed"), fmt.Errorf("associazione al provider dell'utente %d con la stessa email: %w", user.Id, err)), nil
+				return nil, errors.Join(errors.New("OauthRegisterFailed"), fmt.Errorf("associazione al provider dell'utente %d con la stessa email: %w", user.Id, err))
 			}
-			return nil, user
+			return user, nil
 		}
 	}
 
@@ -413,9 +413,9 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (e
 		return nil
 	})
 	if err != nil {
-		return errors.Join(errors.New("OauthRegisterFailed"), err), nil
+		return nil, errors.Join(errors.New("OauthRegisterFailed"), err)
 	}
-	return nil, user
+	return user, nil
 }
 
 // GenerateUsernameByOauth 生成用户名
