@@ -57,6 +57,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   diceva successo. Il nome utente libero si cerca prima della transazione,
   nel database e, con LDAP acceso, in LDAP: con una connessione sola al
   database la registrazione si sarebbe fermata per sempre.
+- Pannello, cancellazione di un utente: se la conferma della transazione
+  non riesce la risposta e' "Operazione non riuscita.", non piu' successo
+  con l'utente ancora nel database, e un errore imprevisto a meta' annulla
+  la transazione invece di lasciarla aperta.
 
 ### Rimosso
 - **Cambio incompatibile per chi usava il login GitHub, Google o Linux.do.**

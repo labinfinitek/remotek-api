@@ -203,3 +203,64 @@ func TestRegistrazioneOidcAnnullata(t *testing.T) {
 		t.Errorf("utenti utente-oidc dopo l'errore: %d (err %v), attesi 0", n, err)
 	}
 }
+
+// TestCancellazioneUtente prova la cancellazione di un utente dal pannello:
+// se una delle cancellazioni collegate non riesce, resta tutto e la
+// risposta e' OperationFailed; senza ostacoli se ne vanno l'utente, le sue
+// voci della rubrica e le sue regole, con una connessione sola.
+func TestCancellazioneUtente(t *testing.T) {
+	g, _, _ := pannello(t, true)
+	err := service.DB.AutoMigrate(&model.AddressBook{}, &model.AddressBookCollection{}, &model.AddressBookCollectionRule{}, &model.Peer{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	utente := &model.User{Username: "da-cancellare", Status: model.COMMON_STATUS_ENABLE}
+	if err := service.DB.Create(utente).Error; err != nil {
+		t.Fatal(err)
+	}
+	err = service.DB.Create(&model.AddressBook{Id: "999000111", UserId: utente.Id}).Error
+	if err == nil {
+		err = service.DB.Create(&model.AddressBookCollectionRule{UserId: utente.Id, CollectionId: 1, Rule: 1, Type: 1, ToId: 2}).Error
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	righe := func() (n [3]int64) {
+		t.Helper()
+		for i, m := range []any{&model.User{}, &model.AddressBook{}, &model.AddressBookCollectionRule{}} {
+			campo := "user_id"
+			if i == 0 {
+				campo = "id"
+			}
+			if err := service.DB.Model(m).Where(campo+" = ?", utente.Id).Count(&n[i]).Error; err != nil {
+				t.Fatal(err)
+			}
+		}
+		return n
+	}
+	corpo := `{"id":` + strconv.FormatUint(uint64(utente.Id), 10) + `}`
+
+	rifiuta(t, "BEFORE DELETE ON address_book_collection_rules")
+	scadenza := unaConnessione(t)
+	rec := alPannello(g, "/api/admin/user/delete", corpo)
+	if got, want := rec.Body.String(), `{"code":101,"message":"Operazione non riuscita.","data":null}`; got != want {
+		t.Errorf("cancellazione con le regole rifiutate:\n got  %s\n want %s", got, want)
+	}
+	if n := righe(); n != [3]int64{1, 1, 1} {
+		t.Errorf("utente, voci e regole dopo l'errore: %v, attesi [1 1 1]", n)
+	}
+
+	if err := service.DB.Exec("DROP TRIGGER rifiuta").Error; err != nil {
+		t.Fatal(err)
+	}
+	rec = alPannello(g, "/api/admin/user/delete", corpo)
+	if scadenza.Err() != nil {
+		t.Fatal("POST /api/admin/user/delete: ferma per 5 secondi ad aspettare la connessione del database (stallo)")
+	}
+	if got, want := rec.Body.String(), `{"code":0,"message":"success","data":null}`; got != want {
+		t.Errorf("cancellazione senza ostacoli:\n got  %s\n want %s", got, want)
+	}
+	if n := righe(); n != [3]int64{} {
+		t.Errorf("utente, voci e regole dopo la cancellazione: %v, attesi [0 0 0]", n)
+	}
+}
