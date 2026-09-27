@@ -76,11 +76,13 @@ func updateTags(tx *gorm.DB, userId uint, tags map[string]uint) error {
 	return nil
 }
 
-// InfoById 根据用户id取用户信息
-func (s *TagService) InfoById(id uint) *model.Tag {
+// InfoById restituisce il tag id; ErrNotFound se non c'e'.
+func (s *TagService) InfoById(id uint) (*model.Tag, error) {
 	u := &model.Tag{}
-	DB.Where("id = ?", id).First(u)
-	return u
+	if err := DB.Where("id = ?", id).First(u).Error; err != nil {
+		return nil, fmt.Errorf("tag %d: %w", id, nonTrovato(err))
+	}
+	return u, nil
 }
 
 func (s *TagService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.TagList, err error) {

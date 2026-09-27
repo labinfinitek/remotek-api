@@ -29,17 +29,17 @@ type Tag struct {
 func (ct *Tag) Detail(c *gin.Context) {
 	id := c.Param("id")
 	iid, _ := strconv.Atoi(id)
-	t := service.AllService.TagService.InfoById(uint(iid))
+	t, err := service.AllService.TagService.InfoById(uint(iid))
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	u := service.AllService.UserService.CurUser(c)
 	if !service.AllService.UserService.IsAdmin(u) && t.UserId != u.Id {
 		response.Fail(c, 101, response.TranslateMsg(c, "NoAccess"))
 		return
 	}
-	if t.Id > 0 {
-		response.Success(c, t)
-		return
-	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.Success(c, t)
 }
 
 // Create 创建标签
@@ -141,9 +141,8 @@ func (ct *Tag) Update(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError"))
 		return
 	}
-	ex := service.AllService.TagService.InfoById(f.Id)
-	if ex.Id == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	if _, err := service.AllService.TagService.InfoById(f.Id); err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 	t := f.ToTag()
@@ -178,12 +177,12 @@ func (ct *Tag) Delete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	ex := service.AllService.TagService.InfoById(f.Id)
-	if ex.Id == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	ex, err := service.AllService.TagService.InfoById(f.Id)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
-	err := service.AllService.TagService.Delete(ex)
+	err = service.AllService.TagService.Delete(ex)
 	if err == nil {
 		response.Success(c, nil)
 		return

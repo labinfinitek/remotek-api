@@ -115,9 +115,9 @@ func (ct *Tag) Update(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "NoAccess"))
 		return
 	}
-	ex := service.AllService.TagService.InfoById(f.Id)
-	if ex.Id == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	ex, err := service.AllService.TagService.InfoById(f.Id)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 	if ex.UserId != u.Id {
@@ -134,7 +134,7 @@ func (ct *Tag) Update(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError"))
 		return
 	}
-	err := service.AllService.TagService.Update(t)
+	err = service.AllService.TagService.Update(t)
 	if err != nil {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
@@ -165,9 +165,9 @@ func (ct *Tag) Delete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	ex := service.AllService.TagService.InfoById(f.Id)
-	if ex.Id == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	ex, err := service.AllService.TagService.InfoById(f.Id)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
@@ -175,7 +175,7 @@ func (ct *Tag) Delete(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "NoAccess"))
 		return
 	}
-	err := service.AllService.TagService.Delete(ex)
+	err = service.AllService.TagService.Delete(ex)
 	if err == nil {
 		response.Success(c, nil)
 		return
