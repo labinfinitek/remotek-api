@@ -109,3 +109,29 @@ func TestCallbackSenzaState(t *testing.T) {
 		}
 	}
 }
+
+// TestPannelloOidcSenzaTestoInterno prova sul router vero i due ErrorErr del
+// pannello su /api/admin/oidc/auth (login) e /api/admin/oauth/bind
+// (associazione) con un provider OIDC che risponde 500: la risposta e' 400
+// col solo messaggio di SystemError, l'errore del provider va nel log con
+// metodo e rotta.
+func TestPannelloOidcSenzaTestoInterno(t *testing.T) {
+	g, _, registro := pannello(t, false)
+	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "dettaglio interno del provider", http.StatusInternalServerError)
+	}))
+	t.Cleanup(provider.Close)
+	if err := service.DB.Create(&model.Oauth{Op: "prova", OauthType: model.OauthTypeOidc, ClientId: "id", ClientSecret: "segreto", Issuer: provider.URL}).Error; err != nil {
+		t.Fatal(err)
+	}
+	for _, rotta := range []string{"/api/admin/oidc/auth", "/api/admin/oauth/bind"} {
+		registro.Reset()
+		rec := alPannello(g, rotta, `{"op":"prova"}`)
+		if rec.Code != 400 || rec.Body.String() != `{"error":"Errore di sistema."}` {
+			t.Errorf("POST %s: %d %s, atteso 400 {\"error\":\"Errore di sistema.\"}", rotta, rec.Code, rec.Body)
+		}
+		if nelLog := registro.String(); !strings.Contains(nelLog, "POST "+rotta+": al client va SystemError") || !strings.Contains(nelLog, "dettaglio interno del provider") {
+			t.Errorf("POST %s: nel log mancano rotta o errore:\n%s", rotta, nelLog)
+		}
+	}
+}
