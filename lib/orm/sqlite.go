@@ -52,11 +52,6 @@ var (
 // definisce: il file si scriverebbe, la cartella no.
 const sqliteReadonlyDirectory = sqlite3.ErrNoExtended(1544)
 
-type SqliteConfig struct {
-	MaxIdleConns int
-	MaxOpenConns int
-}
-
 // ApriSqlite apre il database percorso col DSN di ADR-0007 e una
 // connessione sola, lo scrittore unico, senza chiavi esterne nelle
 // migrazioni. La usano NewSqlite e i test, che cosi' girano sul database

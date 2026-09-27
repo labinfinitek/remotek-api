@@ -100,6 +100,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   acceso e solo GitHub o Linux.do, prima di aggiornare va configurato un
   provider OIDC: senza, nel pannello si rientra solo riaccendendo la
   password.
+- **Cambio incompatibile per chi impostava `gorm.max-idle-conns` o
+  `gorm.max-open-conns`** (`RUSTDESK_API_GORM_MAX_IDLE_CONNS`,
+  `RUSTDESK_API_GORM_MAX_OPEN_CONNS`): le due chiavi non ci sono piu',
+  perche' con uno scrittore solo (ADR-0007) l'API usa una connessione al
+  database, che non si configura. Un valore rimasto nel file o
+  nell'ambiente si ignora, senza errore.
 
 ## [0.1.0] - 2026-09-26
 Base upstream: rustdesk-api v2.7. Primo rilascio: immagine

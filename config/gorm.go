@@ -5,7 +5,5 @@ package config
 const TypeSqlite = "sqlite"
 
 type Gorm struct {
-	Type         string `mapstructure:"type"`
-	MaxIdleConns int    `mapstructure:"max-idle-conns"`
-	MaxOpenConns int    `mapstructure:"max-open-conns"`
+	Type string `mapstructure:"type"`
 }

@@ -159,8 +159,6 @@ stesso default se la chiave manca dal file.
 | `gin.resources-path` | `RUSTDESK_API_GIN_RESOURCES_PATH` | `resources` | cartella di pannello, lingue e modelli; senza i file di lingua l'avvio si ferma |
 | `gin.trust-proxy` \* | `RUSTDESK_API_GIN_TRUST_PROXY` | vuoto | IP o CIDR dei proxy fidati, separati da virgola; vuoto = nessuno, `X-Forwarded-For` e `X-Real-IP` ignorati. Dietro un reverse proxy va impostato, altrimenti captcha e ban contano ogni client come l'IP del proxy. Un valore non valido ferma l'avvio |
 | `gorm.type` | `RUSTDESK_API_GORM_TYPE` | `sqlite` | solo `sqlite` (vuoto vale uguale); un altro valore ferma l'avvio. Il database e' `data/rustdeskapi.db` |
-| `gorm.max-idle-conns` | `RUSTDESK_API_GORM_MAX_IDLE_CONNS` | `10` | connessioni inattive tenute aperte |
-| `gorm.max-open-conns` | `RUSTDESK_API_GORM_MAX_OPEN_CONNS` | `100` | connessioni aperte al massimo |
 | `rustdesk.id-server` | `RUSTDESK_API_RUSTDESK_ID_SERVER` | indirizzo d'esempio | `host:21116` di `hbbs`, da impostare; lo mostra il pannello |
 | `rustdesk.relay-server` | `RUSTDESK_API_RUSTDESK_RELAY_SERVER` | indirizzo d'esempio | `host:21117` di `hbbr`, da impostare |
 | `rustdesk.api-server` | `RUSTDESK_API_RUSTDESK_API_SERVER` | `http://127.0.0.1:21114` | indirizzo di questa API come lo vedono client e browser; da' la callback OIDC `<api-server>/api/oidc/callback` |
