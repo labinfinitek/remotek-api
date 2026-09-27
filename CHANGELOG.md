@@ -31,6 +31,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   richiesta (401), o lasciava il login fuori dal registro. Se il
   dispositivo del login non si lega all'utente il login vale lo stesso e
   l'errore va nel log.
+- Logout del pannello (`/api/admin/logout`) col token di un dispositivo: se
+  il token non si legge o il dispositivo non si scollega dall'utente,
+  risponde "Operazione non riuscita." e l'errore va nel log; prima
+  rispondeva successo e il dispositivo restava dell'utente.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

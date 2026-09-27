@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/lib/jwt"
@@ -137,6 +138,62 @@ func TestLoginSenzaToken(t *testing.T) {
 			}
 			if n := righe(t, "user_tokens"); n != 1 {
 				t.Errorf("token dopo il login: %d, atteso 1, quello del pannello", n)
+			}
+		})
+	}
+}
+
+// TestLogoutDispositivo prova sul router vero il logout del pannello
+// (POST /api/admin/logout) col token di un dispositivo: senza ostacoli
+// cancella il token e scollega il dispositivo dall'utente. Se il token non
+// si legge o il dispositivo non si scollega, la risposta e' OperationFailed
+// e l'errore va nel log: prima il primo errore saltava lo scollegamento, il
+// secondo si perdeva, e in entrambi i casi la risposta era successo col
+// dispositivo ancora dell'utente.
+func TestLogoutDispositivo(t *testing.T) {
+	const tokenDelDispositivo = "token-del-dispositivo"
+	for _, tc := range []struct {
+		nome, rifiuto string
+		ostacolo      func(t *testing.T)
+	}{
+		{"senza ostacoli", "", func(*testing.T) {}},
+		{"token non letto", "lettura rifiutata dal test", func(t *testing.T) { rifiutaLetture(t, "user_tokens", "user_id") }},
+		{"dispositivo non scollegato", "rifiutato dal test", func(t *testing.T) { rifiuta(t, "BEFORE UPDATE ON peers") }},
+	} {
+		t.Run(tc.nome, func(t *testing.T) {
+			g, utente, registro := pannello(t, false)
+			if err := service.DB.AutoMigrate(&model.Peer{}); err != nil {
+				t.Fatal(err)
+			}
+			crea(t, &model.Peer{Id: "999000111", Uuid: "dXVpZA==", UserId: utente.Id})
+			crea(t, &model.UserToken{UserId: utente.Id, Token: tokenDelDispositivo, DeviceUuid: "dXVpZA==", ExpiredAt: time.Now().Add(time.Hour).Unix()})
+			tc.ostacolo(t)
+
+			rec := conToken(g, "POST", "/api/admin/logout", tokenDelDispositivo)
+			risposta, token, proprietario := `{"code":0,"message":"success","data":null}`, int64(1), uint(0)
+			if tc.rifiuto != "" {
+				// Il token non si legge: niente si cancella. Il dispositivo
+				// non si scollega: il token non c'e' gia' piu'.
+				risposta, proprietario = `{"code":101,"message":"Operazione non riuscita.","data":null}`, utente.Id
+				if tc.nome == "token non letto" {
+					token = 2
+				}
+				if nelLog := registro.String(); !strings.Contains(nelLog, "POST /api/admin/logout: ") || !strings.Contains(nelLog, tc.rifiuto) {
+					t.Errorf("POST /api/admin/logout, nel log mancano rotta o errore:\n%s", nelLog)
+				}
+			}
+			if got := rec.Body.String(); rec.Code != 200 || got != risposta {
+				t.Errorf("POST /api/admin/logout: stato %d\n got  %s\n want %s", rec.Code, got, risposta)
+			}
+			if n := righe(t, "user_tokens"); n != token {
+				t.Errorf("token dopo il logout: %d, attesi %d", n, token)
+			}
+			var got uint
+			if err := service.DB.Raw("SELECT user_id FROM peers").Scan(&got).Error; err != nil {
+				t.Fatal(err)
+			}
+			if got != proprietario {
+				t.Errorf("dispositivo dopo il logout: dell'utente %d, atteso %d", got, proprietario)
 			}
 		})
 	}

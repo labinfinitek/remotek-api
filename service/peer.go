@@ -23,13 +23,6 @@ func (ps *PeerService) InfoByRowId(id uint) *model.Peer {
 	return p
 }
 
-// FindByUserIdAndUuid 根据用户id和uuid查找peer
-func (ps *PeerService) FindByUserIdAndUuid(uuid string, userId uint) *model.Peer {
-	p := &model.Peer{}
-	DB.Where("uuid = ? and user_id = ?", uuid, userId).First(p)
-	return p
-}
-
 // UuidBindUserId lega all'utente userId il dispositivo con uuid. Se il
 // dispositivo non c'e' non fa niente: lo crea il suo /api/sysinfo.
 func (ps *PeerService) UuidBindUserId(uuid string, userId uint) error {
@@ -48,12 +41,21 @@ func (ps *PeerService) UuidBindUserId(uuid string, userId uint) error {
 	return nil
 }
 
-// UuidUnbindUserId 解绑用户id, 用于用户注销
-func (ps *PeerService) UuidUnbindUserId(uuid string, userId uint) {
-	peer := ps.FindByUserIdAndUuid(uuid, userId)
-	if peer.RowId > 0 {
-		DB.Model(peer).Update("user_id", 0)
+// UuidUnbindUserId scollega dall'utente userId il suo dispositivo con uuid,
+// se c'e'. Serve al logout.
+func (ps *PeerService) UuidUnbindUserId(uuid string, userId uint) error {
+	peer := &model.Peer{}
+	err := DB.Where("uuid = ? and user_id = ?", uuid, userId).First(peer).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
 	}
+	if err != nil {
+		return fmt.Errorf("lettura del dispositivo: %w", err)
+	}
+	if err := DB.Model(peer).Update("user_id", 0).Error; err != nil {
+		return fmt.Errorf("aggiornamento del dispositivo: %w", err)
+	}
+	return nil
 }
 
 // EraseUserId 清除用户id, 用于用户删除

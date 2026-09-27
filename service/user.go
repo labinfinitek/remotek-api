@@ -215,25 +215,25 @@ func (us *UserService) Create(u *model.User) error {
 	return res
 }
 
-// GetUuidByToken 根据token和user取uuid
-func (us *UserService) GetUuidByToken(u *model.User, token string) string {
+// Logout cancella il token di sessione token dell'utente u e scollega
+// dall'utente il dispositivo del token, se ce n'e' uno.
+func (us *UserService) Logout(u *model.User, token string) error {
 	ut := &model.UserToken{}
 	err := DB.Where("user_id = ? and token = ?", u.Id, token).First(ut).Error
-	if err != nil {
-		return ""
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
 	}
-	return ut.DeviceUuid
-}
-
-// Logout 退出登录 -> 删除token, 解绑uuid
-func (us *UserService) Logout(u *model.User, token string) error {
-	uuid := us.GetUuidByToken(u, token)
-	err := DB.Where("user_id = ? and token = ?", u.Id, token).Delete(&model.UserToken{}).Error
 	if err != nil {
-		return err
+		return fmt.Errorf("lettura del token: %w", err)
 	}
-	if uuid != "" {
-		AllService.PeerService.UuidUnbindUserId(uuid, u.Id)
+	if err := DB.Delete(ut).Error; err != nil {
+		return fmt.Errorf("cancellazione del token: %w", err)
+	}
+	if ut.DeviceUuid == "" {
+		return nil
+	}
+	if err := AllService.PeerService.UuidUnbindUserId(ut.DeviceUuid, u.Id); err != nil {
+		return fmt.Errorf("dispositivo del token: %w", err)
 	}
 	return nil
 }
