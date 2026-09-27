@@ -226,34 +226,41 @@ func (s *AddressBookService) CollectionReadRules(user *model.User) (res []*model
 	return res, nil
 }
 
-func (s *AddressBookService) UserMaxRule(user *model.User, uid, cid uint) int {
+// UserMaxRule restituisce il permesso piu' alto dell'utente user sulla
+// rubrica cid dell'utente uid. Se una regola non si legge restituisce 0 e
+// l'errore: un permesso che non si legge non si concede.
+func (s *AddressBookService) UserMaxRule(user *model.User, uid, cid uint) (int, error) {
 	// ismy?
 	if user.Id == uid {
-		return model.ShareAddressBookRuleRuleFullControl
+		return model.ShareAddressBookRuleRuleFullControl, nil
 	}
 	massima := 0
 	personalRules := &model.AddressBookCollectionRule{}
 	tx := DB.Model(personalRules)
-	tx.Where("type = ? and collection_id = ? and to_id = ?", model.ShareAddressBookRuleTypePersonal, cid, user.Id).First(&personalRules)
-	if personalRules.Id != 0 {
+	switch err := tx.Where("type = ? and collection_id = ? and to_id = ?", model.ShareAddressBookRuleTypePersonal, cid, user.Id).First(&personalRules).Error; {
+	case err == nil:
 		massima = personalRules.Rule
 		if massima == model.ShareAddressBookRuleRuleFullControl {
-			return massima
+			return massima, nil
 		}
+	case !errors.Is(err, gorm.ErrRecordNotFound):
+		return 0, fmt.Errorf("regola dell'utente %d sulla rubrica %d: %w", user.Id, cid, err)
 	}
 
 	groupRules := &model.AddressBookCollectionRule{}
 	tx2 := DB.Model(groupRules)
-	tx2.Where("type = ? and collection_id = ? and to_id = ?", model.ShareAddressBookRuleTypeGroup, cid, user.GroupId).First(&groupRules)
-	if groupRules.Id != 0 {
+	switch err := tx2.Where("type = ? and collection_id = ? and to_id = ?", model.ShareAddressBookRuleTypeGroup, cid, user.GroupId).First(&groupRules).Error; {
+	case err == nil:
 		if groupRules.Rule > massima {
 			massima = groupRules.Rule
 		}
 		if massima == model.ShareAddressBookRuleRuleFullControl {
-			return massima
+			return massima, nil
 		}
+	case !errors.Is(err, gorm.ErrRecordNotFound):
+		return 0, fmt.Errorf("regola del gruppo %d sulla rubrica %d: %w", user.GroupId, cid, err)
 	}
-	return massima
+	return massima, nil
 }
 
 func (s *AddressBookService) CreateCollection(t *model.AddressBookCollection) error {

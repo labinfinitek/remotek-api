@@ -4,6 +4,7 @@ package http
 // un errore del database e' una risposta d'errore, non una rubrica vuota.
 
 import (
+	"fmt"
 	"net/http/httptest"
 	"strconv"
 	"strings"
@@ -142,4 +143,105 @@ func TestPannelloRubricaLetturaFallita(t *testing.T) {
 			}
 		})
 	}
+}
+
+// statoRubrica descrive con Raw, che rifiutaLetture non ferma, le voci e i
+// tag di tutte le rubriche.
+func statoRubrica(t *testing.T) string {
+	t.Helper()
+	var voci, tag []string
+	err := service.DB.Raw("SELECT id || ' ' || alias || ' ' || collection_id FROM address_books ORDER BY row_id").Scan(&voci).Error
+	if err == nil {
+		err = service.DB.Raw("SELECT name || ' ' || color || ' ' || collection_id FROM tags ORDER BY id").Scan(&tag).Error
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	return fmt.Sprint("voci ", voci, ", tag ", tag)
+}
+
+// TestRubricaPermessoNonLetto prova sul router vero le rotte del client su
+// una rubrica condivisa quando la regola dei permessi non si legge:
+// rispondono 400 {"error": "Errore di sistema."}, scrivono l'errore nel log
+// e non cambiano niente. Prima rispondevano "Non hai i permessi per questa
+// operazione.", come a chi il permesso non ce l'ha, e l'errore si perdeva;
+// se non si leggeva solo la regola del gruppo valeva quella dell'utente.
+// Senza ostacoli la regola di controllo completo lascia leggere, scrivere e
+// cancellare.
+func TestRubricaPermessoNonLetto(t *testing.T) {
+	// prova prepara le rubriche con la regola regola per l'utente e, se non
+	// e' il controllo completo, quella di controllo completo per il suo
+	// gruppo; se dove non e' vuoto rifiuta le letture delle regole che lo
+	// contengono. Senza ostacoli la richiesta deve riuscire; con, fallire
+	// senza cambiare niente e con regolaNelLog nel log.
+	prova := func(t *testing.T, regola int, dove, regolaNelLog, metodo, rotta, corpo, dato string) {
+		t.Helper()
+		_, registro, invia, guid := rubricheDiProva(t, regola)
+		if regola != model.ShareAddressBookRuleRuleFullControl {
+			condivisa := &model.AddressBookCollection{}
+			if err := service.DB.Raw("SELECT * FROM address_book_collections WHERE name = 'condivisa'").Scan(condivisa).Error; err != nil {
+				t.Fatal(err)
+			}
+			crea(t, &model.AddressBookCollectionRule{UserId: condivisa.UserId, CollectionId: condivisa.Id, Rule: model.ShareAddressBookRuleRuleFullControl,
+				Type: model.ShareAddressBookRuleTypeGroup, ToId: 1})
+		}
+		prima := statoRubrica(t)
+		if dove == "" {
+			rec := invia(metodo, guid.Replace(rotta), corpo)
+			if rec.Code != 200 || !strings.Contains(rec.Body.String(), dato) {
+				t.Errorf("%s %s: %d %s, atteso 200 con %q", metodo, rotta, rec.Code, rec.Body, dato)
+			}
+			if dopo := statoRubrica(t); dato == "" && dopo == prima {
+				t.Errorf("%s %s non ha cambiato la rubrica: %s", metodo, rotta, dopo)
+			}
+			return
+		}
+		rifiutaLetture(t, "address_book_collection_rules", dove)
+		registro.Reset()
+		rec := invia(metodo, guid.Replace(rotta), corpo)
+		if got, want := rec.Body.String(), `{"error":"Errore di sistema."}`; rec.Code != 400 || got != want {
+			t.Errorf("%s %s con la regola non letta: %d %s, attesi 400 e %s", metodo, rotta, rec.Code, got, want)
+		}
+		percorso, _, _ := strings.Cut(strings.Replace(rotta, "CONDIVISA", ":guid", 1), "?")
+		if nelLog := registro.String(); !strings.Contains(nelLog, metodo+" "+percorso+": ") || !strings.Contains(nelLog, regolaNelLog) ||
+			!strings.Contains(nelLog, "lettura rifiutata dal test") {
+			t.Errorf("%s %s, nel log mancano rotta, regola o errore:\n%s", metodo, rotta, nelLog)
+		}
+		if dopo := statoRubrica(t); dopo != prima {
+			t.Errorf("%s %s con la regola non letta ha cambiato la rubrica:\n prima %s\n dopo  %s", metodo, rotta, prima, dopo)
+		}
+	}
+	const completo = model.ShareAddressBookRuleRuleFullControl
+	for _, tc := range []struct {
+		metodo, rotta, corpo string
+		dato                 string // nella risposta senza ostacoli; vuoto se la rotta scrive
+	}{
+		{"POST", "/api/ab/peers?ab=CONDIVISA", "", "999000222"},
+		{"POST", "/api/ab/tags/CONDIVISA", "", "condiviso"},
+		{"POST", "/api/ab/peer/add/CONDIVISA", `{"id":"999000333"}`, ""},
+		{"PUT", "/api/ab/peer/update/CONDIVISA", `{"id":"999000222","alias":"nuovo"}`, ""},
+		{"DELETE", "/api/ab/peer/CONDIVISA", `["999000222"]`, ""},
+		{"POST", "/api/ab/tag/add/CONDIVISA", `{"name":"nuovo","color":1}`, ""},
+		{"PUT", "/api/ab/tag/rename/CONDIVISA", `{"old":"condiviso","new":"nuovo"}`, ""},
+		{"PUT", "/api/ab/tag/update/CONDIVISA", `{"name":"condiviso","color":1}`, ""},
+		{"DELETE", "/api/ab/tag/CONDIVISA", `["condiviso"]`, ""},
+	} {
+		t.Run(tc.metodo+" "+tc.rotta, func(t *testing.T) {
+			t.Run("senza ostacoli", func(t *testing.T) {
+				prova(t, completo, "", "", tc.metodo, tc.rotta, tc.corpo, tc.dato)
+			})
+			t.Run("regole non lette", func(t *testing.T) {
+				prova(t, completo, "collection_id = ? and to_id", "regola dell'utente", tc.metodo, tc.rotta, tc.corpo, tc.dato)
+			})
+		})
+	}
+	// La regola dell'utente da' la lettura, quella del gruppo il controllo
+	// completo: senza la seconda la cancellazione non si decide.
+	const lettura, cancella, voce = model.ShareAddressBookRuleRuleRead, "/api/ab/peer/CONDIVISA", `["999000222"]`
+	t.Run("regola del gruppo, senza ostacoli", func(t *testing.T) {
+		prova(t, lettura, "", "", "DELETE", cancella, voce, "")
+	})
+	t.Run("regola del gruppo non letta", func(t *testing.T) {
+		prova(t, lettura, "to_id = ? [2 ", "regola del gruppo", "DELETE", cancella, voce, "")
+	})
 }

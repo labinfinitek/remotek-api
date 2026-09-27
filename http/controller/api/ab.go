@@ -552,9 +552,15 @@ func (a *Ab) CheckGuid(cu *model.User, guid string) (gid, uid, cid uint, err err
 }
 
 // permesso dice se l'utente u ha almeno il permesso minimo sulla rubrica cid
-// dell'utente uid; se no risponde NoAccess.
+// dell'utente uid; se no risponde NoAccess. Un permesso che non si legge non
+// si concede: la risposta e' SystemError, con l'errore nel log.
 func (a *Ab) permesso(c *gin.Context, u *model.User, uid, cid uint, minimo int) bool {
-	if service.AllService.AddressBookService.UserMaxRule(u, uid, cid) < minimo {
+	massima, err := service.AllService.AddressBookService.UserMaxRule(u, uid, cid)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return false
+	}
+	if massima < minimo {
 		response.Error(c, response.TranslateMsg(c, "NoAccess"))
 		return false
 	}

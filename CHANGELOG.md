@@ -75,6 +75,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   che la cancellava dal database. Nel pannello gli elenchi di voci, tag e
   rubriche rispondono "Errore di sistema." invece di un elenco vuoto, e il
   cambio dei tag di piu' voci invece di "Elemento non trovato.".
+- Rubrica condivisa del client: se il database non legge le regole dei
+  permessi, le rotte rispondono 400 "Errore di sistema." con l'errore nel
+  log, e non concedono niente; prima rispondevano "Non hai i permessi per
+  questa operazione." e l'errore si perdeva.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,
