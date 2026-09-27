@@ -6,11 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
 	"github.com/lejianwen/rustdesk-api/v2/config"
+	"github.com/lejianwen/rustdesk-api/v2/lib/orm"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/utils"
 )
@@ -21,7 +20,7 @@ import (
 // lo stesso utente vuoto di una password sbagliata, e l'hash nel database
 // resta com'era. Un utente con l'hash bcrypt entra come prima.
 func TestInfoByUsernamePasswordMD5(t *testing.T) {
-	db, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "api.db")), &gorm.Config{Logger: logger.Discard})
+	db, err := orm.ApriSqlite(filepath.Join(t.TempDir(), "api.db"), logger.Discard)
 	if err == nil {
 		err = db.AutoMigrate(&model.User{})
 	}
