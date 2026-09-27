@@ -79,7 +79,8 @@ func TestPortaOccupata(t *testing.T) {
 }
 
 // TestStopConSIGTERM avvia il server, aspetta che accetti connessioni e gli
-// manda SIGTERM: lo stop normale deve uscire con codice 0.
+// manda SIGTERM: lo stop normale deve chiudere il database, che col
+// checkpoint cancella -wal e -shm, e uscire con codice 0.
 func TestStopConSIGTERM(t *testing.T) {
 	dir := sandbox(t)
 	libera, err := net.Listen("tcp", "127.0.0.1:0")
@@ -110,4 +111,5 @@ func TestStopConSIGTERM(t *testing.T) {
 	if c := codice(t, cmd, out); c != 0 {
 		t.Errorf("codice %d dopo SIGTERM, atteso 0\n%s", c, out)
 	}
+	senzaTraccia(t, dir)
 }

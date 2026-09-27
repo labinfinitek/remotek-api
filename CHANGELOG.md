@@ -67,6 +67,19 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   dispositivi senza utente, e `/api/sysinfo` di un dispositivo nuovo
   risponderebbe "Operazione non riuscita.". All'avvio l'API la toglie, una
   volta sola, tenendo dispositivi e indici, e lo scrive nel log.
+- Il database SQLite passa in WAL, con `synchronous` NORMAL, e l'API lo usa
+  con una connessione sola (ADR-0007): prima era in `delete`, dove NORMAL a
+  una caduta di corrente puo' corrompere il database, e fino a 100
+  connessioni scrivevano insieme, aspettandosi a vicenda fino all'errore
+  `database is locked`. Il database in `delete` di un'installazione
+  esistente passa a WAL al primo avvio, senza perdere righe. All'avvio,
+  dopo la scrittura di prova, l'API si ferma con codice 1 se il database non
+  e' in WAL o se SQLite lo trova danneggiato (`PRAGMA integrity_check`, o
+  gia' all'apertura), e nel secondo caso dice di ripristinare l'ultimo
+  backup. Allo stop normale e alla fine di `reset-admin-pwd` e `reset-pwd`
+  il database si chiude e in `data/` resta il solo `rustdeskapi.db`; mentre
+  l'API gira ci sono anche `-wal` e `-shm`, e il backup si fa con
+  `VACUUM INTO`, non copiando il solo `.db` (README).
 
 ### Rimosso
 - **Cambio incompatibile per chi usava il login GitHub, Google o Linux.do.**

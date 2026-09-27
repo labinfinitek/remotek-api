@@ -65,8 +65,18 @@ The repository's `docker-compose.yaml` builds the image from source instead.
 3. The panel is at `http://<host>:21114/_admin/`: see [First start](#first-start-and-administration).
 
 `remotek-data/` (`/app/data` in the container) holds the SQLite database
-`rustdeskapi.db` and `admin-password.txt`. The log goes to stdout
+`rustdeskapi.db` and `admin-password.txt`; while the API runs,
+`rustdeskapi.db-wal` and `rustdeskapi.db-shm` (SQLite in WAL mode) sit next
+to the database, and on a clean stop (SIGTERM, `docker compose stop`) they
+are folded back into it and removed. The log goes to stdout
 (`docker compose logs`) and to `/app/runtime/log.txt`, inside the container.
+
+Backup: with the API running use `sqlite3 rustdeskapi.db "VACUUM INTO '<file>'"`
+(or `sqlite3`'s `.backup`), never a copy of `rustdeskapi.db` alone, which
+would miss the writes still in the `-wal`; with the API stopped, after a
+clean stop `rustdeskapi.db` is enough, otherwise copy the whole directory. To
+restore, with the API stopped, put the backup in place of `rustdeskapi.db`
+and delete `-wal` and `-shm` if present.
 
 ### Building the image
 
