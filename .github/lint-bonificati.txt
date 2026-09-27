@@ -9,6 +9,7 @@ global
 http
 http/controller/admin
 http/controller/admin/my
+http/controller/api
 http/controller/web
 http/middleware
 http/request/admin
