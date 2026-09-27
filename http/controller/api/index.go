@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/lejianwen/rustdesk-api/v2/global"
-	requstform "github.com/lejianwen/rustdesk-api/v2/http/request/api"
+	requestform "github.com/lejianwen/rustdesk-api/v2/http/request/api"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
@@ -42,7 +42,7 @@ func (i *Index) Index(c *gin.Context) {
 // @Failure 500 {object} response.Response
 // @Router /heartbeat [post]
 func (i *Index) Heartbeat(c *gin.Context) {
-	info := &requstform.PeerInfoInHeartbeat{}
+	info := &requestform.PeerInfoInHeartbeat{}
 	err := c.ShouldBindJSON(info)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{})
