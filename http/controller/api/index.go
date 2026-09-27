@@ -57,7 +57,7 @@ func (i *Index) Heartbeat(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{})
 		return
 	}
-	//如果在40s以内则不更新
+	// 如果在40s以内则不更新
 	if time.Now().Unix()-peer.LastOnlineTime >= 30 {
 		upp := &model.Peer{RowId: peer.RowId, LastOnlineTime: time.Now().Unix(), LastOnlineIp: c.ClientIP()}
 		if err := service.AllService.PeerService.Update(upp); err != nil {
@@ -78,7 +78,7 @@ func (i *Index) Heartbeat(c *gin.Context) {
 // @Failure 500 {object} response.Response
 // @Router /version [get]
 func (i *Index) Version(c *gin.Context) {
-	//读取resources/version文件
+	// 读取resources/version文件
 	v := service.AllService.AppService.GetAppVersion()
 	response.Success(
 		c,

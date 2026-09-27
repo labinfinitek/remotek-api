@@ -21,7 +21,8 @@ import (
 type Ab struct {
 }
 
-// Ab
+// Ab restituisce la rubrica legacy dell'utente (GET /api/ab): voci e tag
+// della collezione 0, in data come stringa JSON.
 // @Tags 地址
 // @Summary 地址列表
 // @Description 地址列表
@@ -38,7 +39,7 @@ func (a *Ab) Ab(c *gin.Context) {
 	tags := service.AllService.TagService.ListByUserIdAndCollectionId(user.Id, 0)
 
 	tagColors := map[string]uint{}
-	//将tags中的name转成一个以逗号分割的字符串
+	// 将tags中的name转成一个以逗号分割的字符串
 	var tagNames []string
 	for _, tag := range tags.Tags {
 		tagNames = append(tagNames, tag.Name)
@@ -53,11 +54,11 @@ func (a *Ab) Ab(c *gin.Context) {
 	data, _ := json.Marshal(res)
 	c.JSON(http.StatusOK, gin.H{
 		"data": string(data),
-		//"licensed_devices": 999,
+		// "licensed_devices": 999,
 	})
 }
 
-// UpAb
+// UpAb salva la rubrica legacy che il client manda (POST /api/ab).
 // @Tags 地址
 // @Summary 地址更新
 // @Description 地址更新
@@ -104,7 +105,7 @@ func (a *Ab) UpAb(c *gin.Context) {
 	c.JSON(http.StatusOK, nil)
 }
 
-// PTags
+// PTags restituisce i tag della rubrica guid.
 // @Tags 地址[Personal]
 // @Summary 标签
 // @Description 标签
@@ -124,7 +125,7 @@ func (a *Ab) PTags(c *gin.Context) {
 		return
 	}
 
-	//check privileges
+	// check privileges
 	if !service.AllService.AddressBookService.CheckUserReadPrivilege(u, uid, cid) {
 		response.Error(c, response.TranslateMsg(c, "NoAccess"))
 		return
@@ -133,7 +134,7 @@ func (a *Ab) PTags(c *gin.Context) {
 	c.JSON(http.StatusOK, tags.Tags)
 }
 
-// TagAdd
+// TagAdd aggiunge un tag alla rubrica guid.
 // @Tags 地址[Personal]
 // @Summary 标签添加
 // @Description 标签
@@ -161,7 +162,7 @@ func (a *Ab) TagAdd(c *gin.Context) {
 		return
 	}
 
-	//check privileges
+	// check privileges
 	if !service.AllService.AddressBookService.CheckUserWritePrivilege(u, uid, cid) {
 		response.Error(c, response.TranslateMsg(c, "NoAccess"))
 		return
@@ -182,7 +183,7 @@ func (a *Ab) TagAdd(c *gin.Context) {
 	c.String(http.StatusOK, "")
 }
 
-// TagRename
+// TagRename rinomina un tag della rubrica guid.
 // @Tags 地址[Personal]
 // @Summary 标签重命名
 // @Description 标签
@@ -209,7 +210,7 @@ func (a *Ab) TagRename(c *gin.Context) {
 		return
 	}
 
-	//check privileges
+	// check privileges
 	if !service.AllService.AddressBookService.CheckUserWritePrivilege(u, uid, cid) {
 		response.Error(c, response.TranslateMsg(c, "NoAccess"))
 		return
@@ -234,7 +235,7 @@ func (a *Ab) TagRename(c *gin.Context) {
 	c.String(http.StatusOK, "")
 }
 
-// TagUpdate
+// TagUpdate cambia il colore di un tag della rubrica guid.
 // @Tags 地址[Personal]
 // @Summary 标签修改颜色
 // @Description 标签
@@ -260,7 +261,7 @@ func (a *Ab) TagUpdate(c *gin.Context) {
 		return
 	}
 
-	//check privileges
+	// check privileges
 	if !service.AllService.AddressBookService.CheckUserWritePrivilege(u, uid, cid) {
 		response.Error(c, response.TranslateMsg(c, "NoAccess"))
 		return
@@ -280,7 +281,7 @@ func (a *Ab) TagUpdate(c *gin.Context) {
 	c.String(http.StatusOK, "")
 }
 
-// TagDel
+// TagDel cancella dei tag dalla rubrica guid.
 // @Tags 地址[Personal]
 // @Summary 标签删除
 // @Description 标签
@@ -299,7 +300,7 @@ func (a *Ab) TagDel(c *gin.Context) {
 		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
-	//fmt.Println(t)
+	// fmt.Println(t)
 	u := service.AllService.UserService.CurUser(c)
 	guid := c.Param("guid")
 	_, uid, cid, err := a.CheckGuid(u, guid)
@@ -308,7 +309,7 @@ func (a *Ab) TagDel(c *gin.Context) {
 		return
 	}
 
-	//check privileges
+	// check privileges
 	if !service.AllService.AddressBookService.CheckUserFullControlPrivilege(u, uid, cid) {
 		response.Error(c, response.TranslateMsg(c, "NoAccess"))
 		return
@@ -329,7 +330,8 @@ func (a *Ab) TagDel(c *gin.Context) {
 	c.String(http.StatusOK, "")
 }
 
-// Personal
+// Personal restituisce la rubrica personale dell'utente se
+// rustdesk.personal vale 1, altrimenti null.
 // @Tags 地址[Personal]
 // @Summary 个人地址
 // @Description 个人地址
@@ -351,7 +353,7 @@ func (a *Ab) Personal(c *gin.Context) {
 	*/
 	if global.Config.Rustdesk.Personal == 1 {
 		guid := a.ComposeGuid(user.GroupId, user.Id, 0)
-		//如果返回了guid，后面的请求会有变化
+		// 如果返回了guid，后面的请求会有变化
 		c.JSON(http.StatusOK, gin.H{
 			"guid": guid,
 			"name": user.Username,
@@ -363,7 +365,8 @@ func (a *Ab) Personal(c *gin.Context) {
 
 }
 
-// Settings
+// Settings restituisce le impostazioni delle rubriche: nessun limite di
+// voci.
 // @Tags 地址[Personal]
 // @Summary 设置
 // @Description 设置
@@ -376,11 +379,12 @@ func (a *Ab) Personal(c *gin.Context) {
 // @Security BearerAuth
 func (a *Ab) Settings(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"max_peer_one_ab": 0, //最大peer数，0表示不限制
+		"max_peer_one_ab": 0, // 最大peer数，0表示不限制
 	})
 }
 
-// SharedProfiles
+// SharedProfiles restituisce le rubriche dell'utente e quelle condivise con
+// lui.
 // @Tags 地址[Personal]
 // @Summary 共享地址簿
 // @Description 共享
@@ -407,14 +411,14 @@ func (a *Ab) SharedProfiles(c *gin.Context) {
 		})
 	}
 
-	allAbIds := make(map[uint]int) //用map去重，并保留最大Rule
+	allAbIds := make(map[uint]int) // 用map去重，并保留最大Rule
 	allUserIds := make(map[uint]*model.User)
 	rules := service.AllService.AddressBookService.CollectionReadRules(user)
 	for _, rule := range rules {
-		//先判断是否存在
+		// 先判断是否存在
 		r, ok := allAbIds[rule.CollectionId]
 		if ok {
-			//再判断权限大小
+			// 再判断权限大小
 			if r < rule.Rule {
 				allAbIds[rule.CollectionId] = rule.Rule
 			}
@@ -447,14 +451,15 @@ func (a *Ab) SharedProfiles(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"total": 0, //len(res),
+		"total": 0, // len(res),
 		"data":  res,
 	})
 }
 
-// ParseGuid
+// ParseGuid scompone guid, gruppo-utente-collezione, nei tre id: 0, 0, 0
+// se non e' valido.
 func (a *Ab) ParseGuid(guid string) (gid, uid, cid uint) {
-	//用-切割 guid
+	// 用-切割 guid
 	guids := strings.Split(guid, "-")
 	if len(guids) < 2 {
 		return 0, 0, 0
@@ -481,12 +486,13 @@ func (a *Ab) ParseGuid(guid string) (gid, uid, cid uint) {
 	return
 }
 
-// ComposeGuid
+// ComposeGuid compone il guid gruppo-utente-collezione di una rubrica.
 func (a *Ab) ComposeGuid(gid, uid, cid uint) string {
 	return strconv.Itoa(int(gid)) + "-" + strconv.Itoa(int(uid)) + "-" + strconv.Itoa(int(cid))
 }
 
-// CheckGuid
+// CheckGuid controlla che guid indichi una rubrica che l'utente cu puo' usare
+// e ne restituisce gli id.
 func (a *Ab) CheckGuid(cu *model.User, guid string) (gid, uid, cid uint, err error) {
 	gid, uid, cid = a.ParseGuid(guid)
 	err = nil
@@ -526,7 +532,7 @@ func (a *Ab) CheckGuid(cu *model.User, guid string) (gid, uid, cid uint, err err
 	return
 }
 
-// Peers
+// Peers restituisce le voci della rubrica guid.
 // @Tags 地址[Personal]
 // @Summary 地址列表
 // @Description 地址
@@ -548,7 +554,7 @@ func (a *Ab) Peers(c *gin.Context) {
 		return
 	}
 
-	//check privileges
+	// check privileges
 	if !service.AllService.AddressBookService.CheckUserReadPrivilege(u, uid, cid) {
 		response.Error(c, response.TranslateMsg(c, "NoAccess"))
 		return
@@ -562,7 +568,7 @@ func (a *Ab) Peers(c *gin.Context) {
 	})
 }
 
-// PeerAdd
+// PeerAdd aggiunge una voce alla rubrica guid.
 // @Tags 地址[Personal]
 // @Summary 添加地址
 // @Description 添加地址
@@ -575,7 +581,7 @@ func (a *Ab) Peers(c *gin.Context) {
 // @Security BearerAuth
 func (a *Ab) PeerAdd(c *gin.Context) {
 	// forceAlwaysRelay永远是字符串"false"
-	//f := &gin.H{}
+	// f := &gin.H{}
 	f := &requestform.PersonalAddressBookForm{}
 	err := c.ShouldBindJSON(f)
 	if err != nil {
@@ -591,13 +597,13 @@ func (a *Ab) PeerAdd(c *gin.Context) {
 		return
 	}
 
-	//check privileges
+	// check privileges
 	if !service.AllService.AddressBookService.CheckUserWritePrivilege(u, uid, cid) {
 		response.Error(c, response.TranslateMsg(c, "NoAccess"))
 		return
 	}
 
-	//fmt.Println(f)
+	// fmt.Println(f)
 	f.UserId = uid
 	ab := f.ToAddressBook()
 	ab.CollectionId = cid
@@ -618,7 +624,7 @@ func (a *Ab) PeerAdd(c *gin.Context) {
 	c.String(http.StatusOK, "")
 }
 
-// PeerDel
+// PeerDel cancella delle voci dalla rubrica guid.
 // @Tags 地址[Personal]
 // @Summary 删除地址
 // @Description 删除地址
@@ -644,7 +650,7 @@ func (a *Ab) PeerDel(c *gin.Context) {
 		return
 	}
 
-	//check privileges
+	// check privileges
 	if !service.AllService.AddressBookService.CheckUserFullControlPrivilege(u, uid, cid) {
 		response.Error(c, response.TranslateMsg(c, "NoAccess"))
 		return
@@ -666,7 +672,8 @@ func (a *Ab) PeerDel(c *gin.Context) {
 	c.String(http.StatusOK, "")
 }
 
-// PeerUpdate
+// PeerUpdate cambia alias, password, hash o tag di una voce della rubrica
+// guid.
 // @Tags 地址[Personal]
 // @Summary 更新地址
 // @Description 更新地址
@@ -679,7 +686,7 @@ func (a *Ab) PeerDel(c *gin.Context) {
 // @Security BearerAuth
 func (a *Ab) PeerUpdate(c *gin.Context) {
 	f := gin.H{}
-	//f := &requestform.PersonalAddressBookForm{}
+	// f := &requestform.PersonalAddressBookForm{}
 	err := c.ShouldBindJSON(&f)
 	if err != nil {
 		response.ErrorErr(c, "ParamsError", err)
@@ -693,13 +700,13 @@ func (a *Ab) PeerUpdate(c *gin.Context) {
 		return
 	}
 
-	//check privileges
+	// check privileges
 	if !service.AllService.AddressBookService.CheckUserWritePrivilege(u, uid, cid) {
 		response.Error(c, response.TranslateMsg(c, "NoAccess"))
 		return
 	}
-	//fmt.Println(f)
-	//判断f["Id"]是否存在
+	// fmt.Println(f)
+	// 判断f["Id"]是否存在
 	fid, ok := f["id"]
 	if !ok {
 		response.Error(c, response.TranslateMsg(c, "ParamsError"))
@@ -712,15 +719,15 @@ func (a *Ab) PeerUpdate(c *gin.Context) {
 		response.Error(c, response.TranslateMsg(c, "ItemNotFound"))
 		return
 	}
-	//允许的字段
+	// 允许的字段
 	allowUp := []string{"password", "hash", "tags", "alias"}
-	//f中的字段如果不在allowUp中，就删除
+	// f中的字段如果不在allowUp中，就删除
 	for k := range f {
 		if !utils.InArray(k, allowUp) {
 			delete(f, k)
 		}
 	}
-	//fmt.Println(f)
+	// fmt.Println(f)
 	if tags, _ok := f["tags"]; _ok {
 		f["tags"], _ = json.Marshal(tags)
 	}

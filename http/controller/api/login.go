@@ -40,7 +40,7 @@ func (l *Login) Login(c *gin.Context) {
 
 	f := &api.LoginForm{}
 	err := c.ShouldBindJSON(f)
-	//fmt.Println(f)
+	// fmt.Println(f)
 	if err != nil {
 		loginLimiter.RecordFailedAttempt(clientIp)
 		global.Logger.Warn(fmt.Sprintf("Login Fail: %s %s %s", "ParamsError", c.RemoteIP(), c.ClientIP()))
@@ -91,7 +91,8 @@ func (l *Login) Login(c *gin.Context) {
 	})
 }
 
-// LoginOptions
+// LoginOptions restituisce i modi di login che il client offre: i provider
+// OIDC e, con app.web-sso, webauth.
 // @Tags 登录
 // @Summary 登录选项
 // @Description 登录选项
@@ -126,7 +127,8 @@ func (l *Login) LoginOptions(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-// Logout
+// Logout cancella il token di sessione del client e scollega il suo
+// dispositivo dall'utente.
 // @Tags 登录
 // @Summary 登出
 // @Description 登出

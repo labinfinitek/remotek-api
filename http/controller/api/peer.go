@@ -15,7 +15,7 @@ import (
 type Peer struct {
 }
 
-// SysInfo
+// SysInfo salva le informazioni di sistema che il dispositivo manda.
 // @Tags System
 // @Summary 提交系统信息
 // @Description 提交系统信息
@@ -54,13 +54,13 @@ func (p *Peer) SysInfo(c *gin.Context) {
 			return
 		}
 	}
-	//SYSINFO_UPDATED 上传成功
-	//ID_NOT_FOUND 下次心跳会上传
-	//直接响应文本
+	// SYSINFO_UPDATED 上传成功
+	// ID_NOT_FOUND 下次心跳会上传
+	// 直接响应文本
 	c.String(http.StatusOK, "SYSINFO_UPDATED")
 }
 
-// SysInfoVer
+// SysInfoVer restituisce la versione dell'API e l'ora di avvio.
 // @Tags System
 // @Summary 获取系统版本信息
 // @Description 获取系统版本信息
@@ -70,7 +70,7 @@ func (p *Peer) SysInfo(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /sysinfo_ver [post]
 func (p *Peer) SysInfoVer(c *gin.Context) {
-	//读取resources/version文件
+	// 读取resources/version文件
 	v := service.AllService.AppService.GetAppVersion()
 	// 加上启动时间，方便client上传信息
 	v = fmt.Sprintf("%s\n%s", v, service.AllService.AppService.GetStartTime())

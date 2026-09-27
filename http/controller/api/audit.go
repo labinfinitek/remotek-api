@@ -16,7 +16,8 @@ import (
 type Audit struct {
 }
 
-// AuditConn
+// AuditConn salva nell'audit l'apertura, l'autenticazione e la chiusura
+// delle connessioni al dispositivo.
 // @Tags 审计
 // @Summary 审计连接
 // @Description 审计连接
@@ -75,7 +76,7 @@ func auditNonSalvato(c *gin.Context, err error) {
 	global.Logger.Errorf("%s %s: audit non salvato: %v", c.Request.Method, c.FullPath(), err)
 }
 
-// AuditFile
+// AuditFile salva nell'audit un trasferimento di file.
 // @Tags 审计
 // @Summary 审计文件
 // @Description 审计文件
@@ -92,9 +93,9 @@ func (a *Audit) AuditFile(c *gin.Context) {
 		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
-	//ttt := &gin.H{}
-	//c.ShouldBindBodyWith(ttt, binding.JSON)
-	//fmt.Println(ttt)
+	// ttt := &gin.H{}
+	// c.ShouldBindBodyWith(ttt, binding.JSON)
+	// fmt.Println(ttt)
 	af := aff.ToAuditFile()
 	if err := service.AllService.AuditService.CreateAuditFile(af); err != nil {
 		auditNonSalvato(c, err)

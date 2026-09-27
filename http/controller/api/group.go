@@ -40,7 +40,7 @@ func (g *Group) Users(c *gin.Context) {
 	gr := service.AllService.GroupService.InfoById(u.GroupId)
 	userList := &model.UserList{}
 	if !*u.IsAdmin && gr.Type != model.GroupTypeShare {
-		//仅能获取到自己
+		// 仅能获取到自己
 		userList.Users = append(userList.Users, u)
 		userList.Total = 1
 	} else {
@@ -59,7 +59,8 @@ func (g *Group) Users(c *gin.Context) {
 	})
 }
 
-// Peers
+// Peers restituisce i dispositivi degli utenti che l'utente vede: i suoi,
+// o quelli del gruppo se e' amministratore o il gruppo e' condiviso.
 // @Tags 群组
 // @Summary 机器
 // @Description 机器
@@ -84,7 +85,7 @@ func (g *Group) Peers(c *gin.Context) {
 	gr := service.AllService.GroupService.InfoById(u.GroupId)
 	users := make([]*model.User, 0, 1)
 	if !*u.IsAdmin && gr.Type != model.GroupTypeShare {
-		//仅能获取到自己
+		// 仅能获取到自己
 		users = append(users, u)
 	} else {
 		users = service.AllService.UserService.ListIdAndNameByGroupId(u.GroupId)
@@ -123,7 +124,7 @@ func (g *Group) Peers(c *gin.Context) {
 	})
 }
 
-// Device
+// Device restituisce i gruppi di dispositivi, solo agli amministratori.
 // @Tags 群组
 // @Summary 设备
 // @Description 机器
