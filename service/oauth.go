@@ -4,13 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-
-	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/lejianwen/rustdesk-api/v2/model"
-	"github.com/lejianwen/rustdesk-api/v2/utils"
-	"golang.org/x/oauth2"
-	"gorm.io/gorm"
-	// "io"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -18,12 +11,19 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/coreos/go-oidc/v3/oidc"
+	"golang.org/x/oauth2"
+	"gorm.io/gorm"
+
+	"github.com/lejianwen/rustdesk-api/v2/model"
+	"github.com/lejianwen/rustdesk-api/v2/utils"
 )
 
 type OauthService struct {
 }
 
-// Define a struct to parse the .well-known/openid-configuration response
+// OidcEndpoint is the response of .well-known/openid-configuration.
 type OidcEndpoint struct {
 	Issuer   string `json:"issuer"`
 	AuthURL  string `json:"authorization_endpoint"`
@@ -33,7 +33,7 @@ type OidcEndpoint struct {
 
 type OauthCacheItem struct {
 	UserId     uint   `json:"user_id"`
-	Id         string `json:"id"` //rustdesk的设备ID
+	Id         string `json:"id"` // rustdesk的设备ID
 	Op         string `json:"op"`
 	Action     string `json:"action"`
 	Uuid       string `json:"uuid"`
@@ -92,7 +92,7 @@ func (os *OauthService) DeleteOauthCache(key string) {
 	OauthCache.Delete(key)
 }
 
-func (os *OauthService) BeginAuth(op string) (error error, state, verifier, nonce, url string) {
+func (os *OauthService) BeginAuth(op string) (state, verifier, nonce, url string, err error) {
 	state = utils.RandomString(10) + strconv.FormatInt(time.Now().Unix(), 10)
 	verifier = ""
 	nonce = ""
@@ -100,13 +100,13 @@ func (os *OauthService) BeginAuth(op string) (error error, state, verifier, nonc
 		// Con app.web-sso spento webauth non esiste: stessa risposta di un op
 		// che non c'e', non solo la voce tolta da /api/login-options.
 		if !Config.App.WebSso {
-			return errors.New("ConfigNotFound"), state, verifier, nonce, ""
+			return state, verifier, nonce, "", errors.New("ConfigNotFound")
 		}
 		url = Config.Rustdesk.ApiServer + "/_admin/#/oauth/" + state
-		//url = "http://localhost:8888/_admin/#/oauth/" + code
-		return nil, state, verifier, nonce, url
+		// url = "http://localhost:8888/_admin/#/oauth/" + code
+		return state, verifier, nonce, url, nil
 	}
-	err, oauthInfo, oauthConfig, _ := os.GetOauthConfig(op)
+	oauthInfo, oauthConfig, _, err := os.GetOauthConfig(op)
 	if err == nil {
 		extras := make([]oauth2.AuthCodeOption, 0, 3)
 
@@ -125,13 +125,13 @@ func (os *OauthService) BeginAuth(op string) (error error, state, verifier, nonc
 			}
 		}
 
-		return err, state, verifier, nonce, oauthConfig.AuthCodeURL(state, extras...)
+		return state, verifier, nonce, oauthConfig.AuthCodeURL(state, extras...), nil
 	}
 
-	return err, state, verifier, nonce, ""
+	return state, verifier, nonce, "", err
 }
 
-func (os *OauthService) FetchOidcProvider(issuer string) (error, *oidc.Provider) {
+func (os *OauthService) FetchOidcProvider(issuer string) (*oidc.Provider, error) {
 
 	// Get the HTTP client (with or without proxy based on configuration)
 	client := getHTTPClientWithProxy()
@@ -140,20 +140,19 @@ func (os *OauthService) FetchOidcProvider(issuer string) (error, *oidc.Provider)
 
 	provider, err := oidc.NewProvider(ctx, issuer)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
-	return nil, provider
+	return provider, nil
 }
 
 // GetOauthConfig retrieves the OAuth2 configuration based on the provider name
-func (os *OauthService) GetOauthConfig(op string) (err error, oauthInfo *model.Oauth, oauthConfig *oauth2.Config, provider *oidc.Provider) {
-	//err, oauthInfo, oauthConfig = os.getOauthConfigGeneral(op)
+func (os *OauthService) GetOauthConfig(op string) (oauthInfo *model.Oauth, oauthConfig *oauth2.Config, provider *oidc.Provider, err error) {
 	oauthInfo = os.InfoByOp(op)
 	// Un provider che non e' oidc, come github, google e linuxdo tolti (A3),
 	// resta nel database ma al login risponde come un op che non esiste.
 	if oauthInfo.Id == 0 || oauthInfo.OauthType != model.OauthTypeOidc || oauthInfo.ClientId == "" || oauthInfo.ClientSecret == "" {
-		return errors.New("ConfigNotFound"), nil, nil, nil
+		return nil, nil, nil, errors.New("ConfigNotFound")
 	}
 	oauthConfig = &oauth2.Config{
 		ClientID:     oauthInfo.ClientId,
@@ -161,17 +160,19 @@ func (os *OauthService) GetOauthConfig(op string) (err error, oauthInfo *model.O
 		RedirectURL:  Config.Rustdesk.ApiServer + "/api/oidc/callback",
 	}
 
-	err, provider = os.FetchOidcProvider(oauthInfo.Issuer)
+	provider, err = os.FetchOidcProvider(oauthInfo.Issuer)
 	if err != nil {
-		return err, nil, nil, nil
+		return nil, nil, nil, err
 	}
 	oauthConfig.Endpoint = provider.Endpoint()
 	oauthConfig.Scopes = os.constructScopes(oauthInfo.Scopes)
-	return nil, oauthInfo, oauthConfig, provider
+	return oauthInfo, oauthConfig, provider, nil
 }
 
 func getHTTPClientWithProxy() *http.Client {
-	//add timeout 30s
+	// Timeout di 60 secondi, solo col proxy: senza, il client e'
+	// http.DefaultClient, che non ne ha (il callback OIDC ha il suo,
+	// tempoProviderOidc).
 	timeout := time.Duration(60) * time.Second
 	if Config.Proxy.Enable {
 		if Config.Proxy.Host == "" {
@@ -190,11 +191,20 @@ func getHTTPClientWithProxy() *http.Client {
 	}
 	return http.DefaultClient
 }
+
+// tempoProviderOidc e' il tempo massimo delle richieste del callback OIDC al
+// provider, dallo scambio del codice alla userinfo: senza, un provider che
+// non risponde terrebbe ferma la pagina del login per sempre, perche' senza
+// proxy il client HTTP non ha timeout. I test lo accorciano.
+var tempoProviderOidc = 30 * time.Second
+
 func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.Provider, code string, verifier string, nonce string, userData interface{}) error {
 
 	// 设置代理客户端
 	httpClient := getHTTPClientWithProxy()
-	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
+	ctx, cancel := context.WithTimeout(context.Background(), tempoProviderOidc)
+	defer cancel()
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
 
 	exchangeOpts := make([]oauth2.AuthCodeOption, 0, 1)
 	if verifier != "" {
@@ -208,8 +218,9 @@ func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.
 		return errors.New("GetOauthTokenError")
 	}
 
-	// Senza id_token la verifica si salta, nonce compreso: la tolleranza era
-	// per GitHub e Linux.do, che non sono OIDC e sono usciti (A3).
+	// Senza id_token si saltano la verifica del token e quella del nonce: la
+	// tolleranza era per GitHub e Linux.do, che non sono OIDC e sono usciti
+	// (A3).
 	rawIDToken, ok := token.Extra("id_token").(string)
 	if ok && rawIDToken != "" {
 		// 验证 ID Token
@@ -238,7 +249,12 @@ func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.
 
 	// 获取用户信息
 	client := oauthConfig.Client(ctx, token)
-	resp, err := client.Get(provider.UserInfoEndpoint())
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, provider.UserInfoEndpoint(), nil)
+	if err != nil {
+		Logger.Warn("richiesta della userinfo non preparata: ", err)
+		return errors.New("GetOauthUserInfoError")
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		Logger.Warn("failed getting user info: ", err)
 		return errors.New("GetOauthUserInfoError")
@@ -259,19 +275,19 @@ func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.
 }
 
 // oidcCallback oidc回调, 通过code获取用户信息
-func (os *OauthService) oidcCallback(oauthConfig *oauth2.Config, provider *oidc.Provider, code, verifier, nonce string) (error, *model.OauthUser) {
+func (os *OauthService) oidcCallback(oauthConfig *oauth2.Config, provider *oidc.Provider, code, verifier, nonce string) (*model.OauthUser, error) {
 	var user = &model.OidcUser{}
 	if err := os.callbackBase(oauthConfig, provider, code, verifier, nonce, user); err != nil {
-		return err, nil
+		return nil, err
 	}
-	return nil, user.ToOauthUser()
+	return user.ToOauthUser(), nil
 }
 
-// Callback: Get user information by code and op(Oauth provider)
-func (os *OauthService) Callback(code, verifier, op, nonce string) (err error, oauthUser *model.OauthUser) {
-	err, _, oauthConfig, provider := os.GetOauthConfig(op)
+// Callback gets the user information by code and op (the OAuth provider).
+func (os *OauthService) Callback(code, verifier, op, nonce string) (oauthUser *model.OauthUser, err error) {
+	_, oauthConfig, provider, err := os.GetOauthConfig(op)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	return os.oidcCallback(oauthConfig, provider, code, verifier, nonce)
 }
@@ -282,10 +298,10 @@ func (os *OauthService) UserThirdInfo(op string, openId string) *model.UserThird
 	return ut
 }
 
-// BindOauthUser: Bind third party account
+// BindOauthUser binds a third party account.
 func (os *OauthService) BindOauthUser(userId uint, oauthUser *model.OauthUser, op string) error {
 	utr := &model.UserThird{}
-	err, oauthType := os.GetTypeByOp(op)
+	oauthType, err := os.GetTypeByOp(op)
 	if err != nil {
 		return err
 	}
@@ -293,17 +309,17 @@ func (os *OauthService) BindOauthUser(userId uint, oauthUser *model.OauthUser, o
 	return DB.Create(utr).Error
 }
 
-// UnBindOauthUser: Unbind third party account
+// UnBindOauthUser unbinds a third party account.
 func (os *OauthService) UnBindOauthUser(userId uint, op string) error {
 	return os.UnBindThird(op, userId)
 }
 
-// UnBindThird: Unbind third party account
+// UnBindThird unbinds a third party account.
 func (os *OauthService) UnBindThird(op string, userId uint) error {
 	return DB.Where("user_id = ? and op = ?", userId, op).Delete(&model.UserThird{}).Error
 }
 
-// DeleteUserByUserId: When user is deleted, delete all third party bindings
+// DeleteUserByUserId deletes all the third party bindings of a deleted user.
 func (os *OauthService) DeleteUserByUserId(userId uint) error {
 	return DB.Where("user_id = ?", userId).Delete(&model.UserThird{}).Error
 }
@@ -320,12 +336,6 @@ func (os *OauthService) InfoByOp(op string) *model.Oauth {
 	oauthInfo := &model.Oauth{}
 	DB.Where("op = ?", op).First(oauthInfo)
 	return oauthInfo
-}
-
-// Helper function to get scopes by operation
-func (os *OauthService) getScopesByOp(op string) []string {
-	scopes := os.InfoByOp(op).Scopes
-	return os.constructScopes(scopes)
 }
 
 // Helper function to construct scopes
@@ -352,12 +362,12 @@ func (os *OauthService) List(page, pageSize uint, where func(tx *gorm.DB)) (res 
 }
 
 // GetTypeByOp 根据op获取OauthType
-func (os *OauthService) GetTypeByOp(op string) (error, string) {
+func (os *OauthService) GetTypeByOp(op string) (string, error) {
 	oauthInfo := &model.Oauth{}
 	if DB.Where("op = ?", op).First(oauthInfo).Error != nil {
-		return fmt.Errorf("OAuth provider with op '%s' not found", op), ""
+		return "", fmt.Errorf("OAuth provider with op '%s' not found", op)
 	}
-	return nil, oauthInfo.OauthType
+	return oauthInfo.OauthType, nil
 }
 
 // ValidateOauthProvider 验证Oauth提供者是否正确

@@ -1,8 +1,12 @@
 package service
 
 import (
-	"github.com/lejianwen/rustdesk-api/v2/model"
+	"errors"
+	"fmt"
+
 	"gorm.io/gorm"
+
+	"github.com/lejianwen/rustdesk-api/v2/model"
 )
 
 type PeerService struct {
@@ -14,49 +18,45 @@ func (ps *PeerService) FindById(id string) *model.Peer {
 	DB.Where("id = ?", id).First(p)
 	return p
 }
-func (ps *PeerService) FindByUuid(uuid string) *model.Peer {
-	p := &model.Peer{}
-	DB.Where("uuid = ?", uuid).First(p)
-	return p
-}
 func (ps *PeerService) InfoByRowId(id uint) *model.Peer {
 	p := &model.Peer{}
 	DB.Where("row_id = ?", id).First(p)
 	return p
 }
 
-// FindByUserIdAndUuid 根据用户id和uuid查找peer
-func (ps *PeerService) FindByUserIdAndUuid(uuid string, userId uint) *model.Peer {
-	p := &model.Peer{}
-	DB.Where("uuid = ? and user_id = ?", uuid, userId).First(p)
-	return p
+// UuidBindUserId lega all'utente userId il dispositivo con uuid. Se il
+// dispositivo non c'e' non fa niente: lo crea il suo /api/sysinfo.
+func (ps *PeerService) UuidBindUserId(uuid string, userId uint) error {
+	peer := &model.Peer{}
+	err := DB.Where("uuid = ?", uuid).First(peer).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("lettura del dispositivo: %w", err)
+	}
+	peer.UserId = userId
+	if err := ps.Update(peer); err != nil {
+		return fmt.Errorf("aggiornamento del dispositivo: %w", err)
+	}
+	return nil
 }
 
-// UuidBindUserId 绑定用户id
-func (ps *PeerService) UuidBindUserId(deviceId string, uuid string, userId uint) {
-	peer := ps.FindByUuid(uuid)
-	// 如果存在则更新
-	if peer.RowId > 0 {
-		peer.UserId = userId
-		ps.Update(peer)
-	} else {
-		// 不存在则创建
-		/*if deviceId != "" {
-			DB.Create(&model.Peer{
-				Id:     deviceId,
-				Uuid:   uuid,
-				UserId: userId,
-			})
-		}*/
+// UuidUnbindUserId scollega dall'utente userId il suo dispositivo con uuid,
+// se c'e'. Serve al logout.
+func (ps *PeerService) UuidUnbindUserId(uuid string, userId uint) error {
+	peer := &model.Peer{}
+	err := DB.Where("uuid = ? and user_id = ?", uuid, userId).First(peer).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
 	}
-}
-
-// UuidUnbindUserId 解绑用户id, 用于用户注销
-func (ps *PeerService) UuidUnbindUserId(uuid string, userId uint) {
-	peer := ps.FindByUserIdAndUuid(uuid, userId)
-	if peer.RowId > 0 {
-		DB.Model(peer).Update("user_id", 0)
+	if err != nil {
+		return fmt.Errorf("lettura del dispositivo: %w", err)
 	}
+	if err := DB.Model(peer).Update("user_id", 0).Error; err != nil {
+		return fmt.Errorf("aggiornamento del dispositivo: %w", err)
+	}
+	return nil
 }
 
 // EraseUserId 清除用户id, 用于用户删除
@@ -126,7 +126,7 @@ func (ps *PeerService) GetUuidListByIDs(ids []uint) ([]string, error) {
 	err := DB.Model(&model.Peer{}).
 		Where("row_id in (?)", ids).
 		Pluck("uuid", &uuids).Error
-	//过滤uuids中的空字符串
+	// 过滤uuids中的空字符串
 	var newUuids []string
 	for _, uuid := range uuids {
 		if uuid != "" {
@@ -136,15 +136,24 @@ func (ps *PeerService) GetUuidListByIDs(ids []uint) ([]string, error) {
 	return newUuids, err
 }
 
-// BatchDelete 批量删除, 同时也应该删除token
+// BatchDelete cancella i dispositivi ids e i token di sessione dei loro uuid,
+// in una transazione che su errore o panic si annulla. Se gli uuid non si
+// leggono non cancella niente: i token dei dispositivi cancellati
+// resterebbero validi.
 func (ps *PeerService) BatchDelete(ids []uint) error {
 	uuids, err := ps.GetUuidListByIDs(ids)
-	err = DB.Where("row_id in (?)", ids).Delete(&model.Peer{}).Error
 	if err != nil {
-		return err
+		return fmt.Errorf("uuid dei dispositivi da cancellare: %w", err)
 	}
-	// 删除token
-	return AllService.UserService.FlushTokenByUuids(uuids)
+	return DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("row_id in (?)", ids).Delete(&model.Peer{}).Error; err != nil {
+			return fmt.Errorf("dispositivi: %w", err)
+		}
+		if err := tx.Where("device_uuid in (?)", uuids).Delete(&model.UserToken{}).Error; err != nil {
+			return fmt.Errorf("token di sessione dei dispositivi: %w", err)
+		}
+		return nil
+	})
 }
 
 // Update 更新

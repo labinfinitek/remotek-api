@@ -63,7 +63,10 @@ func RustAuth() gin.HandlerFunc {
 		c.Set("curUser", user)
 		c.Set("token", token)
 
-		service.AllService.UserService.AutoRefreshAccessToken(ut)
+		if err := service.AllService.UserService.AutoRefreshAccessToken(ut); err != nil {
+			// Il token vale fino alla scadenza di prima: la richiesta va avanti.
+			global.Logger.Warnf("%s %s: rinnovo del token non riuscito: %v", c.Request.Method, c.FullPath(), err)
+		}
 
 		c.Next()
 	}

@@ -12,9 +12,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/utils"
-	"gorm.io/gorm"
 )
 
 type UserService struct {
@@ -31,13 +32,6 @@ func (us *UserService) InfoById(id uint) *model.User {
 func (us *UserService) InfoByUsername(un string) *model.User {
 	u := &model.User{}
 	DB.Where("username = ?", un).First(u)
-	return u
-}
-
-// InfoByEmail 根据邮箱取用户信息
-func (us *UserService) InfoByEmail(email string) *model.User {
-	u := &model.User{}
-	DB.Where("email = ?", email).First(u)
 	return u
 }
 
@@ -69,7 +63,7 @@ func (us *UserService) InfoByUsernamePassword(username, password string) *model.
 	return u
 }
 
-// InfoByAccesstoken 根据accesstoken取用户信息
+// InfoByAccessToken 根据accesstoken取用户信息
 func (us *UserService) InfoByAccessToken(token string) (*model.User, *model.UserToken) {
 	u := &model.User{}
 	ut := &model.UserToken{}
@@ -116,8 +110,12 @@ func tokenCasuale(r io.Reader) (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
-// Login 登录
-func (us *UserService) Login(u *model.User, llog *model.LoginLog) *model.UserToken {
+// Login crea il token di sessione dell'utente u e registra l'accesso llog,
+// in una transazione che su errore o panic si annulla: chi entra non riceve
+// un token che il database non ha. Poi lega all'utente il dispositivo di
+// llog, se c'e'; se non ci riesce il login vale lo stesso e l'errore va nel
+// log.
+func (us *UserService) Login(u *model.User, llog *model.LoginLog) (*model.UserToken, error) {
 	token := us.GenerateToken(u)
 	ut := &model.UserToken{
 		UserId:     u.Id,
@@ -126,13 +124,25 @@ func (us *UserService) Login(u *model.User, llog *model.LoginLog) *model.UserTok
 		DeviceId:   llog.DeviceId,
 		ExpiredAt:  us.UserTokenExpireTimestamp(),
 	}
-	DB.Create(ut)
-	llog.UserTokenId = ut.UserId
-	DB.Create(llog)
-	if llog.Uuid != "" {
-		AllService.PeerService.UuidBindUserId(llog.DeviceId, llog.Uuid, u.Id)
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(ut).Error; err != nil {
+			return fmt.Errorf("token di sessione: %w", err)
+		}
+		llog.UserTokenId = ut.UserId
+		if err := tx.Create(llog).Error; err != nil {
+			return fmt.Errorf("registro degli accessi: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("login dell'utente %d: %w", u.Id, err)
 	}
-	return ut
+	if llog.Uuid != "" {
+		if err := AllService.PeerService.UuidBindUserId(llog.Uuid, u.Id); err != nil {
+			Logger.Warnf("login dell'utente %d: il dispositivo non si lega all'utente: %v", u.Id, err)
+		}
+	}
+	return ut, nil
 }
 
 // CurUser 获取当前用户
@@ -206,25 +216,25 @@ func (us *UserService) Create(u *model.User) error {
 	return res
 }
 
-// GetUuidByToken 根据token和user取uuid
-func (us *UserService) GetUuidByToken(u *model.User, token string) string {
+// Logout cancella il token di sessione token dell'utente u e scollega
+// dall'utente il dispositivo del token, se ce n'e' uno.
+func (us *UserService) Logout(u *model.User, token string) error {
 	ut := &model.UserToken{}
 	err := DB.Where("user_id = ? and token = ?", u.Id, token).First(ut).Error
-	if err != nil {
-		return ""
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
 	}
-	return ut.DeviceUuid
-}
-
-// Logout 退出登录 -> 删除token, 解绑uuid
-func (us *UserService) Logout(u *model.User, token string) error {
-	uuid := us.GetUuidByToken(u, token)
-	err := DB.Where("user_id = ? and token = ?", u.Id, token).Delete(&model.UserToken{}).Error
 	if err != nil {
-		return err
+		return fmt.Errorf("lettura del token: %w", err)
 	}
-	if uuid != "" {
-		AllService.PeerService.UuidUnbindUserId(uuid, u.Id)
+	if err := DB.Delete(ut).Error; err != nil {
+		return fmt.Errorf("cancellazione del token: %w", err)
+	}
+	if ut.DeviceUuid == "" {
+		return nil
+	}
+	if err := AllService.PeerService.UuidUnbindUserId(ut.DeviceUuid, u.Id); err != nil {
+		return fmt.Errorf("dispositivo del token: %w", err)
 	}
 	return nil
 }
@@ -235,7 +245,7 @@ func (us *UserService) Logout(u *model.User, token string) error {
 func (us *UserService) Delete(u *model.User) error {
 	userCount := us.getAdminUserCount()
 	if userCount <= 1 && us.IsAdmin(u) {
-		return errors.New("The last admin user cannot be deleted")
+		return errors.New("the last admin user cannot be deleted")
 	}
 	err := DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Delete(u).Error; err != nil {
@@ -267,7 +277,7 @@ func (us *UserService) Update(u *model.User) error {
 		adminCount := us.getAdminUserCount()
 		// 如果这是唯一的管理员，确保不能禁用或取消管理员权限
 		if adminCount <= 1 && (!us.IsAdmin(u) || u.Status == model.COMMON_STATUS_DISABLED) {
-			return errors.New("The last admin user cannot be disabled or demoted")
+			return errors.New("the last admin user cannot be disabled or demoted")
 		}
 	}
 	return DB.Model(u).Updates(u).Error
@@ -281,11 +291,6 @@ func (us *UserService) FlushToken(u *model.User) error {
 // FlushTokenByUuid 清空token
 func (us *UserService) FlushTokenByUuid(uuid string) error {
 	return DB.Where("device_uuid = ?", uuid).Delete(&model.UserToken{}).Error
-}
-
-// FlushTokenByUuids 清空token
-func (us *UserService) FlushTokenByUuids(uuids []string) error {
-	return DB.Where("device_uuid in (?)", uuids).Delete(&model.UserToken{}).Error
 }
 
 // UpdatePassword 更新密码
@@ -308,7 +313,7 @@ func (us *UserService) IsAdmin(u *model.User) bool {
 	return u != nil && *u.IsAdmin
 }
 
-// RouteNames
+// RouteNames restituisce i nomi delle rotte del pannello che l'utente u vede.
 func (us *UserService) RouteNames(u *model.User) []string {
 	if us.IsAdmin(u) {
 		return model.AdminRouteNames
@@ -329,19 +334,31 @@ func (us *UserService) InfoByOauthId(op string, openId string) *model.User {
 	return u
 }
 
-// RegisterByOauth 注册
-func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (error, *model.User) {
+// RegisterByOauth restituisce l'utente locale di oauthUser, l'utente del
+// provider op: quello della sua associazione al provider; se non c'e',
+// quello con la stessa email, a cui aggiunge l'associazione; altrimenti uno
+// nuovo, creato con l'associazione in una transazione. Un errore del
+// database ferma tutto: una lettura che fallisce non vale "non trovato", che
+// farebbe un utente doppio.
+func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (*model.User, error) {
 	Lock.Lock("registerByOauth")
 	defer Lock.UnLock("registerByOauth")
-	ut := AllService.OauthService.UserThirdInfo(op, oauthUser.OpenId)
-	if ut.Id != 0 {
-		return nil, us.InfoById(ut.UserId)
+	ut := &model.UserThird{}
+	switch err := DB.Where("open_id = ? and op = ?", oauthUser.OpenId, op).First(ut).Error; {
+	case err == nil:
+		user := &model.User{}
+		if err := DB.Where("id = ?", ut.UserId).First(user).Error; err != nil {
+			return nil, fmt.Errorf("utente %d dell'associazione al provider: %w", ut.UserId, err)
+		}
+		return user, nil
+	case !errors.Is(err, gorm.ErrRecordNotFound):
+		return nil, fmt.Errorf("associazione al provider: %w", err)
 	}
-	err, oauthType := AllService.OauthService.GetTypeByOp(op)
+	oauthType, err := AllService.OauthService.GetTypeByOp(op)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
-	//check if this email has been registered
+	// check if this email has been registered
 	email := oauthUser.Email
 	// only email is not empty
 	if email != "" {
@@ -351,17 +368,25 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (e
 		// call this, if find user by email, it will update the email to local database
 		user, ldapErr := AllService.LdapService.GetUserInfoByEmailLocal(email)
 		// If we enable ldap, and the error is not ErrLdapUserNotFound, return the error because we could not sure if the user is not found in ldap
-		if !(errors.Is(ldapErr, ErrLdapNotEnabled) || errors.Is(ldapErr, ErrLdapUserNotFound) || ldapErr == nil) {
-			return ldapErr, user
+		if !errors.Is(ldapErr, ErrLdapNotEnabled) && !errors.Is(ldapErr, ErrLdapUserNotFound) && ldapErr != nil {
+			return user, ldapErr
 		}
 		if user.Id == 0 {
 			// this means the user is not found in ldap, maybe ldao is not enabled
-			user = us.InfoByEmail(email)
+			user = &model.User{}
+			switch err := DB.Where("email = ?", email).First(user).Error; {
+			case errors.Is(err, gorm.ErrRecordNotFound):
+				user = nil
+			case err != nil:
+				return nil, fmt.Errorf("utente con l'email del provider: %w", err)
+			}
 		}
-		if user.Id != 0 {
+		if user != nil {
 			ut.FromOauthUser(user.Id, oauthUser, oauthType, op)
-			DB.Create(ut)
-			return nil, user
+			if err := DB.Create(ut).Error; err != nil {
+				return nil, errors.Join(errors.New("OauthRegisterFailed"), fmt.Errorf("associazione al provider dell'utente %d con la stessa email: %w", user.Id, err))
+			}
+			return user, nil
 		}
 	}
 
@@ -389,20 +414,21 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (e
 		return nil
 	})
 	if err != nil {
-		return errors.Join(errors.New("OauthRegisterFailed"), err), nil
+		return nil, errors.Join(errors.New("OauthRegisterFailed"), err)
 	}
-	return nil, user
+	return user, nil
 }
 
 // GenerateUsernameByOauth 生成用户名
 func (us *UserService) GenerateUsernameByOauth(name string) string {
 	for us.IsUsernameExists(name) {
-		name += strconv.Itoa(rand.Intn(10)) // Append a random digit (0-9)
+		name += strconv.Itoa(rand.Intn(10)) //nolint:gosec // G404: una cifra in coda a un nome gia' preso, non un segreto
 	}
 	return name
 }
 
-// UserThirdsByUserId
+// UserThirdsByUserId restituisce le associazioni ai provider dell'utente
+// userId.
 func (us *UserService) UserThirdsByUserId(userId uint) (res []*model.UserThird) {
 	DB.Where("user_id = ?", userId).Find(&res)
 	return res
@@ -491,13 +517,6 @@ func (us *UserService) formatUsername(username string) string {
 	return username
 }
 
-// Helper functions, getUserCount
-func (us *UserService) getUserCount() int64 {
-	var count int64
-	DB.Model(&model.User{}).Count(&count)
-	return count
-}
-
 // helper functions, getAdminUserCount
 func (us *UserService) getAdminUserCount() int64 {
 	var count int64
@@ -509,21 +528,29 @@ func (us *UserService) getAdminUserCount() int64 {
 func (us *UserService) UserTokenExpireTimestamp() int64 {
 	exp := Config.App.TokenExpire
 	if exp == 0 {
-		//默认七天
+		// 默认七天
 		exp = 604800
 	}
 	return time.Now().Add(exp).Unix()
 }
 
-func (us *UserService) RefreshAccessToken(ut *model.UserToken) {
+// RefreshAccessToken porta la scadenza del token ut a quella di un token
+// nuovo.
+func (us *UserService) RefreshAccessToken(ut *model.UserToken) error {
 	ut.ExpiredAt = us.UserTokenExpireTimestamp()
-	DB.Model(ut).Update("expired_at", ut.ExpiredAt)
+	if err := DB.Model(ut).Update("expired_at", ut.ExpiredAt).Error; err != nil {
+		return fmt.Errorf("scadenza del token %d: %w", ut.Id, err)
+	}
+	return nil
 }
 
-func (us *UserService) AutoRefreshAccessToken(ut *model.UserToken) {
+// AutoRefreshAccessToken rinnova il token ut se gli manca meno di un terzo
+// di app.token-expire.
+func (us *UserService) AutoRefreshAccessToken(ut *model.UserToken) error {
 	if ut.ExpiredAt-time.Now().Unix() < Config.App.TokenExpire.Milliseconds()/3000 {
-		us.RefreshAccessToken(ut)
+		return us.RefreshAccessToken(ut)
 	}
+	return nil
 }
 
 func (us *UserService) BatchDeleteUserToken(ids []uint) error {

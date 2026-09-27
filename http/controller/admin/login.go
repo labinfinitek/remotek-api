@@ -87,7 +87,7 @@ func (ct *Login) Login(c *gin.Context) {
 		return
 	}
 
-	ut := service.AllService.UserService.Login(u, &model.LoginLog{
+	ut, err := service.AllService.UserService.Login(u, &model.LoginLog{
 		UserId:   u.Id,
 		Client:   model.LoginLogClientWebAdmin,
 		Uuid:     "", // must be empty
@@ -95,6 +95,10 @@ func (ct *Login) Login(c *gin.Context) {
 		Type:     model.LoginLogTypeAccount,
 		Platform: f.Platform,
 	})
+	if err != nil {
+		response.FailErr(c, 101, "OperationFailed", err)
+		return
+	}
 
 	// 登录成功，清除登录限制
 	loginLimiter.RemoveAttempts(clientIp)
@@ -201,7 +205,7 @@ func (ct *Login) OidcAuth(c *gin.Context) {
 		return
 	}
 
-	err, state, verifier, nonce, url := service.AllService.OauthService.BeginAuth(f.Op)
+	state, verifier, nonce, url, err := service.AllService.OauthService.BeginAuth(f.Op)
 	if err != nil {
 		response.ErrorErr(c, "SystemError", err)
 		return

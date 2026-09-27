@@ -15,7 +15,7 @@ func TestGetAppVersion(t *testing.T) {
 
 func TestMultipleGetAppVersion(t *testing.T) {
 	s := &AppService{}
-	//并发测试
+	// 并发测试
 	// 使用 WaitGroup 等待所有 goroutine 完成
 	wg := sync.WaitGroup{}
 	wg.Add(10) // 启动 10 个 goroutine

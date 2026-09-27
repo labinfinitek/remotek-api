@@ -3,6 +3,7 @@ package middleware
 import (
 	"github.com/gin-gonic/gin"
 
+	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 )
@@ -36,7 +37,10 @@ func BackendUserAuth() gin.HandlerFunc {
 		c.Set("curUser", user)
 		c.Set("token", token)
 		// 如果时间小于1天,token自动续期
-		service.AllService.UserService.AutoRefreshAccessToken(ut)
+		if err := service.AllService.UserService.AutoRefreshAccessToken(ut); err != nil {
+			// Il token vale fino alla scadenza di prima: la richiesta va avanti.
+			global.Logger.Warnf("%s %s: rinnovo del token non riuscito: %v", c.Request.Method, c.FullPath(), err)
+		}
 
 		c.Next()
 	}

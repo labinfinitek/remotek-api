@@ -336,12 +336,16 @@ func (ct *User) Register(c *gin.Context) {
 		return
 	}
 	// 注册成功后自动登录
-	ut := service.AllService.UserService.Login(u, &model.LoginLog{
+	ut, err := service.AllService.UserService.Login(u, &model.LoginLog{
 		UserId: u.Id,
 		Client: model.LoginLogClientWebAdmin,
 		Uuid:   "",
 		Ip:     c.ClientIP(),
 		Type:   model.LoginLogTypeAccount,
 	})
+	if err != nil {
+		response.FailErr(c, 101, "OperationFailed", err)
+		return
+	}
 	responseLoginSuccess(c, u, ut.Token)
 }

@@ -23,5 +23,6 @@ lib/logger
 lib/orm
 model
 model/custom_types
+service
 test/contratto
 utils

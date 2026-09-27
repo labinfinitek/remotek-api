@@ -33,7 +33,7 @@ func init() {
 	startTime = time.Now().Format("2006-01-02 15:04:05")
 }
 
-// GetStartTime
+// GetStartTime restituisce l'ora di avvio dell'API.
 func (a *AppService) GetStartTime() string {
 	return startTime
 }

@@ -36,7 +36,7 @@ func (o *Oauth) OidcAuth(c *gin.Context) {
 
 	oauthService := service.AllService.OauthService
 
-	err, state, verifier, nonce, url := oauthService.BeginAuth(f.Op)
+	state, verifier, nonce, url, err := oauthService.BeginAuth(f.Op)
 	if err != nil {
 		response.ErrorErr(c, "SystemError", err)
 		return
@@ -98,7 +98,7 @@ func (o *Oauth) OidcAuthQueryPre(c *gin.Context) (*model.User, *model.UserToken)
 	service.AllService.OauthService.DeleteOauthCache(q.Code)
 
 	// 创建登录日志并生成用户令牌
-	ut = service.AllService.UserService.Login(u, &model.LoginLog{
+	ut, err := service.AllService.UserService.Login(u, &model.LoginLog{
 		UserId:   u.Id,
 		Client:   v.DeviceType,
 		DeviceId: v.Id,
@@ -107,9 +107,8 @@ func (o *Oauth) OidcAuthQueryPre(c *gin.Context) (*model.User, *model.UserToken)
 		Type:     model.LoginLogTypeOauth,
 		Platform: v.DeviceOs,
 	})
-
-	if ut == nil {
-		response.Error(c, response.TranslateMsg(c, "LoginFailed"))
+	if err != nil {
+		response.ErrorErr(c, "LoginFailed", err)
 		return nil, nil
 	}
 
@@ -174,7 +173,7 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 	var user *model.User
 	// 获取用户信息
 	code := c.Query("code")
-	err, oauthUser := oauthService.Callback(code, verifier, op, nonce)
+	oauthUser, err := oauthService.Callback(code, verifier, op, nonce)
 	if err != nil {
 		// L'errore del provider va solo nel log, la pagina dice OauthFailed.
 		global.Logger.Warnf("%s %s: alla pagina va OauthFailed, errore %q", c.Request.Method, c.FullPath(), err)
@@ -236,7 +235,7 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 			}
 
 			//自动注册
-			err, user = service.AllService.UserService.RegisterByOauth(oauthUser, op)
+			user, err = service.AllService.UserService.RegisterByOauth(oauthUser, op)
 			if err != nil {
 				c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
 					"message": response.IDErr(c, "OauthFailed", err),

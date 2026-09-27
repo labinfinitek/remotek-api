@@ -6,6 +6,55 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Corretto
+- Cancellazione in blocco dei dispositivi dal pannello
+  (`/api/admin/peer/batchDelete`): se gli uuid dei dispositivi non si
+  leggono dal database non cancella niente e risponde "Operazione non
+  riuscita.", con l'errore nel log; dispositivi e token di sessione dei loro
+  uuid si cancellano in una transazione. Prima cancellava i dispositivi e
+  rispondeva successo, e se i token non si cancellavano i dispositivi
+  restavano cancellati: i token dei dispositivi cancellati restavano validi.
+- Login OIDC con autoregistrazione: se l'utente del provider ha l'email di
+  un utente locale e l'associazione al provider non si salva, la pagina
+  dice "Registrazione con OAuth non riuscita." e il login non si lega
+  all'utente; prima riusciva senza associazione. Un errore del database
+  nel leggere l'associazione, il suo utente o l'utente con la stessa email
+  ferma il login con "Autorizzazione OAuth non riuscita." e va nel log:
+  prima valeva "non trovato", e nasceva un utente doppio o la pagina diceva
+  successo senza login.
+- Login del client (`/api/login`, `/api/oidc/auth-query`) e del pannello
+  (login e registrazione): se il token di sessione o la riga del registro
+  degli accessi non si salvano, la risposta e' d'errore ("Operazione non
+  riuscita.", "Accesso non riuscito." nel login OIDC) e l'errore va nel
+  log; token e registro si salvano in una transazione. Prima la risposta
+  dava un token che il database non aveva, e il client usciva alla prima
+  richiesta (401), o lasciava il login fuori dal registro. Se il
+  dispositivo del login non si lega all'utente il login vale lo stesso e
+  l'errore va nel log.
+- Logout del pannello (`/api/admin/logout`) col token di un dispositivo: se
+  il token non si legge o il dispositivo non si scollega dall'utente,
+  risponde "Operazione non riuscita." e l'errore va nel log; prima
+  rispondeva successo e il dispositivo restava dell'utente.
+- Il rinnovo della scadenza del token di sessione, che le rotte del client
+  e del pannello fanno quando al token manca meno di un terzo di
+  `app.token-expire`, se non si salva va nel log a livello warn, con
+  metodo e rotta; la richiesta va avanti come prima. Prima l'errore si
+  perdeva.
+- LDAP: un bind rifiutato (dell'account di servizio o di un utente) e un
+  `userAccountControl` non numerico vanno nel log, col motivo (warn e
+  error; per `userAccountControl` anche il nome dell'utente), non piu' su
+  stdout senza motivo; anche l'errore di chiusura della connessione dopo il
+  bind rifiutato va nel log.
+- Login OIDC: le richieste del callback al provider (scambio del codice,
+  chiavi dell'id_token, userinfo) hanno 30 secondi in tutto; un provider
+  che non risponde fa dire alla pagina "Autorizzazione OAuth non
+  riuscita.", con l'errore nel log, invece di tenerla ferma senza limite:
+  senza proxy il client HTTP non aveva timeout.
+- Comandi al server rustdesk dal pannello: connessione, invio e risposta
+  hanno 5 secondi per indirizzo (IPv6, poi IPv4); un server che accetta la
+  connessione e non risponde fa rispondere "Operazione non riuscita."
+  invece di tenere ferma la richiesta senza limite.
+
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,
 sotto Rimosso: via il login GitHub, Google e Linux.do (resta OIDC generico)
