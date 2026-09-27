@@ -35,8 +35,16 @@ type Ab struct {
 func (a *Ab) Ab(c *gin.Context) {
 	user := service.AllService.UserService.CurUser(c)
 
-	al := service.AllService.AddressBookService.ListByUserIdAndCollectionId(user.Id, 0, 1, 1000)
-	tags := service.AllService.TagService.ListByUserIdAndCollectionId(user.Id, 0)
+	al, err := service.AllService.AddressBookService.ListByUserIdAndCollectionId(user.Id, 0, 1, 1000)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return
+	}
+	tags, err := service.AllService.TagService.ListByUserIdAndCollectionId(user.Id, 0)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return
+	}
 
 	tagColors := map[string]uint{}
 	// 将tags中的name转成一个以逗号分割的字符串
@@ -129,7 +137,11 @@ func (a *Ab) PTags(c *gin.Context) {
 	if !a.permesso(c, u, uid, cid, model.ShareAddressBookRuleRuleRead) {
 		return
 	}
-	tags := service.AllService.TagService.ListByUserIdAndCollectionId(uid, cid)
+	tags, err := service.AllService.TagService.ListByUserIdAndCollectionId(uid, cid)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return
+	}
 	c.JSON(http.StatusOK, tags.Tags)
 }
 
@@ -396,7 +408,11 @@ func (a *Ab) SharedProfiles(c *gin.Context) {
 	var res []*api.SharedProfilesPayload
 
 	user := service.AllService.UserService.CurUser(c)
-	myAbCollectionList := service.AllService.AddressBookService.ListCollectionByUserId(user.Id)
+	myAbCollectionList, err := service.AllService.AddressBookService.ListCollectionByUserId(user.Id)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return
+	}
 	for _, ab := range myAbCollectionList.AddressBookCollection {
 		res = append(res, &api.SharedProfilesPayload{
 			Guid:  a.ComposeGuid(user.GroupId, user.Id, ab.Id),
@@ -408,7 +424,11 @@ func (a *Ab) SharedProfiles(c *gin.Context) {
 
 	allAbIds := make(map[uint]int) // 用map去重，并保留最大Rule
 	allUserIds := make(map[uint]*model.User)
-	rules := service.AllService.AddressBookService.CollectionReadRules(user)
+	rules, err := service.AllService.AddressBookService.CollectionReadRules(user)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return
+	}
 	for _, rule := range rules {
 		// 先判断是否存在
 		r, ok := allAbIds[rule.CollectionId]
@@ -424,7 +444,11 @@ func (a *Ab) SharedProfiles(c *gin.Context) {
 
 	}
 	abids := utils.Keys(allAbIds)
-	collections := service.AllService.AddressBookService.ListCollectionByIds(abids)
+	collections, err := service.AllService.AddressBookService.ListCollectionByIds(abids)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return
+	}
 
 	ids := utils.Keys(allUserIds)
 	allUsers := service.AllService.UserService.ListByIds(ids)
@@ -564,7 +588,11 @@ func (a *Ab) Peers(c *gin.Context) {
 		return
 	}
 
-	al := service.AllService.AddressBookService.ListByUserIdAndCollectionId(uid, cid, 1, 1000)
+	al, err := service.AllService.AddressBookService.ListByUserIdAndCollectionId(uid, cid, 1, 1000)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"total":            al.Total,
 		"data":             al.AddressBooks,

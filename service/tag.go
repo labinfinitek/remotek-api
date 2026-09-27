@@ -17,12 +17,11 @@ func (s *TagService) InfoByUserIdAndNameAndCollectionId(userid uint, name string
 	return p
 }
 
-func (s *TagService) ListByUserIdAndCollectionId(userId, cid uint) (res *model.TagList) {
-	res = s.List(1, 1000, func(tx *gorm.DB) {
+func (s *TagService) ListByUserIdAndCollectionId(userId, cid uint) (*model.TagList, error) {
+	return s.List(1, 1000, func(tx *gorm.DB) {
 		tx.Where("user_id = ? and collection_id = ?", userId, cid)
 		tx.Order("name asc")
 	})
-	return
 }
 
 // UpdateTags porta i tag dell'utente a tags (nome e colore): aggiunge quelli
@@ -79,7 +78,7 @@ func (s *TagService) InfoById(id uint) *model.Tag {
 	return u
 }
 
-func (s *TagService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.TagList) {
+func (s *TagService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.TagList, err error) {
 	res = &model.TagList{}
 	res.Page = int64(page)
 	res.PageSize = int64(pageSize)
@@ -87,10 +86,14 @@ func (s *TagService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *mo
 	if where != nil {
 		where(tx)
 	}
-	tx.Count(&res.Total)
+	if err = tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio dei tag: %w", err)
+	}
 	tx.Scopes(Paginate(page, pageSize))
-	tx.Find(&res.Tags)
-	return
+	if err = tx.Find(&res.Tags).Error; err != nil {
+		return nil, fmt.Errorf("tag: %w", err)
+	}
+	return res, nil
 }
 
 // Create 创建
