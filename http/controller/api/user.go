@@ -1,10 +1,12 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+
 	apiResp "github.com/lejianwen/rustdesk-api/v2/http/response/api"
 	"github.com/lejianwen/rustdesk-api/v2/service"
-	"net/http"
 )
 
 type User struct {
