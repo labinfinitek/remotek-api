@@ -185,8 +185,8 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 	}
 	userId := oauthCache.UserId
 	openid := oauthUser.OpenId
-	if action == service.OauthActionTypeBind {
-
+	switch action {
+	case service.OauthActionTypeBind:
 		//fmt.Println("bind", ty, userData)
 		// 检查此openid是否已经绑定过
 		utr := oauthService.UserThirdInfo(op, openid)
@@ -215,9 +215,7 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 		c.HTML(http.StatusOK, "oauth_success.html", gin.H{
 			"message": "BindSuccess",
 		})
-		return
-
-	} else if action == service.OauthActionTypeLogin {
+	case service.OauthActionTypeLogin:
 		//登录
 		if userId != 0 {
 			c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
@@ -262,14 +260,11 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 		c.HTML(http.StatusOK, "oauth_success.html", gin.H{
 			"message": "OauthSuccess",
 		})
-		return
-	} else {
+	default:
 		c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
 			"message": "ParamsError",
 		})
-		return
 	}
-
 }
 
 type MessageParams struct {

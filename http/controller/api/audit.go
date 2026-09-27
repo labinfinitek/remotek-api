@@ -37,11 +37,12 @@ func (a *Audit) AuditConn(c *gin.Context) {
 	c.ShouldBindBodyWith(ttt, binding.JSON)
 	fmt.Println(ttt)*/
 	ac := af.ToAuditConn()
-	if af.Action == model.AuditActionNew {
+	switch af.Action {
+	case model.AuditActionNew:
 		if err := service.AllService.AuditService.CreateAuditConn(ac); err != nil {
 			auditNonSalvato(c, err)
 		}
-	} else if af.Action == model.AuditActionClose {
+	case model.AuditActionClose:
 		ex := service.AllService.AuditService.InfoByPeerIdAndConnId(af.Id, af.ConnId)
 		if ex.Id != 0 {
 			ex.CloseTime = time.Now().Unix()
@@ -49,7 +50,7 @@ func (a *Audit) AuditConn(c *gin.Context) {
 				auditNonSalvato(c, err)
 			}
 		}
-	} else if af.Action == "" {
+	case "":
 		ex := service.AllService.AuditService.InfoByPeerIdAndConnId(af.Id, af.ConnId)
 		if ex.Id != 0 {
 			up := &model.AuditConn{
