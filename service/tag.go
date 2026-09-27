@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"gorm.io/gorm"
 )
@@ -32,20 +33,36 @@ func (s *TagService) ListByUserIdAndCollectionId(userId, cid uint) (res *model.T
 	})
 	return
 }
-func (s *TagService) UpdateTags(userId uint, tags map[string]uint) {
-	tx := DB.Begin()
+
+// UpdateTags porta i tag dell'utente a tags (nome e colore): aggiunge quelli
+// nuovi, aggiorna i colori e cancella gli altri, in una transazione che su
+// errore o panic si annulla.
+func (s *TagService) UpdateTags(userId uint, tags map[string]uint) error {
+	return DB.Transaction(func(tx *gorm.DB) error {
+		return updateTags(tx, userId, tags)
+	})
+}
+
+// updateTags e' UpdateTags dentro la transazione tx.
+func updateTags(tx *gorm.DB, userId uint, tags map[string]uint) error {
 	//先查询所有tag
 	var allTags []*model.Tag
-	tx.Where("user_id = ?", userId).Find(&allTags)
+	if err := tx.Where("user_id = ?", userId).Find(&allTags).Error; err != nil {
+		return fmt.Errorf("lettura dei tag: %w", err)
+	}
 	for _, t := range allTags {
 		if _, ok := tags[t.Name]; !ok {
 			//删除
-			tx.Delete(t)
+			if err := tx.Delete(t).Error; err != nil {
+				return fmt.Errorf("cancellazione di un tag: %w", err)
+			}
 		} else {
 			if tags[t.Name] != t.Color {
 				//更新
 				t.Color = tags[t.Name]
-				tx.Save(t)
+				if err := tx.Save(t).Error; err != nil {
+					return fmt.Errorf("colore di un tag: %w", err)
+				}
 			}
 			//移除
 			delete(tags, t.Name)
@@ -57,9 +74,11 @@ func (s *TagService) UpdateTags(userId uint, tags map[string]uint) {
 		t.Name = tag
 		t.Color = color
 		t.UserId = userId
-		tx.Create(t)
+		if err := tx.Create(t).Error; err != nil {
+			return fmt.Errorf("tag nuovo: %w", err)
+		}
 	}
-	tx.Commit()
+	return nil
 }
 
 // InfoById 根据用户id取用户信息
