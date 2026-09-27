@@ -20,6 +20,13 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   gia' autenticato. `/api/admin/oauth/info`, `confirm` e `bindConfirm` non
   mandano piu' al browser verifier PKCE, nonce e dati dell'utente del
   provider, solo i campi che le pagine del pannello mostrano.
+- Anche `/api/oidc/*` non manda piu' al client ne' al browser il testo di
+  un errore interno (REGOLE 8), ultimo gruppo di rotte rimasto: un corpo
+  JSON rotto a `/api/oidc/auth` riceve "Parametri non validi." senza il
+  testo del parser; la pagina del login OAuth, se il provider risponde con
+  un errore o l'autoregistrazione non riesce, non riceve piu' il testo
+  dell'errore (che nel secondo caso mostrava grezzo) ma l'ID del messaggio.
+  L'errore va nel log a livello warn, con metodo e rotta.
 
 ## [0.1.0] - 2026-09-26
 Base upstream: rustdesk-api v2.7. Primo rilascio: immagine

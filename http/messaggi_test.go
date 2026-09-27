@@ -103,7 +103,7 @@ func TestMessaggi(t *testing.T) {
 	// e il limiter del test non banna.
 	global.Config.Lang = configurata
 	const erroreJSON = "invalid character 'x' looking for beginning of value"
-	for _, percorso := range []string{"/api/sysinfo", "/api/audit/conn", "/api/audit/file", "/api/login"} {
+	for _, percorso := range []string{"/api/sysinfo", "/api/audit/conn", "/api/audit/file", "/api/oidc/auth", "/api/login"} {
 		registro.Reset()
 		req := httptest.NewRequest("POST", percorso, strings.NewReader(`{"id": x}`))
 		req.Header.Set("Content-Type", "application/json")

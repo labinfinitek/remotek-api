@@ -116,12 +116,20 @@ func traduci(c *gin.Context, id string, dati map[string]interface{}) string {
 // richiesta) e l'errore con %q, che tiene su una riga gli a capo di
 // errors.Join.
 func messaggioPer(c *gin.Context, id string, err error) string {
+	return traduci(c, IDErr(c, id, err), nil)
+}
+
+// IDErr sceglie come ErrorErr l'ID del messaggio per id ed err, il primo
+// nella catena di err o altrimenti id, e scrive err nel log; restituisce
+// l'ID, non la traduzione. Serve alle pagine OAuth, che traducono l'ID nel
+// browser con /api/oidc/msg.
+func IDErr(c *gin.Context, id string, err error) string {
 	localizer := global.Localizer(c.GetHeader("Accept-Language"))
 	if trovato := idNellaCatena(localizer, err); trovato != "" {
 		id = trovato
 	}
 	global.Logger.Warnf("%s %s: al client va %s, errore %q", c.Request.Method, c.FullPath(), id, err)
-	return traduci(c, id, nil)
+	return id
 }
 
 // idNellaCatena restituisce il testo del primo errore della catena di err,

@@ -30,7 +30,7 @@ func (o *Oauth) OidcAuth(c *gin.Context) {
 	f := &api.OidcAuthRequest{}
 	err := c.ShouldBindJSON(&f)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 
@@ -38,7 +38,7 @@ func (o *Oauth) OidcAuth(c *gin.Context) {
 
 	err, state, verifier, nonce, url := oauthService.BeginAuth(f.Op)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, err.Error()))
+		response.ErrorErr(c, "SystemError", err)
 		return
 	}
 
@@ -67,7 +67,7 @@ func (o *Oauth) OidcAuthQueryPre(c *gin.Context) (*model.User, *model.UserToken)
 
 	// 解析查询参数并处理错误
 	if err := c.ShouldBindQuery(q); err != nil {
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+": "+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return nil, nil
 	}
 
@@ -173,9 +173,10 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 	code := c.Query("code")
 	err, oauthUser := oauthService.Callback(code, verifier, op, nonce)
 	if err != nil {
+		// L'errore del provider va solo nel log, la pagina dice OauthFailed.
+		global.Logger.Warnf("%s %s: alla pagina va OauthFailed, errore %q", c.Request.Method, c.FullPath(), err)
 		c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
-			"message":     "OauthFailed",
-			"sub_message": err.Error(),
+			"message": "OauthFailed",
 		})
 		return
 	}
@@ -235,7 +236,7 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 			err, user = service.AllService.UserService.RegisterByOauth(oauthUser, op)
 			if err != nil {
 				c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
-					"message": err.Error(),
+					"message": response.IDErr(c, "OauthFailed", err),
 				})
 				return
 			}

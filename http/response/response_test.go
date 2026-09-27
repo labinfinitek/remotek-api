@@ -107,3 +107,32 @@ func TestRipiegoInglese(t *testing.T) {
 		t.Errorf("il log doveva essere vuoto:\n%s", registro.String())
 	}
 }
+
+// TestIDErr prova che IDErr, per le pagine OAuth, restituisca l'ID e non la
+// traduzione: quello nella catena dell'errore, altrimenti quello del punto,
+// con l'errore nel log.
+func TestIDErr(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	global.Config.Gin.ResourcesPath = filepath.Join("..", "..", "resources")
+	global.Config.Lang = "en"
+	var registro strings.Builder
+	global.Logger = logrus.New()
+	global.Logger.SetOutput(&registro)
+	global.InitI18n()
+
+	interno := errors.New("dial tcp 192.0.2.1:5432: connect: connection refused")
+	for err, atteso := range map[error]string{
+		fmt.Errorf("registrazione: %w", errors.New("UsernameExists")): "UsernameExists",
+		interno: "OauthFailed",
+	} {
+		registro.Reset()
+		c, _ := gin.CreateTestContext(httptest.NewRecorder())
+		c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
+		if got := IDErr(c, "OauthFailed", err); got != atteso {
+			t.Errorf("IDErr(%q) = %q, atteso %q", err, got, atteso)
+		}
+		if !strings.Contains(registro.String(), err.Error()) {
+			t.Errorf("IDErr(%q): errore non nel log:\n%s", err, registro.String())
+		}
+	}
+}
