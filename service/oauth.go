@@ -4,13 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-
-	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/lejianwen/rustdesk-api/v2/model"
-	"github.com/lejianwen/rustdesk-api/v2/utils"
-	"golang.org/x/oauth2"
-	"gorm.io/gorm"
-	// "io"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -18,6 +11,13 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/coreos/go-oidc/v3/oidc"
+	"golang.org/x/oauth2"
+	"gorm.io/gorm"
+
+	"github.com/lejianwen/rustdesk-api/v2/model"
+	"github.com/lejianwen/rustdesk-api/v2/utils"
 )
 
 type OauthService struct {
@@ -190,6 +190,7 @@ func getHTTPClientWithProxy() *http.Client {
 	}
 	return http.DefaultClient
 }
+
 // tempoProviderOidc e' il tempo massimo delle richieste del callback OIDC al
 // provider, dallo scambio del codice alla userinfo: senza, un provider che
 // non risponde terrebbe ferma la pagina del login per sempre, perche' senza

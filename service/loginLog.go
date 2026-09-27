@@ -1,8 +1,9 @@
 package service
 
 import (
-	"github.com/lejianwen/rustdesk-api/v2/model"
 	"gorm.io/gorm"
+
+	"github.com/lejianwen/rustdesk-api/v2/model"
 )
 
 type LoginLogService struct {
