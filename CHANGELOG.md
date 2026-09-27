@@ -101,10 +101,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   "Errore di sistema." invece di "Elemento non trovato.", con l'errore nel
   log.
 - Regole di condivisione delle rubriche nel pannello: se il database non le
-  legge, gli elenchi (amministrazione e sezione dell'utente) rispondono
-  "Errore di sistema." con l'errore nel log, invece di un elenco vuoto; il
-  dettaglio, la modifica e la cancellazione di una regola, invece di
-  "Elemento non trovato.".
+  legge, le rotte rispondono "Errore di sistema." con l'errore nel log.
+  Prima gli elenchi (amministrazione e sezione dell'utente) erano vuoti,
+  dettaglio, modifica e cancellazione di una regola rispondevano "Elemento
+  non trovato.", e creazione e modifica prendevano la lettura fallita per
+  "nessuna regola uguale" e salvavano la regola doppia.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

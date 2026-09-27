@@ -665,3 +665,23 @@ func TestPannelloRegolaNonLetta(t *testing.T) {
 		{"POST", "/api/admin/my/address_book_collection_rule/delete", `{"id":999999}`, false, nonTrovato},
 	})
 }
+
+// TestPannelloRegolaDoppia prova sul router vero le rotte del pannello che
+// creano o cambiano una regola di condivisione, e prima guardano se ce n'e'
+// gia' una con lo stesso tipo, destinatario e rubrica: se il database non la
+// legge rispondono code 101 "Errore di sistema.", con l'errore nel log, e non
+// salvano niente. Prima la lettura fallita valeva "non c'e'" e la regola
+// doppia si salvava. Una regola che c'e' davvero ha la risposta di prima.
+func TestPannelloRegolaDoppia(t *testing.T) {
+	const erroreDiSistema = `{"code":101,"message":"Errore di sistema.","data":null}`
+	const regola = `"user_id":UTENTE,"collection_id":RUBRICA,"type":1,"to_id":AMICO`
+	provaPannello(t, "address_book_collection_rules", "to_id", []casoDelPannello{
+		{"POST", "/api/admin/address_book_collection_rule/create", `{` + regola + `,"rule":2}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book_collection_rule/create", `{` + regola + `,"rule":2}`, true, erroreDiSistema},
+		{"POST", "/api/admin/address_book_collection_rule/update", `{"id":REGOLA,` + regola + `,"rule":2}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book_collection_rule/update", `{"id":REGOLA,` + regola + `,"rule":2}`, true, erroreDiSistema},
+		{"POST", "/api/admin/address_book_collection_rule/create", `{` + regola + `,"rule":2}`, false, `{"code":101,"message":"L'elemento esiste già.","data":null}`},
+		{"POST", "/api/admin/my/address_book_collection_rule/create", `{` + regola + `,"rule":2}`, false, `{"code":101,"message":"L'elemento esiste già.","data":null}`},
+		{"POST", "/api/admin/my/address_book_collection_rule/update", `{"id":REGOLA,` + regola + `,"rule":2}`, false, `{"code":0,"message":"success","data":null}`},
+	})
+}

@@ -1,6 +1,8 @@
 package my
 
 import (
+	"errors"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
@@ -81,9 +83,8 @@ func (abcr *AddressBookCollectionRule) Create(c *gin.Context) {
 	t := f
 	u := service.AllService.UserService.CurUser(c)
 	t.UserId = u.Id
-	msg, res := abcr.CheckForm(u, t)
-	if !res {
-		response.Fail(c, 101, response.TranslateMsg(c, msg))
+	if err := abcr.CheckForm(u, t); err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 	err := service.AllService.AddressBookService.CreateRule(t)
@@ -94,23 +95,25 @@ func (abcr *AddressBookCollectionRule) Create(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-func (abcr *AddressBookCollectionRule) CheckForm(u *model.User, t *model.AddressBookCollectionRule) (string, bool) {
+// CheckForm controlla la regola t dell'utente u prima di salvarla, come
+// CheckForm del pannello di amministrazione.
+func (abcr *AddressBookCollectionRule) CheckForm(u *model.User, t *model.AddressBookCollectionRule) error {
 	if t.UserId != u.Id {
-		return "NoAccess", false
+		return errors.New("NoAccess")
 	}
 	if t.CollectionId > 0 && !service.AllService.AddressBookService.CheckCollectionOwner(t.UserId, t.CollectionId) {
-		return "ParamsError", false
+		return errors.New("ParamsError")
 	}
 
 	// check to_id
 	switch t.Type {
 	case model.ShareAddressBookRuleTypePersonal:
 		if t.ToId == t.UserId {
-			return "CannotShareToSelf", false
+			return errors.New("CannotShareToSelf")
 		}
 		tou := service.AllService.UserService.InfoById(t.ToId)
 		if tou.Id == 0 {
-			return "ItemNotFound", false
+			return errors.New("ItemNotFound")
 		}
 		// 非管理员不能分享给非本组织用户
 		// if tou.GroupId != u.GroupId {
@@ -124,20 +127,21 @@ func (abcr *AddressBookCollectionRule) CheckForm(u *model.User, t *model.Address
 
 		tog := service.AllService.GroupService.InfoById(t.ToId)
 		if tog.Id == 0 {
-			return "ItemNotFound", false
+			return errors.New("ItemNotFound")
 		}
 	default:
-		return "ParamsError", false
+		return errors.New("ParamsError")
 	}
-	// 重复检查
-	ex := service.AllService.AddressBookService.RuleInfoByToIdAndCid(t.Type, t.ToId, t.CollectionId)
-	if t.Id == 0 && ex.Id > 0 {
-		return "ItemExists", false
+	// un'altra regola con tipo, destinatario e collezione di t e' un doppione
+	switch ex, err := service.AllService.AddressBookService.RuleInfoByToIdAndCid(t.Type, t.ToId, t.CollectionId); {
+	case errors.Is(err, service.ErrNotFound):
+		return nil
+	case err != nil:
+		return err
+	case ex.Id != t.Id:
+		return errors.New("ItemExists")
 	}
-	if t.Id > 0 && ex.Id > 0 && t.Id != ex.Id {
-		return "ItemExists", false
-	}
-	return "", true
+	return nil
 }
 
 // Update 编辑
@@ -178,9 +182,8 @@ func (abcr *AddressBookCollectionRule) Update(c *gin.Context) {
 		return
 	}
 	t := f
-	msg, res := abcr.CheckForm(u, t)
-	if !res {
-		response.Fail(c, 101, response.TranslateMsg(c, msg))
+	if err = abcr.CheckForm(u, t); err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 	err = service.AllService.AddressBookService.UpdateRule(t)

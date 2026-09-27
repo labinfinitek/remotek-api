@@ -307,13 +307,14 @@ func (s *AddressBookService) RuleInfoById(id uint) (*model.AddressBookCollection
 	return p, nil
 }
 
-func (s *AddressBookService) RulePersonalInfoByToIdAndCid(toid, cid uint) *model.AddressBookCollectionRule {
-	return s.RuleInfoByToIdAndCid(model.ShareAddressBookRuleTypePersonal, toid, cid)
-}
-func (s *AddressBookService) RuleInfoByToIdAndCid(t int, toid, cid uint) *model.AddressBookCollectionRule {
+// RuleInfoByToIdAndCid restituisce la regola di tipo t che condivide la
+// collezione cid con toid, utente o gruppo; ErrNotFound se non c'e'.
+func (s *AddressBookService) RuleInfoByToIdAndCid(t int, toid, cid uint) (*model.AddressBookCollectionRule, error) {
 	p := &model.AddressBookCollectionRule{}
-	DB.Where("type = ? and to_id = ? and collection_id = ?", t, toid, cid).First(p)
-	return p
+	if err := DB.Where("type = ? and to_id = ? and collection_id = ?", t, toid, cid).First(p).Error; err != nil {
+		return nil, fmt.Errorf("regola di tipo %d per %d sulla collezione %d: %w", t, toid, cid, nonTrovato(err))
+	}
+	return p, nil
 }
 func (s *AddressBookService) CreateRule(t *model.AddressBookCollectionRule) error {
 	return DB.Create(t).Error
