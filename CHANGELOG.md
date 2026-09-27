@@ -51,6 +51,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   del computer legge il dispositivo dentro la transazione: con una
   connessione sola al database (ADR-0007) la richiesta si sarebbe fermata
   per sempre, e con lei l'API.
+- Login OIDC con autoregistrazione: se l'associazione al provider non si
+  salva, l'utente nuovo non resta e la pagina dice che la registrazione non
+  e' riuscita; prima restava un utente senza associazione e la pagina
+  diceva successo. Il nome utente libero si cerca prima della transazione,
+  nel database e, con LDAP acceso, in LDAP: con una connessione sola al
+  database la registrazione si sarebbe fermata per sempre.
 
 ### Rimosso
 - **Cambio incompatibile per chi usava il login GitHub, Google o Linux.do.**

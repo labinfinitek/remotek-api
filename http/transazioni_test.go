@@ -174,3 +174,32 @@ func TestCollezioneCancellazioneAnnullata(t *testing.T) {
 		}
 	}
 }
+
+// TestRegistrazioneOidcAnnullata prova che il login OIDC con
+// autoregistrazione, se l'associazione al provider non si salva, non lascia
+// l'utente creato e risponde OauthRegisterFailed: prima confermava l'utente
+// senza associazione e rispondeva successo, e al login dopo ne nasceva un
+// altro.
+func TestRegistrazioneOidcAnnullata(t *testing.T) {
+	g, _, _ := pannello(t, false)
+	registra := true
+	if err := service.DB.Create(&model.Oauth{Op: "aziendale", OauthType: model.OauthTypeOidc, ClientId: "id", ClientSecret: "segreto",
+		Issuer: providerOidc(t), AutoRegister: &registra}).Error; err != nil {
+		t.Fatal(err)
+	}
+	rifiuta(t, "BEFORE INSERT ON user_thirds")
+	rec := richiesta(g, "POST", "/api/oidc/auth", "", `{"op":"aziendale","id":"999000111","uuid":"dXVpZA==","deviceInfo":{"os":"windows","type":"client","name":"PC-COLLAUDO"}}`)
+	var risposta struct{ Code string }
+	if err := json.Unmarshal(rec.Body.Bytes(), &risposta); err != nil || rec.Code != 200 {
+		t.Fatalf("POST /api/oidc/auth: %d %s (%v)", rec.Code, rec.Body, err)
+	}
+	t.Cleanup(func() { service.AllService.OauthService.DeleteOauthCache(risposta.Code) })
+	rec = richiesta(g, "GET", "/api/oidc/callback?state="+risposta.Code+"&code="+codiceDelProvider, "", "")
+	if !strings.Contains(rec.Body.String(), "var msg = 'OauthRegisterFailed'") {
+		t.Errorf("GET /api/oidc/callback con l'associazione rifiutata: %d, atteso il messaggio OauthRegisterFailed", rec.Code)
+	}
+	var n int64
+	if err := service.DB.Model(&model.User{}).Where("username = ?", "utente-oidc").Count(&n).Error; err != nil || n != 0 {
+		t.Errorf("utenti utente-oidc dopo l'errore: %d (err %v), attesi 0", n, err)
+	}
+}

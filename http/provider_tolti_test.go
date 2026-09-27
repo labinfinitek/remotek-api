@@ -169,7 +169,9 @@ func TestProviderTolti(t *testing.T) {
 // TestProviderOidc prova sul router vero che un provider oidc funziona come
 // prima, fino al callback: /api/oidc/auth risponde col codice e l'indirizzo
 // del provider, il callback scambia il codice, legge l'utente, lo registra
-// (auto_register), lo associa al provider e lega il login all'utente.
+// (auto_register), lo associa al provider e lega il login all'utente. Con
+// una connessione sola al database: la registrazione non deve cercare il
+// nome libero su DB dentro la sua transazione, che la fermerebbe per sempre.
 func TestProviderOidc(t *testing.T) {
 	g, _, _ := pannello(t, false)
 	issuer := providerOidc(t)
@@ -178,6 +180,7 @@ func TestProviderOidc(t *testing.T) {
 		Issuer: issuer, AutoRegister: &registra}).Error; err != nil {
 		t.Fatal(err)
 	}
+	scadenza := unaConnessione(t)
 
 	rec := richiesta(g, "POST", "/api/oidc/auth", "", `{"op":"aziendale","id":"999000111","uuid":"dXVpZA==","deviceInfo":{"os":"windows","type":"client","name":"PC-COLLAUDO"}}`)
 	var risposta struct{ Code, Url string }
@@ -197,6 +200,9 @@ func TestProviderOidc(t *testing.T) {
 	}
 
 	rec = richiesta(g, "GET", "/api/oidc/callback?state="+risposta.Code+"&code="+codiceDelProvider, "", "")
+	if scadenza.Err() != nil {
+		t.Fatalf("GET /api/oidc/callback: fermo per 5 secondi ad aspettare la connessione del database (stallo); stato %d", rec.Code)
+	}
 	if !strings.Contains(rec.Body.String(), "var msg = 'OauthSuccess'") {
 		t.Fatalf("GET /api/oidc/callback: %d %s", rec.Code, rec.Body)
 	}
