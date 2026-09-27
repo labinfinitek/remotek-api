@@ -126,8 +126,7 @@ func (a *Ab) PTags(c *gin.Context) {
 	}
 
 	// check privileges
-	if !service.AllService.AddressBookService.CheckUserReadPrivilege(u, uid, cid) {
-		response.Error(c, response.TranslateMsg(c, "NoAccess"))
+	if !a.permesso(c, u, uid, cid, model.ShareAddressBookRuleRuleRead) {
 		return
 	}
 	tags := service.AllService.TagService.ListByUserIdAndCollectionId(uid, cid)
@@ -163,8 +162,7 @@ func (a *Ab) TagAdd(c *gin.Context) {
 	}
 
 	// check privileges
-	if !service.AllService.AddressBookService.CheckUserWritePrivilege(u, uid, cid) {
-		response.Error(c, response.TranslateMsg(c, "NoAccess"))
+	if !a.permesso(c, u, uid, cid, model.ShareAddressBookRuleRuleReadWrite) {
 		return
 	}
 
@@ -211,8 +209,7 @@ func (a *Ab) TagRename(c *gin.Context) {
 	}
 
 	// check privileges
-	if !service.AllService.AddressBookService.CheckUserWritePrivilege(u, uid, cid) {
-		response.Error(c, response.TranslateMsg(c, "NoAccess"))
+	if !a.permesso(c, u, uid, cid, model.ShareAddressBookRuleRuleReadWrite) {
 		return
 	}
 
@@ -262,8 +259,7 @@ func (a *Ab) TagUpdate(c *gin.Context) {
 	}
 
 	// check privileges
-	if !service.AllService.AddressBookService.CheckUserWritePrivilege(u, uid, cid) {
-		response.Error(c, response.TranslateMsg(c, "NoAccess"))
+	if !a.permesso(c, u, uid, cid, model.ShareAddressBookRuleRuleReadWrite) {
 		return
 	}
 
@@ -310,8 +306,7 @@ func (a *Ab) TagDel(c *gin.Context) {
 	}
 
 	// check privileges
-	if !service.AllService.AddressBookService.CheckUserFullControlPrivilege(u, uid, cid) {
-		response.Error(c, response.TranslateMsg(c, "NoAccess"))
+	if !a.permesso(c, u, uid, cid, model.ShareAddressBookRuleRuleFullControl) {
 		return
 	}
 
@@ -532,6 +527,16 @@ func (a *Ab) CheckGuid(cu *model.User, guid string) (gid, uid, cid uint, err err
 	return
 }
 
+// permesso dice se l'utente u ha almeno il permesso minimo sulla rubrica cid
+// dell'utente uid; se no risponde NoAccess.
+func (a *Ab) permesso(c *gin.Context, u *model.User, uid, cid uint, minimo int) bool {
+	if service.AllService.AddressBookService.UserMaxRule(u, uid, cid) < minimo {
+		response.Error(c, response.TranslateMsg(c, "NoAccess"))
+		return false
+	}
+	return true
+}
+
 // Peers restituisce le voci della rubrica guid.
 // @Tags 地址[Personal]
 // @Summary 地址列表
@@ -555,8 +560,7 @@ func (a *Ab) Peers(c *gin.Context) {
 	}
 
 	// check privileges
-	if !service.AllService.AddressBookService.CheckUserReadPrivilege(u, uid, cid) {
-		response.Error(c, response.TranslateMsg(c, "NoAccess"))
+	if !a.permesso(c, u, uid, cid, model.ShareAddressBookRuleRuleRead) {
 		return
 	}
 
@@ -598,8 +602,7 @@ func (a *Ab) PeerAdd(c *gin.Context) {
 	}
 
 	// check privileges
-	if !service.AllService.AddressBookService.CheckUserWritePrivilege(u, uid, cid) {
-		response.Error(c, response.TranslateMsg(c, "NoAccess"))
+	if !a.permesso(c, u, uid, cid, model.ShareAddressBookRuleRuleReadWrite) {
 		return
 	}
 
@@ -651,8 +654,7 @@ func (a *Ab) PeerDel(c *gin.Context) {
 	}
 
 	// check privileges
-	if !service.AllService.AddressBookService.CheckUserFullControlPrivilege(u, uid, cid) {
-		response.Error(c, response.TranslateMsg(c, "NoAccess"))
+	if !a.permesso(c, u, uid, cid, model.ShareAddressBookRuleRuleFullControl) {
 		return
 	}
 
@@ -701,8 +703,7 @@ func (a *Ab) PeerUpdate(c *gin.Context) {
 	}
 
 	// check privileges
-	if !service.AllService.AddressBookService.CheckUserWritePrivilege(u, uid, cid) {
-		response.Error(c, response.TranslateMsg(c, "NoAccess"))
+	if !a.permesso(c, u, uid, cid, model.ShareAddressBookRuleRuleReadWrite) {
 		return
 	}
 	// fmt.Println(f)

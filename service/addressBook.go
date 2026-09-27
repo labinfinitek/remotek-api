@@ -244,16 +244,6 @@ func (s *AddressBookService) UserMaxRule(user *model.User, uid, cid uint) int {
 	return massima
 }
 
-func (s *AddressBookService) CheckUserReadPrivilege(user *model.User, uid, cid uint) bool {
-	return s.UserMaxRule(user, uid, cid) >= model.ShareAddressBookRuleRuleRead
-}
-func (s *AddressBookService) CheckUserWritePrivilege(user *model.User, uid, cid uint) bool {
-	return s.UserMaxRule(user, uid, cid) >= model.ShareAddressBookRuleRuleReadWrite
-}
-func (s *AddressBookService) CheckUserFullControlPrivilege(user *model.User, uid, cid uint) bool {
-	return s.UserMaxRule(user, uid, cid) >= model.ShareAddressBookRuleRuleFullControl
-}
-
 func (s *AddressBookService) CreateCollection(t *model.AddressBookCollection) error {
 	return DB.Create(t).Error
 }
