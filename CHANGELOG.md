@@ -45,6 +45,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   error; per `userAccountControl` anche il nome dell'utente), non piu' su
   stdout senza motivo; anche l'errore di chiusura della connessione dopo il
   bind rifiutato va nel log.
+- Login OIDC: le richieste del callback al provider (scambio del codice,
+  chiavi dell'id_token, userinfo) hanno 30 secondi in tutto; un provider
+  che non risponde fa dire alla pagina "Autorizzazione OAuth non
+  riuscita.", con l'errore nel log, invece di tenerla ferma senza limite:
+  senza proxy il client HTTP non aveva timeout.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

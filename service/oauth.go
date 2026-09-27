@@ -190,11 +190,19 @@ func getHTTPClientWithProxy() *http.Client {
 	}
 	return http.DefaultClient
 }
+// tempoProviderOidc e' il tempo massimo delle richieste del callback OIDC al
+// provider, dallo scambio del codice alla userinfo: senza, un provider che
+// non risponde terrebbe ferma la pagina del login per sempre, perche' senza
+// proxy il client HTTP non ha timeout. I test lo accorciano.
+var tempoProviderOidc = 30 * time.Second
+
 func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.Provider, code string, verifier string, nonce string, userData interface{}) error {
 
 	// 设置代理客户端
 	httpClient := getHTTPClientWithProxy()
-	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
+	ctx, cancel := context.WithTimeout(context.Background(), tempoProviderOidc)
+	defer cancel()
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
 
 	exchangeOpts := make([]oauth2.AuthCodeOption, 0, 1)
 	if verifier != "" {
@@ -238,7 +246,12 @@ func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.
 
 	// 获取用户信息
 	client := oauthConfig.Client(ctx, token)
-	resp, err := client.Get(provider.UserInfoEndpoint())
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, provider.UserInfoEndpoint(), nil)
+	if err != nil {
+		Logger.Warn("richiesta della userinfo non preparata: ", err)
+		return errors.New("GetOauthUserInfoError")
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		Logger.Warn("failed getting user info: ", err)
 		return errors.New("GetOauthUserInfoError")
