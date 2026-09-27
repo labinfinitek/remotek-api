@@ -73,6 +73,11 @@ description = "Param is empty."
 one = "Il campo {{.P0}} è vuoto."
 other = "Il campo {{.P0}} è vuoto."
 
+[OauthStateMissing]
+description = "Oauth state missing."
+one = "Il provider OAuth non ha restituito lo stato del login: ripeti il login."
+other = "Il provider OAuth non ha restituito lo stato del login: ripeti il login."
+
 [BindFail]
 description = "Bind fail."
 one = "Associazione non riuscita."

@@ -33,6 +33,9 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   apostrofo: `/api/oidc/msg` le scriveva tra apici nello script, e con 8
   messaggi italiani ("L'elemento esiste già.", "L'accesso con password è
   disattivato." e altri) lo script non partiva e la pagina mostrava l'ID.
+- La pagina del login OAuth senza `state` dice "Il provider OAuth non ha
+  restituito lo stato del login: ripeti il login." invece di "Il campo
+  <no value> è vuoto.".
 
 ## [0.1.0] - 2026-09-26
 Base upstream: rustdesk-api v2.7. Primo rilascio: immagine

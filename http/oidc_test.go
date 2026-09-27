@@ -87,3 +87,25 @@ func TestMessaggioConApostrofo(t *testing.T) {
 		t.Errorf("/api/oidc/msg con titolo:\n got  %s\n want %s", got, want)
 	}
 }
+
+// TestCallbackSenzaState prova il giro della pagina di /api/oidc/callback
+// senza state: l'ID che la pagina manda a /api/oidc/msg ha una traduzione
+// completa, senza il segnaposto di ParamIsEmpty, che usciva come "Il campo
+// <no value> è vuoto.".
+func TestCallbackSenzaState(t *testing.T) {
+	g, _, _ := pannello(t, false)
+	rec := httptest.NewRecorder()
+	g.ServeHTTP(rec, httptest.NewRequest("GET", "/api/oidc/callback?code=x", nil))
+	m := regexp.MustCompile(`var msg = '([A-Za-z]+)'`).FindStringSubmatch(rec.Body.String())
+	if m == nil {
+		t.Fatalf("GET /api/oidc/callback senza state: manca l'ID del messaggio:\n%s", rec.Body.String())
+	}
+	for lingua, atteso := range map[string]string{
+		"it": "Il provider OAuth non ha restituito lo stato del login: ripeti il login.",
+		"en": "The OAuth provider did not return the login state: start the login again.",
+	} {
+		if got := traduzioniDaMsg(t, g, lingua, m[1]); got != atteso {
+			t.Errorf("GET /api/oidc/callback senza state, %s: la pagina mostra %q, atteso %q", lingua, got, atteso)
+		}
+	}
+}

@@ -148,9 +148,10 @@ func (o *Oauth) OidcAuthQuery(c *gin.Context) {
 func (o *Oauth) OauthCallback(c *gin.Context) {
 	state := c.Query("state")
 	if state == "" {
+		// ParamIsEmpty ha il segnaposto del campo, che /api/oidc/msg non
+		// riempie: la pagina mostrava "Il campo <no value> è vuoto.".
 		c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
-			"message":     "ParamIsEmpty",
-			"sub_message": "state",
+			"message": "OauthStateMissing",
 		})
 		return
 	}
