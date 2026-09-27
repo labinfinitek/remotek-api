@@ -145,9 +145,9 @@ func (ct *AddressBook) Update(c *gin.Context) {
 		return
 	}
 
-	ex := service.AllService.AddressBookService.InfoByRowId(f.RowId)
-	if ex.RowId == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	ex, err := service.AllService.AddressBookService.InfoByRowId(f.RowId)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 	if ex.UserId != u.Id {
@@ -163,7 +163,7 @@ func (ct *AddressBook) Update(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError"))
 		return
 	}
-	err := service.AllService.AddressBookService.UpdateAll(t)
+	err = service.AllService.AddressBookService.UpdateAll(t)
 	if err != nil {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
@@ -194,9 +194,9 @@ func (ct *AddressBook) Delete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	ex := service.AllService.AddressBookService.InfoByRowId(f.RowId)
-	if ex.RowId == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	ex, err := service.AllService.AddressBookService.InfoByRowId(f.RowId)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
@@ -204,7 +204,7 @@ func (ct *AddressBook) Delete(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "NoAccess"))
 		return
 	}
-	err := service.AllService.AddressBookService.Delete(ex)
+	err = service.AllService.AddressBookService.Delete(ex)
 	if err == nil {
 		response.Success(c, nil)
 		return

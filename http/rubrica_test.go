@@ -714,3 +714,24 @@ func TestPannelloProprietarioNonLetto(t *testing.T) {
 		{"POST", "/api/admin/my/address_book_collection_rule/create", regola + `ALTRUI}`, false, parametri},
 	})
 }
+
+// TestPannelloVocePerRigaNonLetta prova sul router vero le rotte del pannello
+// che leggono una voce per row_id: se il database non la legge rispondono
+// code 101 "Errore di sistema.", con l'errore nel log, e non cambiano niente.
+// Prima rispondevano "Elemento non trovato.". Una voce che non c'e' ha la
+// risposta di prima.
+func TestPannelloVocePerRigaNonLetta(t *testing.T) {
+	const erroreDiSistema = `{"code":101,"message":"Errore di sistema.","data":null}`
+	const nonTrovato = `{"code":101,"message":"Elemento non trovato.","data":null}`
+	const modifica = `{"row_id":VOCE,"id":"999000111","user_id":UTENTE,"alias":"nuovo"}`
+	provaPannello(t, "address_books", "row_id", []casoDelPannello{
+		{"POST", "/api/admin/address_book/update", modifica, true, erroreDiSistema},
+		{"POST", "/api/admin/address_book/delete", `{"row_id":VOCE}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book/update", modifica, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book/delete", `{"row_id":VOCE}`, true, erroreDiSistema},
+		{"POST", "/api/admin/address_book/update", strings.Replace(modifica, "VOCE", "999999", 1), false, nonTrovato},
+		{"POST", "/api/admin/address_book/delete", `{"row_id":999999}`, false, nonTrovato},
+		{"POST", "/api/admin/my/address_book/update", strings.Replace(modifica, "VOCE", "999999", 1), false, nonTrovato},
+		{"POST", "/api/admin/my/address_book/delete", `{"row_id":999999}`, false, nonTrovato},
+	})
+}

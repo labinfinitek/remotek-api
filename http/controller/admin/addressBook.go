@@ -31,12 +31,12 @@ type AddressBook struct {
 func (ct *AddressBook) Detail(c *gin.Context) {
 	id := c.Param("id")
 	iid, _ := strconv.Atoi(id)
-	t := service.AllService.AddressBookService.InfoByRowId(uint(iid))
-	if t.RowId > 0 {
-		response.Success(c, t)
+	t, err := service.AllService.AddressBookService.InfoByRowId(uint(iid))
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.Success(c, t)
 }
 
 // Create 创建地址簿
@@ -235,9 +235,8 @@ func (ct *AddressBook) Update(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
 		return
 	}
-	ex := service.AllService.AddressBookService.InfoByRowId(f.RowId)
-	if ex.RowId == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	if _, err := service.AllService.AddressBookService.InfoByRowId(f.RowId); err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 	t := f.ToAddressBook()
@@ -280,12 +279,12 @@ func (ct *AddressBook) Delete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	t := service.AllService.AddressBookService.InfoByRowId(f.RowId)
-	if t.RowId == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	t, err := service.AllService.AddressBookService.InfoByRowId(f.RowId)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
-	err := service.AllService.AddressBookService.Delete(t)
+	err = service.AllService.AddressBookService.Delete(t)
 	if err == nil {
 		response.Success(c, nil)
 		return

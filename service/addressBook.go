@@ -23,10 +23,14 @@ func (s *AddressBookService) InfoByUserIdAndIdAndCid(userid uint, id string, cid
 	}
 	return p, nil
 }
-func (s *AddressBookService) InfoByRowId(id uint) *model.AddressBook {
+
+// InfoByRowId restituisce la voce con row_id id; ErrNotFound se non c'e'.
+func (s *AddressBookService) InfoByRowId(id uint) (*model.AddressBook, error) {
 	p := &model.AddressBook{}
-	DB.Where("row_id = ?", id).First(p)
-	return p
+	if err := DB.Where("row_id = ?", id).First(p).Error; err != nil {
+		return nil, fmt.Errorf("voce %d: %w", id, nonTrovato(err))
+	}
+	return p, nil
 }
 
 // AddAddressBook aggiunge la voce ab alla rubrica.
