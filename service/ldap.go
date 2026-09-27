@@ -104,8 +104,10 @@ func (ls *LdapService) connectAndBind(cfg *config.Ldap, username, password strin
 
 	// Bind as the "service" user
 	if err = conn.Bind(username, password); err != nil {
-		fmt.Println("Bind failed")
-		conn.Close()
+		Logger.Warnf("LDAP: bind non riuscito: %v", err)
+		if errChiusura := conn.Close(); errChiusura != nil {
+			Logger.Warnf("LDAP: chiusura della connessione dopo il bind non riuscito: %v", errChiusura)
+		}
 		return nil, errors.Join(ErrLdapBindService, err)
 	}
 	return conn, nil
@@ -523,7 +525,7 @@ func (ls *LdapService) isUserEnabled(cfg *config.Ldap, ldapUser *LdapUser) bool 
 		// Parse the userAccountControl value
 		userAccountControl, err := strconv.Atoi(ldapUser.EnableAttrValue)
 		if err != nil {
-			fmt.Printf("[ERROR] Invalid userAccountControl value: %v\n", err)
+			Logger.Errorf("LDAP: userAccountControl di %s non numerico, l'utente vale disabilitato: %v", ldapUser.Username, err)
 			ldapUser.Enabled = false
 			return false
 		}

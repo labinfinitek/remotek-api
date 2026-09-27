@@ -40,6 +40,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   `app.token-expire`, se non si salva va nel log a livello warn, con
   metodo e rotta; la richiesta va avanti come prima. Prima l'errore si
   perdeva.
+- LDAP: un bind rifiutato (dell'account di servizio o di un utente) e un
+  `userAccountControl` non numerico vanno nel log, col motivo (warn e
+  error; per `userAccountControl` anche il nome dell'utente), non piu' su
+  stdout senza motivo; anche l'errore di chiusura della connessione dopo il
+  bind rifiutato va nel log.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,
