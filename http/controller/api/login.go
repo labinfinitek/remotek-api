@@ -68,12 +68,6 @@ func (l *Login) Login(c *gin.Context) {
 		return
 	}
 
-	//根据refer判断是webclient还是app
-	ref := c.GetHeader("referer")
-	if ref != "" {
-		f.DeviceInfo.Type = model.LoginLogClientWeb
-	}
-
 	ut := service.AllService.UserService.Login(u, &model.LoginLog{
 		UserId:   u.Id,
 		Client:   f.DeviceInfo.Type,

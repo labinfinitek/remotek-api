@@ -73,6 +73,11 @@ description = "Param is empty."
 one = "{{.P0}} is empty."
 other = "{{.P0}} is empty."
 
+[OauthStateMissing]
+description = "Oauth state missing."
+one = "The OAuth provider did not return the login state: start the login again."
+other = "The OAuth provider did not return the login state: start the login again."
+
 [BindFail]
 description = "Bind fail."
 one = "Bind fail."

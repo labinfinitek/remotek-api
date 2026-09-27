@@ -44,7 +44,7 @@ func pannello(t *testing.T, admin bool) (*gin.Engine, *model.User, *strings.Buil
 	global.ApiInitValidator()
 	db, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "api.db")), &gorm.Config{Logger: logger.Discard})
 	if err == nil {
-		err = db.AutoMigrate(&model.User{}, &model.UserToken{}, &model.Tag{})
+		err = db.AutoMigrate(&model.User{}, &model.UserToken{}, &model.Tag{}, &model.Oauth{}, &model.UserThird{})
 	}
 	if err != nil {
 		t.Fatal(err)

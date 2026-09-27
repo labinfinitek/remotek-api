@@ -14,10 +14,7 @@ import (
 // un errore nella risposta, con quante chiamate X.Error() hanno: al loro
 // posto vanno response.ErrorErr e response.FailErr, che lo scrivono nel log
 // (REGOLE 8). Chi sistema un file ne abbassa il numero o lo toglie.
-var daSistemare = map[string]int{
-	// /api/oidc/*, aspetta i golden del contratto
-	"api/ouath.go": 5,
-}
+var daSistemare = map[string]int{}
 
 // TestErrorNeiController conta, file per file, le chiamate X.Error() senza
 // argomenti nei file .go di http/controller (non nei test) fuori dalle

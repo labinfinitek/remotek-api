@@ -8,13 +8,17 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/request/admin"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
+	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 )
 
 type Oauth struct {
 }
 
-// Info risponde con lo stato OAuth in cache per il codice nella query.
+// Info risponde, per il codice nella query, con i soli campi della voce in
+// cache che le pagine oauth del pannello mostrano: id e device_name
+// (login.vue), op (bind.vue). Verifier PKCE, nonce e dati dell'utente del
+// provider non escono.
 func (o *Oauth) Info(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {
@@ -26,7 +30,7 @@ func (o *Oauth) Info(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
 		return
 	}
-	response.Success(c, v)
+	response.Success(c, gin.H{"id": v.Id, "device_name": v.DeviceName, "op": v.Op})
 }
 
 func (o *Oauth) ToBind(c *gin.Context) {
@@ -64,7 +68,11 @@ func (o *Oauth) ToBind(c *gin.Context) {
 	})
 }
 
-// Confirm 确认授权登录
+// Confirm lega all'utente del pannello il login webauth del codice: il
+// dispositivo che lo ha chiesto riceve il token di questo utente. Accetta
+// solo un login webauth non ancora confermato e solo con app.web-sso acceso;
+// un login OIDC, che deve passare dal provider, o un'associazione ricevono
+// la risposta del codice scaduto. login.vue non legge i dati della risposta.
 func (o *Oauth) Confirm(c *gin.Context) {
 	j := &admin.OauthConfirmForm{}
 	err := c.ShouldBindJSON(j)
@@ -77,16 +85,24 @@ func (o *Oauth) Confirm(c *gin.Context) {
 		return
 	}
 	v := service.AllService.OauthService.GetOauthCache(j.Code)
-	if v == nil {
+	if v == nil || !global.Config.App.WebSso || v.Op != model.OauthTypeWebauth ||
+		v.Action != service.OauthActionTypeLogin || v.UserId != 0 {
 		response.Fail(c, 101, response.TranslateMsg(c, "OauthExpired"))
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
 	v.UserId = u.Id
 	service.AllService.OauthService.SetOauthCache(j.Code, v, 0)
-	response.Success(c, v)
+	response.Success(c, nil)
 }
 
+// BindConfirm associa all'utente del pannello l'account del provider di un
+// login OIDC che il provider ha gia' autenticato ma che non e' ancora di
+// nessun utente (OauthCallback, autoregistrazione spenta, rimanda a
+// /_admin/#/oauth/bind/<code>), e lega il login a questo utente. Senza
+// OpenId il provider non ha risposto: un codice appena creato da
+// /api/oidc/auth, o un login gia' legato, riceve la risposta del codice
+// scaduto. bind.vue legge solo device_type.
 func (o *Oauth) BindConfirm(c *gin.Context) {
 	j := &admin.OauthConfirmForm{}
 	err := c.ShouldBindJSON(j)
@@ -100,7 +116,8 @@ func (o *Oauth) BindConfirm(c *gin.Context) {
 	}
 	oauthService := service.AllService.OauthService
 	oauthCache := oauthService.GetOauthCache(j.Code)
-	if oauthCache == nil {
+	if oauthCache == nil || oauthCache.Action != service.OauthActionTypeLogin ||
+		oauthCache.OpenId == "" || oauthCache.UserId != 0 {
 		response.Fail(c, 101, response.TranslateMsg(c, "OauthExpired"))
 		return
 	}
@@ -114,7 +131,7 @@ func (o *Oauth) BindConfirm(c *gin.Context) {
 
 	oauthCache.UserId = user.Id
 	oauthService.SetOauthCache(j.Code, oauthCache, 0)
-	response.Success(c, oauthCache)
+	response.Success(c, gin.H{"device_type": oauthCache.DeviceType})
 }
 
 func (o *Oauth) Unbind(c *gin.Context) {

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,7 +11,6 @@ import (
 	apiResp "github.com/lejianwen/rustdesk-api/v2/http/response/api"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
-	"github.com/lejianwen/rustdesk-api/v2/utils"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 )
 
@@ -30,7 +30,7 @@ func (o *Oauth) OidcAuth(c *gin.Context) {
 	f := &api.OidcAuthRequest{}
 	err := c.ShouldBindJSON(&f)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
 
@@ -38,7 +38,7 @@ func (o *Oauth) OidcAuth(c *gin.Context) {
 
 	err, state, verifier, nonce, url := oauthService.BeginAuth(f.Op)
 	if err != nil {
-		response.Error(c, response.TranslateMsg(c, err.Error()))
+		response.ErrorErr(c, "SystemError", err)
 		return
 	}
 
@@ -67,7 +67,7 @@ func (o *Oauth) OidcAuthQueryPre(c *gin.Context) (*model.User, *model.UserToken)
 
 	// 解析查询参数并处理错误
 	if err := c.ShouldBindQuery(q); err != nil {
-		response.Error(c, response.TranslateMsg(c, "ParamsError")+": "+err.Error())
+		response.ErrorErr(c, "ParamsError", err)
 		return nil, nil
 	}
 
@@ -80,7 +80,9 @@ func (o *Oauth) OidcAuthQueryPre(c *gin.Context) (*model.User, *model.UserToken)
 
 	// 如果 UserId 为 0，说明还在授权中
 	if v.UserId == 0 {
-		//fix: 1.4.2 webclient oidc
+		// Risposta che il client nativo 1.4.9 interroga ogni secondo: cerca
+		// alla lettera "No authed oidc is found" in error e continua
+		// (src/hbbs_http/account.rs:291). Golden oidc-auth-query-in-attesa.
 		c.JSON(http.StatusOK, gin.H{"message": "Authorization in progress, please login and bind", "error": "No authed oidc is found"})
 		return nil, nil
 	}
@@ -148,9 +150,10 @@ func (o *Oauth) OidcAuthQuery(c *gin.Context) {
 func (o *Oauth) OauthCallback(c *gin.Context) {
 	state := c.Query("state")
 	if state == "" {
+		// ParamIsEmpty ha il segnaposto del campo, che /api/oidc/msg non
+		// riempie: la pagina mostrava "Il campo <no value> è vuoto.".
 		c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
-			"message":     "ParamIsEmpty",
-			"sub_message": "state",
+			"message": "OauthStateMissing",
 		})
 		return
 	}
@@ -173,9 +176,10 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 	code := c.Query("code")
 	err, oauthUser := oauthService.Callback(code, verifier, op, nonce)
 	if err != nil {
+		// L'errore del provider va solo nel log, la pagina dice OauthFailed.
+		global.Logger.Warnf("%s %s: alla pagina va OauthFailed, errore %q", c.Request.Method, c.FullPath(), err)
 		c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
-			"message":     "OauthFailed",
-			"sub_message": err.Error(),
+			"message": "OauthFailed",
 		})
 		return
 	}
@@ -235,7 +239,7 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 			err, user = service.AllService.UserService.RegisterByOauth(oauthUser, op)
 			if err != nil {
 				c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
-					"message": err.Error(),
+					"message": response.IDErr(c, "OauthFailed", err),
 				})
 				return
 			}
@@ -274,6 +278,11 @@ type MessageParams struct {
 	Msg   string `json:"msg" form:"msg"`
 }
 
+// Message risponde alle pagine OAuth con lo script che assegna a title e msg
+// le traduzioni degli ID nella query. I valori sono letterali JSON, che sono
+// stringhe JavaScript valide qualunque cosa contengano: tra apici, un
+// apostrofo della traduzione ("L'elemento esiste già.") chiudeva la
+// stringa, lo script non partiva e la pagina mostrava l'ID.
 func (o *Oauth) Message(c *gin.Context) {
 	mp := &MessageParams{}
 	if err := c.ShouldBindQuery(mp); err != nil {
@@ -281,25 +290,22 @@ func (o *Oauth) Message(c *gin.Context) {
 	}
 	localizer := global.Localizer(mp.Lang)
 	res := ""
-	if mp.Title != "" {
-		title, err := localizer.LocalizeMessage(&i18n.Message{
-			ID: mp.Title,
-		})
-		if err == nil {
-			res = utils.StringConcat(";title='", title, "';")
+	for _, v := range []struct{ nome, id string }{{"title", mp.Title}, {"msg", mp.Msg}} {
+		if v.id == "" {
+			continue
 		}
-
-	}
-	if mp.Msg != "" {
-		msg, err := localizer.LocalizeMessage(&i18n.Message{
-			ID: mp.Msg,
-		})
-		if err == nil {
-			res = utils.StringConcat(res, "msg = '", msg, "';")
+		testo, err := localizer.LocalizeMessage(&i18n.Message{ID: v.id})
+		if err != nil {
+			continue
 		}
+		letterale, err := json.Marshal(testo)
+		if err != nil {
+			continue
+		}
+		res += ";" + v.nome + " = " + string(letterale) + ";"
 	}
 
-	//返回js内容
+	// lo script lo carica la pagina con un tag <script>
 	c.Header("Content-Type", "application/javascript")
 	c.String(http.StatusOK, res)
 }

@@ -6,6 +6,40 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Sicurezza
+- Il login `webauth` (il client apre il pannello e un utente del pannello
+  conferma) esiste solo con `app.web-sso` acceso: spento, `/api/oidc/auth`
+  del client e l'associazione dal pannello rispondono come a un provider
+  che non esiste (400 "Configurazione non trovata."), non piu' solo senza
+  la voce in `/api/login-options`. La conferma dal pannello
+  (`/api/admin/oauth/confirm`) accetta solo un login `webauth` non ancora
+  confermato: prima confermava qualsiasi codice, e un utente del pannello
+  che apriva `/_admin/#/oauth/<code>` di un login OIDC avviato da un altro
+  dispositivo gli dava il proprio token senza passare dal provider.
+  `/api/admin/oauth/bindConfirm` accetta solo un login che il provider ha
+  gia' autenticato. `/api/admin/oauth/info`, `confirm` e `bindConfirm` non
+  mandano piu' al browser verifier PKCE, nonce e dati dell'utente del
+  provider, solo i campi che le pagine del pannello mostrano.
+- Anche `/api/oidc/*` non manda piu' al client ne' al browser il testo di
+  un errore interno (REGOLE 8), ultimo gruppo di rotte rimasto: un corpo
+  JSON rotto a `/api/oidc/auth` riceve "Parametri non validi." senza il
+  testo del parser; la pagina del login OAuth, se il provider risponde con
+  un errore o l'autoregistrazione non riesce, non riceve piu' il testo
+  dell'errore (che nel secondo caso mostrava grezzo) ma l'ID del messaggio.
+  L'errore va nel log a livello warn, con metodo e rotta.
+
+### Corretto
+- La pagina del login OAuth mostra le frasi tradotte anche quando hanno un
+  apostrofo: `/api/oidc/msg` le scriveva tra apici nello script, e con 8
+  messaggi italiani ("L'elemento esiste già.", "L'accesso con password è
+  disattivato." e altri) lo script non partiva e la pagina mostrava l'ID.
+- La pagina del login OAuth senza `state` dice "Il provider OAuth non ha
+  restituito lo stato del login: ripeti il login." invece di "Il campo
+  <no value> è vuoto.".
+- Le pagine del login OAuth dichiarano la lingua configurata (`lang`,
+  vuota vale l'inglese) nell'attributo `lang` e la usano se il browser non
+  dice la sua, invece di `zh-CN`.
+
 ## [0.1.0] - 2026-09-26
 Base upstream: rustdesk-api v2.7. Primo rilascio: immagine
 `ghcr.io/labinfinitek/remotek-api:0.1.0`.

@@ -132,7 +132,7 @@ default when the key is missing from the file.
 | `app.ban-threshold` \* | `RUSTDESK_API_APP_BAN_THRESHOLD` | `10` | failed logins from one IP, within 10 minutes, after which every request from it is refused for 30 minutes; `0` never |
 | `app.show-swagger` \* | `RUSTDESK_API_APP_SHOW_SWAGGER` | `0` | `1` publishes `/swagger/index.html` and `/admin/swagger/index.html` |
 | `app.token-expire` | `RUSTDESK_API_APP_TOKEN_EXPIRE` | `168h` | session lifetime (Go duration: `72h`, `30m`) |
-| `app.web-sso` \* | `RUSTDESK_API_APP_WEB_SSO` | `false` | offers the client the login confirmed from the panel (`webauth`) |
+| `app.web-sso` \* | `RUSTDESK_API_APP_WEB_SSO` | `false` | turns on the client login confirmed from the panel (`webauth`); off, `/api/oidc/auth` rejects it like a provider that does not exist |
 | `app.disable-pwd-login` | `RUSTDESK_API_APP_DISABLE_PWD_LOGIN` | `false` | `true` removes password login, OIDC and LDAP remain |
 | `admin.title` \* | `RUSTDESK_API_ADMIN_TITLE` | empty | panel title; empty = `brand.name` |
 | `admin.hello` | `RUSTDESK_API_ADMIN_HELLO` | empty | panel welcome message (HTML); when not empty, `admin.hello-file` is not read |

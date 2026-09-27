@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/lejianwen/rustdesk-api/v2/global"
 )
 
 // indirizzoEsterno trova un indirizzo assoluto (http://, https:// o che
@@ -90,6 +92,30 @@ func TestPagineOAuthMessaggioComeTesto(t *testing.T) {
 		}
 		if !strings.Contains(corpo, `var msg = '\u0022\u003e\u003cscript\u003ealert(1)\u003c\/script\u003e'`) {
 			t.Errorf("%s: manca il messaggio come stringa JavaScript:\n%s", pagina, corpo)
+		}
+	}
+}
+
+// TestPagineOAuthLingua rende le due pagine del login OAuth col router vero:
+// l'attributo lang e la lingua di ripiego, se il browser non dice la sua,
+// sono quella configurata, e l'inglese con lang vuoto; non piu' zh-CN.
+func TestPagineOAuthLingua(t *testing.T) {
+	pannello(t, false)
+	prec := global.Config.Lang
+	t.Cleanup(func() { global.Config.Lang = prec })
+	for conf, attesa := range map[string]string{"it": "it", "en": "en", "": "en"} {
+		global.Config.Lang = conf
+		g := NewEngine()
+		for _, pagina := range []string{"oauth_fail.html", "oauth_success.html"} {
+			rec := httptest.NewRecorder()
+			if err := g.HTMLRender.Instance(pagina, gin.H{"message": "OauthFailed"}).Render(rec); err != nil {
+				t.Fatalf("%s: %v", pagina, err)
+			}
+			corpo := rec.Body.String()
+			if !strings.Contains(corpo, `<html lang="`+attesa+`">`) ||
+				!strings.Contains(corpo, `navigator.userLanguage || '`+attesa+`';`) || strings.Contains(corpo, "zh-CN") {
+				t.Errorf("%s, lang %q: manca la lingua %s:\n%s", pagina, conf, attesa, corpo)
+			}
 		}
 	}
 }
