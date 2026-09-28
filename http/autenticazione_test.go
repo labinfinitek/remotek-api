@@ -1,7 +1,7 @@
 package http
 
 // Test delle letture del modulo auth sul router vero: un errore del database
-// non fa uscire il tecnico dal client o dal pannello.
+// non fa uscire il tecnico dal client o dal pannello e non lo banna.
 
 import (
 	"net/http/httptest"
@@ -15,6 +15,7 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/lib/jwt"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
+	"github.com/lejianwen/rustdesk-api/v2/utils"
 )
 
 // TestRustAuthLetturaFallita prova sul router vero RustAuth, il middleware
@@ -110,6 +111,51 @@ func TestBackendUserAuthLetturaFallita(t *testing.T) {
 			}
 			if nelLog := registro.String(); tc.tabella != "" && (!strings.Contains(nelLog, "GET "+tc.rotta+": ") || !strings.Contains(nelLog, "lettura rifiutata dal test")) {
 				t.Errorf("GET %s, nel log mancano rotta o errore:\n%s", tc.rotta, nelLog)
+			}
+		})
+	}
+}
+
+// TestLoginLetturaFallita prova sul router vero il login del client e del
+// pannello quando il database non legge l'utente: la risposta e' "Errore di
+// sistema." (client 400 {"error": ...}, pannello code 101), con l'errore nel
+// log, e il tentativo non conta tra quelli falliti. Col ban a 1 tentativo
+// fallito, un secondo login con la password giusta entra. Prima la lettura
+// fallita valeva una password sbagliata: il primo login bannava l'IP e il
+// secondo riceveva il ban (code 423).
+func TestLoginLetturaFallita(t *testing.T) {
+	for _, tc := range []struct {
+		rotta, corpo, erroreDiSistema, entrato string
+	}{
+		{"/api/login", `{"username":"prova","password":"` + passwordDiProva + `","id":"999000111","uuid":"dXVpZA==",` +
+			`"autoLogin":true,"type":"account","deviceInfo":{"os":"windows","type":"client","name":"PC-COLLAUDO"}}`,
+			`{"error":"Errore di sistema."}`, `"access_token":`},
+		{"/api/admin/login", `{"username":"prova","password":"` + passwordDiProva + `"}`,
+			`{"code":101,"message":"Errore di sistema.","data":null}`, `{"code":0,`},
+	} {
+		t.Run(tc.rotta, func(t *testing.T) {
+			g, utente, registro := pannello(t, false)
+			preparaLogin(t, utente)
+			prec := global.LoginLimiter
+			global.LoginLimiter = utils.NewLoginLimiter(utils.SecurityPolicy{CaptchaThreshold: global.Config.App.CaptchaThreshold, BanThreshold: 1})
+			t.Cleanup(func() { global.LoginLimiter = prec })
+			rifiutaLetture(t, "users", "")
+
+			rec := richiesta(g, "POST", tc.rotta, "", tc.corpo)
+			if got := rec.Body.String(); got != tc.erroreDiSistema {
+				t.Errorf("POST %s con gli utenti non letti: %d %s, atteso %s", tc.rotta, rec.Code, got, tc.erroreDiSistema)
+			}
+			if nelLog := registro.String(); !strings.Contains(nelLog, "POST "+tc.rotta+": ") || !strings.Contains(nelLog, "lettura rifiutata dal test") {
+				t.Errorf("POST %s, nel log mancano rotta o errore:\n%s", tc.rotta, nelLog)
+			}
+
+			// Il database torna a leggere: il login entra se il primo non
+			// ha contato come tentativo fallito.
+			if err := service.DB.Callback().Query().Remove("rifiuta_letture_users"); err != nil {
+				t.Fatal(err)
+			}
+			if rec := richiesta(g, "POST", tc.rotta, "", tc.corpo); rec.Code != 200 || !strings.Contains(rec.Body.String(), tc.entrato) {
+				t.Errorf("POST %s con la password giusta, dopo la lettura fallita: %d %s, atteso il login", tc.rotta, rec.Code, rec.Body)
 			}
 		})
 	}

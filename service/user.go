@@ -28,32 +28,36 @@ func (us *UserService) InfoById(id uint) *model.User {
 	return u
 }
 
-// InfoByUsername 根据用户名取用户信息
-func (us *UserService) InfoByUsername(un string) *model.User {
+// InfoByUsername restituisce l'utente di nome un; ErrNotFound se non c'e'.
+func (us *UserService) InfoByUsername(un string) (*model.User, error) {
 	u := &model.User{}
-	DB.Where("username = ?", un).First(u)
-	return u
+	if err := DB.Where("username = ?", un).First(u).Error; err != nil {
+		return nil, fmt.Errorf("utente per nome: %w", nonTrovato(err))
+	}
+	return u, nil
 }
 
-// InfoByUsernamePassword 根据用户名密码取用户信息
-func (us *UserService) InfoByUsernamePassword(username, password string) *model.User {
+// InfoByUsernamePassword restituisce l'utente username se password e' la
+// sua, con LDAP acceso prima dalla directory; ErrNotFound se l'utente non
+// c'e' o la password e' sbagliata. Un errore del database non e' una
+// password sbagliata.
+func (us *UserService) InfoByUsernamePassword(username, password string) (*model.User, error) {
 	if Config.Ldap.Enable {
 		u, err := AllService.LdapService.Authenticate(username, password)
 		if err == nil {
-			return u
+			return u, nil
 		}
 		Logger.Errorf("LDAP authentication failed, %v", err)
 		Logger.Warn("Fallback to local database")
 	}
-	u := &model.User{}
-	DB.Where("username = ?", username).First(u)
-	if u.Id == 0 {
-		return u
+	u, err := us.InfoByUsername(username)
+	if err != nil {
+		return nil, err
 	}
 	if ok, err := utils.VerifyPassword(u.Password, password); err != nil || !ok {
-		return &model.User{}
+		return nil, ErrNotFound
 	}
-	return u
+	return u, nil
 }
 
 // InfoByAccessToken restituisce l'utente del token di sessione token e il

@@ -123,6 +123,13 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   token che non c'e', scaduto o di un utente disabilitato ha le risposte di
   prima. Anche la configurazione del pannello (`/api/admin/config/admin`)
   con un token risponde "Errore di sistema." invece del solo titolo.
+- Login del client (`/api/login`) e del pannello: se il database non legge
+  l'utente, la risposta e' "Errore di sistema." con l'errore nel log, e il
+  tentativo non conta per captcha e ban. Prima valeva una password
+  sbagliata: col database in difficolta' dieci tentativi
+  (`app.ban-threshold`) bloccavano per 30 minuti l'IP di tecnici con la
+  password giusta. Lo stesso con LDAP acceso, quando il database non legge
+  l'utente locale di chi la directory ha autenticato.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

@@ -208,10 +208,14 @@ func (ls *LdapService) isUserInGroup(cfg *config.Ldap, ldapUser *LdapUser, group
 // If the user exists and Ldap.Sync is enabled, it updates local info.
 func (ls *LdapService) mapToLocalUser(cfg *config.Ldap, lu *LdapUser) (*model.User, error) {
 	userService := &UserService{}
-	localUser := userService.InfoByUsername(lu.Username)
+	// Un utente locale che non si legge non e' un utente che non c'e'.
+	localUser, err := userService.InfoByUsername(lu.Username)
+	if err != nil && !errors.Is(err, ErrNotFound) {
+		return nil, err
+	}
 	isAdmin := ls.isUserAdmin(cfg, lu)
 	// If the user doesn't exist in local DB, create a new one
-	if localUser.Id == 0 {
+	if errors.Is(err, ErrNotFound) {
 		newUser := lu.ToUser(nil)
 		// Typically, you don’t store LDAP user passwords locally.
 		// If needed, you can set a random password here.
@@ -220,7 +224,7 @@ func (ls *LdapService) mapToLocalUser(cfg *config.Ldap, lu *LdapUser) (*model.Us
 		if err := DB.Create(newUser).Error; err != nil {
 			return nil, errors.Join(ErrLdapCreateUserFailed, err)
 		}
-		return userService.InfoByUsername(lu.Username), nil
+		return userService.InfoByUsername(lu.Username)
 	}
 
 	// If the user already exists and sync is enabled, update local info
