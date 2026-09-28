@@ -110,6 +110,12 @@ func (is *ServerCmdService) SendSocketCmd(ty string, port int, cmd string) (stri
 	return string(buf[:n]), nil
 }
 
+// Update salva i campi del modulo del pannello, anche vuoti: un alias, una
+// spiegazione o un'opzione svuotati restano vuoti. La data di creazione
+// resta quella di prima.
 func (is *ServerCmdService) Update(f *model.ServerCmd) error {
-	return DB.Model(f).Updates(f).Error
+	if err := DB.Model(f).Select("cmd", "alias", "option", "explain", "target").Updates(f).Error; err != nil {
+		return fmt.Errorf("voce %d dei comandi del server: %w", f.Id, err)
+	}
+	return nil
 }

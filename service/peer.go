@@ -203,7 +203,32 @@ func (ps *PeerService) BatchDelete(ids []uint) error {
 	})
 }
 
-// Update 更新
+// Update salva i campi non vuoti di u: serve alle scritture parziali
+// (sysinfo, heartbeat, legame con l'utente), che non devono azzerare il resto.
 func (ps *PeerService) Update(u *model.Peer) error {
 	return DB.Model(u).Updates(u).Error
+}
+
+// UpdateDalPannello salva i campi del modulo del pannello (admin.PeerForm),
+// anche vuoti, cosi' un nome del PC o un gruppo tolti restano tolti. L'alias
+// si scrive solo con conAlias, cioe' se il corpo aveva la chiave: il pannello
+// la manda solo se l'alias si e' toccato. ID e uuid vuoti non si scrivono:
+// il modulo li manda vuoti per non cambiarli, e un uuid vuoto scioglierebbe
+// il legame ID-uuid. Utente, ultimo contatto e IP non sono nel modulo e
+// restano quelli di prima.
+func (ps *PeerService) UpdateDalPannello(u *model.Peer, conAlias bool) error {
+	campi := []string{"cpu", "hostname", "memory", "os", "username", "version", "group_id"}
+	if conAlias {
+		campi = append(campi, "alias")
+	}
+	if u.Id != "" {
+		campi = append(campi, "id")
+	}
+	if u.Uuid != "" {
+		campi = append(campi, "uuid")
+	}
+	if err := DB.Model(u).Select(campi).Updates(u).Error; err != nil {
+		return fmt.Errorf("dispositivo %d: %w", u.RowId, err)
+	}
+	return nil
 }
