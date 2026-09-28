@@ -189,6 +189,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   l'errore va nel log. Prima l'elenco era vuoto, dettaglio e cancellazione
   dicevano "Elemento non trovato.", e la creazione salvava il provider
   senza sapere se ce n'era gia' uno con lo stesso op.
+- Login OIDC di un account senza utente, con un provider salvato senza
+  `auto_register` (NULL nel database): l'autoregistrazione vale spenta e
+  il callback rimanda ad associare l'account dal pannello; prima andava in
+  panic (500). Il pannello, quando crea o aggiorna un provider senza
+  `auto_register`, la salva spenta, come gia' `pkce_enable`.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

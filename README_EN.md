@@ -190,7 +190,10 @@ default when the key is missing from the file.
 
 The OIDC provider is configured from the panel (OAuth, type `oidc`): it needs
 the `Issuer`, `Scopes` default to `openid,profile,email`, callback URL
-`<rustdesk.api-server>/api/oidc/callback`.
+`<rustdesk.api-server>/api/oidc/callback`. Auto-registration
+(`auto_register`) is off unless you turn it on: a provider account without a
+user is sent to link itself from the panel; when on, the user is created at
+the first login.
 
 ## First start and administration
 

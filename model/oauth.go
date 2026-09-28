@@ -41,6 +41,9 @@ type Oauth struct {
 	ClientId     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
 	// RedirectUrl  string `json:"redirect_url"`
+	// AutoRegister crea l'utente al primo login di un account del provider
+	// che non ne ha uno, invece di rimandare ad associarlo. Un provider
+	// salvato senza il campo ha NULL: vale spenta.
 	AutoRegister *bool  `json:"auto_register"`
 	Scopes       string `json:"scopes"`
 	Issuer       string `json:"issuer"`
@@ -50,8 +53,8 @@ type Oauth struct {
 }
 
 // FormatOauthInfo controlla il tipo e completa un provider OAuth prima di
-// crearlo o aggiornarlo: Op "oidc" se vuoto, PKCE spento e S256 se non
-// indicati.
+// crearlo o aggiornarlo: Op "oidc" se vuoto, autoregistrazione e PKCE spenti
+// e S256 se non indicati.
 func (oa *Oauth) FormatOauthInfo() error {
 	oauthType := strings.TrimSpace(oa.OauthType)
 	err := ValidateOauthType(oa.OauthType)
@@ -62,6 +65,10 @@ func (oa *Oauth) FormatOauthInfo() error {
 	op := strings.TrimSpace(oa.Op)
 	if op == "" && oauthType == OauthTypeOidc {
 		oa.Op = OauthTypeOidc
+	}
+	if oa.AutoRegister == nil {
+		oa.AutoRegister = new(bool)
+		*oa.AutoRegister = false
 	}
 	if oa.PkceEnable == nil {
 		oa.PkceEnable = new(bool)

@@ -193,7 +193,10 @@ stesso default se la chiave manca dal file.
 
 Il provider OIDC si configura dal pannello (OAuth, tipo `oidc`): serve
 l'`Issuer`, `Scopes` di default `openid,profile,email`, URL di callback
-`<rustdesk.api-server>/api/oidc/callback`.
+`<rustdesk.api-server>/api/oidc/callback`. L'autoregistrazione
+(`auto_register`) e' spenta se non la si accende: un account del provider
+senza utente viene rimandato ad associarsi dal pannello; accesa, l'utente
+nasce al primo login.
 
 ## Primo avvio e amministrazione
 
