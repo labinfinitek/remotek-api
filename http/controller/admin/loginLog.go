@@ -1,8 +1,6 @@
 package admin
 
 import (
-	"strconv"
-
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
@@ -14,28 +12,6 @@ import (
 )
 
 type LoginLog struct {
-}
-
-// Detail 登录日志
-// @Tags 登录日志
-// @Summary 登录日志详情
-// @Description 登录日志详情
-// @Accept  json
-// @Produce  json
-// @Param id path int true "ID"
-// @Success 200 {object} response.Response{data=model.LoginLog}
-// @Failure 500 {object} response.Response
-// @Router /admin/login_log/detail/{id} [get]
-// @Security token
-func (ct *LoginLog) Detail(c *gin.Context) {
-	id := c.Param("id")
-	iid, _ := strconv.Atoi(id)
-	u, err := service.AllService.LoginLogService.InfoById(uint(iid))
-	if err == nil {
-		response.Success(c, u)
-		return
-	}
-	response.FailErr(c, 101, "SystemError", err)
 }
 
 // List 列表
