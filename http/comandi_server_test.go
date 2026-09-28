@@ -131,3 +131,39 @@ func TestPannelloComandiServerSoloAdmin(t *testing.T) {
 		})
 	}
 }
+
+// TestPannelloModificaComandoServer prova sul router vero la modifica dei
+// comandi salvati dal pannello, POST /api/admin/rustdesk/cmdUpdate: con
+// l'amministratore cambia la riga, a un utente non amministratore risponde
+// come le altre rotte del gruppo e la riga resta com'era. Prima la rotta non
+// c'era, rispondeva 404 e la modifica dal pannello non riusciva.
+func TestPannelloModificaComandoServer(t *testing.T) {
+	for _, admin := range []bool{false, true} {
+		t.Run("admin="+strconv.FormatBool(admin), func(t *testing.T) {
+			g, _, _ := pannello(t, admin)
+			if err := service.DB.AutoMigrate(&model.ServerCmd{}); err != nil {
+				t.Fatal(err)
+			}
+			salvato := &model.ServerCmd{Cmd: "salvato", Explain: "prima", Target: model.ServerCmdTargetIdServer}
+			crea(t, salvato)
+
+			const rotta = "/api/admin/rustdesk/cmdUpdate"
+			corpo := `{"id": ` + strconv.FormatUint(uint64(salvato.Id), 10) + `, "cmd": "cambiato", "explain": "dopo", "target": "` + model.ServerCmdTargetRelayServer + `"}`
+			rec := richiesta(g, "POST", rotta, "", corpo)
+			risposta, voluto := `{"code":0,"message":"success","data":null}`, "cambiato/dopo/"+model.ServerCmdTargetRelayServer
+			if !admin {
+				risposta, voluto = `{"code":403,"message":"Non hai i permessi per questa operazione.","data":null}`, "salvato/prima/"+model.ServerCmdTargetIdServer
+			}
+			if got := rec.Body.String(); rec.Code != 200 || got != risposta {
+				t.Errorf("POST %s: stato %d\n got  %s\n want %s", rotta, rec.Code, got, risposta)
+			}
+			dopo := &model.ServerCmd{}
+			if err := service.DB.First(dopo, salvato.Id).Error; err != nil {
+				t.Fatal(err)
+			}
+			if got := dopo.Cmd + "/" + dopo.Explain + "/" + dopo.Target; got != voluto {
+				t.Errorf("voce dopo POST %s: %q, atteso %q", rotta, got, voluto)
+			}
+		})
+	}
+}

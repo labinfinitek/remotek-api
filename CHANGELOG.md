@@ -42,6 +42,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   `ldaps://`. Nel `conf/config.yaml` d'esempio `bind-password` e' vuota.
 
 ### Corretto
+- Pannello, comandi del server: la modifica di un comando salvato riesce.
+  Il pannello la manda a `/api/admin/rustdesk/cmdUpdate`, che non era
+  registrata e rispondeva 404; ora c'e', solo per gli amministratori come
+  le altre rotte dei comandi.
 - Rubriche condivise del client (`/api/ab/shared/profiles`): una rubrica
   condivisa il cui proprietario non c'e' piu' nel database (dati rimasti
   orfani prima della cancellazione a cascata degli utenti) si salta, con
