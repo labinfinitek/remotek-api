@@ -47,3 +47,44 @@ func TestAuditNonSalvato(t *testing.T) {
 		})
 	}
 }
+
+// TestAuditConnessioneNonLetta prova sul router vero la chiusura e la nota di
+// una connessione dell'audit quando il database non la legge: la risposta
+// resta quella dei golden audit-conn-close e audit-conn-nota, perche' il
+// client la ignora, e l'errore va nel log con metodo e rotta. Prima la
+// lettura fallita valeva "connessione mai vista" e non restava niente. Una
+// connessione che non c'e' resta senza log, come prima.
+func TestAuditConnessioneNonLetta(t *testing.T) {
+	for _, tc := range []struct {
+		nome, corpo string
+		rifiuto     bool
+	}{
+		{"chiusa", `{"action":"close","conn_id":7,"id":"999000111","session_id":1,"uuid":"dXVpZA=="}`, true},
+		{"nota", `{"conn_id":7,"id":"999000111","peer":["999000222","tecnico"],"session_id":1,"type":0,"uuid":"dXVpZA=="}`, true},
+		{"chiusa, mai vista", `{"action":"close","conn_id":8,"id":"999000111","session_id":1,"uuid":"dXVpZA=="}`, false},
+		{"nota, mai vista", `{"conn_id":8,"id":"999000111","peer":["999000222","tecnico"],"session_id":1,"type":0,"uuid":"dXVpZA=="}`, false},
+	} {
+		t.Run(tc.nome, func(t *testing.T) {
+			g, _, registro := pannello(t, false)
+			if err := service.DB.AutoMigrate(&model.AuditConn{}); err != nil {
+				t.Fatal(err)
+			}
+			crea(t, &model.AuditConn{Action: model.AuditActionNew, ConnId: 7, PeerId: "999000111"})
+			if tc.rifiuto {
+				rifiutaLetture(t, "audit_conns", "peer_id")
+			}
+
+			rec := richiesta(g, "POST", "/api/audit/conn", "", tc.corpo)
+			if got, want := rec.Body.String(), `{"code":0,"message":"success","data":""}`; rec.Code != 200 || got != want {
+				t.Errorf("POST /api/audit/conn: %d %s, attesi 200 e %s", rec.Code, got, want)
+			}
+			nelLog := registro.String()
+			if tc.rifiuto && (!strings.Contains(nelLog, "POST /api/audit/conn: ") || !strings.Contains(nelLog, "lettura rifiutata dal test")) {
+				t.Errorf("nel log mancano rotta o errore:\n%s", nelLog)
+			}
+			if !tc.rifiuto && nelLog != "" {
+				t.Errorf("una connessione mai vista non va nel log:\n%s", nelLog)
+			}
+		})
+	}
+}

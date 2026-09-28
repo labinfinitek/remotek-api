@@ -1,6 +1,8 @@
 package service
 
 import (
+	"fmt"
+
 	"gorm.io/gorm"
 
 	"github.com/lejianwen/rustdesk-api/v2/model"
@@ -38,11 +40,13 @@ func (as *AuditService) UpdateAuditConn(u *model.AuditConn) error {
 }
 
 // InfoByPeerIdAndConnId restituisce la connessione connId del dispositivo
-// peerId, vuota se non la legge.
-func (as *AuditService) InfoByPeerIdAndConnId(peerId string, connId int64) (res *model.AuditConn) {
-	res = &model.AuditConn{}
-	DB.Where("peer_id = ? and conn_id = ?", peerId, connId).First(res)
-	return
+// peerId; ErrNotFound se non c'e'.
+func (as *AuditService) InfoByPeerIdAndConnId(peerId string, connId int64) (*model.AuditConn, error) {
+	res := &model.AuditConn{}
+	if err := DB.Where("peer_id = ? and conn_id = ?", peerId, connId).First(res).Error; err != nil {
+		return nil, fmt.Errorf("connessione %d del dispositivo %s: %w", connId, peerId, nonTrovato(err))
+	}
+	return res, nil
 }
 
 // ConnInfoById restituisce la connessione id, vuota se non la legge.

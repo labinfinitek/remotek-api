@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -44,16 +45,16 @@ func (a *Audit) AuditConn(c *gin.Context) {
 			auditNonSalvato(c, err)
 		}
 	case model.AuditActionClose:
-		ex := service.AllService.AuditService.InfoByPeerIdAndConnId(af.Id, af.ConnId)
-		if ex.Id != 0 {
+		ex, err := connessioneAudit(c, af.Id, af.ConnId)
+		if err == nil {
 			ex.CloseTime = time.Now().Unix()
 			if err := service.AllService.AuditService.UpdateAuditConn(ex); err != nil {
 				auditNonSalvato(c, err)
 			}
 		}
 	case "":
-		ex := service.AllService.AuditService.InfoByPeerIdAndConnId(af.Id, af.ConnId)
-		if ex.Id != 0 {
+		ex, err := connessioneAudit(c, af.Id, af.ConnId)
+		if err == nil {
 			up := &model.AuditConn{
 				IdModel:   model.IdModel{Id: ex.Id},
 				FromPeer:  ac.FromPeer,
@@ -67,6 +68,18 @@ func (a *Audit) AuditConn(c *gin.Context) {
 		}
 	}
 	response.Success(c, "")
+}
+
+// connessioneAudit legge la connessione connId del dispositivo peerId. Se il
+// database non la legge scrive l'errore nel log con auditNonSalvato; una
+// connessione che non c'e' non va nel log, come prima: il client puo'
+// chiudere o annotare una connessione di cui l'audit non ha l'apertura.
+func connessioneAudit(c *gin.Context, peerId string, connId int64) (*model.AuditConn, error) {
+	ex, err := service.AllService.AuditService.InfoByPeerIdAndConnId(peerId, connId)
+	if err != nil && !errors.Is(err, service.ErrNotFound) {
+		auditNonSalvato(c, err)
+	}
+	return ex, err
 }
 
 // auditNonSalvato scrive nel log, a livello error, l'audit che il database
