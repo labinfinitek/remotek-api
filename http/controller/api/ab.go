@@ -457,7 +457,11 @@ func (a *Ab) SharedProfiles(c *gin.Context) {
 	}
 
 	ids := utils.Keys(allUserIds)
-	allUsers := service.AllService.UserService.ListByIds(ids)
+	allUsers, err := service.AllService.UserService.ListByIds(ids)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return
+	}
 	for _, u := range allUsers {
 		allUserIds[u.Id] = u
 	}

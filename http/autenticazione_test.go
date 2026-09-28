@@ -1,15 +1,19 @@
 package http
 
 // Test delle letture del modulo auth sul router vero: un errore del database
-// non fa uscire il tecnico dal client o dal pannello e non lo banna.
+// non vale "non trovato", non fa uscire il tecnico dal client o dal pannello
+// e non lo banna.
 
 import (
+	"errors"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"gorm.io/gorm"
 
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/lib/jwt"
@@ -159,4 +163,114 @@ func TestLoginLetturaFallita(t *testing.T) {
 			}
 		})
 	}
+}
+
+// idDi restituisce con Raw, che rifiutaLetture non ferma, l'id dell'utente
+// username, come testo.
+func idDi(t *testing.T, username string) string {
+	t.Helper()
+	var id uint
+	if err := service.DB.Raw("SELECT id FROM users WHERE username = ?", username).Scan(&id).Error; err != nil || id == 0 {
+		t.Fatalf("id di %s: %d (%v)", username, id, err)
+	}
+	return strconv.FormatUint(uint64(id), 10)
+}
+
+// TestClientUtentiNonLetti prova sul router vero le rotte del client che,
+// dopo RustAuth, leggono gli utenti: se il database non li legge rispondono
+// 400 {"error": "Errore di sistema."}, con l'errore nel log, e non 401, che
+// per il client e' un logout. Prima /api/users e /api/peers rispondevano 200
+// con l'elenco vuoto, e le rubriche condivise andavano in panic (500).
+func TestClientUtentiNonLetti(t *testing.T) {
+	for _, tc := range []struct {
+		nome, metodo, rotta, dove string // in dove PROPRIETARIO diventa l'id del proprietario
+		amministratore            bool   // l'amministratore vede gli utenti del suo gruppo
+	}{
+		{"utenti del gruppo", "GET", "/api/users", "group_id", true},
+		{"dispositivi del gruppo", "GET", "/api/peers", "group_id", true},
+		{"proprietari delle rubriche condivise", "POST", "/api/ab/shared/profiles", "id in", false},
+	} {
+		t.Run(tc.nome, func(t *testing.T) {
+			_, registro, invia, guid := rubricheDiProva(t, model.ShareAddressBookRuleRuleRead)
+			if tc.amministratore {
+				if err := service.DB.Exec("UPDATE users SET is_admin = 1 WHERE username = 'prova'").Error; err != nil {
+					t.Fatal(err)
+				}
+			}
+			rifiutaLetture(t, "users", strings.Replace(tc.dove, "PROPRIETARIO", idDi(t, "proprietario"), 1))
+
+			rec := invia(tc.metodo, guid.Replace(tc.rotta), "")
+			if got, want := rec.Body.String(), `{"error":"Errore di sistema."}`; rec.Code != 400 || got != want {
+				t.Errorf("%s %s con gli utenti non letti: %d %s, attesi 400 e %s", tc.metodo, tc.rotta, rec.Code, got, want)
+			}
+			percorso, _, _ := strings.Cut(tc.rotta, "?")
+			if nelLog := registro.String(); !strings.Contains(nelLog, tc.metodo+" "+percorso+": ") || !strings.Contains(nelLog, "lettura rifiutata dal test") {
+				t.Errorf("%s %s, nel log mancano rotta o errore:\n%s", tc.metodo, tc.rotta, nelLog)
+			}
+		})
+	}
+}
+
+// rifiutaElenchi fa fallire nel database dei servizi le letture senza WHERE
+// della tabella tabella, come l'elenco di tutti gli utenti, che
+// rifiutaLetture non ferma; le altre riescono.
+func rifiutaElenchi(t *testing.T, tabella string) {
+	t.Helper()
+	err := service.DB.Callback().Query().Before("gorm:query").Register("rifiuta_elenchi_"+tabella, func(db *gorm.DB) {
+		if _, ok := db.Statement.Clauses["WHERE"]; db.Statement.Table == tabella && !ok {
+			_ = db.AddError(errors.New("lettura rifiutata dal test"))
+		}
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestPannelloUtenteNonLetto prova sul router vero le rotte del pannello che
+// leggono l'elenco degli utenti: se il database non lo legge rispondono code
+// 101 "Errore di sistema.", con l'errore nel log. Prima rispondevano successo
+// con l'elenco vuoto.
+func TestPannelloUtenteNonLetto(t *testing.T) {
+	const erroreDiSistema = `{"code":101,"message":"Errore di sistema.","data":null}`
+	for _, tc := range []struct {
+		metodo, rotta, corpo, dove string // in rotta, corpo e dove SECONDO diventa l'id di secondo
+	}{
+		{"GET", "/api/admin/user/list?username=sec", "", "username like"},
+		{"POST", "/api/admin/user/groupUsers", "", ""},
+	} {
+		t.Run(tc.metodo+" "+tc.rotta, func(t *testing.T) {
+			g, _, registro := pannello(t, true)
+			crea(t, &model.User{Username: "secondo", GroupId: 1, Status: model.COMMON_STATUS_ENABLE})
+			sostituisci := strings.NewReplacer("SECONDO", idDi(t, "secondo"))
+			prima := statoUtenti(t)
+			if tc.dove == "" {
+				rifiutaElenchi(t, "users")
+			} else {
+				rifiutaLetture(t, "users", sostituisci.Replace(tc.dove))
+			}
+
+			rec := richiesta(g, tc.metodo, sostituisci.Replace(tc.rotta), "", sostituisci.Replace(tc.corpo))
+			if got := rec.Body.String(); rec.Code != 200 || got != erroreDiSistema {
+				t.Errorf("%s %s: stato %d\n got  %s\n want %s", tc.metodo, tc.rotta, rec.Code, got, erroreDiSistema)
+			}
+			percorso, _, _ := strings.Cut(strings.Replace(tc.rotta, "/SECONDO", "/:id", 1), "?")
+			if nelLog := registro.String(); !strings.Contains(nelLog, tc.metodo+" "+percorso+": ") || !strings.Contains(nelLog, "lettura rifiutata dal test") {
+				t.Errorf("%s %s, nel log mancano rotta o errore:\n%s", tc.metodo, tc.rotta, nelLog)
+			}
+			if dopo := statoUtenti(t); dopo != prima {
+				t.Errorf("%s %s ha cambiato gli utenti:\n prima %s\n dopo  %s", tc.metodo, tc.rotta, prima, dopo)
+			}
+		})
+	}
+}
+
+// statoUtenti descrive con Raw, che rifiutaLetture non ferma, nome, ruolo,
+// stato e password degli utenti.
+func statoUtenti(t *testing.T) string {
+	t.Helper()
+	var utenti []string
+	if err := service.DB.Raw("SELECT username || ' ' || is_admin || ' ' || status || ' ' || password FROM users ORDER BY id").Scan(&utenti).Error; err != nil {
+		t.Fatal(err)
+	}
+	return strings.Join(utenti, ", ")
 }

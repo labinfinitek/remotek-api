@@ -155,7 +155,7 @@ func (us *UserService) CurUser(c *gin.Context) *model.User {
 	return u
 }
 
-func (us *UserService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.UserList) {
+func (us *UserService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.UserList, err error) {
 	res = &model.UserList{}
 	res.Page = int64(page)
 	res.PageSize = int64(pageSize)
@@ -163,29 +163,38 @@ func (us *UserService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *
 	if where != nil {
 		where(tx)
 	}
-	tx.Count(&res.Total)
+	if err = tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio degli utenti: %w", err)
+	}
 	tx.Scopes(Paginate(page, pageSize))
-	tx.Find(&res.Users)
-	return
+	if err = tx.Find(&res.Users).Error; err != nil {
+		return nil, fmt.Errorf("utenti: %w", err)
+	}
+	return res, nil
 }
 
-func (us *UserService) ListByIds(ids []uint) (res []*model.User) {
-	DB.Where("id in ?", ids).Find(&res)
-	return res
+func (us *UserService) ListByIds(ids []uint) (res []*model.User, err error) {
+	if err = DB.Where("id in ?", ids).Find(&res).Error; err != nil {
+		return nil, fmt.Errorf("utenti per id: %w", err)
+	}
+	return res, nil
 }
 
-// ListByGroupId 根据组id取用户列表
-func (us *UserService) ListByGroupId(groupId, page, pageSize uint) (res *model.UserList) {
-	res = us.List(page, pageSize, func(tx *gorm.DB) {
+// ListByGroupId restituisce la pagina page di pageSize utenti del gruppo
+// groupId.
+func (us *UserService) ListByGroupId(groupId, page, pageSize uint) (*model.UserList, error) {
+	return us.List(page, pageSize, func(tx *gorm.DB) {
 		tx.Where("group_id = ?", groupId)
 	})
-	return
 }
 
-// ListIdAndNameByGroupId 根据组id取用户id和用户名列表
-func (us *UserService) ListIdAndNameByGroupId(groupId uint) (res []*model.User) {
-	DB.Model(&model.User{}).Where("group_id = ?", groupId).Select("id, username").Find(&res)
-	return res
+// ListIdAndNameByGroupId restituisce id e nome degli utenti del gruppo
+// groupId.
+func (us *UserService) ListIdAndNameByGroupId(groupId uint) (res []*model.User, err error) {
+	if err = DB.Model(&model.User{}).Where("group_id = ?", groupId).Select("id, username").Find(&res).Error; err != nil {
+		return nil, fmt.Errorf("utenti del gruppo %d: %w", groupId, err)
+	}
+	return res, nil
 }
 
 // CheckUserEnable 判断用户是否禁用

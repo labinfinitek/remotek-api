@@ -130,6 +130,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   (`app.ban-threshold`) bloccavano per 30 minuti l'IP di tecnici con la
   password giusta. Lo stesso con LDAP acceso, quando il database non legge
   l'utente locale di chi la directory ha autenticato.
+- Utenti e dispositivi del gruppo nel client (`/api/users`, `/api/peers`) e
+  rubriche condivise (`/api/ab/shared/profiles`): se il database non legge
+  gli utenti rispondono 400 "Errore di sistema." con l'errore nel log. Prima
+  i primi due rispondevano 200 con l'elenco vuoto, e le rubriche condivise
+  500 senza corpo (un panic). Nel pannello l'elenco degli utenti risponde
+  "Errore di sistema." invece di un elenco vuoto.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

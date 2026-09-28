@@ -90,11 +90,15 @@ func (ct *User) List(c *gin.Context) {
 		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
-	res := service.AllService.UserService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
+	res, err := service.AllService.UserService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
 		if query.Username != "" {
 			tx.Where("username like ?", "%"+query.Username+"%")
 		}
 	})
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	response.Success(c, res)
 }
 
@@ -295,7 +299,11 @@ func (ct *User) MyOauth(c *gin.Context) {
 // GroupUsers risponde coi gruppi e con gli utenti (i primi 999 e 9999).
 func (ct *User) GroupUsers(c *gin.Context) {
 	aG := service.AllService.GroupService.List(1, 999, nil)
-	aU := service.AllService.UserService.List(1, 9999, nil)
+	aU, err := service.AllService.UserService.List(1, 9999, nil)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	response.Success(c, gin.H{
 		"groups": aG.Groups,
 		"users":  aU.Users,
