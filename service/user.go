@@ -35,13 +35,6 @@ func (us *UserService) InfoByUsername(un string) *model.User {
 	return u
 }
 
-// InfoByOpenid 根据openid取用户信息
-func (us *UserService) InfoByOpenid(openid string) *model.User {
-	u := &model.User{}
-	DB.Where("openid = ?", openid).First(u)
-	return u
-}
-
 // InfoByUsernamePassword 根据用户名密码取用户信息
 func (us *UserService) InfoByUsernamePassword(username, password string) *model.User {
 	if Config.Ldap.Enable {
@@ -180,13 +173,6 @@ func (us *UserService) ListByGroupId(groupId, page, pageSize uint) (res *model.U
 		tx.Where("group_id = ?", groupId)
 	})
 	return
-}
-
-// ListIdsByGroupId 根据组id取用户id列表
-func (us *UserService) ListIdsByGroupId(groupId uint) (ids []uint) {
-	DB.Model(&model.User{}).Where("group_id = ?", groupId).Pluck("id", &ids)
-	return ids
-
 }
 
 // ListIdAndNameByGroupId 根据组id取用户id和用户名列表
