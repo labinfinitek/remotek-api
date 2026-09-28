@@ -111,6 +111,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   "Errore di sistema." con l'errore nel log, e non salvano niente come
   prima; prima rispondevano "Parametri non validi.", come a chi sceglie la
   rubrica di un altro, e l'errore si perdeva.
+- Pannello, voci e tag della rubrica: se il database non legge la voce o il
+  tag, modifica e cancellazione (amministrazione e sezione dell'utente), e
+  il dettaglio di un tag, rispondono "Errore di sistema." con l'errore nel
+  log, invece di "Elemento non trovato.".
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,
