@@ -85,7 +85,11 @@ func (ct *Group) List(c *gin.Context) {
 		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
-	res := service.AllService.GroupService.List(query.Page, query.PageSize, nil)
+	res, err := service.AllService.GroupService.List(query.Page, query.PageSize, nil)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	response.Success(c, res)
 }
 

@@ -386,6 +386,11 @@ func TestPannelloUtenteNonLetto(t *testing.T) {
 	} {
 		t.Run(tc.metodo+" "+tc.rotta, func(t *testing.T) {
 			g, _, registro := pannello(t, true)
+			// groupUsers legge i gruppi prima degli utenti: senza la tabella
+			// risponderebbe per quella lettura
+			if err := service.DB.AutoMigrate(&model.Group{}); err != nil {
+				t.Fatal(err)
+			}
 			crea(t, &model.User{Username: "secondo", GroupId: 1, Status: model.COMMON_STATUS_ENABLE})
 			sostituisci := strings.NewReplacer("SECONDO", idDi(t, "secondo"))
 			prima := statoUtenti(t)

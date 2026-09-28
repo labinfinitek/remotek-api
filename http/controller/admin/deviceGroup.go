@@ -28,12 +28,12 @@ type DeviceGroup struct {
 func (ct *DeviceGroup) Detail(c *gin.Context) {
 	id := c.Param("id")
 	iid, _ := strconv.Atoi(id)
-	u := service.AllService.GroupService.DeviceGroupInfoById(uint(iid))
-	if u.Id > 0 {
+	u, err := service.AllService.GroupService.DeviceGroupInfoById(uint(iid))
+	if err == nil {
 		response.Success(c, u)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.FailErr(c, 101, "SystemError", err)
 }
 
 // Create 创建设备群组
@@ -151,8 +151,8 @@ func (ct *DeviceGroup) Delete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	u := service.AllService.GroupService.DeviceGroupInfoById(f.Id)
-	if u.Id > 0 {
+	u, err := service.AllService.GroupService.DeviceGroupInfoById(f.Id)
+	if err == nil {
 		err := service.AllService.GroupService.DeviceGroupDelete(u)
 		if err == nil {
 			response.Success(c, nil)
@@ -161,5 +161,5 @@ func (ct *DeviceGroup) Delete(c *gin.Context) {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.FailErr(c, 101, "SystemError", err)
 }

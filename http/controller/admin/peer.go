@@ -30,12 +30,12 @@ type Peer struct {
 func (ct *Peer) Detail(c *gin.Context) {
 	id := c.Param("id")
 	iid, _ := strconv.Atoi(id)
-	u := service.AllService.PeerService.InfoByRowId(uint(iid))
-	if u.RowId > 0 {
+	u, err := service.AllService.PeerService.InfoByRowId(uint(iid))
+	if err == nil {
 		response.Success(c, u)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.FailErr(c, 101, "SystemError", err)
 }
 
 // Create 创建设备
@@ -91,7 +91,7 @@ func (ct *Peer) List(c *gin.Context) {
 		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
-	res := service.AllService.PeerService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
+	res, err := service.AllService.PeerService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
 		if query.TimeAgo > 0 {
 			lt := time.Now().Unix() - int64(query.TimeAgo)
 			tx.Where("last_online_time < ?", lt)
@@ -119,6 +119,10 @@ func (ct *Peer) List(c *gin.Context) {
 			tx.Where("alias like ?", "%"+query.Alias+"%")
 		}
 	})
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	response.Success(c, res)
 }
 
@@ -180,8 +184,8 @@ func (ct *Peer) Delete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	u := service.AllService.PeerService.InfoByRowId(f.RowId)
-	if u.RowId > 0 {
+	u, err := service.AllService.PeerService.InfoByRowId(f.RowId)
+	if err == nil {
 		err := service.AllService.PeerService.Delete(u)
 		if err == nil {
 			response.Success(c, nil)
@@ -190,7 +194,7 @@ func (ct *Peer) Delete(c *gin.Context) {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.FailErr(c, 101, "SystemError", err)
 }
 
 // BatchDelete 批量删除
@@ -232,10 +236,14 @@ func (ct *Peer) SimpleData(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError"))
 		return
 	}
-	res := service.AllService.PeerService.List(1, 99999, func(tx *gorm.DB) {
+	res, err := service.AllService.PeerService.List(1, 99999, func(tx *gorm.DB) {
 		// 可以公开的情报
 		tx.Select("id,version")
 		tx.Where("id in (?)", f.Ids)
 	})
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	response.Success(c, res)
 }

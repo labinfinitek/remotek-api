@@ -215,6 +215,14 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   di dispositivi rispondono "Errore di sistema." invece di "Elemento non
   trovato." o di un elenco vuoto; un gruppo che non c'e' ha la risposta di
   prima.
+- Pannello, dispositivi e gruppi: se il database non li legge, dettaglio,
+  cancellazione ed elenco dei dispositivi, l'elenco dei propri
+  dispositivi, gli ID dei dispositivi (`/api/admin/peer/simpleData`),
+  l'aggiunta in rubrica dai dispositivi, l'elenco dei gruppi, gruppi e
+  utenti (`/api/admin/user/groupUsers`) e dettaglio e cancellazione dei
+  gruppi di dispositivi rispondono "Errore di sistema.", con l'errore nel
+  log. Prima dicevano "Elemento non trovato." o davano un elenco vuoto.
+  Una riga che non c'e' ha la risposta di prima.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,
