@@ -2,6 +2,8 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -92,4 +94,79 @@ func crea(t *testing.T, m any) {
 	if err := service.DB.Create(m).Error; err != nil {
 		t.Fatal(err)
 	}
+}
+
+// TestAutoregistrazioneNonIndicata prova sul router vero il login OIDC di un
+// account senza utente con un provider salvato senza auto_register, NULL nel
+// database: l'autoregistrazione vale spenta, il callback rimanda ad
+// associare l'account e non crea ne' utenti ne' associazioni. Prima
+// dereferenziava nil e andava in panic (500).
+func TestAutoregistrazioneNonIndicata(t *testing.T) {
+	g, _, _ := pannello(t, false)
+	crea(t, &model.Oauth{Op: "aziendale", OauthType: model.OauthTypeOidc, ClientId: "id", ClientSecret: "segreto",
+		Issuer: providerOidc(t)})
+	if got := autoregistrazione(t); got != "NULL" {
+		t.Fatalf("auto_register del provider di prova: %s, atteso NULL", got)
+	}
+	utenti, associazioni := righe(t, "users"), righe(t, "user_thirds")
+
+	rec := richiesta(g, "POST", "/api/oidc/auth", "", `{"op":"aziendale","id":"999000111","uuid":"dXVpZA==","deviceInfo":{"os":"windows","type":"client","name":"PC-COLLAUDO"}}`)
+	var risposta struct{ Code string }
+	if err := json.Unmarshal(rec.Body.Bytes(), &risposta); err != nil || rec.Code != 200 {
+		t.Fatalf("POST /api/oidc/auth: %d %s (%v)", rec.Code, rec.Body, err)
+	}
+	t.Cleanup(func() { service.AllService.OauthService.DeleteOauthCache(risposta.Code) })
+
+	rec = richiesta(g, "GET", "/api/oidc/callback?state="+risposta.Code+"&code="+codiceDelProvider, "", "")
+	if got, want := rec.Header().Get("Location"), "/_admin/#/oauth/bind/"+risposta.Code; rec.Code != http.StatusFound || got != want {
+		t.Errorf("GET /api/oidc/callback: %d verso %q, attesi 302 verso %q\n%s", rec.Code, got, want, rec.Body)
+	}
+	if voce := service.AllService.OauthService.GetOauthCache(risposta.Code); voce == nil || voce.OpenId != "sub-1" || voce.UserId != 0 {
+		t.Errorf("login in cache dopo il callback: %+v, atteso l'account sub-1 da associare", voce)
+	}
+	if u, a := righe(t, "users"), righe(t, "user_thirds"); u != utenti || a != associazioni {
+		t.Errorf("dopo il callback %d utenti e %d associazioni, erano %d e %d", u, a, utenti, associazioni)
+	}
+}
+
+// TestProviderSenzaAutoregistrazione prova sul router vero che il pannello,
+// quando crea o aggiorna un provider senza auto_register, salva spenta
+// l'autoregistrazione, come fa per pkce_enable. Prima la creazione lasciava
+// NULL, e l'aggiornamento il valore che c'era.
+func TestProviderSenzaAutoregistrazione(t *testing.T) {
+	g, _, _ := pannello(t, true)
+	const successo = `{"code":0,"message":"success","data":null}`
+	const campi = `"op":"aziendale","oauth_type":"oidc","issuer":"https://idp.esempio.it","client_id":"id","client_secret":"segreto"`
+
+	if rec := alPannello(g, "/api/admin/oauth/create", "{"+campi+"}"); rec.Body.String() != successo {
+		t.Fatalf("POST /api/admin/oauth/create: %d %s", rec.Code, rec.Body)
+	}
+	if got := autoregistrazione(t); got != "0" {
+		t.Errorf("auto_register dopo la creazione: %s, atteso 0", got)
+	}
+
+	var id uint
+	if err := service.DB.Raw("SELECT id FROM oauths").Scan(&id).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := service.DB.Exec("UPDATE oauths SET auto_register = 1").Error; err != nil {
+		t.Fatal(err)
+	}
+	if rec := alPannello(g, "/api/admin/oauth/update", fmt.Sprintf(`{"id":%d,%s}`, id, campi)); rec.Body.String() != successo {
+		t.Fatalf("POST /api/admin/oauth/update: %d %s", rec.Code, rec.Body)
+	}
+	if got := autoregistrazione(t); got != "0" {
+		t.Errorf("auto_register dopo una modifica senza il campo: %s, atteso 0", got)
+	}
+}
+
+// autoregistrazione legge con Raw auto_register dell'unico provider: "0",
+// "1" o "NULL".
+func autoregistrazione(t *testing.T) string {
+	t.Helper()
+	var v string
+	if err := service.DB.Raw("SELECT COALESCE(CAST(auto_register AS TEXT), 'NULL') FROM oauths").Scan(&v).Error; err != nil {
+		t.Fatal(err)
+	}
+	return v
 }

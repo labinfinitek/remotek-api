@@ -250,7 +250,9 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 				})
 				return
 			}
-			if !*oauthConfig.AutoRegister {
+			// Un provider salvato senza auto_register ha NULL: vale spenta,
+			// come il default di FormatOauthInfo.
+			if oauthConfig.AutoRegister == nil || !*oauthConfig.AutoRegister {
 				// c.String(http.StatusInternalServerError, "还未绑定用户，请先绑定")
 				oauthCache.UpdateFromOauthUser(oauthUser)
 				c.Redirect(http.StatusFound, "/_admin/#/oauth/bind/"+cacheKey)
