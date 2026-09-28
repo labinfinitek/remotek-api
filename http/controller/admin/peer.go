@@ -153,7 +153,7 @@ func (ct *Peer) Update(c *gin.Context) {
 		return
 	}
 	u := f.ToPeer()
-	err := service.AllService.PeerService.UpdateDalPannello(u)
+	err := service.AllService.PeerService.UpdateDalPannello(u, f.Alias != nil)
 	if err != nil {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return

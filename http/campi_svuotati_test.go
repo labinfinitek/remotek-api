@@ -22,40 +22,52 @@ func modifica(t *testing.T, g *gin.Engine, rotta, corpo string) {
 }
 
 // TestPannelloSvuotaDispositivo prova sul router vero che la modifica di un
-// dispositivo dal pannello (POST /api/admin/peer/update) salva vuoti alias,
-// nome del PC e gruppo tolti, e lascia com'erano uuid (mandato vuoto),
-// utente, ultimo contatto e IP, che il modulo non manda. Prima gorm saltava i
-// campi vuoti: il pannello rispondeva successo e l'alias restava.
+// dispositivo dal pannello (POST /api/admin/peer/update) salva vuoti nome
+// del PC e gruppo tolti, e lascia com'erano uuid (mandato vuoto), utente,
+// ultimo contatto e IP, che il modulo non manda. L'alias si svuota se il
+// corpo ha "alias": "", e resta se il corpo non ha la chiave, come quello del
+// pannello (rustdesk-api-web 3998c2a) quando l'alias non si tocca. Prima
+// gorm saltava i campi vuoti: il pannello rispondeva successo e nome e
+// gruppo restavano.
 func TestPannelloSvuotaDispositivo(t *testing.T) {
-	g, _, _ := pannello(t, true)
-	if err := service.DB.AutoMigrate(&model.Peer{}); err != nil {
-		t.Fatal(err)
-	}
-	pc := &model.Peer{Id: "999000111", Uuid: "dXVpZA==", Alias: "ufficio", Hostname: "PC-COLLAUDO", Os: "windows",
-		GroupId: 3, UserId: 7, LastOnlineTime: 1700000000, LastOnlineIp: "10.0.0.1"}
-	crea(t, pc)
+	for _, tc := range []struct {
+		nome, alias, voluto string
+	}{
+		{"alias svuotato", `"alias": "", `, ""},
+		{"alias assente", "", "ufficio"},
+	} {
+		t.Run(tc.nome, func(t *testing.T) {
+			g, _, _ := pannello(t, true)
+			if err := service.DB.AutoMigrate(&model.Peer{}); err != nil {
+				t.Fatal(err)
+			}
+			pc := &model.Peer{Id: "999000111", Uuid: "dXVpZA==", Alias: "ufficio", Hostname: "PC-COLLAUDO", Os: "windows",
+				GroupId: 3, UserId: 7, LastOnlineTime: 1700000000, LastOnlineIp: "10.0.0.1"}
+			crea(t, pc)
 
-	const rotta = "/api/admin/peer/update"
-	corpo := `{"row_id": ` + strconv.FormatUint(uint64(pc.RowId), 10) +
-		`, "id": "999000111", "uuid": "", "alias": "", "hostname": "", "os": "windows", "group_id": 0}`
-	modifica(t, g, rotta, corpo)
-	dopo := &model.Peer{}
-	if err := service.DB.First(dopo, pc.RowId).Error; err != nil {
-		t.Fatal(err)
-	}
-	got := fmt.Sprintf("id=%s uuid=%s alias=%q hostname=%q os=%s gruppo=%d utente=%d contatto=%d ip=%s",
-		dopo.Id, dopo.Uuid, dopo.Alias, dopo.Hostname, dopo.Os, dopo.GroupId, dopo.UserId, dopo.LastOnlineTime, dopo.LastOnlineIp)
-	want := `id=999000111 uuid=dXVpZA== alias="" hostname="" os=windows gruppo=0 utente=7 contatto=1700000000 ip=10.0.0.1`
-	if got != want {
-		t.Errorf("dispositivo dopo POST %s:\n got  %s\n want %s", rotta, got, want)
+			const rotta = "/api/admin/peer/update"
+			corpo := `{"row_id": ` + strconv.FormatUint(uint64(pc.RowId), 10) + `, "id": "999000111", "uuid": "", ` + tc.alias +
+				`"cpu": "", "hostname": "", "memory": "", "os": "windows", "username": "", "version": "", "group_id": 0}`
+			modifica(t, g, rotta, corpo)
+			dopo := &model.Peer{}
+			if err := service.DB.First(dopo, pc.RowId).Error; err != nil {
+				t.Fatal(err)
+			}
+			got := fmt.Sprintf("id=%s uuid=%s alias=%q hostname=%q os=%s gruppo=%d utente=%d contatto=%d ip=%s",
+				dopo.Id, dopo.Uuid, dopo.Alias, dopo.Hostname, dopo.Os, dopo.GroupId, dopo.UserId, dopo.LastOnlineTime, dopo.LastOnlineIp)
+			want := fmt.Sprintf(`id=999000111 uuid=dXVpZA== alias=%q hostname="" os=windows gruppo=0 utente=7 contatto=1700000000 ip=10.0.0.1`, tc.voluto)
+			if got != want {
+				t.Errorf("dispositivo dopo POST %s:\n got  %s\n want %s", rotta, got, want)
+			}
+		})
 	}
 }
 
 // TestPannelloSvuotaComandoServer prova sul router vero che la modifica di
 // una voce dei comandi del server dal pannello (POST
 // /api/admin/rustdesk/cmdUpdate) salva vuoti alias, opzione e spiegazione
-// tolti, e lascia la data di creazione. Prima restavano quelli di prima e il pannello rispondeva
-// successo.
+// tolti, e lascia la data di creazione. Prima restavano quelli di prima e
+// il pannello rispondeva successo.
 func TestPannelloSvuotaComandoServer(t *testing.T) {
 	g, _, _ := pannello(t, true)
 	if err := service.DB.AutoMigrate(&model.ServerCmd{}); err != nil {

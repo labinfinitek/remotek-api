@@ -80,7 +80,9 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   restavano com'erano. Non cambiano: ID e uuid del dispositivo mandati vuoti
   restano quelli di prima, come la password dell'utente e il ruolo se
   `is_admin` non c'e'; utente, ultimo contatto e IP del dispositivo non sono
-  nel modulo e non si toccano. Gruppi, gruppi di dispositivi, collezioni e
+  nel modulo e non si toccano. Il pannello (rustdesk-api-web `3998c2a`)
+  manda l'alias del dispositivo solo se l'utente tocca quel campo: se nel
+  corpo manca, l'alias resta quello di prima. Gruppi, gruppi di dispositivi, collezioni e
   regole della rubrica non avevano il problema: il validatore non accetta
   vuoti i loro campi.
 - File d'esempio `conf/config.yaml`: `rustdesk.id-server`,

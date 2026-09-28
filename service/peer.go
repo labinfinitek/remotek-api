@@ -210,12 +210,17 @@ func (ps *PeerService) Update(u *model.Peer) error {
 }
 
 // UpdateDalPannello salva i campi del modulo del pannello (admin.PeerForm),
-// anche vuoti, cosi' un alias o un gruppo tolti restano tolti. ID e uuid
-// vuoti non si scrivono: il modulo li manda vuoti per non cambiarli, e un
-// uuid vuoto scioglierebbe il legame ID-uuid. Utente, ultimo contatto e IP
-// non sono nel modulo e restano quelli di prima.
-func (ps *PeerService) UpdateDalPannello(u *model.Peer) error {
-	campi := []string{"cpu", "hostname", "memory", "os", "username", "version", "group_id", "alias"}
+// anche vuoti, cosi' un nome del PC o un gruppo tolti restano tolti. L'alias
+// si scrive solo con conAlias, cioe' se il corpo aveva la chiave: il pannello
+// la manda solo se l'alias si e' toccato. ID e uuid vuoti non si scrivono:
+// il modulo li manda vuoti per non cambiarli, e un uuid vuoto scioglierebbe
+// il legame ID-uuid. Utente, ultimo contatto e IP non sono nel modulo e
+// restano quelli di prima.
+func (ps *PeerService) UpdateDalPannello(u *model.Peer, conAlias bool) error {
+	campi := []string{"cpu", "hostname", "memory", "os", "username", "version", "group_id"}
+	if conAlias {
+		campi = append(campi, "alias")
+	}
 	if u.Id != "" {
 		campi = append(campi, "id")
 	}

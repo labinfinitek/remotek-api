@@ -13,7 +13,9 @@ type PeerForm struct {
 	Uuid     string `json:"uuid"`
 	Version  string `json:"version"`
 	GroupId  uint   `json:"group_id"`
-	Alias    string `json:"alias"`
+	// Alias e' nil se il corpo non ha la chiave: il pannello la manda solo
+	// se l'alias si e' toccato, e allora vuoto vuol dire svuotato.
+	Alias *string `json:"alias"`
 }
 
 type PeerBatchDeleteForm struct {
@@ -22,6 +24,10 @@ type PeerBatchDeleteForm struct {
 
 // ToPeer copia i campi del modulo in un model.Peer nuovo.
 func (f *PeerForm) ToPeer() *model.Peer {
+	alias := ""
+	if f.Alias != nil {
+		alias = *f.Alias
+	}
 	return &model.Peer{
 		RowId:    f.RowId,
 		Id:       f.Id,
@@ -33,7 +39,7 @@ func (f *PeerForm) ToPeer() *model.Peer {
 		Uuid:     f.Uuid,
 		Version:  f.Version,
 		GroupId:  f.GroupId,
-		Alias:    f.Alias,
+		Alias:    alias,
 	}
 }
 
