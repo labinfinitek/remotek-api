@@ -207,11 +207,14 @@ func (us *UserService) CheckUserEnable(u *model.User) bool {
 // Create 创建
 func (us *UserService) Create(u *model.User) error {
 	// The initial username should be formatted, and the username should be unique
-	if us.IsUsernameExists(u.Username) {
+	esiste, err := us.IsUsernameExists(u.Username)
+	if err != nil {
+		return diSistema(err)
+	}
+	if esiste {
 		return errors.New("UsernameExists")
 	}
 	u.Username = us.formatUsername(u.Username)
-	var err error
 	u.Password, err = utils.EncryptPassword(u.Password)
 	if err != nil {
 		return err
@@ -245,11 +248,17 @@ func (us *UserService) Logout(u *model.User, token string) error {
 
 // Delete cancella l'utente con le sue associazioni ai provider e le sue
 // voci, collezioni e regole della rubrica, in una transazione che su errore
-// o panic si annulla; poi scollega i suoi dispositivi.
+// o panic si annulla; poi scollega i suoi dispositivi. Un amministratore
+// non si cancella se e' l'ultimo o se gli amministratori non si contano.
 func (us *UserService) Delete(u *model.User) error {
-	userCount := us.getAdminUserCount()
-	if userCount <= 1 && us.IsAdmin(u) {
-		return errors.New("the last admin user cannot be deleted")
+	if us.IsAdmin(u) {
+		userCount, err := us.getAdminUserCount()
+		if err != nil {
+			return diSistema(err)
+		}
+		if userCount <= 1 {
+			return errors.New("the last admin user cannot be deleted")
+		}
 	}
 	err := DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Delete(u).Error; err != nil {
@@ -273,7 +282,9 @@ func (us *UserService) Delete(u *model.User) error {
 	return nil
 }
 
-// Update 更新
+// Update salva l'utente u. L'ultimo amministratore non si disabilita e non
+// perde il ruolo; se l'utente o il numero degli amministratori non si
+// leggono, non salva niente.
 func (us *UserService) Update(u *model.User) error {
 	currentUser, err := us.InfoById(u.Id)
 	if err != nil {
@@ -281,7 +292,10 @@ func (us *UserService) Update(u *model.User) error {
 	}
 	// 如果当前用户是管理员并且 IsAdmin 不为空，进行检查
 	if us.IsAdmin(currentUser) {
-		adminCount := us.getAdminUserCount()
+		adminCount, err := us.getAdminUserCount()
+		if err != nil {
+			return diSistema(err)
+		}
 		// 如果这是唯一的管理员，确保不能禁用或取消管理员权限
 		if adminCount <= 1 && (!us.IsAdmin(u) || u.Status == model.COMMON_STATUS_DISABLED) {
 			return errors.New("the last admin user cannot be disabled or demoted")
@@ -401,7 +415,10 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (*
 	// Il nome libero si cerca prima della transazione: la ricerca passa da DB
 	// e, con LDAP acceso, dalla rete, e con una connessione sola DB
 	// aspetterebbe per sempre la connessione della transazione.
-	usernameUnique := us.GenerateUsernameByOauth(username)
+	usernameUnique, err := us.GenerateUsernameByOauth(username)
+	if err != nil {
+		return nil, err
+	}
 	user := &model.User{
 		Username: usernameUnique,
 		GroupId:  1,
@@ -423,12 +440,17 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (*
 	return user, nil
 }
 
-// GenerateUsernameByOauth 生成用户名
-func (us *UserService) GenerateUsernameByOauth(name string) string {
-	for us.IsUsernameExists(name) {
+// GenerateUsernameByOauth restituisce name o, se e' preso, name con cifre in
+// coda finche' non e' libero. Se non si sa se un nome e' preso si ferma, con
+// l'errore.
+func (us *UserService) GenerateUsernameByOauth(name string) (string, error) {
+	for {
+		preso, err := us.IsUsernameExists(name)
+		if err != nil || !preso {
+			return name, err
+		}
 		name += strconv.Itoa(rand.Intn(10)) //nolint:gosec // G404: una cifra in coda a un nome gia' preso, non un segreto
 	}
-	return name
 }
 
 // UserThirdsByUserId restituisce le associazioni ai provider dell'utente
@@ -524,11 +546,13 @@ func (us *UserService) formatUsername(username string) string {
 	return username
 }
 
-// helper functions, getAdminUserCount
-func (us *UserService) getAdminUserCount() int64 {
+// getAdminUserCount restituisce quanti amministratori ci sono.
+func (us *UserService) getAdminUserCount() (int64, error) {
 	var count int64
-	DB.Model(&model.User{}).Where("is_admin = ?", true).Count(&count)
-	return count
+	if err := DB.Model(&model.User{}).Where("is_admin = ?", true).Count(&count).Error; err != nil {
+		return 0, fmt.Errorf("conteggio degli amministratori: %w", err)
+	}
+	return count, nil
 }
 
 // UserTokenExpireTimestamp 生成用户token过期时间
@@ -568,15 +592,23 @@ func (us *UserService) VerifyJWT(token string) (uint, error) {
 	return Jwt.ParseToken(token)
 }
 
-// IsUsernameExists 判断用户名是否存在, it will check the internal database and LDAP(if enabled)
-func (us *UserService) IsUsernameExists(username string) bool {
-	return us.IsUsernameExistsLocal(username) || AllService.LdapService.IsUsernameExists(username)
+// IsUsernameExists dice se il nome username e' preso, nel database o, con
+// LDAP acceso, nella directory.
+func (us *UserService) IsUsernameExists(username string) (bool, error) {
+	locale, err := us.IsUsernameExistsLocal(username)
+	if err != nil {
+		return false, err
+	}
+	return locale || AllService.LdapService.IsUsernameExists(username), nil
 }
 
-func (us *UserService) IsUsernameExistsLocal(username string) bool {
-	u := &model.User{}
-	DB.Where("username = ?", username).First(u)
-	return u.Id != 0
+// IsUsernameExistsLocal dice se nel database c'e' un utente di nome username.
+func (us *UserService) IsUsernameExistsLocal(username string) (bool, error) {
+	_, err := us.InfoByUsername(username)
+	if errors.Is(err, ErrNotFound) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 func (us *UserService) IsEmailExistsLdap(email string) bool {

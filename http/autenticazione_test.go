@@ -455,3 +455,114 @@ func TestPannelloDestinatarioNonLetto(t *testing.T) {
 		{"POST", "/api/admin/my/address_book_collection_rule/create", regola + `999999}`, false, nonTrovato},
 	})
 }
+
+// TestPannelloAmministratoriNonContati prova sul router vero la
+// cancellazione e il declassamento di un amministratore quando il database
+// non conta gli amministratori: la risposta e' code 101 "Errore di
+// sistema.", con l'errore nel log, e l'utente resta com'era. Prima la
+// lettura fallita valeva zero amministratori: le rotte rispondevano
+// "Operazione non riuscita.", come per l'ultimo amministratore, e l'errore si
+// perdeva. Con due amministratori contati, cancellazione e declassamento
+// riescono.
+func TestPannelloAmministratoriNonContati(t *testing.T) {
+	for _, tc := range []struct{ rotta, corpo string }{
+		{"/api/admin/user/delete", `{"id":SECONDO}`},
+		{"/api/admin/user/update", `{"id":SECONDO,"username":"secondo","group_id":1,"status":1,"is_admin":false}`},
+	} {
+		for _, rifiuta := range []bool{true, false} {
+			t.Run(tc.rotta+" amministratori non contati "+strconv.FormatBool(rifiuta), func(t *testing.T) {
+				g, _, registro := pannello(t, true)
+				// le tabelle che la cancellazione di un utente svuota
+				if err := service.DB.AutoMigrate(&model.AddressBook{}, &model.AddressBookCollection{}, &model.AddressBookCollectionRule{}, &model.Peer{}); err != nil {
+					t.Fatal(err)
+				}
+				amministratore := true
+				crea(t, &model.User{Username: "secondo", GroupId: 1, Status: model.COMMON_STATUS_ENABLE, IsAdmin: &amministratore})
+				corpo := strings.Replace(tc.corpo, "SECONDO", idDi(t, "secondo"), 1)
+				prima := statoUtenti(t)
+				risposta := `{"code":0,"message":"success","data":null}`
+				if rifiuta {
+					rifiutaLetture(t, "users", "is_admin")
+					risposta = `{"code":101,"message":"Errore di sistema.","data":null}`
+				}
+
+				rec := alPannello(g, tc.rotta, corpo)
+				if got := rec.Body.String(); rec.Code != 200 || got != risposta {
+					t.Errorf("POST %s: stato %d\n got  %s\n want %s", tc.rotta, rec.Code, got, risposta)
+				}
+				if cambiato := statoUtenti(t) != prima; cambiato == rifiuta {
+					t.Errorf("POST %s: utenti cambiati %t, atteso %t", tc.rotta, cambiato, !rifiuta)
+				}
+				if nelLog := registro.String(); rifiuta && (!strings.Contains(nelLog, "POST "+tc.rotta+": ") || !strings.Contains(nelLog, "lettura rifiutata dal test")) {
+					t.Errorf("POST %s, nel log mancano rotta o errore:\n%s", tc.rotta, nelLog)
+				}
+			})
+		}
+	}
+}
+
+// TestNomeUtenteNonLetto prova sul router vero le due rotte che, prima di
+// creare un utente, guardano se il suo nome e' preso: se il database non
+// legge gli utenti per nome, la registrazione OIDC si ferma e la pagina del
+// callback dice OauthFailed, e la creazione dal pannello risponde code 101
+// "Errore di sistema."; l'errore va nel log e nessun utente nasce. Prima la
+// lettura fallita valeva "nome libero" e l'utente nasceva senza che si
+// sapesse se il nome era di un altro. Senza ostacoli un nome preso prende
+// cifre in coda, come prima.
+func TestNomeUtenteNonLetto(t *testing.T) {
+	for _, tc := range []struct {
+		nome                  string
+		rifiuta, preso, nasce bool
+	}{
+		{"registrazione OIDC, nome non letto", true, false, false},
+		{"registrazione OIDC, nome preso", false, true, true},
+	} {
+		t.Run(tc.nome, func(t *testing.T) {
+			g, _, registro := pannello(t, false)
+			registra := true
+			crea(t, &model.Oauth{Op: "aziendale", OauthType: model.OauthTypeOidc, ClientId: "id", ClientSecret: "segreto",
+				Issuer: providerOidc(t), AutoRegister: &registra})
+			if tc.preso {
+				crea(t, &model.User{Username: "utente-oidc"}) // senza l'email del provider
+			}
+			if tc.rifiuta {
+				rifiutaLetture(t, "users", "username")
+			}
+			service.AllService.OauthService.SetOauthCache("prova-callback", &service.OauthCacheItem{Op: "aziendale", Action: service.OauthActionTypeLogin}, 0)
+			t.Cleanup(func() { service.AllService.OauthService.DeleteOauthCache("prova-callback") })
+			utenti := righe(t, "users")
+
+			rec := richiesta(g, "GET", "/api/oidc/callback?state=prova-callback&code="+codiceDelProvider, "", "")
+			messaggio, dopo := "OauthFailed", utenti
+			if tc.nasce {
+				messaggio, dopo = "OauthSuccess", utenti+1
+			}
+			if !strings.Contains(rec.Body.String(), "var msg = '"+messaggio+"'") {
+				t.Errorf("GET /api/oidc/callback: %d, atteso il messaggio %s\n%s", rec.Code, messaggio, rec.Body)
+			}
+			if n := righe(t, "users"); n != dopo {
+				t.Errorf("utenti dopo il callback: %d, attesi %d", n, dopo)
+			}
+			if nelLog := registro.String(); tc.rifiuta && (!strings.Contains(nelLog, "GET /api/oidc/callback: al client va OauthFailed") || !strings.Contains(nelLog, "lettura rifiutata dal test")) {
+				t.Errorf("GET /api/oidc/callback, nel log mancano rotta o errore:\n%s", nelLog)
+			}
+		})
+	}
+
+	t.Run("creazione dal pannello, nome non letto", func(t *testing.T) {
+		g, _, registro := pannello(t, true)
+		rifiutaLetture(t, "users", "username")
+		prima := statoUtenti(t)
+
+		rec := alPannello(g, "/api/admin/user/create", `{"username":"nuovo","group_id":1,"status":1}`)
+		if got, want := rec.Body.String(), `{"code":101,"message":"Errore di sistema.","data":null}`; rec.Code != 200 || got != want {
+			t.Errorf("POST /api/admin/user/create: stato %d\n got  %s\n want %s", rec.Code, got, want)
+		}
+		if dopo := statoUtenti(t); dopo != prima {
+			t.Errorf("POST /api/admin/user/create ha cambiato gli utenti:\n prima %s\n dopo  %s", prima, dopo)
+		}
+		if nelLog := registro.String(); !strings.Contains(nelLog, "POST /api/admin/user/create: ") || !strings.Contains(nelLog, "lettura rifiutata dal test") {
+			t.Errorf("POST /api/admin/user/create, nel log mancano rotta o errore:\n%s", nelLog)
+		}
+	})
+}

@@ -161,6 +161,16 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   l'errore va nel log a livello warn, con metodo e rotta; il dispositivo si
   salva senza utente e la risposta resta `SYSINFO_UPDATED`, come prima.
   Prima l'errore si perdeva.
+- Pannello, cancellazione e modifica di un amministratore: se il database
+  non conta gli amministratori, rispondono "Errore di sistema." con
+  l'errore nel log, e non cancellano ne' declassano nessuno. Prima la
+  lettura fallita valeva zero amministratori: la risposta era "Operazione
+  non riuscita.", come per l'ultimo amministratore, e l'errore si perdeva.
+- Registrazione con OIDC e creazione di un utente dal pannello: se il
+  database non dice se il nome utente e' preso, la registrazione si ferma
+  e la pagina del callback dice "Autorizzazione OAuth non riuscita.", e la
+  creazione risponde "Errore di sistema.", con l'errore nel log; nessun
+  utente nasce. Prima la lettura fallita valeva "nome libero".
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,
