@@ -42,6 +42,11 @@ func (ct *LoginLog) List(c *gin.Context) {
 		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
+	// L'uuid del dispositivo del login autorizza a scriverne scheda,
+	// heartbeat e audit: resta agli amministratori (/api/admin/login_log/list).
+	for _, l := range res.LoginLogs {
+		l.Uuid = ""
+	}
 	response.Success(c, res)
 }
 
