@@ -56,7 +56,9 @@ func Init(g *gin.Engine) {
 
 func RustdeskCmdBind(adg *gin.RouterGroup) {
 	cont := &admin.Rustdesk{}
-	rg := adg.Group("/rustdesk")
+	// Solo amministratori: i comandi vanno a hbbs e hbbr (relay, blocco degli
+	// IP, limiti di banda) e valgono per tutto il server.
+	rg := adg.Group("/rustdesk").Use(middleware.AdminPrivilege())
 	rg.POST("/sendCmd", cont.SendCmd)
 	rg.GET("/cmdList", cont.CmdList)
 	rg.POST("/cmdDelete", cont.CmdDelete)
