@@ -21,6 +21,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   pannello (rustdesk-api-web `3998c2a`) non ha una colonna per la nota.
 
 ### Sicurezza
+- Pannello, "i miei dispositivi" e "i miei login"
+  (`/api/admin/my/peer/list`, `/api/admin/my/login_log/list`): l'uuid dei
+  dispositivi resta vuoto. Dal legame ID-uuid (REM-2026-002) l'uuid autorizza
+  a scrivere scheda, heartbeat e audit di un PC, e un utente del pannello non
+  amministratore lo leggeva dei PC legati a lui. Le liste di amministrazione
+  (`/api/admin/peer/list`, `/api/admin/login_log/list`) lo mostrano ancora.
 - Pannello, comandi del server (`/api/admin/rustdesk/sendCmd`, `cmdList`,
   `cmdCreate`, `cmdDelete`): solo per gli amministratori (REM-2026-004). A
   un utente del pannello non amministratore rispondono come le altre rotte

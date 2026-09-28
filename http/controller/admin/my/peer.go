@@ -61,5 +61,10 @@ func (ct *Peer) List(c *gin.Context) {
 		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
+	// L'uuid autorizza a scrivere scheda, heartbeat e audit del PC: resta
+	// agli amministratori (/api/admin/peer/list).
+	for _, p := range res.Peers {
+		p.Uuid = ""
+	}
 	response.Success(c, res)
 }
