@@ -2,7 +2,10 @@ package api
 
 import (
 	"errors"
+	"net/http"
+	"strconv"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -35,11 +38,19 @@ func (a *Audit) AuditConn(c *gin.Context) {
 		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
+	if af.Note != nil && af.ConnId == 0 {
+		// La nota durante la sessione (golden audit-conn-nota) arriva dal PC
+		// del tecnico con id, session_id e note, senza uuid ne' conn_id:
+		// si attacca alla connessione gia' registrata e non crea righe
+		// (ADR-0019, regola 6).
+		notaDiSessione(c, af.Id, strconv.FormatUint(af.SessionId, 10), *af.Note)
+		response.Success(c, "")
+		return
+	}
 	if af.Uuid == "" && af.Action == "" && af.ConnId == 0 {
-		// La nota durante la sessione (golden audit-conn-nota: id,
-		// session_id e note, senza uuid, azione ne' conn_id) non scrive
-		// niente, come prima; e' un altro compito. Ogni altra richiesta
-		// senza uuid passa da dalDispositivo, che la scarta con un warn.
+		// Senza nota, uuid, azione ne' conn_id non c'e' niente da scrivere,
+		// come prima. Ogni altra richiesta senza uuid passa da
+		// dalDispositivo, che la scarta con un warn.
 		response.Success(c, "")
 		return
 	}
@@ -75,6 +86,87 @@ func (a *Audit) AuditConn(c *gin.Context) {
 				auditNonSalvato(c, err)
 			}
 		}
+	}
+	response.Success(c, "")
+}
+
+// notaDiSessione scrive la nota durante la sessione sulla connessione piu'
+// recente del dispositivo peerId con quel sessionId. Se la connessione non
+// c'e' scrive una riga di info; il testo della nota non va mai nel log.
+func notaDiSessione(c *gin.Context, peerId, sessionId, nota string) {
+	err := service.AllService.AuditService.NotaDiSessione(peerId, sessionId, tronca(c, nota))
+	switch {
+	case errors.Is(err, service.ErrNotFound):
+		global.Logger.Infof("%s %s: nota di sessione senza connessione registrata del dispositivo %s, non salvata", c.Request.Method, c.FullPath(), peerId)
+	case err != nil:
+		auditNonSalvato(c, err)
+	}
+}
+
+// tronca riduce la nota a model.NotaMax caratteri; se la taglia lo scrive
+// nel log con la lunghezza, senza il testo, che e' libero del tecnico e puo'
+// avere dati personali.
+func tronca(c *gin.Context, nota string) string {
+	n := utf8.RuneCountInString(nota)
+	if n <= model.NotaMax {
+		return nota
+	}
+	global.Logger.Warnf("%s %s: nota di %d caratteri troncata a %d", c.Request.Method, c.FullPath(), n, model.NotaMax)
+	return string([]rune(nota)[:model.NotaMax])
+}
+
+// ConnAttiva restituisce al tecnico, come stringa JSON, il guid della
+// connessione aperta al dispositivo id con quel session_id e di tipo
+// conn_type, con cui manda la nota di fine connessione; "" se non c'e',
+// e il client riprova.
+// @Tags 审计
+// @Summary guid della connessione aperta
+// @Produce  json
+// @Param id query string true "ID del dispositivo"
+// @Param session_id query string true "session_id"
+// @Param conn_type query int true "tipo della connessione"
+// @Success 200 {string} string ""
+// @Failure 400 {object} response.ErrorResponse
+// @Router /audit/conn/active [get]
+// @Security token
+func (a *Audit) ConnAttiva(c *gin.Context) {
+	sid, err := strconv.ParseUint(c.Query("session_id"), 10, 64)
+	var tipo int
+	if err == nil {
+		tipo, err = strconv.Atoi(c.Query("conn_type"))
+	}
+	if err != nil {
+		response.ErrorErr(c, "ParamsError", err)
+		return
+	}
+	guid, err := service.AllService.AuditService.GuidConnessioneAperta(c.Query("id"), strconv.FormatUint(sid, 10), tipo)
+	if err != nil && !errors.Is(err, service.ErrNotFound) {
+		response.ErrorErr(c, "SystemError", err)
+		return
+	}
+	c.JSON(http.StatusOK, guid)
+}
+
+// Nota scrive la nota di fine connessione del tecnico sulla connessione col
+// guid della richiesta; guid sconosciuto: 400 ItemNotFound.
+// @Tags 审计
+// @Summary nota di fine connessione
+// @Accept  json
+// @Produce  json
+// @Param body body request.AuditNotaForm true "guid e nota"
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.ErrorResponse
+// @Router /audit [put]
+// @Security token
+func (a *Audit) Nota(c *gin.Context) {
+	f := &request.AuditNotaForm{}
+	if err := c.ShouldBindBodyWith(f, binding.JSON); err != nil {
+		response.ErrorErr(c, "ParamsError", err)
+		return
+	}
+	if err := service.AllService.AuditService.NotaPerGuid(f.Guid, tronca(c, f.Note)); err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return
 	}
 	response.Success(c, "")
 }

@@ -54,13 +54,12 @@ diventa rosso quando la risposta cambia.
 
 ## Stato
 
-Registrati tutti i 52 passi di `scenario.json`, rieseguiti dalla CI (push e
+Registrati tutti i 50 passi di `scenario.json`, rieseguiti dalla CI (push e
 PR verso `remotek`) da `TestContract` in `cmd/contratto_test.go`: tre
 scenari anonimi che l'API implementa (`version`, `login-options`,
-`non-autenticato`); i 404 delle cinque richieste che il client manda e l'API
-non implementa, che finiscono nel `NoRoute` (`audit-conn-active-404`, nel
-gruppo `anonime`, e `audit-alarm-404`, `devices-deploy-404`,
-`devices-cli-404`, `audit-nota-guid-404`, nel gruppo `non-implementate`); i
+`non-autenticato`); i 404 delle tre richieste che il client manda e l'API
+non implementa, che finiscono nel `NoRoute` (`audit-alarm-404`,
+`devices-deploy-404`, `devices-cli-404`, nel gruppo `non-implementate`); i
 29 passi dell'utente di collaudo (`utente`: login, utente corrente, rubrica
 personale con tag e peer, rubrica legacy, utenti e dispositivi del gruppo,
 logout); i 7 del dispositivo, senza autenticazione (`peer`: heartbeat,
@@ -97,9 +96,16 @@ non partono. Il seme non e' un test del contratto (non ha golden): e' il
 prerequisito verificato dei passi con utente, che ricevono nome e password
 da `Options.Vars`.
 
-Gruppi attivi: tutti e sette, nell'ordine dello scenario: `anonime` (4
-passi), `non-implementate` (4), `utente` (29), `peer` (7), `login-errato`
+Gruppi attivi: tutti e sette, nell'ordine dello scenario: `anonime` (3
+passi), `non-implementate` (3), `utente` (29), `peer` (7), `login-errato`
 (1), `senza-utente` (5), `ban` (2). Nessun passo resta da registrare.
+
+`audit-conn-active-404` e `audit-nota-guid-404` non sono piu' nello
+scenario: `GET /api/audit/conn/active` e `PUT /api/audit`, la nota di fine
+connessione del tecnico, sono una funzione nuova (ADR-0019, regola 6) e non
+rispondono piu' 404. Le loro cartelle restano in `testdata`, registrazione
+della v2.7; i golden nuovi li registra il registratore dell'ombrello dopo
+il rilascio.
 `ban` gira per ultimo e in una chiamata a parte di `Run`: prima il
 sottotest `preparazione-ban` manda login sbagliati via HTTP finche' la
 risposta non e' piu' 400, come il passo di servizio `ban-preparazione` del

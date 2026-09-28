@@ -12,9 +12,10 @@ import (
 	"time"
 )
 
-// anonymous risponde ai quattro passi anonimi come l'istanza di riferimento,
-// con due valori scelti dal test: data di /api/version (JSON grezzo; il golden
-// vale "2.7\n" e si confronta per forma) ed error del 401 di /api/ab.
+// anonymous risponde ai passi anonimi, e col 404 a ogni altra rotta, come
+// l'istanza di riferimento, con due valori scelti dal test: data di
+// /api/version (JSON grezzo; il golden vale "2.7\n" e si confronta per
+// forma) ed error del 401 di /api/ab.
 func anonymous(version, abError string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

@@ -120,7 +120,7 @@ func TestRunFailures(t *testing.T) {
 		{"nessun gruppo", Options{BaseURL: anon.URL, Golden: goldens}, []string{"run: scenario: nessun passo da rieseguire"}},
 		{"golden mancante", Options{BaseURL: two.URL, Golden: noGolden, Groups: []string{"utente"}}, []string{"run/login", "run/dopo", "run/dopo: golden mancante o non valido in un gruppo attivo: lettura: "}},
 		{"segnaposto senza valore", Options{BaseURL: two.URL, Golden: noExtract, Groups: []string{"utente"}}, []string{"run/login", "run/dopo", "run/dopo: intestazione Authorization: manca 'token'"}},
-		{"differenza", Options{BaseURL: anon.URL, Golden: goldens, Groups: []string{"anonime"}}, []string{"run/version", "run/login-options", "run/non-autenticato", "run/non-autenticato: prima differenza alla riga 4", "run/audit-conn-active-404"}},
+		{"differenza", Options{BaseURL: anon.URL, Golden: goldens, Groups: []string{"anonime"}}, []string{"run/version", "run/login-options", "run/non-autenticato", "run/non-autenticato: prima differenza alla riga 4"}},
 	}
 	for _, c := range cases {
 		var log []string

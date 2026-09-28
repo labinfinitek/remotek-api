@@ -17,8 +17,15 @@ type AuditConn struct {
 	Type      int    `json:"type" gorm:"default:0;not null;"`
 	Uuid      string `json:"uuid" gorm:"default:'';not null;"`
 	CloseTime int64  `json:"close_time" gorm:"default:0;not null;"`
+	Note      string `json:"note" gorm:"default:'';not null;"`
+	// Guid e' il segreto con cui il tecnico scrive la nota di fine
+	// connessione (PUT /api/audit): nel pannello non si vede.
+	Guid string `json:"-" gorm:"default:'';not null;index"`
 	TimeModel
 }
+
+// NotaMax e' la lunghezza massima della nota di sessione, in caratteri.
+const NotaMax = 2000
 
 type AuditConnList struct {
 	AuditConns []*AuditConn `json:"list"`

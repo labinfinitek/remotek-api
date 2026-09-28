@@ -17,6 +17,13 @@ type AuditConnForm struct {
 	SessionId uint64   `json:"session_id"` // u64 casuale nel client: un float64 lo arrotonda sopra 2^53
 	Type      int      `json:"type"`
 	Uuid      string   `json:"uuid"`
+	Note      *string  `json:"note"` // c'e' solo nella nota durante la sessione
+}
+
+// AuditNotaForm e' la nota di fine connessione del tecnico (PUT /api/audit).
+type AuditNotaForm struct {
+	Guid string `json:"guid"`
+	Note string `json:"note"`
 }
 
 func (a *AuditConnForm) ToAuditConn() *model.AuditConn {

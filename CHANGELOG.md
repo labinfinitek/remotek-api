@@ -6,6 +6,20 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Aggiunto
+- Note di sessione del tecnico nel registro delle connessioni, che l'API
+  prima perdeva. La nota che il client manda durante la sessione si salva
+  sulla connessione gia' registrata con quell'ID e quel `session_id`, senza
+  crearne di nuove; la nota di fine connessione (opzione del client
+  `allow-ask-for-note`, spenta di fabbrica) passa da
+  `GET /api/audit/conn/active` e `PUT /api/audit`, col login del tecnico e
+  un guid casuale della connessione. Con `session_id` 0 o assente, quello
+  delle connessioni non ancora autorizzate, la nota non si salva e il guid
+  non si da'. Al massimo 2000 caratteri, oltre si tronca; il testo della
+  nota non va mai nel log. La nota si legge nel JSON di
+  `/api/admin/audit_conn/list` e nell'esportazione CSV del pannello: il
+  pannello (rustdesk-api-web `3998c2a`) non ha una colonna per la nota.
+
 ### Sicurezza
 - Pannello, comandi del server (`/api/admin/rustdesk/sendCmd`, `cmdList`,
   `cmdCreate`, `cmdDelete`): solo per gli amministratori (REM-2026-004). A
