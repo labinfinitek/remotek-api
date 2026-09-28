@@ -32,7 +32,7 @@ func (is *ServerCmdService) List(page, pageSize uint) (*model.ServerCmdList, err
 func (is *ServerCmdService) Info(id uint) (*model.ServerCmd, error) {
 	u := &model.ServerCmd{}
 	if err := DB.Where("id = ?", id).First(u).Error; err != nil {
-		return nil, fmt.Errorf("comando del server %d: %w", id, nonTrovato(err))
+		return nil, fmt.Errorf("voce %d dei comandi del server: %w", id, nonTrovato(err))
 	}
 	return u, nil
 }
