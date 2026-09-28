@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -65,9 +66,9 @@ func (ct *Login) Login(c *gin.Context) {
 		}
 	}
 
-	u := service.AllService.UserService.InfoByUsernamePassword(f.Username, f.Password)
+	u, err := service.AllService.UserService.InfoByUsernamePassword(f.Username, f.Password)
 
-	if u.Id == 0 {
+	if errors.Is(err, service.ErrNotFound) {
 		global.Logger.Warn(fmt.Sprintf("Login Fail: %s %s %s", "UsernameOrPasswordError", c.RemoteIP(), clientIp))
 		loginLimiter.RecordFailedAttempt(clientIp)
 		if _, needCaptcha = loginLimiter.CheckSecurityStatus(clientIp); needCaptcha {
@@ -75,6 +76,11 @@ func (ct *Login) Login(c *gin.Context) {
 		} else {
 			response.Fail(c, 101, response.TranslateMsg(c, "UsernameOrPasswordError"))
 		}
+		return
+	}
+	if err != nil {
+		// Non e' una password sbagliata: non conta per captcha e ban.
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 

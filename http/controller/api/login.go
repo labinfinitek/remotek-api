@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -56,12 +57,18 @@ func (l *Login) Login(c *gin.Context) {
 		return
 	}
 
-	u := service.AllService.UserService.InfoByUsernamePassword(f.Username, f.Password)
+	u, err := service.AllService.UserService.InfoByUsernamePassword(f.Username, f.Password)
 
-	if u.Id == 0 {
+	if errors.Is(err, service.ErrNotFound) {
 		loginLimiter.RecordFailedAttempt(clientIp)
 		global.Logger.Warn(fmt.Sprintf("Login Fail: %s %s %s", "UsernameOrPasswordError", c.RemoteIP(), c.ClientIP()))
 		response.Error(c, response.TranslateMsg(c, "UsernameOrPasswordError"))
+		return
+	}
+	if err != nil {
+		// Non e' una password sbagliata: non conta per captcha e ban, che
+		// bloccherebbero l'IP di tecnici con la password giusta.
+		response.ErrorErr(c, "SystemError", err)
 		return
 	}
 

@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"errors"
 	"os"
 	"strings"
 
@@ -68,9 +69,13 @@ func (co *Config) AdminConfig(c *gin.Context) {
 	u := &model.User{}
 	token := c.GetHeader("api-token")
 	if token != "" {
-		u, _ = service.AllService.UserService.InfoByAccessToken(token)
-		if !service.AllService.UserService.CheckUserEnable(u) {
-			u.Id = 0
+		utente, _, err := service.AllService.UserService.InfoByAccessToken(token)
+		switch {
+		case err != nil && !errors.Is(err, service.ErrNotFound):
+			response.FailErr(c, 101, "SystemError", err)
+			return
+		case err == nil && service.AllService.UserService.CheckUserEnable(utente):
+			u = utente
 		}
 	}
 

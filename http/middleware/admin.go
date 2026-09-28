@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"errors"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/lejianwen/rustdesk-api/v2/global"
@@ -19,9 +21,15 @@ func BackendUserAuth() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		user, ut := service.AllService.UserService.InfoByAccessToken(token)
-		if user.Id == 0 {
+		user, ut, err := service.AllService.UserService.InfoByAccessToken(token)
+		if errors.Is(err, service.ErrNotFound) {
 			response.Fail(c, 403, response.TranslateMsg(c, "NeedLogin"))
+			c.Abort()
+			return
+		}
+		if err != nil {
+			// Non 403, che per il pannello e' un logout (request.js).
+			response.FailErr(c, 101, "SystemError", err)
 			c.Abort()
 			return
 		}

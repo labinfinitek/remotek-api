@@ -4,12 +4,17 @@ import (
 	"errors"
 	"io"
 	"net"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 
 	"github.com/lejianwen/rustdesk-api/v2/config"
+	"github.com/lejianwen/rustdesk-api/v2/lib/orm"
+	"github.com/lejianwen/rustdesk-api/v2/model"
 )
 
 // registroDiProva fa scrivere il log dei servizi in un registro, che
@@ -108,5 +113,43 @@ func TestUserAccountControlNonNumerico(t *testing.T) {
 	}
 	if nelLog := registro.String(); !strings.Contains(nelLog, "level=error") || !strings.Contains(nelLog, "mrossi") || !strings.Contains(nelLog, "non-numero") {
 		t.Errorf("nel log manca l'errore di userAccountControl:\n%s", nelLog)
+	}
+}
+
+// TestLdapUtenteLocaleNonLetto prova il passaggio da un utente LDAP
+// autenticato all'utente locale quando il database non legge gli utenti:
+// mapToLocalUser restituisce l'errore del database e non crea nessun utente.
+// Prima la lettura fallita valeva "utente che non c'e'": nasceva l'utente e
+// tornava un utente vuoto senza errore, che il login prendeva per una
+// password sbagliata e contava per captcha e ban.
+func TestLdapUtenteLocaleNonLetto(t *testing.T) {
+	db, err := orm.ApriSqlite(filepath.Join(t.TempDir(), "api.db"), logger.Discard)
+	if err == nil {
+		err = db.AutoMigrate(&model.User{})
+	}
+	if err == nil {
+		err = db.Callback().Query().Before("gorm:query").Register("rifiuta_utenti", func(tx *gorm.DB) {
+			if tx.Statement.Table == "users" {
+				_ = tx.AddError(errors.New("lettura rifiutata dal test"))
+			}
+		})
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	prec := DB
+	DB = db
+	t.Cleanup(func() { DB = prec })
+
+	u, err := (&LdapService{}).mapToLocalUser(&config.Ldap{}, &LdapUser{Username: "mrossi", Enabled: true})
+	if u != nil || err == nil || !strings.Contains(err.Error(), "lettura rifiutata dal test") {
+		t.Errorf("mapToLocalUser con gli utenti non letti: utente %+v, errore %v; attesi nessun utente e l'errore del database", u, err)
+	}
+	var n int64
+	if err := db.Raw("SELECT count(*) FROM users").Scan(&n).Error; err != nil {
+		t.Fatal(err)
+	}
+	if n != 0 {
+		t.Errorf("utenti dopo mapToLocalUser: %d, atteso nessuno", n)
 	}
 }

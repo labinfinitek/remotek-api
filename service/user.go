@@ -28,54 +28,54 @@ func (us *UserService) InfoById(id uint) *model.User {
 	return u
 }
 
-// InfoByUsername 根据用户名取用户信息
-func (us *UserService) InfoByUsername(un string) *model.User {
+// InfoByUsername restituisce l'utente di nome un; ErrNotFound se non c'e'.
+func (us *UserService) InfoByUsername(un string) (*model.User, error) {
 	u := &model.User{}
-	DB.Where("username = ?", un).First(u)
-	return u
+	if err := DB.Where("username = ?", un).First(u).Error; err != nil {
+		return nil, fmt.Errorf("utente per nome: %w", nonTrovato(err))
+	}
+	return u, nil
 }
 
-// InfoByOpenid 根据openid取用户信息
-func (us *UserService) InfoByOpenid(openid string) *model.User {
-	u := &model.User{}
-	DB.Where("openid = ?", openid).First(u)
-	return u
-}
-
-// InfoByUsernamePassword 根据用户名密码取用户信息
-func (us *UserService) InfoByUsernamePassword(username, password string) *model.User {
+// InfoByUsernamePassword restituisce l'utente username se password e' la
+// sua, con LDAP acceso prima dalla directory; ErrNotFound se l'utente non
+// c'e' o la password e' sbagliata. Un errore del database non e' una
+// password sbagliata.
+func (us *UserService) InfoByUsernamePassword(username, password string) (*model.User, error) {
 	if Config.Ldap.Enable {
 		u, err := AllService.LdapService.Authenticate(username, password)
 		if err == nil {
-			return u
+			return u, nil
 		}
 		Logger.Errorf("LDAP authentication failed, %v", err)
 		Logger.Warn("Fallback to local database")
 	}
-	u := &model.User{}
-	DB.Where("username = ?", username).First(u)
-	if u.Id == 0 {
-		return u
+	u, err := us.InfoByUsername(username)
+	if err != nil {
+		return nil, err
 	}
 	if ok, err := utils.VerifyPassword(u.Password, password); err != nil || !ok {
-		return &model.User{}
+		return nil, ErrNotFound
 	}
-	return u
+	return u, nil
 }
 
-// InfoByAccessToken 根据accesstoken取用户信息
-func (us *UserService) InfoByAccessToken(token string) (*model.User, *model.UserToken) {
-	u := &model.User{}
+// InfoByAccessToken restituisce l'utente del token di sessione token e il
+// token; ErrNotFound se il token non c'e' o e' scaduto, o se il suo utente
+// non c'e' piu'.
+func (us *UserService) InfoByAccessToken(token string) (*model.User, *model.UserToken, error) {
 	ut := &model.UserToken{}
-	DB.Where("token = ?", token).First(ut)
-	if ut.Id == 0 {
-		return u, ut
+	if err := DB.Where("token = ?", token).First(ut).Error; err != nil {
+		return nil, nil, fmt.Errorf("token di sessione: %w", nonTrovato(err))
 	}
 	if ut.ExpiredAt < time.Now().Unix() {
-		return u, ut
+		return nil, nil, fmt.Errorf("token di sessione %d scaduto: %w", ut.Id, ErrNotFound)
 	}
-	DB.Where("id = ?", ut.UserId).First(u)
-	return u, ut
+	u := &model.User{}
+	if err := DB.Where("id = ?", ut.UserId).First(u).Error; err != nil {
+		return nil, nil, fmt.Errorf("utente %d del token di sessione: %w", ut.UserId, nonTrovato(err))
+	}
+	return u, ut, nil
 }
 
 // fonteCasuale e' la fonte dei token di sessione; i test la sostituiscono
@@ -180,13 +180,6 @@ func (us *UserService) ListByGroupId(groupId, page, pageSize uint) (res *model.U
 		tx.Where("group_id = ?", groupId)
 	})
 	return
-}
-
-// ListIdsByGroupId 根据组id取用户id列表
-func (us *UserService) ListIdsByGroupId(groupId uint) (ids []uint) {
-	DB.Model(&model.User{}).Where("group_id = ?", groupId).Pluck("id", &ids)
-	return ids
-
 }
 
 // ListIdAndNameByGroupId 根据组id取用户id和用户名列表

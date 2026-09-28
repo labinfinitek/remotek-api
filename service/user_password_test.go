@@ -3,6 +3,7 @@ package service
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
 	"path/filepath"
 	"testing"
 
@@ -17,8 +18,8 @@ import (
 // TestInfoByUsernamePasswordMD5 prova il controllo della password del login
 // del client e del pannello: un utente con l'hash md5 delle versioni molto
 // vecchie di rustdesk-api non entra neanche con la password giusta, riceve
-// lo stesso utente vuoto di una password sbagliata, e l'hash nel database
-// resta com'era. Un utente con l'hash bcrypt entra come prima.
+// ErrNotFound come per una password sbagliata, e l'hash nel database resta
+// com'era. Un utente con l'hash bcrypt entra come prima.
 func TestInfoByUsernamePasswordMD5(t *testing.T) {
 	db, err := orm.ApriSqlite(filepath.Join(t.TempDir(), "api.db"), logger.Discard)
 	if err == nil {
@@ -53,12 +54,12 @@ func TestInfoByUsernamePasswordMD5(t *testing.T) {
 		{"nuovo", "nuova-password", true},
 		{"nuovo", "sbagliata", false},
 	} {
-		u := us.InfoByUsernamePassword(tc.utente, tc.password)
-		if entra := u.Id != 0; entra != tc.entra {
-			t.Errorf("%s con %q: entra %t, atteso %t", tc.utente, tc.password, entra, tc.entra)
+		u, err := us.InfoByUsernamePassword(tc.utente, tc.password)
+		if entra := err == nil && u.Id != 0; entra != tc.entra {
+			t.Errorf("%s con %q: entra %t (errore %v), atteso %t", tc.utente, tc.password, entra, err, tc.entra)
 		}
-		if !tc.entra && *u != (model.User{}) {
-			t.Errorf("%s con %q: utente %+v, atteso vuoto come per una password sbagliata", tc.utente, tc.password, u)
+		if !tc.entra && !errors.Is(err, ErrNotFound) {
+			t.Errorf("%s con %q: errore %v, atteso ErrNotFound come per una password sbagliata", tc.utente, tc.password, err)
 		}
 	}
 	salvato := &model.User{}
