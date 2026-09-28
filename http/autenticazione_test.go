@@ -410,6 +410,22 @@ func TestPannelloUtenteNonLetto(t *testing.T) {
 	}
 }
 
+// TestPannelloModificaUtenteAssente prova sul router vero la modifica dal
+// pannello di un utente che non c'e': risponde "Elemento non trovato." e non
+// salva niente. Prima andava in panic (500): Update leggeva l'utente senza
+// guardare l'errore e chiedeva IsAdmin a un utente vuoto.
+func TestPannelloModificaUtenteAssente(t *testing.T) {
+	g, _, _ := pannello(t, true)
+	prima := statoUtenti(t)
+	rec := alPannello(g, "/api/admin/user/update", `{"id":999999,"username":"nessuno","group_id":1,"status":1,"is_admin":false}`)
+	if got, want := rec.Body.String(), `{"code":101,"message":"Elemento non trovato.","data":null}`; rec.Code != 200 || got != want {
+		t.Errorf("POST /api/admin/user/update: stato %d\n got  %s\n want %s", rec.Code, got, want)
+	}
+	if dopo := statoUtenti(t); dopo != prima {
+		t.Errorf("POST /api/admin/user/update ha cambiato gli utenti:\n prima %s\n dopo  %s", prima, dopo)
+	}
+}
+
 // statoUtenti descrive con Raw, che rifiutaLetture non ferma, nome, ruolo,
 // stato e password degli utenti.
 func statoUtenti(t *testing.T) string {
