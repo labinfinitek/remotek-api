@@ -2,6 +2,7 @@ package admin
 
 import (
 	"encoding/json"
+	"errors"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -70,9 +71,12 @@ func (ct *AddressBook) Create(c *gin.Context) {
 		return
 	}
 
-	ex := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(t.UserId, t.Id, t.CollectionId)
-	if ex.RowId > 0 {
+	switch _, err := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(t.UserId, t.Id, t.CollectionId); {
+	case err == nil:
 		response.Fail(c, 101, response.TranslateMsg(c, "ItemExists"))
+		return
+	case !errors.Is(err, service.ErrNotFound):
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 
@@ -139,12 +143,15 @@ func (ct *AddressBook) BatchCreate(c *gin.Context) {
 		if t.UserId == 0 {
 			continue
 		}
-		ex := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(t.UserId, t.Id, t.CollectionId)
-		if ex.RowId == 0 {
+		switch _, err := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(t.UserId, t.Id, t.CollectionId); {
+		case errors.Is(err, service.ErrNotFound):
 			if err := service.AllService.AddressBookService.Create(t); err != nil {
 				response.FailErr(c, 101, "OperationFailed", err)
 				return
 			}
+		case err != nil:
+			response.FailErr(c, 101, "SystemError", err)
+			return
 		}
 	}
 
@@ -291,9 +298,8 @@ func (ct *AddressBook) BatchCreateFromPeers(c *gin.Context) {
 	}
 
 	if f.CollectionId != 0 {
-		collection := service.AllService.AddressBookService.CollectionInfoById(f.CollectionId)
-		if collection.Id == 0 {
-			response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+		if _, err := service.AllService.AddressBookService.CollectionInfoById(f.CollectionId); err != nil {
+			response.FailErr(c, 101, "SystemError", err)
 			return
 		}
 	}
@@ -313,9 +319,12 @@ func (ct *AddressBook) BatchCreateFromPeers(c *gin.Context) {
 		ab.Tags = tags
 		ab.CollectionId = f.CollectionId
 		ab.UserId = f.UserId
-		ex := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(f.UserId, ab.Id, ab.CollectionId)
-		if ex.RowId != 0 {
+		switch _, err := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(f.UserId, ab.Id, ab.CollectionId); {
+		case err == nil:
 			continue
+		case !errors.Is(err, service.ErrNotFound):
+			response.FailErr(c, 101, "SystemError", err)
+			return
 		}
 		if err := service.AllService.AddressBookService.Create(ab); err != nil {
 			response.FailErr(c, 101, "OperationFailed", err)

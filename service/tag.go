@@ -11,10 +11,14 @@ import (
 type TagService struct {
 }
 
-func (s *TagService) InfoByUserIdAndNameAndCollectionId(userid uint, name string, cid uint) *model.Tag {
+// InfoByUserIdAndNameAndCollectionId restituisce il tag name della
+// collezione cid dell'utente userid; ErrNotFound se non c'e'.
+func (s *TagService) InfoByUserIdAndNameAndCollectionId(userid uint, name string, cid uint) (*model.Tag, error) {
 	p := &model.Tag{}
-	DB.Where("user_id = ? and name = ? and collection_id = ?", userid, name, cid).First(p)
-	return p
+	if err := DB.Where("user_id = ? and name = ? and collection_id = ?", userid, name, cid).First(p).Error; err != nil {
+		return nil, fmt.Errorf("tag della collezione %d dell'utente %d: %w", cid, userid, nonTrovato(err))
+	}
+	return p, nil
 }
 
 func (s *TagService) ListByUserIdAndCollectionId(userId, cid uint) (*model.TagList, error) {

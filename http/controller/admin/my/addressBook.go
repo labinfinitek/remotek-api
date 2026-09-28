@@ -2,6 +2,7 @@ package my
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -91,9 +92,12 @@ func (ct *AddressBook) Create(c *gin.Context) {
 		return
 	}
 
-	ex := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(t.UserId, t.Id, t.CollectionId)
-	if ex.RowId > 0 {
+	switch _, err := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(t.UserId, t.Id, t.CollectionId); {
+	case err == nil:
 		response.Fail(c, 101, response.TranslateMsg(c, "ItemExists"))
+		return
+	case !errors.Is(err, service.ErrNotFound):
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 
@@ -208,9 +212,9 @@ func (ct *AddressBook) BatchCreateFromPeers(c *gin.Context) {
 	u := service.AllService.UserService.CurUser(c)
 
 	if f.CollectionId != 0 {
-		collection := service.AllService.AddressBookService.CollectionInfoById(f.CollectionId)
-		if collection.Id == 0 {
-			response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+		collection, err := service.AllService.AddressBookService.CollectionInfoById(f.CollectionId)
+		if err != nil {
+			response.FailErr(c, 101, "SystemError", err)
 			return
 		}
 		if collection.UserId != u.Id {
@@ -237,9 +241,12 @@ func (ct *AddressBook) BatchCreateFromPeers(c *gin.Context) {
 		ab := service.AllService.AddressBookService.FromPeer(peer)
 		ab.Tags = tags
 		ab.CollectionId = f.CollectionId
-		ex := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(u.Id, ab.Id, ab.CollectionId)
-		if ex.RowId != 0 {
+		switch _, err := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(u.Id, ab.Id, ab.CollectionId); {
+		case err == nil:
 			continue
+		case !errors.Is(err, service.ErrNotFound):
+			response.FailErr(c, 101, "SystemError", err)
+			return
 		}
 		if err := service.AllService.AddressBookService.Create(ab); err != nil {
 			response.FailErr(c, 101, "OperationFailed", err)

@@ -178,9 +178,12 @@ func (a *Ab) TagAdd(c *gin.Context) {
 		return
 	}
 
-	tag := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, t.Name, cid)
-	if tag != nil && tag.Id != 0 {
+	switch _, err := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, t.Name, cid); {
+	case err == nil:
 		response.Error(c, response.TranslateMsg(c, "ItemExists"))
+		return
+	case !errors.Is(err, service.ErrNotFound):
+		response.ErrorErr(c, "SystemError", err)
 		return
 	}
 	t.UserId = uid
@@ -225,14 +228,17 @@ func (a *Ab) TagRename(c *gin.Context) {
 		return
 	}
 
-	tag := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, t.Old, cid)
-	if tag == nil || tag.Id == 0 {
-		response.Error(c, response.TranslateMsg(c, "ItemNotFound"))
+	tag, err := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, t.Old, cid)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
 		return
 	}
-	ntag := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, t.New, cid)
-	if ntag != nil && ntag.Id != 0 {
+	switch _, err := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, t.New, cid); {
+	case err == nil:
 		response.Error(c, response.TranslateMsg(c, "ItemExists"))
+		return
+	case !errors.Is(err, service.ErrNotFound):
+		response.ErrorErr(c, "SystemError", err)
 		return
 	}
 	tag.Name = t.New
@@ -275,9 +281,9 @@ func (a *Ab) TagUpdate(c *gin.Context) {
 		return
 	}
 
-	tag := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, t.Name, cid)
-	if tag == nil || tag.Id == 0 {
-		response.Error(c, response.TranslateMsg(c, "ItemNotFound"))
+	tag, err := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, t.Name, cid)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
 		return
 	}
 	tag.Color = t.Color
@@ -323,9 +329,9 @@ func (a *Ab) TagDel(c *gin.Context) {
 	}
 
 	for _, name := range *t {
-		tag := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, name, cid)
-		if tag == nil || tag.Id == 0 {
-			response.Error(c, response.TranslateMsg(c, "ItemNotFound"))
+		tag, err := service.AllService.TagService.InfoByUserIdAndNameAndCollectionId(uid, name, cid)
+		if err != nil {
+			response.ErrorErr(c, "SystemError", err)
 			return
 		}
 		err = service.AllService.TagService.Delete(tag)
@@ -538,14 +544,15 @@ func (a *Ab) CheckGuid(cu *model.User, guid string) (gid, uid, cid uint, err err
 		return
 	}
 	if cid > 0 {
-		c := service.AllService.AddressBookService.CollectionInfoById(cid)
-		if c == nil || c.Id == 0 {
+		c, errc := service.AllService.AddressBookService.CollectionInfoById(cid)
+		switch {
+		case errors.Is(errc, service.ErrNotFound):
 			err = errors.New("ParamsError")
-			return
-		}
-		if c.UserId != uid {
+		case errc != nil:
+			// una collezione che non si legge non e' un guid sbagliato
+			err = errors.Join(errors.New("SystemError"), errc)
+		case c.UserId != uid:
 			err = errors.New("ParamsError")
-			return
 		}
 	}
 	return
@@ -693,9 +700,9 @@ func (a *Ab) PeerDel(c *gin.Context) {
 	}
 
 	for _, id := range *f {
-		ab := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(uid, id, cid)
-		if ab == nil || ab.RowId == 0 {
-			response.Error(c, response.TranslateMsg(c, "ItemNotFound"))
+		ab, err := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(uid, id, cid)
+		if err != nil {
+			response.ErrorErr(c, "SystemError", err)
 			return
 		}
 		err = service.AllService.AddressBookService.Delete(ab)
@@ -749,9 +756,9 @@ func (a *Ab) PeerUpdate(c *gin.Context) {
 	}
 	fidstr := fid.(string)
 
-	ab := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(uid, fidstr, cid)
-	if ab == nil || ab.RowId == 0 {
-		response.Error(c, response.TranslateMsg(c, "ItemNotFound"))
+	ab, err := service.AllService.AddressBookService.InfoByUserIdAndIdAndCid(uid, fidstr, cid)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
 		return
 	}
 	// 允许的字段

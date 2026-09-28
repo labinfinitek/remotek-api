@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 
@@ -50,6 +52,20 @@ func New(c *config.Config, g *gorm.DB, l *log.Logger, j *jwt.Jwt, lo lock.Locker
 	Lock = lo
 	AllService = new(Service)
 	return AllService
+}
+
+// ErrNotFound dice che una lettura non ha trovato la riga cercata. Il testo e'
+// l'ID del messaggio ItemNotFound: ErrorErr e FailErr lo trovano nella catena
+// dell'errore, mentre un errore del database prende il messaggio del punto.
+var ErrNotFound = errors.New("ItemNotFound")
+
+// nonTrovato restituisce ErrNotFound se err e' gorm.ErrRecordNotFound,
+// altrimenti err.
+func nonTrovato(err error) error {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrNotFound
+	}
+	return err
 }
 
 func Paginate(page, pageSize uint) func(db *gorm.DB) *gorm.DB {
