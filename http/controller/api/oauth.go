@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -90,9 +91,13 @@ func (o *Oauth) OidcAuthQueryPre(c *gin.Context) (*model.User, *model.UserToken)
 	}
 
 	// 获取用户信息
-	u = service.AllService.UserService.InfoById(v.UserId)
-	if u == nil {
+	u, err := service.AllService.UserService.InfoById(v.UserId)
+	if errors.Is(err, service.ErrNotFound) {
 		response.Error(c, response.TranslateMsg(c, "UserNotFound"))
+		return nil, nil
+	}
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
 		return nil, nil
 	}
 
@@ -100,7 +105,7 @@ func (o *Oauth) OidcAuthQueryPre(c *gin.Context) (*model.User, *model.UserToken)
 	service.AllService.OauthService.DeleteOauthCache(q.Code)
 
 	// 创建登录日志并生成用户令牌
-	ut, err := service.AllService.UserService.Login(u, &model.LoginLog{
+	ut, err = service.AllService.UserService.Login(u, &model.LoginLog{
 		UserId:   u.Id,
 		Client:   v.DeviceType,
 		DeviceId: v.Id,
@@ -198,11 +203,10 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 			})
 			return
 		}
-		// 绑定
-		user = service.AllService.UserService.InfoById(userId)
-		if user == nil {
+		// 绑定: ItemNotFound se l'utente non c'e', OauthFailed se non si legge
+		if _, err := service.AllService.UserService.InfoById(userId); err != nil {
 			c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
-				"message": "ItemNotFound",
+				"message": response.IDErr(c, "OauthFailed", err),
 			})
 			return
 		}
@@ -225,7 +229,13 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 			})
 			return
 		}
-		user = service.AllService.UserService.InfoByOauthId(op, openid)
+		user, err = service.AllService.UserService.InfoByOauthId(op, openid)
+		if err != nil && !errors.Is(err, service.ErrNotFound) {
+			c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
+				"message": response.IDErr(c, "OauthFailed", err),
+			})
+			return
+		}
 		if user == nil {
 			oauthConfig := oauthService.InfoByOp(op)
 			if !*oauthConfig.AutoRegister {

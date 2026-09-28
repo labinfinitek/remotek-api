@@ -136,6 +136,21 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   i primi due rispondevano 200 con l'elenco vuoto, e le rubriche condivise
   500 senza corpo (un panic). Nel pannello l'elenco degli utenti risponde
   "Errore di sistema." invece di un elenco vuoto.
+- Utente letto per id: se il database non lo legge, le rotte del client
+  sulla rubrica di un altro utente rispondono 400 "Errore di sistema."
+  invece di "Parametri non validi.", `/api/oidc/auth-query` risponde 400
+  "Errore di sistema." invece di dare al client il token di un utente
+  vuoto, che lo faceva uscire alla prima richiesta, e il callback OIDC
+  dice "Autorizzazione OAuth non riuscita." invece di associare lo stesso
+  l'account o, con l'autoregistrazione spenta, di rimandare ad associarlo
+  di nuovo. Nel pannello dettaglio, cancellazione, cambio della password e
+  modifica di un utente, e le regole di condivisione verso un utente,
+  rispondono "Errore di sistema." invece di "Elemento non trovato." (la
+  modifica andava in panic). L'errore va nel log. Un utente che non c'e'
+  ha le risposte di prima, tranne `/api/oidc/auth-query`, che risponde
+  "Utente non trovato.", e il callback, che dice "Elemento non trovato.":
+  prima davano il token di un utente vuoto e associavano l'account a un
+  utente che non c'e'.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

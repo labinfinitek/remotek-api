@@ -68,6 +68,17 @@ func nonTrovato(err error) error {
 	return err
 }
 
+// diSistema aggiunge l'ID SystemError alla catena di err, se non e'
+// ErrNotFound: dove il messaggio del punto e' un altro, come OperationFailed,
+// FailErr dice "Errore di sistema." per una lettura che non riesce e
+// "Elemento non trovato." per una riga che non c'e'.
+func diSistema(err error) error {
+	if errors.Is(err, ErrNotFound) {
+		return err
+	}
+	return errors.Join(errors.New("SystemError"), err)
+}
+
 func Paginate(page, pageSize uint) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if page == 0 {

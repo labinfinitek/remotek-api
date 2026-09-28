@@ -21,11 +21,13 @@ import (
 type UserService struct {
 }
 
-// InfoById 根据用户id取用户信息
-func (us *UserService) InfoById(id uint) *model.User {
+// InfoById restituisce l'utente id; ErrNotFound se non c'e'.
+func (us *UserService) InfoById(id uint) (*model.User, error) {
 	u := &model.User{}
-	DB.Where("id = ?", id).First(u)
-	return u
+	if err := DB.Where("id = ?", id).First(u).Error; err != nil {
+		return nil, fmt.Errorf("utente %d: %w", id, nonTrovato(err))
+	}
+	return u, nil
 }
 
 // InfoByUsername restituisce l'utente di nome un; ErrNotFound se non c'e'.
@@ -273,7 +275,10 @@ func (us *UserService) Delete(u *model.User) error {
 
 // Update 更新
 func (us *UserService) Update(u *model.User) error {
-	currentUser := us.InfoById(u.Id)
+	currentUser, err := us.InfoById(u.Id)
+	if err != nil {
+		return diSistema(err)
+	}
 	// 如果当前用户是管理员并且 IsAdmin 不为空，进行检查
 	if us.IsAdmin(currentUser) {
 		adminCount := us.getAdminUserCount()
@@ -323,17 +328,14 @@ func (us *UserService) RouteNames(u *model.User) []string {
 	return model.UserRouteNames
 }
 
-// InfoByOauthId 根据oauth的name和openId取用户信息
-func (us *UserService) InfoByOauthId(op string, openId string) *model.User {
+// InfoByOauthId restituisce l'utente dell'associazione all'account openId del
+// provider op; ErrNotFound se non c'e' l'associazione o il suo utente.
+func (us *UserService) InfoByOauthId(op string, openId string) (*model.User, error) {
 	ut := AllService.OauthService.UserThirdInfo(op, openId)
 	if ut.Id == 0 {
-		return nil
+		return nil, ErrNotFound
 	}
-	u := us.InfoById(ut.UserId)
-	if u.Id == 0 {
-		return nil
-	}
-	return u
+	return us.InfoById(ut.UserId)
 }
 
 // RegisterByOauth restituisce l'utente locale di oauthUser, l'utente del

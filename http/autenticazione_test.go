@@ -180,7 +180,8 @@ func idDi(t *testing.T, username string) string {
 // dopo RustAuth, leggono gli utenti: se il database non li legge rispondono
 // 400 {"error": "Errore di sistema."}, con l'errore nel log, e non 401, che
 // per il client e' un logout. Prima /api/users e /api/peers rispondevano 200
-// con l'elenco vuoto, e le rubriche condivise andavano in panic (500).
+// con l'elenco vuoto, le rubriche condivise andavano in panic (500), e una
+// rubrica di un altro utente rispondeva "Parametri non validi.".
 func TestClientUtentiNonLetti(t *testing.T) {
 	for _, tc := range []struct {
 		nome, metodo, rotta, dove string // in dove PROPRIETARIO diventa l'id del proprietario
@@ -189,6 +190,7 @@ func TestClientUtentiNonLetti(t *testing.T) {
 		{"utenti del gruppo", "GET", "/api/users", "group_id", true},
 		{"dispositivi del gruppo", "GET", "/api/peers", "group_id", true},
 		{"proprietari delle rubriche condivise", "POST", "/api/ab/shared/profiles", "id in", false},
+		{"proprietario della rubrica", "POST", "/api/ab/peers?ab=CONDIVISA", "id = ? [PROPRIETARIO]", false},
 	} {
 		t.Run(tc.nome, func(t *testing.T) {
 			_, registro, invia, guid := rubricheDiProva(t, model.ShareAddressBookRuleRuleRead)
@@ -211,6 +213,97 @@ func TestClientUtentiNonLetti(t *testing.T) {
 	}
 }
 
+// TestAuthQueryUtenteNonLetto prova sul router vero /api/oidc/auth-query, che
+// il client interroga finche' il login OIDC non e' fatto, quando l'utente del
+// login non si legge: la risposta e' 400 "Errore di sistema.", con l'errore
+// nel log, e nessun token. Un utente che non c'e' riceve "Utente non
+// trovato.", la risposta che il codice aveva per questo caso ma non dava mai.
+// Prima in tutti e due i casi il client riceveva il token di un utente vuoto
+// (id 0), e alla prima richiesta un 401, cioe' un logout.
+func TestAuthQueryUtenteNonLetto(t *testing.T) {
+	for _, tc := range []struct {
+		nome, risposta string
+		rifiuta        bool
+		utente         func(u *model.User) uint
+	}{
+		{"utente non letto", `{"error":"Errore di sistema."}`, true, func(u *model.User) uint { return u.Id }},
+		{"utente che non c'e'", `{"error":"Utente non trovato."}`, false, func(*model.User) uint { return 999999 }},
+	} {
+		t.Run(tc.nome, func(t *testing.T) {
+			g, utente, registro := pannello(t, false)
+			preparaLogin(t, utente)
+			service.AllService.OauthService.SetOauthCache("login-oidc", &service.OauthCacheItem{UserId: tc.utente(utente), Action: service.OauthActionTypeLogin}, 0)
+			t.Cleanup(func() { service.AllService.OauthService.DeleteOauthCache("login-oidc") })
+			if tc.rifiuta {
+				rifiutaLetture(t, "users", "")
+			}
+
+			rec := richiesta(g, "GET", "/api/oidc/auth-query?code=login-oidc&id=999000111&uuid=dXVpZA==", "", "")
+			if got := rec.Body.String(); rec.Code != 400 || got != tc.risposta {
+				t.Errorf("GET /api/oidc/auth-query: %d %s, attesi 400 e %s", rec.Code, got, tc.risposta)
+			}
+			if n := righe(t, "user_tokens"); n != 1 {
+				t.Errorf("token dopo la richiesta: %d, atteso 1, quello del pannello", n)
+			}
+			if nelLog := registro.String(); tc.rifiuta && (!strings.Contains(nelLog, "GET /api/oidc/auth-query: ") || !strings.Contains(nelLog, "lettura rifiutata dal test")) {
+				t.Errorf("GET /api/oidc/auth-query, nel log mancano rotta o errore:\n%s", nelLog)
+			}
+		})
+	}
+}
+
+// TestCallbackOidcLetturaFallita prova sul router vero il callback OIDC
+// quando il database non legge un utente: la pagina dice OauthFailed, con
+// l'errore nel log, come per gli altri errori del callback, e non nascono
+// associazioni. Prima l'associazione chiesta dal
+// pannello riusciva lo stesso, anche per un utente che non c'e' (ora
+// ItemNotFound, il messaggio che il codice aveva per questo caso ma non dava
+// mai), e il login con l'autoregistrazione spenta di un account con la sua
+// associazione rimandava ad associarlo di nuovo.
+func TestCallbackOidcLetturaFallita(t *testing.T) {
+	for _, tc := range []struct {
+		nome, azione, messaggio string
+		// prepara crea e rifiuta quello che il caso vuole e restituisce
+		// l'utente della voce in cache: quello da associare, 0 per un login.
+		prepara func(t *testing.T, utente *model.User) uint
+	}{
+		{"associazione, utente non letto", service.OauthActionTypeBind, "OauthFailed", func(t *testing.T, utente *model.User) uint {
+			rifiutaLetture(t, "users", "")
+			return utente.Id
+		}},
+		{"associazione, utente che non c'e'", service.OauthActionTypeBind, "ItemNotFound", func(*testing.T, *model.User) uint {
+			return 999999
+		}},
+		{"login, utente dell'associazione non letto", service.OauthActionTypeLogin, "OauthFailed", func(t *testing.T, utente *model.User) uint {
+			crea(t, &model.UserThird{UserId: utente.Id, Op: "aziendale", OauthType: model.OauthTypeOidc, OauthUser: model.OauthUser{OpenId: "sub-1"}})
+			rifiutaLetture(t, "users", "")
+			return 0
+		}},
+	} {
+		t.Run(tc.nome, func(t *testing.T) {
+			g, utente, registro := pannello(t, false)
+			registra := false
+			crea(t, &model.Oauth{Op: "aziendale", OauthType: model.OauthTypeOidc, ClientId: "id", ClientSecret: "segreto",
+				Issuer: providerOidc(t), AutoRegister: &registra})
+			voce := &service.OauthCacheItem{Op: "aziendale", Action: tc.azione, UserId: tc.prepara(t, utente)}
+			service.AllService.OauthService.SetOauthCache("prova-callback", voce, 0)
+			t.Cleanup(func() { service.AllService.OauthService.DeleteOauthCache("prova-callback") })
+			associazioni, utenti := righe(t, "user_thirds"), righe(t, "users")
+
+			rec := richiesta(g, "GET", "/api/oidc/callback?state=prova-callback&code="+codiceDelProvider, "", "")
+			if !strings.Contains(rec.Body.String(), "var msg = '"+tc.messaggio+"'") {
+				t.Errorf("GET /api/oidc/callback: %d, atteso il messaggio %s\n%s", rec.Code, tc.messaggio, rec.Body)
+			}
+			if nelLog := registro.String(); !strings.Contains(nelLog, "GET /api/oidc/callback: al client va "+tc.messaggio) {
+				t.Errorf("GET /api/oidc/callback, nel log manca la rotta:\n%s", nelLog)
+			}
+			if n, m := righe(t, "user_thirds"), righe(t, "users"); n != associazioni || m != utenti {
+				t.Errorf("dopo il callback %d associazioni e %d utenti, erano %d e %d", n, m, associazioni, utenti)
+			}
+		})
+	}
+}
+
 // rifiutaElenchi fa fallire nel database dei servizi le letture senza WHERE
 // della tabella tabella, come l'elenco di tutti gli utenti, che
 // rifiutaLetture non ferma; le altre riescono.
@@ -227,14 +320,21 @@ func rifiutaElenchi(t *testing.T, tabella string) {
 }
 
 // TestPannelloUtenteNonLetto prova sul router vero le rotte del pannello che
-// leggono l'elenco degli utenti: se il database non lo legge rispondono code
-// 101 "Errore di sistema.", con l'errore nel log. Prima rispondevano successo
-// con l'elenco vuoto.
+// leggono un utente o l'elenco degli utenti: se il database non li legge
+// rispondono code 101 "Errore di sistema.", con l'errore nel log, e l'utente
+// resta com'era. Prima dettaglio, cancellazione e cambio della password
+// rispondevano "Elemento non trovato.", la modifica andava in panic (500) e
+// gli elenchi erano vuoti.
 func TestPannelloUtenteNonLetto(t *testing.T) {
 	const erroreDiSistema = `{"code":101,"message":"Errore di sistema.","data":null}`
+	const modifica = `{"id":SECONDO,"username":"secondo","group_id":1,"status":1,"is_admin":false}`
 	for _, tc := range []struct {
 		metodo, rotta, corpo, dove string // in rotta, corpo e dove SECONDO diventa l'id di secondo
 	}{
+		{"GET", "/api/admin/user/detail/SECONDO", "", "id = ? [SECONDO]"},
+		{"POST", "/api/admin/user/delete", `{"id":SECONDO}`, "id = ? [SECONDO]"},
+		{"POST", "/api/admin/user/changePwd", `{"id":SECONDO,"password":"` + strings.Repeat("p", 15) + `"}`, "id = ? [SECONDO]"},
+		{"POST", "/api/admin/user/update", modifica, "id = ? [SECONDO]"},
 		{"GET", "/api/admin/user/list?username=sec", "", "username like"},
 		{"POST", "/api/admin/user/groupUsers", "", ""},
 	} {
@@ -273,4 +373,23 @@ func statoUtenti(t *testing.T) string {
 		t.Fatal(err)
 	}
 	return strings.Join(utenti, ", ")
+}
+
+// TestPannelloDestinatarioNonLetto prova sul router vero la creazione di una
+// regola di condivisione verso un utente: se il database non legge l'utente
+// destinatario, amministrazione e sezione dell'utente rispondono code 101
+// "Errore di sistema.", con l'errore nel log, e non salvano niente. Prima
+// rispondevano "Elemento non trovato.". Un destinatario che non c'e' ha la
+// risposta di prima.
+func TestPannelloDestinatarioNonLetto(t *testing.T) {
+	const erroreDiSistema = `{"code":101,"message":"Errore di sistema.","data":null}`
+	const nonTrovato = `{"code":101,"message":"Elemento non trovato.","data":null}`
+	const regola = `{"user_id":UTENTE,"collection_id":RUBRICA,"type":1,"rule":2,"to_id":`
+	// amico e' il secondo utente di pannelloDiProva, dopo quello di pannello
+	provaPannello(t, "users", "id = ? [2]", []casoDelPannello{
+		{"POST", "/api/admin/address_book_collection_rule/create", regola + `AMICO}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book_collection_rule/create", regola + `AMICO}`, true, erroreDiSistema},
+		{"POST", "/api/admin/address_book_collection_rule/create", regola + `999999}`, false, nonTrovato},
+		{"POST", "/api/admin/my/address_book_collection_rule/create", regola + `999999}`, false, nonTrovato},
+	})
 }
