@@ -207,11 +207,14 @@ func (us *UserService) CheckUserEnable(u *model.User) bool {
 // Create 创建
 func (us *UserService) Create(u *model.User) error {
 	// The initial username should be formatted, and the username should be unique
-	if us.IsUsernameExists(u.Username) {
+	esiste, err := us.IsUsernameExists(u.Username)
+	if err != nil {
+		return diSistema(err)
+	}
+	if esiste {
 		return errors.New("UsernameExists")
 	}
 	u.Username = us.formatUsername(u.Username)
-	var err error
 	u.Password, err = utils.EncryptPassword(u.Password)
 	if err != nil {
 		return err
@@ -412,7 +415,10 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (*
 	// Il nome libero si cerca prima della transazione: la ricerca passa da DB
 	// e, con LDAP acceso, dalla rete, e con una connessione sola DB
 	// aspetterebbe per sempre la connessione della transazione.
-	usernameUnique := us.GenerateUsernameByOauth(username)
+	usernameUnique, err := us.GenerateUsernameByOauth(username)
+	if err != nil {
+		return nil, err
+	}
 	user := &model.User{
 		Username: usernameUnique,
 		GroupId:  1,
@@ -434,12 +440,17 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (*
 	return user, nil
 }
 
-// GenerateUsernameByOauth 生成用户名
-func (us *UserService) GenerateUsernameByOauth(name string) string {
-	for us.IsUsernameExists(name) {
+// GenerateUsernameByOauth restituisce name o, se e' preso, name con cifre in
+// coda finche' non e' libero. Se non si sa se un nome e' preso si ferma, con
+// l'errore.
+func (us *UserService) GenerateUsernameByOauth(name string) (string, error) {
+	for {
+		preso, err := us.IsUsernameExists(name)
+		if err != nil || !preso {
+			return name, err
+		}
 		name += strconv.Itoa(rand.Intn(10)) //nolint:gosec // G404: una cifra in coda a un nome gia' preso, non un segreto
 	}
-	return name
 }
 
 // UserThirdsByUserId restituisce le associazioni ai provider dell'utente
@@ -581,15 +592,23 @@ func (us *UserService) VerifyJWT(token string) (uint, error) {
 	return Jwt.ParseToken(token)
 }
 
-// IsUsernameExists 判断用户名是否存在, it will check the internal database and LDAP(if enabled)
-func (us *UserService) IsUsernameExists(username string) bool {
-	return us.IsUsernameExistsLocal(username) || AllService.LdapService.IsUsernameExists(username)
+// IsUsernameExists dice se il nome username e' preso, nel database o, con
+// LDAP acceso, nella directory.
+func (us *UserService) IsUsernameExists(username string) (bool, error) {
+	locale, err := us.IsUsernameExistsLocal(username)
+	if err != nil {
+		return false, err
+	}
+	return locale || AllService.LdapService.IsUsernameExists(username), nil
 }
 
-func (us *UserService) IsUsernameExistsLocal(username string) bool {
-	u := &model.User{}
-	DB.Where("username = ?", username).First(u)
-	return u.Id != 0
+// IsUsernameExistsLocal dice se nel database c'e' un utente di nome username.
+func (us *UserService) IsUsernameExistsLocal(username string) (bool, error) {
+	_, err := us.InfoByUsername(username)
+	if errors.Is(err, ErrNotFound) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 func (us *UserService) IsEmailExistsLdap(email string) bool {
