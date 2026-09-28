@@ -342,3 +342,13 @@ other = "Informazioni sul dispositivo"
 description = "The device does not match the one registered with this ID."
 one = "Il dispositivo non corrisponde a quello registrato."
 other = "Il dispositivo non corrisponde a quello registrato."
+
+[PeerId]
+description = "Field name: PC ID."
+one = "ID del PC"
+other = "ID del PC"
+
+[PeerIdExists]
+description = "Another PC already has this ID."
+one = "Un altro PC ha già questo ID."
+other = "Un altro PC ha già questo ID."

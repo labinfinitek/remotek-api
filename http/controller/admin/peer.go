@@ -60,6 +60,9 @@ func (ct *Peer) Create(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
+	if idUsato(c, f) {
+		return
+	}
 	p := f.ToPeer()
 	err := service.AllService.PeerService.Create(p)
 	if err != nil {
@@ -67,6 +70,22 @@ func (ct *Peer) Create(c *gin.Context) {
 		return
 	}
 	response.Success(c, nil)
+}
+
+// idUsato risponde PeerIdExists, o SystemError se non si legge, e
+// restituisce true se l'ID del modulo f e' gia' di un altro PC: un ID ha un
+// PC solo, perche' il legame ID-uuid sia di un dispositivo solo.
+func idUsato(c *gin.Context, f *admin.PeerForm) bool {
+	usato, err := service.AllService.PeerService.IdUsato(f.Id, f.RowId)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return true
+	}
+	if usato {
+		response.Fail(c, 101, response.TranslateMsg(c, "PeerIdExists"))
+		return true
+	}
+	return false
 }
 
 // List 列表
@@ -150,6 +169,9 @@ func (ct *Peer) Update(c *gin.Context) {
 	errList := global.Validator.ValidStruct(c, f)
 	if len(errList) > 0 {
 		response.Fail(c, 101, errList[0])
+		return
+	}
+	if idUsato(c, f) {
 		return
 	}
 	u := f.ToPeer()

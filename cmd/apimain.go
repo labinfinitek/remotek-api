@@ -196,6 +196,7 @@ func InitGlobal() {
 		global.Logger.Fatalf("migrazione del database non riuscita, al riavvio si ripete: %v", err)
 	}
 	DatabaseAutoUpdate()
+	indiceUnicoDispositivi()
 	avvisaProviderNonSupportati()
 }
 
@@ -251,6 +252,28 @@ func togliVincoloDispositivi() error {
 	}
 	global.Logger.Info("tolta da peers la chiave esterna fk_peers_user delle versioni di upstream fino al 2024-10-14")
 	return nil
+}
+
+// indiceUnicoDispositivi crea all'avvio l'indice unico su peers.id, se non
+// c'e' e peers non ha ID doppi (PeerService.CreaIndiceIdUnico). Non sta nel tag
+// del modello: AutoMigrate fallirebbe su un database con doppioni, e Migrate
+// fermerebbe l'avvio. Con doppioni scrive un error col loro numero, senza
+// ID, uuid o nomi, e l'avvio continua; il passo si ripete a ogni avvio
+// finche' l'indice non c'e'. Nessuna riga si cancella: quali tenere lo
+// decide chi usa il pannello. Anche un errore del database va nel log e
+// lascia andare avanti l'avvio senza l'indice, come prima.
+func indiceUnicoDispositivi() {
+	creato, doppi, err := service.AllService.PeerService.CreaIndiceIdUnico()
+	switch {
+	case err != nil:
+		global.Logger.Errorf("indice unico %s non creato, l'avvio continua: %v", service.IndiceIdUnico, err)
+	case doppi > 0:
+		global.Logger.Errorf("peers ha %d ID di PC su piu' righe: l'indice unico %s non si crea e un ID doppio "+
+			"si lega al dispositivo della prima riga. Dal pannello, in Dispositivi, cerca ogni ID doppio e cancella le righe "+
+			"in piu' (anche quelle con ID vuoto); al prossimo avvio l'indice si crea", doppi, service.IndiceIdUnico)
+	case creato:
+		global.Logger.Infof("creato l'indice unico %s: un ID di PC compare una volta sola in peers", service.IndiceIdUnico)
+	}
 }
 
 func DatabaseAutoUpdate() {
