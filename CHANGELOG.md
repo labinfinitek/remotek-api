@@ -115,6 +115,14 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   tag, modifica e cancellazione (amministrazione e sezione dell'utente), e
   il dettaglio di un tag, rispondono "Errore di sistema." con l'errore nel
   log, invece di "Elemento non trovato.".
+- Rotte autenticate del client e del pannello: se il database non legge il
+  token di sessione o il suo utente, il client riceve 500 "Errore di
+  sistema." e il pannello "Errore di sistema." (code 101), con l'errore nel
+  log. Prima il client riceveva 401 e il pannello code 403, che per tutti e
+  due sono un logout: un errore del database faceva uscire il tecnico. Un
+  token che non c'e', scaduto o di un utente disabilitato ha le risposte di
+  prima. Anche la configurazione del pannello (`/api/admin/config/admin`)
+  con un token risponde "Errore di sistema." invece del solo titolo.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

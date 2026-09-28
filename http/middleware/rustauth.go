@@ -1,9 +1,13 @@
 package middleware
 
 import (
+	"errors"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/lejianwen/rustdesk-api/v2/global"
+	"github.com/lejianwen/rustdesk-api/v2/http/response"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 )
 
@@ -44,11 +48,19 @@ func RustAuth() gin.HandlerFunc {
 			}
 		}
 
-		user, ut := service.AllService.UserService.InfoByAccessToken(token)
-		if user.Id == 0 {
+		user, ut, err := service.AllService.UserService.InfoByAccessToken(token)
+		if errors.Is(err, service.ErrNotFound) {
 			c.JSON(401, gin.H{
 				"error": "Unauthorized",
 			})
+			c.Abort()
+			return
+		}
+		if err != nil {
+			// Ne' 401 ne' 400, che per il client 1.4.9 sono un logout (su
+			// /api/currentUser anche il 400, user_model.dart:81-82): un
+			// errore del database non fa uscire il tecnico.
+			response.ErrorStatusErr(c, http.StatusInternalServerError, "SystemError", err)
 			c.Abort()
 			return
 		}

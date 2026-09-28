@@ -60,6 +60,12 @@ func ErrorErr(c *gin.Context, id string, err error) {
 	Error(c, messaggioPer(c, id, err))
 }
 
+// ErrorStatusErr risponde come ErrorErr, ma con lo stato status: serve dove
+// per il client il 400 vuol dire altro, come il logout su /api/currentUser.
+func ErrorStatusErr(c *gin.Context, status int, id string, err error) {
+	c.JSON(status, ErrorResponse{Error: messaggioPer(c, id, err)})
+}
+
 // FailErr risponde come Fail, col codice code, con il messaggio che ErrorErr
 // sceglie per id ed err; anche qui il testo di err va solo nel log.
 func FailErr(c *gin.Context, code int, id string, err error) {

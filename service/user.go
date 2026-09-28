@@ -56,19 +56,22 @@ func (us *UserService) InfoByUsernamePassword(username, password string) *model.
 	return u
 }
 
-// InfoByAccessToken 根据accesstoken取用户信息
-func (us *UserService) InfoByAccessToken(token string) (*model.User, *model.UserToken) {
-	u := &model.User{}
+// InfoByAccessToken restituisce l'utente del token di sessione token e il
+// token; ErrNotFound se il token non c'e' o e' scaduto, o se il suo utente
+// non c'e' piu'.
+func (us *UserService) InfoByAccessToken(token string) (*model.User, *model.UserToken, error) {
 	ut := &model.UserToken{}
-	DB.Where("token = ?", token).First(ut)
-	if ut.Id == 0 {
-		return u, ut
+	if err := DB.Where("token = ?", token).First(ut).Error; err != nil {
+		return nil, nil, fmt.Errorf("token di sessione: %w", nonTrovato(err))
 	}
 	if ut.ExpiredAt < time.Now().Unix() {
-		return u, ut
+		return nil, nil, fmt.Errorf("token di sessione %d scaduto: %w", ut.Id, ErrNotFound)
 	}
-	DB.Where("id = ?", ut.UserId).First(u)
-	return u, ut
+	u := &model.User{}
+	if err := DB.Where("id = ?", ut.UserId).First(u).Error; err != nil {
+		return nil, nil, fmt.Errorf("utente %d del token di sessione: %w", ut.UserId, nonTrovato(err))
+	}
+	return u, ut, nil
 }
 
 // fonteCasuale e' la fonte dei token di sessione; i test la sostituiscono
