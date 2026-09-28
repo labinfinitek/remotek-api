@@ -313,6 +313,43 @@ func TestCallbackOidcLetturaFallita(t *testing.T) {
 	}
 }
 
+// TestSysinfoUltimoLoginNonLetto prova sul router vero /api/sysinfo, senza
+// autenticazione, quando il database non legge il registro degli accessi:
+// la risposta resta SYSINFO_UPDATED (golden sysinfo) e il dispositivo si
+// salva senza utente, come prima, ma l'errore va nel log, dove prima non
+// arrivava. Senza ostacoli il dispositivo prende l'utente dell'ultimo login.
+func TestSysinfoUltimoLoginNonLetto(t *testing.T) {
+	for _, rifiuta := range []bool{false, true} {
+		t.Run("registro non letto "+strconv.FormatBool(rifiuta), func(t *testing.T) {
+			g, utente, registro := pannello(t, false)
+			if err := service.DB.AutoMigrate(&model.LoginLog{}, &model.Peer{}); err != nil {
+				t.Fatal(err)
+			}
+			crea(t, &model.LoginLog{UserId: utente.Id, Uuid: "dXVpZA==", DeviceId: "999000111"})
+			atteso := utente.Id
+			if rifiuta {
+				rifiutaLetture(t, "login_logs", "")
+				atteso = 0
+			}
+
+			rec := richiesta(g, "POST", "/api/sysinfo", "", `{"id":"999000111","uuid":"dXVpZA==","hostname":"PC-COLLAUDO","os":"windows","version":"1.4.9"}`)
+			if rec.Code != 200 || rec.Body.String() != "SYSINFO_UPDATED" {
+				t.Errorf("POST /api/sysinfo: %d %s, attesi 200 e SYSINFO_UPDATED", rec.Code, rec.Body)
+			}
+			var proprietario uint
+			if err := service.DB.Raw("SELECT user_id FROM peers WHERE id = '999000111'").Scan(&proprietario).Error; err != nil {
+				t.Fatal(err)
+			}
+			if proprietario != atteso {
+				t.Errorf("dispositivo salvato con l'utente %d, atteso %d", proprietario, atteso)
+			}
+			if nelLog := registro.String(); rifiuta && (!strings.Contains(nelLog, "POST /api/sysinfo: ") || !strings.Contains(nelLog, "lettura rifiutata dal test")) {
+				t.Errorf("POST /api/sysinfo, nel log mancano rotta o errore:\n%s", nelLog)
+			}
+		})
+	}
+}
+
 // rifiutaElenchi fa fallire nel database dei servizi le letture senza WHERE
 // della tabella tabella, come l'elenco di tutti gli utenti, che
 // rifiutaLetture non ferma; le altre riescono.

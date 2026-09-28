@@ -444,11 +444,14 @@ func (us *UserService) UserThirdInfo(userId uint, op string) *model.UserThird {
 	return ut
 }
 
-// FindLatestUserIdFromLoginLogByUuid 根据uuid和设备id查找最后登录的用户id
-func (us *UserService) FindLatestUserIdFromLoginLogByUuid(uuid string, deviceId string) uint {
+// FindLatestUserIdFromLoginLogByUuid restituisce l'utente dell'ultimo login
+// del dispositivo uuid con id deviceId; ErrNotFound se non ce n'e'.
+func (us *UserService) FindLatestUserIdFromLoginLogByUuid(uuid string, deviceId string) (uint, error) {
 	llog := &model.LoginLog{}
-	DB.Where("uuid = ? and device_id = ?", uuid, deviceId).Order("id desc").First(llog)
-	return llog.UserId
+	if err := DB.Where("uuid = ? and device_id = ?", uuid, deviceId).Order("id desc").First(llog).Error; err != nil {
+		return 0, fmt.Errorf("ultimo login del dispositivo: %w", nonTrovato(err))
+	}
+	return llog.UserId, nil
 }
 
 // IsPasswordEmptyById 根据用户id判断密码是否为空，主要用于第三方登录的自动注册

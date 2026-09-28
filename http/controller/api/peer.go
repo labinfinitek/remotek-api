@@ -1,12 +1,14 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 
+	"github.com/lejianwen/rustdesk-api/v2/global"
 	requestform "github.com/lejianwen/rustdesk-api/v2/http/request/api"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
 	"github.com/lejianwen/rustdesk-api/v2/service"
@@ -36,7 +38,7 @@ func (p *Peer) SysInfo(c *gin.Context) {
 	pe := service.AllService.PeerService.FindById(f.Id)
 	if pe.RowId == 0 {
 		pe = f.ToPeer()
-		pe.UserId = service.AllService.UserService.FindLatestUserIdFromLoginLogByUuid(pe.Uuid, pe.Id)
+		pe.UserId = ultimoUtente(c, pe.Uuid, pe.Id)
 		err = service.AllService.PeerService.Create(pe)
 		if err != nil {
 			response.ErrorErr(c, "OperationFailed", err)
@@ -44,7 +46,7 @@ func (p *Peer) SysInfo(c *gin.Context) {
 		}
 	} else {
 		if pe.UserId == 0 {
-			pe.UserId = service.AllService.UserService.FindLatestUserIdFromLoginLogByUuid(pe.Uuid, pe.Id)
+			pe.UserId = ultimoUtente(c, pe.Uuid, pe.Id)
 		}
 		fpe.RowId = pe.RowId
 		fpe.UserId = pe.UserId
@@ -58,6 +60,17 @@ func (p *Peer) SysInfo(c *gin.Context) {
 	// ID_NOT_FOUND 下次心跳会上传
 	// 直接响应文本
 	c.String(http.StatusOK, "SYSINFO_UPDATED")
+}
+
+// ultimoUtente restituisce l'utente dell'ultimo login del dispositivo, 0 se
+// non ce n'e'. Un errore del database va nel log e vale 0: il dispositivo si
+// salva senza utente, come prima, e la risposta non cambia.
+func ultimoUtente(c *gin.Context, uuid, id string) uint {
+	userId, err := service.AllService.UserService.FindLatestUserIdFromLoginLogByUuid(uuid, id)
+	if err != nil && !errors.Is(err, service.ErrNotFound) {
+		global.Logger.Warnf("%s %s: dispositivo salvato senza utente: %v", c.Request.Method, c.FullPath(), err)
+	}
+	return userId
 }
 
 // SysInfoVer restituisce la versione dell'API e l'ora di avvio.

@@ -157,6 +157,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   pannello si salvava lo stesso, anche per un account gia' associato a un
   altro utente, e il login con l'autoregistrazione spenta rimandava ad
   associare l'account.
+- `/api/sysinfo`: se il database non legge l'ultimo login del dispositivo,
+  l'errore va nel log a livello warn, con metodo e rotta; il dispositivo si
+  salva senza utente e la risposta resta `SYSINFO_UPDATED`, come prima.
+  Prima l'errore si perdeva.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,
