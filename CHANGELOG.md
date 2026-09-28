@@ -7,6 +7,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 ## [Non rilasciato]
 
 ### Corretto
+- Rubriche condivise del client (`/api/ab/shared/profiles`): una rubrica
+  condivisa il cui proprietario non c'e' piu' nel database (dati rimasti
+  orfani prima della cancellazione a cascata degli utenti) si salta, con
+  una riga di warn nel log, e le altre restano nella risposta. Prima la
+  rotta andava in panic e rispondeva 500, e il client 1.4.9 toglieva
+  dall'elenco tutte le rubriche condivise dell'utente.
 - Cancellazione in blocco dei dispositivi dal pannello
   (`/api/admin/peer/batchDelete`): se gli uuid dei dispositivi non si
   leggono dal database non cancella niente e risponde "Operazione non
