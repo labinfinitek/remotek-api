@@ -11,18 +11,24 @@ import (
 type AuditService struct {
 }
 
-func (as *AuditService) AuditConnList(page, pageSize uint, where func(tx *gorm.DB)) (res *model.AuditConnList) {
-	res = &model.AuditConnList{}
+// AuditConnList restituisce la pagina page di pageSize connessioni
+// dell'audit, filtrate da where se non e' nil.
+func (as *AuditService) AuditConnList(page, pageSize uint, where func(tx *gorm.DB)) (*model.AuditConnList, error) {
+	res := &model.AuditConnList{}
 	res.Page = int64(page)
 	res.PageSize = int64(pageSize)
 	tx := DB.Model(&model.AuditConn{})
 	if where != nil {
 		where(tx)
 	}
-	tx.Count(&res.Total)
+	if err := tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio delle connessioni dell'audit: %w", err)
+	}
 	tx.Scopes(Paginate(page, pageSize))
-	tx.Find(&res.AuditConns)
-	return
+	if err := tx.Find(&res.AuditConns).Error; err != nil {
+		return nil, fmt.Errorf("connessioni dell'audit: %w", err)
+	}
+	return res, nil
 }
 
 // CreateAuditConn 创建
@@ -49,33 +55,43 @@ func (as *AuditService) InfoByPeerIdAndConnId(peerId string, connId int64) (*mod
 	return res, nil
 }
 
-// ConnInfoById restituisce la connessione id, vuota se non la legge.
-func (as *AuditService) ConnInfoById(id uint) (res *model.AuditConn) {
-	res = &model.AuditConn{}
-	DB.Where("id = ?", id).First(res)
-	return
+// ConnInfoById restituisce la connessione id; ErrNotFound se non c'e'.
+func (as *AuditService) ConnInfoById(id uint) (*model.AuditConn, error) {
+	res := &model.AuditConn{}
+	if err := DB.Where("id = ?", id).First(res).Error; err != nil {
+		return nil, fmt.Errorf("connessione dell'audit %d: %w", id, nonTrovato(err))
+	}
+	return res, nil
 }
 
-// FileInfoById restituisce il trasferimento di file id, vuoto se non lo
-// legge.
-func (as *AuditService) FileInfoById(id uint) (res *model.AuditFile) {
-	res = &model.AuditFile{}
-	DB.Where("id = ?", id).First(res)
-	return
+// FileInfoById restituisce il trasferimento di file id; ErrNotFound se non
+// c'e'.
+func (as *AuditService) FileInfoById(id uint) (*model.AuditFile, error) {
+	res := &model.AuditFile{}
+	if err := DB.Where("id = ?", id).First(res).Error; err != nil {
+		return nil, fmt.Errorf("trasferimento di file %d: %w", id, nonTrovato(err))
+	}
+	return res, nil
 }
 
-func (as *AuditService) AuditFileList(page, pageSize uint, where func(tx *gorm.DB)) (res *model.AuditFileList) {
-	res = &model.AuditFileList{}
+// AuditFileList restituisce la pagina page di pageSize trasferimenti di file
+// dell'audit, filtrati da where se non e' nil.
+func (as *AuditService) AuditFileList(page, pageSize uint, where func(tx *gorm.DB)) (*model.AuditFileList, error) {
+	res := &model.AuditFileList{}
 	res.Page = int64(page)
 	res.PageSize = int64(pageSize)
 	tx := DB.Model(&model.AuditFile{})
 	if where != nil {
 		where(tx)
 	}
-	tx.Count(&res.Total)
+	if err := tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio dei trasferimenti di file: %w", err)
+	}
 	tx.Scopes(Paginate(page, pageSize))
-	tx.Find(&res.AuditFiles)
-	return
+	if err := tx.Find(&res.AuditFiles).Error; err != nil {
+		return nil, fmt.Errorf("trasferimenti di file: %w", err)
+	}
+	return res, nil
 }
 
 // CreateAuditFile salva il trasferimento di file u.

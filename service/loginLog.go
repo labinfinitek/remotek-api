@@ -1,6 +1,8 @@
 package service
 
 import (
+	"fmt"
+
 	"gorm.io/gorm"
 
 	"github.com/lejianwen/rustdesk-api/v2/model"
@@ -9,25 +11,34 @@ import (
 type LoginLogService struct {
 }
 
-// InfoById 根据用户id取用户信息
-func (us *LoginLogService) InfoById(id uint) *model.LoginLog {
+// InfoById restituisce la voce id del registro dei login; ErrNotFound se non
+// c'e'.
+func (us *LoginLogService) InfoById(id uint) (*model.LoginLog, error) {
 	u := &model.LoginLog{}
-	DB.Where("id = ?", id).First(u)
-	return u
+	if err := DB.Where("id = ?", id).First(u).Error; err != nil {
+		return nil, fmt.Errorf("voce %d del registro dei login: %w", id, nonTrovato(err))
+	}
+	return u, nil
 }
 
-func (us *LoginLogService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.LoginLogList) {
-	res = &model.LoginLogList{}
+// List restituisce la pagina page di pageSize voci del registro dei login,
+// filtrate da where se non e' nil.
+func (us *LoginLogService) List(page, pageSize uint, where func(tx *gorm.DB)) (*model.LoginLogList, error) {
+	res := &model.LoginLogList{}
 	res.Page = int64(page)
 	res.PageSize = int64(pageSize)
 	tx := DB.Model(&model.LoginLog{})
 	if where != nil {
 		where(tx)
 	}
-	tx.Count(&res.Total)
+	if err := tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio del registro dei login: %w", err)
+	}
 	tx.Scopes(Paginate(page, pageSize))
-	tx.Find(&res.LoginLogs)
-	return
+	if err := tx.Find(&res.LoginLogs).Error; err != nil {
+		return nil, fmt.Errorf("registro dei login: %w", err)
+	}
+	return res, nil
 }
 
 // Create 创建
