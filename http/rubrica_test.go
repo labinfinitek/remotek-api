@@ -111,6 +111,58 @@ func TestRubricaLetturaFallita(t *testing.T) {
 	}
 }
 
+// TestRubricheCondiviseProprietarioTolto prova sul router vero che
+// POST /api/ab/shared/profiles, se una rubrica condivisa non ha piu' il suo
+// proprietario (dati rimasti orfani, tolto con una Exec e non con
+// UserService.Delete, che cancellerebbe anche la regola), salta quella
+// rubrica con una riga di warn nel log e risponde 200 con le altre. Prima
+// andava in panic e rispondeva 500: il client 1.4.9 toglieva dall'elenco
+// tutte le rubriche condivise.
+func TestRubricheCondiviseProprietarioTolto(t *testing.T) {
+	_, registro, invia, _ := rubricheDiProva(t, model.ShareAddressBookRuleRuleRead)
+	var utente, orfana model.AddressBookCollection
+	err := service.DB.Raw("SELECT * FROM address_book_collections WHERE name = 'ufficio'").Scan(&utente).Error
+	if err == nil {
+		err = service.DB.Raw("SELECT * FROM address_book_collections WHERE name = 'condivisa'").Scan(&orfana).Error
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondo := &model.User{Username: "secondo", GroupId: 1, Status: model.COMMON_STATUS_ENABLE}
+	crea(t, secondo)
+	altra := &model.AddressBookCollection{UserId: secondo.Id, Name: "altra"}
+	crea(t, altra)
+	crea(t, &model.AddressBookCollectionRule{UserId: secondo.Id, CollectionId: altra.Id, Rule: model.ShareAddressBookRuleRuleRead,
+		Type: model.ShareAddressBookRuleTypePersonal, ToId: utente.UserId})
+	if err := service.DB.Exec("DELETE FROM users WHERE id = ?", orfana.UserId).Error; err != nil {
+		t.Fatal(err)
+	}
+	registro.Reset()
+
+	rec := invia("POST", "/api/ab/shared/profiles", "")
+	var corpo struct {
+		Total *int `json:"total"`
+		Data  []struct {
+			Guid, Name, Owner string
+			Rule              int
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &corpo); rec.Code != 200 || err != nil || corpo.Total == nil {
+		t.Fatalf("POST /api/ab/shared/profiles con una rubrica orfana: %d %s, atteso 200 con total e data", rec.Code, rec.Body)
+	}
+	var nomi []string
+	for _, r := range corpo.Data {
+		nomi = append(nomi, r.Name+" "+r.Owner)
+	}
+	if got, want := strings.Join(nomi, ", "), "ufficio prova, altra secondo"; got != want {
+		t.Errorf("rubriche nella risposta: %q, attese %q", got, want)
+	}
+	riga := fmt.Sprintf("POST /api/ab/shared/profiles: rubrica %d saltata, il proprietario %d non c'e'", orfana.Id, orfana.UserId)
+	if nelLog := registro.String(); !strings.Contains(nelLog, "level=warning") || !strings.Contains(nelLog, riga) {
+		t.Errorf("nel log manca il warn %q:\n%s", riga, nelLog)
+	}
+}
+
 // TestPannelloRubricaLetturaFallita prova sul router vero che gli elenchi
 // della rubrica del pannello (voci, rubriche, regole di condivisione e tag,
 // dell'amministrazione e della sezione dell'utente) e il cambio dei tag di
