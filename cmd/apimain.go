@@ -136,6 +136,9 @@ func InitGlobal() {
 	for _, a := range global.Config.Ldap.Avvisi() {
 		global.Logger.Warn(a)
 	}
+	for _, a := range global.Config.Rustdesk.Avvisi() {
+		global.Logger.Warn(a)
+	}
 
 	// gorm: solo SQLite (A3). Un altro tipo, per esempio mysql di
 	// un'installazione vecchia, ferma l'avvio prima che si crei

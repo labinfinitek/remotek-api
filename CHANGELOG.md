@@ -72,6 +72,14 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   `ldaps://`. Nel `conf/config.yaml` d'esempio `bind-password` e' vuota.
 
 ### Corretto
+- File d'esempio `conf/config.yaml`: `rustdesk.id-server`,
+  `rustdesk.relay-server` e `rustdesk.api-server` sono vuoti, da
+  configurare, invece di `192.168.1.66:21116`, `192.168.1.66:21117` e
+  `http://127.0.0.1:21114` di upstream; chi usa il file cosi' com'e' vede
+  nel pannello i campi vuoti invece di un indirizzo sbagliato. All'avvio un
+  warn per `id-server` vuoto (un client senza server ID usa i server
+  pubblici di RustDesk) e uno per `api-server` vuoto (login OIDC e
+  `webauth` senza host); si impostano con `RUSTDESK_API_RUSTDESK_*`.
 - Pannello, comandi del server: la modifica di un comando salvato riesce.
   Il pannello la manda a `/api/admin/rustdesk/cmdUpdate`, che non era
   registrata e rispondeva 404; ora c'e', solo per gli amministratori come
