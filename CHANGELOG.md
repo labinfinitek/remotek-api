@@ -21,6 +21,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   pannello (rustdesk-api-web `3998c2a`) non ha una colonna per la nota.
 
 ### Sicurezza
+- Pannello, "le mie rubriche" (`/api/admin/my/address_book_collection/update`):
+  la rubrica resta di chi la modifica, e lo `user_id` nel corpo non conta.
+  Prima un utente del pannello non amministratore poteva passare una sua
+  rubrica, con le voci dentro, a un altro utente, che se la trovava tra le
+  sue rubriche nel client.
 - Pannello, "i miei dispositivi" e "i miei login"
   (`/api/admin/my/peer/list`, `/api/admin/my/login_log/list`): l'uuid dei
   dispositivi resta vuoto. Dal legame ID-uuid (REM-2026-002) l'uuid autorizza
