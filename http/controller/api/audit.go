@@ -35,9 +35,11 @@ func (a *Audit) AuditConn(c *gin.Context) {
 		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
-	if af.Uuid == "" {
-		// La nota durante la sessione arriva senza uuid ne' conn_id e non
-		// scrive niente, come prima; e' un altro compito.
+	if af.Uuid == "" && af.Action == "" && af.ConnId == 0 {
+		// La nota durante la sessione (golden audit-conn-nota: id,
+		// session_id e note, senza uuid, azione ne' conn_id) non scrive
+		// niente, come prima; e' un altro compito. Ogni altra richiesta
+		// senza uuid passa da dalDispositivo, che la scarta con un warn.
 		response.Success(c, "")
 		return
 	}

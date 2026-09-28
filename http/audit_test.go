@@ -104,6 +104,7 @@ func TestAuditDaAltri(t *testing.T) {
 		salvato            bool // 999000111 e' un PC salvato con uuidSalvato
 	}{
 		{"connessione nuova, ID sconosciuto", "/api/audit/conn", `{"action":"new","conn_id":8,"id":"999000111","ip":"192.0.2.10","session_id":1,"uuid":"` + uuidSalvato + `"}`, false},
+		{"connessione nuova, senza uuid", "/api/audit/conn", `{"action":"new","conn_id":8,"id":"999000111","ip":"192.0.2.10","session_id":1,"uuid":""}`, true},
 		{"connessione nuova, uuid diverso", "/api/audit/conn", `{"action":"new","conn_id":8,"id":"999000111","ip":"192.0.2.10","session_id":1,"uuid":"` + uuidAltro + `"}`, true},
 		{"connessione chiusa, uuid diverso", "/api/audit/conn", `{"action":"close","conn_id":7,"id":"999000111","session_id":1,"uuid":"` + uuidAltro + `"}`, true},
 		{"connessione autenticata, uuid diverso", "/api/audit/conn", `{"conn_id":7,"id":"999000111","peer":["999000222","intruso"],"session_id":1,"type":0,"uuid":"` + uuidAltro + `"}`, true},
@@ -134,6 +135,37 @@ func TestAuditDaAltri(t *testing.T) {
 				t.Errorf("audit_files ha %d righe, attese 0", n)
 			}
 			senzaUuid(t, registro, tc.rotta)
+		})
+	}
+}
+
+// TestAuditPcNonLetto prova sul router vero che l'audit mandato dal PC
+// salvato, col suo uuid, non scrive niente se il database non legge il PC:
+// il legame non si puo' controllare. La risposta resta quella dei golden
+// audit-conn-new e audit-file, perche' il client la ignora, e l'errore va
+// nel log con auditNonSalvato. Prima l'audit non leggeva il PC e scriveva.
+func TestAuditPcNonLetto(t *testing.T) {
+	for _, tc := range []struct{ nome, rotta, corpo string }{
+		{"connessione nuova", "/api/audit/conn", `{"action":"new","conn_id":8,"id":"999000111","ip":"192.0.2.10","session_id":1,"uuid":"` + uuidSalvato + `"}`},
+		{"file", "/api/audit/file", `{"conn_id":7,"id":"999000111","info":"{}","is_file":false,"path":"C:\\prova","peer_id":"999000222","type":0,"uuid":"` + uuidSalvato + `"}`},
+	} {
+		t.Run(tc.nome, func(t *testing.T) {
+			g, registro := dispositiviDiProva(t, &model.Peer{Id: "999000111", Uuid: uuidSalvato})
+			rifiutaLetture(t, "peers", "")
+
+			rec := richiesta(g, "POST", tc.rotta, "", tc.corpo)
+			if got, want := rec.Body.String(), `{"code":0,"message":"success","data":""}`; rec.Code != 200 || got != want {
+				t.Errorf("POST %s: %d %s, attesi 200 e %s", tc.rotta, rec.Code, got, want)
+			}
+			for _, tabella := range []string{"audit_conns", "audit_files"} {
+				if n := righe(t, tabella); n != 0 {
+					t.Errorf("%s ha %d righe, attese 0", tabella, n)
+				}
+			}
+			nelLog := registro.String()
+			if !strings.Contains(nelLog, "level=error") || !strings.Contains(nelLog, "POST "+tc.rotta+": audit non salvato") || !strings.Contains(nelLog, "lettura rifiutata dal test") {
+				t.Errorf("POST %s, nel log manca l'errore con rotta:\n%s", tc.rotta, nelLog)
+			}
 		})
 	}
 }
