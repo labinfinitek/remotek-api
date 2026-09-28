@@ -223,6 +223,17 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   gruppi di dispositivi rispondono "Errore di sistema.", con l'errore nel
   log. Prima dicevano "Elemento non trovato." o davano un elenco vuoto.
   Una riga che non c'e' ha la risposta di prima.
+- Audit delle connessioni (`/api/audit/conn`): se il database non legge la
+  connessione da chiudere o da annotare, l'errore va nel log. Prima
+  valeva "connessione mai vista" e l'orario di chiusura o la nota si
+  perdevano senza traccia. La risposta al client non cambia.
+- Pannello, audit, registro dei login e comandi del server: se il
+  database non li legge, gli elenchi (connessioni e file dell'audit,
+  registro dei login, propri login, comandi del server), le
+  cancellazioni e il dettaglio rispondono "Errore di sistema.", con
+  l'errore nel log. Prima gli elenchi erano vuoti (quello dei comandi con
+  i soli comandi di sistema) e le cancellazioni dicevano "Elemento non
+  trovato.". Una riga che non c'e' ha la risposta di prima.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

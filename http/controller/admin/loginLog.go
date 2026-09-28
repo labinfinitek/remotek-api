@@ -30,12 +30,12 @@ type LoginLog struct {
 func (ct *LoginLog) Detail(c *gin.Context) {
 	id := c.Param("id")
 	iid, _ := strconv.Atoi(id)
-	u := service.AllService.LoginLogService.InfoById(uint(iid))
-	if u.Id > 0 {
+	u, err := service.AllService.LoginLogService.InfoById(uint(iid))
+	if err == nil {
 		response.Success(c, u)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.FailErr(c, 101, "SystemError", err)
 }
 
 // List 列表
@@ -57,12 +57,16 @@ func (ct *LoginLog) List(c *gin.Context) {
 		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
-	res := service.AllService.LoginLogService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
+	res, err := service.AllService.LoginLogService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
 		if query.UserId > 0 {
 			tx.Where("user_id = ?", query.UserId)
 		}
 		tx.Order("id desc")
 	})
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	response.Success(c, res)
 }
 
@@ -89,12 +93,12 @@ func (ct *LoginLog) Delete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	l := service.AllService.LoginLogService.InfoById(f.Id)
-	if l.Id == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	l, err := service.AllService.LoginLogService.InfoById(f.Id)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
-	err := service.AllService.LoginLogService.Delete(l)
+	err = service.AllService.LoginLogService.Delete(l)
 	if err == nil {
 		response.Success(c, nil)
 		return

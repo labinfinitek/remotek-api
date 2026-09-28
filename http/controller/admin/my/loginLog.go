@@ -34,10 +34,14 @@ func (ct *LoginLog) List(c *gin.Context) {
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
-	res := service.AllService.LoginLogService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
+	res, err := service.AllService.LoginLogService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
 		tx.Where("user_id = ? and is_deleted = ?", u.Id, model.IsDeletedNo)
 		tx.Order("id desc")
 	})
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	response.Success(c, res)
 }
 
@@ -64,8 +68,12 @@ func (ct *LoginLog) Delete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	l := service.AllService.LoginLogService.InfoById(f.Id)
-	if l.Id == 0 || l.IsDeleted == model.IsDeletedYes {
+	l, err := service.AllService.LoginLogService.InfoById(f.Id)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
+	if l.IsDeleted == model.IsDeletedYes {
 		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
 		return
 	}
@@ -74,7 +82,7 @@ func (ct *LoginLog) Delete(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
 		return
 	}
-	err := service.AllService.LoginLogService.SoftDelete(l)
+	err = service.AllService.LoginLogService.SoftDelete(l)
 	if err == nil {
 		response.Success(c, nil)
 		return

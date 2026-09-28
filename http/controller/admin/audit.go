@@ -34,7 +34,7 @@ func (a *Audit) ConnList(c *gin.Context) {
 		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
-	res := service.AllService.AuditService.AuditConnList(query.Page, query.PageSize, func(tx *gorm.DB) {
+	res, err := service.AllService.AuditService.AuditConnList(query.Page, query.PageSize, func(tx *gorm.DB) {
 		if query.PeerId != "" {
 			tx.Where("peer_id like ?", "%"+query.PeerId+"%")
 		}
@@ -43,6 +43,10 @@ func (a *Audit) ConnList(c *gin.Context) {
 		}
 		tx.Order("id desc")
 	})
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	response.Success(c, res)
 }
 
@@ -69,8 +73,8 @@ func (a *Audit) ConnDelete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	l := service.AllService.AuditService.ConnInfoById(f.Id)
-	if l.Id > 0 {
+	l, err := service.AllService.AuditService.ConnInfoById(f.Id)
+	if err == nil {
 		err := service.AllService.AuditService.DeleteAuditConn(l)
 		if err == nil {
 			response.Success(c, nil)
@@ -79,7 +83,7 @@ func (a *Audit) ConnDelete(c *gin.Context) {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.FailErr(c, 101, "SystemError", err)
 }
 
 // BatchConnDelete 删除
@@ -132,7 +136,7 @@ func (a *Audit) FileList(c *gin.Context) {
 		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
-	res := service.AllService.AuditService.AuditFileList(query.Page, query.PageSize, func(tx *gorm.DB) {
+	res, err := service.AllService.AuditService.AuditFileList(query.Page, query.PageSize, func(tx *gorm.DB) {
 		if query.PeerId != "" {
 			tx.Where("peer_id like ?", "%"+query.PeerId+"%")
 		}
@@ -141,6 +145,10 @@ func (a *Audit) FileList(c *gin.Context) {
 		}
 		tx.Order("id desc")
 	})
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	response.Success(c, res)
 }
 
@@ -167,8 +175,8 @@ func (a *Audit) FileDelete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	l := service.AllService.AuditService.FileInfoById(f.Id)
-	if l.Id > 0 {
+	l, err := service.AllService.AuditService.FileInfoById(f.Id)
+	if err == nil {
 		err := service.AllService.AuditService.DeleteAuditFile(l)
 		if err == nil {
 			response.Success(c, nil)
@@ -177,7 +185,7 @@ func (a *Audit) FileDelete(c *gin.Context) {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.FailErr(c, 101, "SystemError", err)
 }
 
 // BatchFileDelete 删除

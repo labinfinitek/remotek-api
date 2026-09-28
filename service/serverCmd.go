@@ -12,22 +12,29 @@ import (
 type ServerCmdService struct{}
 
 // List restituisce la pagina page dei comandi del server.
-func (is *ServerCmdService) List(page, pageSize uint) (res *model.ServerCmdList) {
-	res = &model.ServerCmdList{}
+func (is *ServerCmdService) List(page, pageSize uint) (*model.ServerCmdList, error) {
+	res := &model.ServerCmdList{}
 	res.Page = int64(page)
 	res.PageSize = int64(pageSize)
 	tx := DB.Model(&model.ServerCmd{})
-	tx.Count(&res.Total)
+	if err := tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio dei comandi del server: %w", err)
+	}
 	tx.Scopes(Paginate(page, pageSize))
-	tx.Find(&res.ServerCmds)
-	return
+	if err := tx.Find(&res.ServerCmds).Error; err != nil {
+		return nil, fmt.Errorf("comandi del server: %w", err)
+	}
+	return res, nil
 }
 
-// Info restituisce la voce id dei comandi del server, vuota se non la legge.
-func (is *ServerCmdService) Info(id uint) *model.ServerCmd {
+// Info restituisce la voce id dei comandi del server; ErrNotFound se non
+// c'e'.
+func (is *ServerCmdService) Info(id uint) (*model.ServerCmd, error) {
 	u := &model.ServerCmd{}
-	DB.Where("id = ?", id).First(u)
-	return u
+	if err := DB.Where("id = ?", id).First(u).Error; err != nil {
+		return nil, fmt.Errorf("voce %d dei comandi del server: %w", id, nonTrovato(err))
+	}
+	return u, nil
 }
 
 // Delete cancella la voce u dei comandi del server.

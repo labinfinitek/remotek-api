@@ -25,7 +25,11 @@ func (r *Rustdesk) CmdList(c *gin.Context) {
 		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
-	res := service.AllService.ServerCmdService.List(q.Page, 9999)
+	res, err := service.AllService.ServerCmdService.List(q.Page, 9999)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	// 在列表前添加系统命令
 	list := make([]*model.ServerCmd, 0)
 	list = append(list, model.SysIdServerCmds...)
@@ -46,13 +50,13 @@ func (r *Rustdesk) CmdDelete(c *gin.Context) {
 		return
 	}
 
-	ex := service.AllService.ServerCmdService.Info(f.Id)
-	if ex.Id == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	ex, err := service.AllService.ServerCmdService.Info(f.Id)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 
-	err := service.AllService.ServerCmdService.Delete(ex)
+	err = service.AllService.ServerCmdService.Delete(ex)
 	if err != nil {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
@@ -89,9 +93,8 @@ func (r *Rustdesk) CmdUpdate(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	ex := service.AllService.ServerCmdService.Info(f.Id)
-	if ex.Id == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	if _, err := service.AllService.ServerCmdService.Info(f.Id); err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 	err := service.AllService.ServerCmdService.Update(f)
