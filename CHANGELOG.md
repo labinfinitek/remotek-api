@@ -171,6 +171,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   e la pagina del callback dice "Autorizzazione OAuth non riuscita.", e la
   creazione risponde "Errore di sistema.", con l'errore nel log; nessun
   utente nasce. Prima la lettura fallita valeva "nome libero".
+- Pannello, token di sessione (`/api/admin/user_token`): se il database non
+  li legge, l'elenco e la cancellazione rispondono "Errore di sistema." con
+  l'errore nel log. Prima l'elenco era vuoto e la cancellazione diceva
+  "Elemento non trovato.".
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

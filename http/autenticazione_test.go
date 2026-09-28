@@ -566,3 +566,75 @@ func TestNomeUtenteNonLetto(t *testing.T) {
 		}
 	})
 }
+
+// statoOauth descrive con Raw, che rifiutaLetture non ferma, provider OAuth,
+// associazioni e token di sessione.
+func statoOauth(t *testing.T) string {
+	t.Helper()
+	var provider, associazioni, token []string
+	err := service.DB.Raw("SELECT op FROM oauths ORDER BY id").Scan(&provider).Error
+	if err == nil {
+		err = service.DB.Raw("SELECT user_id || ' ' || op FROM user_thirds ORDER BY id").Scan(&associazioni).Error
+	}
+	if err == nil {
+		err = service.DB.Raw("SELECT token FROM user_tokens ORDER BY id").Scan(&token).Error
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	return strings.Join(provider, ",") + "; " + strings.Join(associazioni, ",") + "; " + strings.Join(token, ",")
+}
+
+// TestPannelloLettureAuth prova sul router vero le letture del modulo auth
+// che servono solo il pannello, dall'amministratore: i token di sessione. Se
+// il database non li legge le rotte rispondono code 101 "Errore di
+// sistema.", con l'errore nel log, e non cambiano niente. Prima l'elenco era
+// vuoto e la cancellazione diceva "Elemento non trovato.". Un token che non
+// c'e' ha la risposta di prima.
+func TestPannelloLettureAuth(t *testing.T) {
+	const erroreDiSistema = `{"code":101,"message":"Errore di sistema.","data":null}`
+	const nonTrovato = `{"code":101,"message":"Elemento non trovato.","data":null}`
+	for _, tc := range []struct {
+		metodo, rotta, corpo string // PROVIDER e TOKEN diventano gli id
+		tabella, dove        string // le letture rifiutate: tutte quelle senza WHERE se dove e' "elenco"
+		risposta             string
+	}{
+		{"GET", "/api/admin/user_token/list?user_id=1", "", "user_tokens", "user_id", erroreDiSistema},
+		{"POST", "/api/admin/user_token/delete", `{"id":TOKEN}`, "user_tokens", "id = ?", erroreDiSistema},
+		{"POST", "/api/admin/user_token/delete", `{"id":999999}`, "", "", nonTrovato},
+	} {
+		t.Run(tc.metodo+" "+tc.rotta+" "+tc.tabella, func(t *testing.T) {
+			g, utente, registro := pannello(t, true)
+			provider := &model.Oauth{Op: "aziendale", OauthType: model.OauthTypeOidc, ClientId: "id", ClientSecret: "segreto", Issuer: providerOidc(t)}
+			crea(t, provider)
+			crea(t, &model.UserThird{UserId: utente.Id, Op: "aziendale", OauthType: model.OauthTypeOidc, OauthUser: model.OauthUser{OpenId: "sub-1"}})
+			token := &model.UserToken{UserId: utente.Id, Token: "token-da-cancellare", ExpiredAt: time.Now().Add(time.Hour).Unix()}
+			crea(t, token)
+			id := func(n uint) string { return strconv.FormatUint(uint64(n), 10) }
+			sostituisci := strings.NewReplacer("PROVIDER", id(provider.Id), "TOKEN", id(token.Id))
+			prima := statoOauth(t)
+			switch tc.dove {
+			case "":
+			case "elenco":
+				rifiutaElenchi(t, tc.tabella)
+			default:
+				rifiutaLetture(t, tc.tabella, tc.dove)
+			}
+
+			rec := richiesta(g, tc.metodo, sostituisci.Replace(tc.rotta), "", sostituisci.Replace(tc.corpo))
+			if got := rec.Body.String(); rec.Code != 200 || got != tc.risposta {
+				t.Errorf("%s %s: stato %d\n got  %s\n want %s", tc.metodo, tc.rotta, rec.Code, got, tc.risposta)
+			}
+			if tc.dove == "" {
+				return
+			}
+			if dopo := statoOauth(t); dopo != prima {
+				t.Errorf("%s %s ha cambiato il database:\n prima %s\n dopo  %s", tc.metodo, tc.rotta, prima, dopo)
+			}
+			percorso, _, _ := strings.Cut(strings.Replace(tc.rotta, "/PROVIDER", "/:id", 1), "?")
+			if nelLog := registro.String(); !strings.Contains(nelLog, tc.metodo+" "+percorso+": ") || !strings.Contains(nelLog, "lettura rifiutata dal test") {
+				t.Errorf("%s %s, nel log mancano rotta o errore:\n%s", tc.metodo, tc.rotta, nelLog)
+			}
+		})
+	}
+}

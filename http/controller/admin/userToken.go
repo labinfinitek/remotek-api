@@ -33,12 +33,16 @@ func (ct *UserToken) List(c *gin.Context) {
 		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
-	res := service.AllService.UserService.TokenList(query.Page, query.PageSize, func(tx *gorm.DB) {
+	res, err := service.AllService.UserService.TokenList(query.Page, query.PageSize, func(tx *gorm.DB) {
 		if query.UserId > 0 {
 			tx.Where("user_id = ?", query.UserId)
 		}
 		tx.Order("id desc")
 	})
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	response.Success(c, res)
 }
 
@@ -65,22 +69,21 @@ func (ct *UserToken) Delete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	l := service.AllService.UserService.TokenInfoById(f.Id)
+	l, err := service.AllService.UserService.TokenInfoById(f.Id)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	u := service.AllService.UserService.CurUser(c)
 	if !service.AllService.UserService.IsAdmin(u) && l.UserId != u.Id {
 		response.Fail(c, 101, response.TranslateMsg(c, "NoAccess"))
 		return
 	}
-	if l.Id > 0 {
-		err := service.AllService.UserService.DeleteToken(l)
-		if err == nil {
-			response.Success(c, nil)
-			return
-		}
+	if err := service.AllService.UserService.DeleteToken(l); err != nil {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.Success(c, nil)
 }
 
 // BatchDelete 批量删除

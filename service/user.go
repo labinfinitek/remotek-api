@@ -515,7 +515,7 @@ func (us *UserService) Register(username string, email string, password string, 
 	return u
 }
 
-func (us *UserService) TokenList(page uint, size uint, f func(tx *gorm.DB)) *model.UserTokenList {
+func (us *UserService) TokenList(page uint, size uint, f func(tx *gorm.DB)) (*model.UserTokenList, error) {
 	res := &model.UserTokenList{}
 	res.Page = int64(page)
 	res.PageSize = int64(size)
@@ -523,16 +523,24 @@ func (us *UserService) TokenList(page uint, size uint, f func(tx *gorm.DB)) *mod
 	if f != nil {
 		f(tx)
 	}
-	tx.Count(&res.Total)
+	if err := tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio dei token di sessione: %w", err)
+	}
 	tx.Scopes(Paginate(page, size))
-	tx.Find(&res.UserTokens)
-	return res
+	if err := tx.Find(&res.UserTokens).Error; err != nil {
+		return nil, fmt.Errorf("token di sessione: %w", err)
+	}
+	return res, nil
 }
 
-func (us *UserService) TokenInfoById(id uint) *model.UserToken {
+// TokenInfoById restituisce il token di sessione id; ErrNotFound se non
+// c'e'.
+func (us *UserService) TokenInfoById(id uint) (*model.UserToken, error) {
 	ut := &model.UserToken{}
-	DB.Where("id = ?", id).First(ut)
-	return ut
+	if err := DB.Where("id = ?", id).First(ut).Error; err != nil {
+		return nil, fmt.Errorf("token di sessione %d: %w", id, nonTrovato(err))
+	}
+	return ut, nil
 }
 
 func (us *UserService) DeleteToken(l *model.UserToken) error {
