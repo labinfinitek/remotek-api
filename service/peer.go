@@ -66,17 +66,22 @@ func (ps *PeerService) EraseUserId(userId uint) error {
 	return DB.Model(&model.Peer{}).Where("user_id = ?", userId).Update("user_id", 0).Error
 }
 
-// ListByUserIds 根据用户id取列表
-func (ps *PeerService) ListByUserIds(userIds []uint, page, pageSize uint) (res *model.PeerList) {
-	res = &model.PeerList{}
+// ListByUserIds restituisce la pagina page di pageSize dispositivi degli
+// utenti userIds.
+func (ps *PeerService) ListByUserIds(userIds []uint, page, pageSize uint) (*model.PeerList, error) {
+	res := &model.PeerList{}
 	res.Page = int64(page)
 	res.PageSize = int64(pageSize)
 	tx := DB.Model(&model.Peer{})
 	tx.Where("user_id in (?)", userIds)
-	tx.Count(&res.Total)
+	if err := tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio dei dispositivi degli utenti: %w", err)
+	}
 	tx.Scopes(Paginate(page, pageSize))
-	tx.Find(&res.Peers)
-	return
+	if err := tx.Find(&res.Peers).Error; err != nil {
+		return nil, fmt.Errorf("dispositivi degli utenti: %w", err)
+	}
+	return res, nil
 }
 
 func (ps *PeerService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.PeerList) {

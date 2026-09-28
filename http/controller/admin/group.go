@@ -28,12 +28,12 @@ type Group struct {
 func (ct *Group) Detail(c *gin.Context) {
 	id := c.Param("id")
 	iid, _ := strconv.Atoi(id)
-	u := service.AllService.GroupService.InfoById(uint(iid))
-	if u.Id > 0 {
+	u, err := service.AllService.GroupService.InfoById(uint(iid))
+	if err == nil {
 		response.Success(c, u)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.FailErr(c, 101, "SystemError", err)
 }
 
 // Create 创建群组
@@ -147,8 +147,8 @@ func (ct *Group) Delete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	u := service.AllService.GroupService.InfoById(f.Id)
-	if u.Id > 0 {
+	u, err := service.AllService.GroupService.InfoById(f.Id)
+	if err == nil {
 		err := service.AllService.GroupService.Delete(u)
 		if err == nil {
 			response.Success(c, nil)
@@ -157,5 +157,5 @@ func (ct *Group) Delete(c *gin.Context) {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.FailErr(c, 101, "SystemError", err)
 }
