@@ -175,6 +175,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   li legge, l'elenco e la cancellazione rispondono "Errore di sistema." con
   l'errore nel log. Prima l'elenco era vuoto e la cancellazione diceva
   "Elemento non trovato.".
+- Pannello, associazioni dell'utente ai provider OAuth: se il database non
+  le legge, l'elenco dei provider dell'utente, l'associazione e lo
+  scollegamento rispondono "Errore di sistema." con l'errore nel log. Prima
+  l'elenco mostrava i provider come non associati, l'associazione partiva
+  anche se c'era gia', e lo scollegamento diceva "Elemento non trovato.".
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

@@ -586,11 +586,13 @@ func statoOauth(t *testing.T) string {
 }
 
 // TestPannelloLettureAuth prova sul router vero le letture del modulo auth
-// che servono solo il pannello, dall'amministratore: i token di sessione. Se
-// il database non li legge le rotte rispondono code 101 "Errore di
-// sistema.", con l'errore nel log, e non cambiano niente. Prima l'elenco era
-// vuoto e la cancellazione diceva "Elemento non trovato.". Un token che non
-// c'e' ha la risposta di prima.
+// che servono solo il pannello, dall'amministratore: token di sessione e
+// associazioni ai provider dell'utente. Se il database non li legge le rotte
+// rispondono code 101 "Errore di sistema.", con l'errore nel log, e non
+// cambiano niente. Prima gli elenchi erano vuoti o senza associazioni,
+// cancellazione e scollegamento dicevano "Elemento non trovato.", e
+// l'associazione partiva come se non ce ne fosse una. Una riga che non c'e'
+// ha la risposta di prima.
 func TestPannelloLettureAuth(t *testing.T) {
 	const erroreDiSistema = `{"code":101,"message":"Errore di sistema.","data":null}`
 	const nonTrovato = `{"code":101,"message":"Elemento non trovato.","data":null}`
@@ -601,7 +603,11 @@ func TestPannelloLettureAuth(t *testing.T) {
 	}{
 		{"GET", "/api/admin/user_token/list?user_id=1", "", "user_tokens", "user_id", erroreDiSistema},
 		{"POST", "/api/admin/user_token/delete", `{"id":TOKEN}`, "user_tokens", "id = ?", erroreDiSistema},
+		{"POST", "/api/admin/user/myOauth", "", "user_thirds", "user_id", erroreDiSistema},
+		{"POST", "/api/admin/oauth/bind", `{"op":"aziendale"}`, "user_thirds", "op", erroreDiSistema},
+		{"POST", "/api/admin/oauth/unbind", `{"op":"aziendale"}`, "user_thirds", "op", erroreDiSistema},
 		{"POST", "/api/admin/user_token/delete", `{"id":999999}`, "", "", nonTrovato},
+		{"POST", "/api/admin/oauth/unbind", `{"op":"altro"}`, "", "", nonTrovato},
 	} {
 		t.Run(tc.metodo+" "+tc.rotta+" "+tc.tabella, func(t *testing.T) {
 			g, utente, registro := pannello(t, true)

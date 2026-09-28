@@ -279,7 +279,11 @@ func (ct *User) ChangeCurPwd(c *gin.Context) {
 func (ct *User) MyOauth(c *gin.Context) {
 	u := service.AllService.UserService.CurUser(c)
 	oal := service.AllService.OauthService.List(1, 100, nil)
-	uts := service.AllService.UserService.UserThirdsByUserId(u.Id)
+	uts, err := service.AllService.UserService.UserThirdsByUserId(u.Id)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	var res []*adResp.UserOauthItem
 	for _, oa := range oal.Oauths {
 		item := &adResp.UserOauthItem{

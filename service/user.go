@@ -455,15 +455,21 @@ func (us *UserService) GenerateUsernameByOauth(name string) (string, error) {
 
 // UserThirdsByUserId restituisce le associazioni ai provider dell'utente
 // userId.
-func (us *UserService) UserThirdsByUserId(userId uint) (res []*model.UserThird) {
-	DB.Where("user_id = ?", userId).Find(&res)
-	return res
+func (us *UserService) UserThirdsByUserId(userId uint) (res []*model.UserThird, err error) {
+	if err = DB.Where("user_id = ?", userId).Find(&res).Error; err != nil {
+		return nil, fmt.Errorf("associazioni ai provider dell'utente %d: %w", userId, err)
+	}
+	return res, nil
 }
 
-func (us *UserService) UserThirdInfo(userId uint, op string) *model.UserThird {
+// UserThirdInfo restituisce l'associazione dell'utente userId al provider
+// op; ErrNotFound se non c'e'.
+func (us *UserService) UserThirdInfo(userId uint, op string) (*model.UserThird, error) {
 	ut := &model.UserThird{}
-	DB.Where("user_id = ? and op = ?", userId, op).First(ut)
-	return ut
+	if err := DB.Where("user_id = ? and op = ?", userId, op).First(ut).Error; err != nil {
+		return nil, fmt.Errorf("associazione dell'utente %d al provider: %w", userId, nonTrovato(err))
+	}
+	return ut, nil
 }
 
 // FindLatestUserIdFromLoginLogByUuid restituisce l'utente dell'ultimo login

@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -42,9 +43,12 @@ func (o *Oauth) ToBind(c *gin.Context) {
 	}
 	u := service.AllService.UserService.CurUser(c)
 
-	utr := service.AllService.UserService.UserThirdInfo(u.Id, f.Op)
-	if utr.Id > 0 {
+	switch _, err := service.AllService.UserService.UserThirdInfo(u.Id, f.Op); {
+	case err == nil:
 		response.Fail(c, 101, response.TranslateMsg(c, "OauthHasBindOtherUser"))
+		return
+	case !errors.Is(err, service.ErrNotFound):
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 
@@ -142,9 +146,8 @@ func (o *Oauth) Unbind(c *gin.Context) {
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
-	utr := service.AllService.UserService.UserThirdInfo(u.Id, f.Op)
-	if utr.Id == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	if _, err := service.AllService.UserService.UserThirdInfo(u.Id, f.Op); err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 	err = service.AllService.OauthService.UnBindOauthUser(u.Id, f.Op)
