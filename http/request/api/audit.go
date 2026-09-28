@@ -14,7 +14,7 @@ type AuditConnForm struct {
 	Id        string   `json:"id"`
 	Peer      []string `json:"peer"`
 	Ip        string   `json:"ip"`
-	SessionId float64  `json:"session_id"`
+	SessionId uint64   `json:"session_id"` // u64 casuale nel client: un float64 lo arrotonda sopra 2^53
 	Type      int      `json:"type"`
 	Uuid      string   `json:"uuid"`
 }
@@ -28,7 +28,7 @@ func (a *AuditConnForm) ToAuditConn() *model.AuditConn {
 			fn = a.Peer[1]
 		}
 	}
-	ssid := strconv.FormatFloat(a.SessionId, 'f', -1, 64)
+	ssid := strconv.FormatUint(a.SessionId, 10)
 	return &model.AuditConn{
 		Action:    a.Action,
 		ConnId:    a.ConnId,

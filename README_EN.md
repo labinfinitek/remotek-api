@@ -256,12 +256,12 @@ Not renamed: the `RUSTDESK_API_` prefix, the `rustdesk:` section, the
   (`ldap.tls-verify` is `true`); for an internal certificate use
   `ldap.tls-ca-file`. At startup a warning flags `ldap://`, which sends
   passwords in clear text, and `ldap.tls-verify: false`.
-- **Devices**: sysinfo and heartbeat come from the client without
+- **Devices**: sysinfo, heartbeat and audit come from the client without
   login; the API accepts them only from the registered device. The first
   sysinfo of an ID binds the ID to the PC's uuid (on Windows the
   MachineGuid); a PC created from the panel binds to the first uuid that
   arrives. From then on, with another uuid, sysinfo answers "The device
-  does not match the registered one." and heartbeat writes
+  does not match the registered one." and heartbeat and audit write
   nothing; the log keeps a warning with the route and the PC's ID. If the
   PC really changes uuid (Windows reinstalled, hardware replaced) the
   binding is reopened by deleting the PC from the panel: the next sysinfo

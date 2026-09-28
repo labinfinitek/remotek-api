@@ -259,12 +259,12 @@ rotte `/api/admin/rustdesk/*`, il module path Go.
   (`ldap.tls-verify` vale `true`); per un certificato interno usa
   `ldap.tls-ca-file`. All'avvio un warn segnala `ldap://`, che manda le
   password in chiaro, e `ldap.tls-verify: false`.
-- **Dispositivi**: sysinfo e heartbeat arrivano dal client senza
+- **Dispositivi**: sysinfo, heartbeat e audit arrivano dal client senza
   login; l'API li accetta solo dal dispositivo registrato. Il primo sysinfo
   di un ID lega l'ID all'uuid del PC (su Windows il MachineGuid); un PC
   creato dal pannello si lega al primo uuid che arriva. Da allora, con un
   altro uuid, sysinfo risponde "Il dispositivo non corrisponde a quello
-  registrato." e heartbeat non scrive niente; nel log resta un
+  registrato." e heartbeat e audit non scrivono niente; nel log resta un
   warn con rotta e ID del PC. Se il PC cambia davvero uuid (reinstallazione
   di Windows, sostituzione) il legame si riapre cancellando il PC dal
   pannello: il sysinfo successivo lo ricrea col nuovo uuid.

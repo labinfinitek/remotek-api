@@ -35,9 +35,16 @@ func (a *Audit) AuditConn(c *gin.Context) {
 		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
-	/*ttt := &gin.H{}
-	c.ShouldBindBodyWith(ttt, binding.JSON)
-	fmt.Println(ttt)*/
+	if af.Uuid == "" {
+		// La nota durante la sessione arriva senza uuid ne' conn_id e non
+		// scrive niente, come prima; e' un altro compito.
+		response.Success(c, "")
+		return
+	}
+	if !dalDispositivo(c, af.Id, af.Uuid) {
+		response.Success(c, "")
+		return
+	}
 	ac := af.ToAuditConn()
 	switch af.Action {
 	case model.AuditActionNew:
@@ -82,6 +89,27 @@ func connessioneAudit(c *gin.Context, peerId string, connId int64) (*model.Audit
 	return ex, err
 }
 
+// dalDispositivo dice se l'audit arriva dal PC salvato con l'ID id e
+// l'uuid uuid, l'unico che puo' scriverne il registro (REM-2026-002).
+// Altrimenti scrive nel log perche' l'audit e' scartato: warn con rotta e
+// ID, niente uuid, o l'errore del database con auditNonSalvato. Al client
+// va successo lo stesso: ignora la risposta.
+func dalDispositivo(c *gin.Context, id, uuid string) bool {
+	_, esito, err := service.AllService.PeerService.Riconosci(id, uuid)
+	switch {
+	case err != nil:
+		auditNonSalvato(c, err)
+		return false
+	case esito == service.PcSconosciuto:
+		dispositivoDiverso(c, id, "nessun PC salvato con questo ID")
+		return false
+	case esito == service.UuidDiverso:
+		dispositivoDiverso(c, id, "uuid diverso da quello salvato")
+		return false
+	}
+	return true
+}
+
 // auditNonSalvato scrive nel log, a livello error, l'audit che il database
 // non ha salvato. Al client va successo lo stesso: ignora la risposta, e un
 // errore non gli farebbe rimandare niente.
@@ -106,9 +134,10 @@ func (a *Audit) AuditFile(c *gin.Context) {
 		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
-	// ttt := &gin.H{}
-	// c.ShouldBindBodyWith(ttt, binding.JSON)
-	// fmt.Println(ttt)
+	if !dalDispositivo(c, aff.Id, aff.Uuid) {
+		response.Success(c, "")
+		return
+	}
 	af := aff.ToAuditFile()
 	if err := service.AllService.AuditService.CreateAuditFile(af); err != nil {
 		auditNonSalvato(c, err)
