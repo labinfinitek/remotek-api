@@ -243,7 +243,13 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 			return
 		}
 		if user == nil {
-			oauthConfig := oauthService.InfoByOp(op)
+			oauthConfig, err := oauthService.InfoByOp(op)
+			if err != nil {
+				c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
+					"message": response.IDErr(c, "OauthFailed", err),
+				})
+				return
+			}
 			if !*oauthConfig.AutoRegister {
 				// c.String(http.StatusInternalServerError, "还未绑定用户，请先绑定")
 				oauthCache.UpdateFromOauthUser(oauthUser)

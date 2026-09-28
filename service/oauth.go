@@ -148,10 +148,13 @@ func (os *OauthService) FetchOidcProvider(issuer string) (*oidc.Provider, error)
 
 // GetOauthConfig retrieves the OAuth2 configuration based on the provider name
 func (os *OauthService) GetOauthConfig(op string) (oauthInfo *model.Oauth, oauthConfig *oauth2.Config, provider *oidc.Provider, err error) {
-	oauthInfo = os.InfoByOp(op)
+	oauthInfo, err = os.InfoByOp(op)
+	if err != nil && !errors.Is(err, ErrNotFound) {
+		return nil, nil, nil, err
+	}
 	// Un provider che non e' oidc, come github, google e linuxdo tolti (A3),
 	// resta nel database ma al login risponde come un op che non esiste.
-	if oauthInfo.Id == 0 || oauthInfo.OauthType != model.OauthTypeOidc || oauthInfo.ClientId == "" || oauthInfo.ClientSecret == "" {
+	if err != nil || oauthInfo.OauthType != model.OauthTypeOidc || oauthInfo.ClientId == "" || oauthInfo.ClientSecret == "" {
 		return nil, nil, nil, errors.New("ConfigNotFound")
 	}
 	oauthConfig = &oauth2.Config{
@@ -328,18 +331,22 @@ func (os *OauthService) DeleteUserByUserId(userId uint) error {
 	return DB.Where("user_id = ?", userId).Delete(&model.UserThird{}).Error
 }
 
-// InfoById 根据id获取Oauth信息
-func (os *OauthService) InfoById(id uint) *model.Oauth {
+// InfoById restituisce il provider OAuth id; ErrNotFound se non c'e'.
+func (os *OauthService) InfoById(id uint) (*model.Oauth, error) {
 	oauthInfo := &model.Oauth{}
-	DB.Where("id = ?", id).First(oauthInfo)
-	return oauthInfo
+	if err := DB.Where("id = ?", id).First(oauthInfo).Error; err != nil {
+		return nil, fmt.Errorf("provider OAuth %d: %w", id, nonTrovato(err))
+	}
+	return oauthInfo, nil
 }
 
-// InfoByOp 根据op获取Oauth信息
-func (os *OauthService) InfoByOp(op string) *model.Oauth {
+// InfoByOp restituisce il provider OAuth op; ErrNotFound se non c'e'.
+func (os *OauthService) InfoByOp(op string) (*model.Oauth, error) {
 	oauthInfo := &model.Oauth{}
-	DB.Where("op = ?", op).First(oauthInfo)
-	return oauthInfo
+	if err := DB.Where("op = ?", op).First(oauthInfo).Error; err != nil {
+		return nil, fmt.Errorf("provider OAuth %q: %w", op, nonTrovato(err))
+	}
+	return oauthInfo, nil
 }
 
 // Helper function to construct scopes
@@ -351,7 +358,7 @@ func (os *OauthService) constructScopes(scopes string) []string {
 	return strings.Split(scopes, ",")
 }
 
-func (os *OauthService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.OauthList) {
+func (os *OauthService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.OauthList, err error) {
 	res = &model.OauthList{}
 	res.Page = int64(page)
 	res.PageSize = int64(pageSize)
@@ -359,10 +366,14 @@ func (os *OauthService) List(page, pageSize uint, where func(tx *gorm.DB)) (res 
 	if where != nil {
 		where(tx)
 	}
-	tx.Count(&res.Total)
+	if err = tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio dei provider OAuth: %w", err)
+	}
 	tx.Scopes(Paginate(page, pageSize))
-	tx.Find(&res.Oauths)
-	return
+	if err = tx.Find(&res.Oauths).Error; err != nil {
+		return nil, fmt.Errorf("provider OAuth: %w", err)
+	}
+	return res, nil
 }
 
 // GetTypeByOp 根据op获取OauthType

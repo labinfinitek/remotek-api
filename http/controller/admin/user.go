@@ -278,7 +278,11 @@ func (ct *User) ChangeCurPwd(c *gin.Context) {
 // @Security token
 func (ct *User) MyOauth(c *gin.Context) {
 	u := service.AllService.UserService.CurUser(c)
-	oal := service.AllService.OauthService.List(1, 100, nil)
+	oal, err := service.AllService.OauthService.List(1, 100, nil)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	uts, err := service.AllService.UserService.UserThirdsByUserId(u.Id)
 	if err != nil {
 		response.FailErr(c, 101, "SystemError", err)
