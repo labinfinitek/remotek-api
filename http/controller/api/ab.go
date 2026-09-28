@@ -457,7 +457,11 @@ func (a *Ab) SharedProfiles(c *gin.Context) {
 	}
 
 	ids := utils.Keys(allUserIds)
-	allUsers := service.AllService.UserService.ListByIds(ids)
+	allUsers, err := service.AllService.UserService.ListByIds(ids)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return
+	}
 	for _, u := range allUsers {
 		allUserIds[u.Id] = u
 	}
@@ -525,15 +529,19 @@ func (a *Ab) CheckGuid(cu *model.User, guid string) (gid, uid, cid uint, err err
 		err = errors.New("ParamsError")
 		return
 	}
-	u := &model.User{}
-	if cu.Id == uid {
-		u = cu
-	} else {
-		u = service.AllService.UserService.InfoById(uid)
-	}
-	if u == nil || u.Id == 0 {
-		err = errors.New("ParamsError")
-		return
+	u := cu
+	if cu.Id != uid {
+		var erru error
+		u, erru = service.AllService.UserService.InfoById(uid)
+		switch {
+		case errors.Is(erru, service.ErrNotFound):
+			err = errors.New("ParamsError")
+			return
+		case erru != nil:
+			// un utente che non si legge non e' un guid sbagliato
+			err = errors.Join(errors.New("SystemError"), erru)
+			return
+		}
 	}
 	if u.GroupId != gid {
 		err = errors.New("ParamsError")

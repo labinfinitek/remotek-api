@@ -114,9 +114,9 @@ func (abcr *AddressBookCollectionRule) CheckForm(u *model.User, t *model.Address
 		if t.ToId == t.UserId {
 			return errors.New("CannotShareToSelf")
 		}
-		tou := service.AllService.UserService.InfoById(t.ToId)
-		if tou.Id == 0 {
-			return errors.New("ItemNotFound")
+		// ErrNotFound ha per testo ItemNotFound, la risposta di prima
+		if _, err := service.AllService.UserService.InfoById(t.ToId); err != nil {
+			return err
 		}
 		// 非管理员不能分享给非本组织用户
 		// if tou.GroupId != u.GroupId {

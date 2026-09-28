@@ -130,6 +130,37 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   (`app.ban-threshold`) bloccavano per 30 minuti l'IP di tecnici con la
   password giusta. Lo stesso con LDAP acceso, quando il database non legge
   l'utente locale di chi la directory ha autenticato.
+- Utenti e dispositivi del gruppo nel client (`/api/users`, `/api/peers`) e
+  rubriche condivise (`/api/ab/shared/profiles`): se il database non legge
+  gli utenti rispondono 400 "Errore di sistema." con l'errore nel log. Prima
+  i primi due rispondevano 200 con l'elenco vuoto, e le rubriche condivise
+  500 senza corpo (un panic). Nel pannello l'elenco degli utenti risponde
+  "Errore di sistema." invece di un elenco vuoto.
+- Utente letto per id: se il database non lo legge, le rotte del client
+  sulla rubrica di un altro utente rispondono 400 "Errore di sistema."
+  invece di "Parametri non validi.", `/api/oidc/auth-query` risponde 400
+  "Errore di sistema." invece di dare al client il token di un utente
+  vuoto, che lo faceva uscire alla prima richiesta, e il callback OIDC
+  dice "Autorizzazione OAuth non riuscita." invece di associare lo stesso
+  l'account o, con l'autoregistrazione spenta, di rimandare ad associarlo
+  di nuovo. Nel pannello dettaglio, cancellazione, cambio della password e
+  modifica di un utente, e le regole di condivisione verso un utente,
+  rispondono "Errore di sistema." invece di "Elemento non trovato." (la
+  modifica andava in panic). L'errore va nel log. Un utente che non c'e'
+  ha le risposte di prima, tranne `/api/oidc/auth-query`, che risponde
+  "Utente non trovato.", e il callback, che dice "Elemento non trovato.":
+  prima davano il token di un utente vuoto e associavano l'account a un
+  utente che non c'e'.
+- Login OIDC: se il database non legge l'associazione dell'account al
+  provider, la pagina del callback dice "Autorizzazione OAuth non
+  riuscita." con l'errore nel log. Prima l'associazione chiesta dal
+  pannello si salvava lo stesso, anche per un account gia' associato a un
+  altro utente, e il login con l'autoregistrazione spenta rimandava ad
+  associare l'account.
+- `/api/sysinfo`: se il database non legge l'ultimo login del dispositivo,
+  l'errore va nel log a livello warn, con metodo e rotta; il dispositivo si
+  salva senza utente e la risposta resta `SYSINFO_UPDATED`, come prima.
+  Prima l'errore si perdeva.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

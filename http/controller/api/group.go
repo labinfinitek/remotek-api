@@ -44,7 +44,11 @@ func (g *Group) Users(c *gin.Context) {
 		userList.Users = append(userList.Users, u)
 		userList.Total = 1
 	} else {
-		userList = service.AllService.UserService.ListByGroupId(u.GroupId, q.Page, q.PageSize)
+		userList, err = service.AllService.UserService.ListByGroupId(u.GroupId, q.Page, q.PageSize)
+		if err != nil {
+			response.ErrorErr(c, "SystemError", err)
+			return
+		}
 	}
 
 	data := make([]*apiResp.UserPayload, 0, len(userList.Users))
@@ -88,7 +92,11 @@ func (g *Group) Peers(c *gin.Context) {
 		// 仅能获取到自己
 		users = append(users, u)
 	} else {
-		users = service.AllService.UserService.ListIdAndNameByGroupId(u.GroupId)
+		users, err = service.AllService.UserService.ListIdAndNameByGroupId(u.GroupId)
+		if err != nil {
+			response.ErrorErr(c, "SystemError", err)
+			return
+		}
 	}
 
 	namesById := make(map[uint]string, len(users))

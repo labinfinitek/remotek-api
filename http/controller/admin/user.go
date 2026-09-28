@@ -32,12 +32,12 @@ type User struct {
 func (ct *User) Detail(c *gin.Context) {
 	id := c.Param("id")
 	iid, _ := strconv.Atoi(id)
-	u := service.AllService.UserService.InfoById(uint(iid))
-	if u.Id > 0 {
+	u, err := service.AllService.UserService.InfoById(uint(iid))
+	if err == nil {
 		response.Success(c, u)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.FailErr(c, 101, "SystemError", err)
 }
 
 // Create 管理员
@@ -90,11 +90,15 @@ func (ct *User) List(c *gin.Context) {
 		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
-	res := service.AllService.UserService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
+	res, err := service.AllService.UserService.List(query.Page, query.PageSize, func(tx *gorm.DB) {
 		if query.Username != "" {
 			tx.Where("username like ?", "%"+query.Username+"%")
 		}
 	})
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	response.Success(c, res)
 }
 
@@ -156,8 +160,8 @@ func (ct *User) Delete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	u := service.AllService.UserService.InfoById(f.Id)
-	if u.Id > 0 {
+	u, err := service.AllService.UserService.InfoById(f.Id)
+	if err == nil {
 		err := service.AllService.UserService.Delete(u)
 		if err == nil {
 			response.Success(c, nil)
@@ -166,7 +170,7 @@ func (ct *User) Delete(c *gin.Context) {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.FailErr(c, 101, "SystemError", err)
 }
 
 // UpdatePassword 修改密码
@@ -191,12 +195,12 @@ func (ct *User) UpdatePassword(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	u := service.AllService.UserService.InfoById(f.Id)
-	if u.Id == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	u, err := service.AllService.UserService.InfoById(f.Id)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
-	err := service.AllService.UserService.UpdatePassword(u, f.Password)
+	err = service.AllService.UserService.UpdatePassword(u, f.Password)
 	if err != nil {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
@@ -295,7 +299,11 @@ func (ct *User) MyOauth(c *gin.Context) {
 // GroupUsers risponde coi gruppi e con gli utenti (i primi 999 e 9999).
 func (ct *User) GroupUsers(c *gin.Context) {
 	aG := service.AllService.GroupService.List(1, 999, nil)
-	aU := service.AllService.UserService.List(1, 9999, nil)
+	aU, err := service.AllService.UserService.List(1, 9999, nil)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	response.Success(c, gin.H{
 		"groups": aG.Groups,
 		"users":  aU.Users,

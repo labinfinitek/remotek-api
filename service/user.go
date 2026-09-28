@@ -21,11 +21,13 @@ import (
 type UserService struct {
 }
 
-// InfoById 根据用户id取用户信息
-func (us *UserService) InfoById(id uint) *model.User {
+// InfoById restituisce l'utente id; ErrNotFound se non c'e'.
+func (us *UserService) InfoById(id uint) (*model.User, error) {
 	u := &model.User{}
-	DB.Where("id = ?", id).First(u)
-	return u
+	if err := DB.Where("id = ?", id).First(u).Error; err != nil {
+		return nil, fmt.Errorf("utente %d: %w", id, nonTrovato(err))
+	}
+	return u, nil
 }
 
 // InfoByUsername restituisce l'utente di nome un; ErrNotFound se non c'e'.
@@ -155,7 +157,7 @@ func (us *UserService) CurUser(c *gin.Context) *model.User {
 	return u
 }
 
-func (us *UserService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.UserList) {
+func (us *UserService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.UserList, err error) {
 	res = &model.UserList{}
 	res.Page = int64(page)
 	res.PageSize = int64(pageSize)
@@ -163,29 +165,38 @@ func (us *UserService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *
 	if where != nil {
 		where(tx)
 	}
-	tx.Count(&res.Total)
+	if err = tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio degli utenti: %w", err)
+	}
 	tx.Scopes(Paginate(page, pageSize))
-	tx.Find(&res.Users)
-	return
+	if err = tx.Find(&res.Users).Error; err != nil {
+		return nil, fmt.Errorf("utenti: %w", err)
+	}
+	return res, nil
 }
 
-func (us *UserService) ListByIds(ids []uint) (res []*model.User) {
-	DB.Where("id in ?", ids).Find(&res)
-	return res
+func (us *UserService) ListByIds(ids []uint) (res []*model.User, err error) {
+	if err = DB.Where("id in ?", ids).Find(&res).Error; err != nil {
+		return nil, fmt.Errorf("utenti per id: %w", err)
+	}
+	return res, nil
 }
 
-// ListByGroupId 根据组id取用户列表
-func (us *UserService) ListByGroupId(groupId, page, pageSize uint) (res *model.UserList) {
-	res = us.List(page, pageSize, func(tx *gorm.DB) {
+// ListByGroupId restituisce la pagina page di pageSize utenti del gruppo
+// groupId.
+func (us *UserService) ListByGroupId(groupId, page, pageSize uint) (*model.UserList, error) {
+	return us.List(page, pageSize, func(tx *gorm.DB) {
 		tx.Where("group_id = ?", groupId)
 	})
-	return
 }
 
-// ListIdAndNameByGroupId 根据组id取用户id和用户名列表
-func (us *UserService) ListIdAndNameByGroupId(groupId uint) (res []*model.User) {
-	DB.Model(&model.User{}).Where("group_id = ?", groupId).Select("id, username").Find(&res)
-	return res
+// ListIdAndNameByGroupId restituisce id e nome degli utenti del gruppo
+// groupId.
+func (us *UserService) ListIdAndNameByGroupId(groupId uint) (res []*model.User, err error) {
+	if err = DB.Model(&model.User{}).Where("group_id = ?", groupId).Select("id, username").Find(&res).Error; err != nil {
+		return nil, fmt.Errorf("utenti del gruppo %d: %w", groupId, err)
+	}
+	return res, nil
 }
 
 // CheckUserEnable 判断用户是否禁用
@@ -264,7 +275,10 @@ func (us *UserService) Delete(u *model.User) error {
 
 // Update 更新
 func (us *UserService) Update(u *model.User) error {
-	currentUser := us.InfoById(u.Id)
+	currentUser, err := us.InfoById(u.Id)
+	if err != nil {
+		return diSistema(err)
+	}
 	// 如果当前用户是管理员并且 IsAdmin 不为空，进行检查
 	if us.IsAdmin(currentUser) {
 		adminCount := us.getAdminUserCount()
@@ -314,17 +328,14 @@ func (us *UserService) RouteNames(u *model.User) []string {
 	return model.UserRouteNames
 }
 
-// InfoByOauthId 根据oauth的name和openId取用户信息
-func (us *UserService) InfoByOauthId(op string, openId string) *model.User {
-	ut := AllService.OauthService.UserThirdInfo(op, openId)
-	if ut.Id == 0 {
-		return nil
+// InfoByOauthId restituisce l'utente dell'associazione all'account openId del
+// provider op; ErrNotFound se non c'e' l'associazione o il suo utente.
+func (us *UserService) InfoByOauthId(op string, openId string) (*model.User, error) {
+	ut, err := AllService.OauthService.UserThirdInfo(op, openId)
+	if err != nil {
+		return nil, err
 	}
-	u := us.InfoById(ut.UserId)
-	if u.Id == 0 {
-		return nil
-	}
-	return u
+	return us.InfoById(ut.UserId)
 }
 
 // RegisterByOauth restituisce l'utente locale di oauthUser, l'utente del
@@ -433,11 +444,14 @@ func (us *UserService) UserThirdInfo(userId uint, op string) *model.UserThird {
 	return ut
 }
 
-// FindLatestUserIdFromLoginLogByUuid 根据uuid和设备id查找最后登录的用户id
-func (us *UserService) FindLatestUserIdFromLoginLogByUuid(uuid string, deviceId string) uint {
+// FindLatestUserIdFromLoginLogByUuid restituisce l'utente dell'ultimo login
+// del dispositivo uuid con id deviceId; ErrNotFound se non ce n'e'.
+func (us *UserService) FindLatestUserIdFromLoginLogByUuid(uuid string, deviceId string) (uint, error) {
 	llog := &model.LoginLog{}
-	DB.Where("uuid = ? and device_id = ?", uuid, deviceId).Order("id desc").First(llog)
-	return llog.UserId
+	if err := DB.Where("uuid = ? and device_id = ?", uuid, deviceId).Order("id desc").First(llog).Error; err != nil {
+		return 0, fmt.Errorf("ultimo login del dispositivo: %w", nonTrovato(err))
+	}
+	return llog.UserId, nil
 }
 
 // IsPasswordEmptyById 根据用户id判断密码是否为空，主要用于第三方登录的自动注册
