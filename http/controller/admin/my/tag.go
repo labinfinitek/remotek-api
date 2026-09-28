@@ -126,7 +126,11 @@ func (ct *Tag) Update(c *gin.Context) {
 	}
 
 	t := f.ToTag()
-	if t.CollectionId > 0 && !service.AllService.AddressBookService.CheckCollectionOwner(t.UserId, t.CollectionId) {
+	switch sua, err := service.AllService.AddressBookService.CheckCollectionOwner(t.UserId, t.CollectionId); {
+	case err != nil:
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	case !sua:
 		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError"))
 		return
 	}

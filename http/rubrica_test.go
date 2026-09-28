@@ -112,8 +112,9 @@ func TestRubricaLetturaFallita(t *testing.T) {
 }
 
 // TestPannelloRubricaLetturaFallita prova sul router vero che gli elenchi
-// della rubrica del pannello (voci, rubriche e tag, dell'amministrazione e
-// della sezione dell'utente) e il cambio dei tag di piu' voci, se il
+// della rubrica del pannello (voci, rubriche, regole di condivisione e tag,
+// dell'amministrazione e della sezione dell'utente) e il cambio dei tag di
+// piu' voci, se il
 // database non legge, rispondono code 101 "Errore di sistema." e scrivono
 // l'errore nel log. Prima gli elenchi rispondevano successo con l'elenco
 // vuoto, e il cambio dei tag "Elemento non trovato.".
@@ -124,12 +125,14 @@ func TestPannelloRubricaLetturaFallita(t *testing.T) {
 		{"POST", "/api/admin/my/address_book/batchUpdateTags", `{"row_ids":[1],"tags":["casa"]}`, "address_books"},
 		{"GET", "/api/admin/address_book_collection/list?user_id=1", "", "address_book_collections"},
 		{"GET", "/api/admin/my/address_book_collection/list", "", "address_book_collections"},
+		{"GET", "/api/admin/address_book_collection_rule/list?user_id=1", "", "address_book_collection_rules"},
+		{"GET", "/api/admin/my/address_book_collection_rule/list", "", "address_book_collection_rules"},
 		{"GET", "/api/admin/tag/list?user_id=1", "", "tags"},
 		{"GET", "/api/admin/my/tag/list", "", "tags"},
 	} {
 		t.Run(tc.rotta, func(t *testing.T) {
 			g, utente, registro := pannello(t, true)
-			if err := service.DB.AutoMigrate(&model.AddressBook{}, &model.AddressBookCollection{}); err != nil {
+			if err := service.DB.AutoMigrate(&model.AddressBook{}, &model.AddressBookCollection{}, &model.AddressBookCollectionRule{}); err != nil {
 				t.Fatal(err)
 			}
 			crea(t, &model.AddressBook{Id: "999000111", UserId: utente.Id})
@@ -550,4 +553,164 @@ func TestPannelloCollezioneNonLetta(t *testing.T) {
 			}
 		})
 	}
+}
+
+// pannelloDiProva prepara il router vero del pannello con l'amministratore di
+// pannello: la sua rubrica ufficio, condivisa in lettura con l'utente amico
+// dalla regola REGOLA, e nella rubrica personale la voce 999000111 e il tag
+// lavoro; amico ha la rubrica altrui. Restituisce il router, il registro del
+// log e un Replacer che mette gli id di UTENTE, AMICO, RUBRICA (ufficio),
+// ALTRUI, REGOLA, VOCE e TAG.
+func pannelloDiProva(t *testing.T) (*gin.Engine, *strings.Builder, *strings.Replacer) {
+	t.Helper()
+	g, utente, registro := pannello(t, true)
+	if err := service.DB.AutoMigrate(&model.AddressBook{}, &model.AddressBookCollection{}, &model.AddressBookCollectionRule{}); err != nil {
+		t.Fatal(err)
+	}
+	amico := &model.User{Username: "amico", Status: model.COMMON_STATUS_ENABLE}
+	crea(t, amico)
+	ufficio := &model.AddressBookCollection{UserId: utente.Id, Name: "ufficio"}
+	crea(t, ufficio)
+	altrui := &model.AddressBookCollection{UserId: amico.Id, Name: "altrui"}
+	crea(t, altrui)
+	regola := &model.AddressBookCollectionRule{UserId: utente.Id, CollectionId: ufficio.Id, Rule: model.ShareAddressBookRuleRuleRead,
+		Type: model.ShareAddressBookRuleTypePersonal, ToId: amico.Id}
+	crea(t, regola)
+	voce := &model.AddressBook{Id: "999000111", UserId: utente.Id}
+	crea(t, voce)
+	tag := &model.Tag{Name: "lavoro", UserId: utente.Id, Color: 1}
+	crea(t, tag)
+	id := func(n uint) string { return strconv.FormatUint(uint64(n), 10) }
+	return g, registro, strings.NewReplacer("UTENTE", id(utente.Id), "AMICO", id(amico.Id), "RUBRICA", id(ufficio.Id),
+		"ALTRUI", id(altrui.Id), "REGOLA", id(regola.Id), "VOCE", id(voce.RowId), "TAG", id(tag.Id))
+}
+
+// statoDelPannello descrive con Raw, che rifiutaLetture non ferma, voci e tag
+// come statoRubrica, e rubriche e regole di condivisione.
+func statoDelPannello(t *testing.T) string {
+	t.Helper()
+	var rubriche, regole []string
+	err := service.DB.Raw("SELECT name || ' ' || user_id FROM address_book_collections ORDER BY id").Scan(&rubriche).Error
+	if err == nil {
+		err = service.DB.Raw("SELECT collection_id || ' ' || type || ' ' || to_id || ' ' || rule FROM address_book_collection_rules ORDER BY id").Scan(&regole).Error
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	return statoRubrica(t) + fmt.Sprint(", rubriche ", rubriche, ", regole ", regole)
+}
+
+// casoDelPannello e' una richiesta al router di pannelloDiProva, coi
+// segnaposto del suo Replacer in rotta e corpo, e la risposta attesa; con
+// rifiuta, le letture che provaPannello rifiuta non riescono.
+type casoDelPannello struct {
+	metodo, rotta, corpo string
+	rifiuta              bool
+	risposta             string
+}
+
+// provaPannello manda ogni caso a un router nuovo di pannelloDiProva, con le
+// letture della tabella tabella la cui WHERE contiene dove rifiutate se il
+// caso lo chiede, e controlla la risposta. Con le letture rifiutate
+// controlla anche che il database resti com'era e che nel log ci siano la
+// rotta e l'errore.
+func provaPannello(t *testing.T, tabella, dove string, casi []casoDelPannello) {
+	t.Helper()
+	rotta := strings.NewReplacer("/REGOLA", "/:id", "/TAG", "/:id")
+	for _, tc := range casi {
+		caso := ", senza ostacoli"
+		if tc.rifiuta {
+			caso = ", " + tabella + " non lette"
+		}
+		t.Run(tc.metodo+" "+tc.rotta+caso, func(t *testing.T) {
+			g, registro, segnaposto := pannelloDiProva(t)
+			prima := statoDelPannello(t)
+			if tc.rifiuta {
+				rifiutaLetture(t, tabella, dove)
+			}
+			rec := richiesta(g, tc.metodo, segnaposto.Replace(tc.rotta), "", segnaposto.Replace(tc.corpo))
+			if got := rec.Body.String(); rec.Code != 200 || got != tc.risposta {
+				t.Errorf("%s %s: stato %d\n got  %s\n want %s", tc.metodo, tc.rotta, rec.Code, got, tc.risposta)
+			}
+			if !tc.rifiuta {
+				return
+			}
+			if dopo := statoDelPannello(t); dopo != prima {
+				t.Errorf("%s %s ha cambiato il database:\n prima %s\n dopo  %s", tc.metodo, tc.rotta, prima, dopo)
+			}
+			if nelLog := registro.String(); !strings.Contains(nelLog, tc.metodo+" "+rotta.Replace(tc.rotta)+": ") || !strings.Contains(nelLog, "lettura rifiutata dal test") {
+				t.Errorf("%s %s, nel log mancano rotta o errore:\n%s", tc.metodo, tc.rotta, nelLog)
+			}
+		})
+	}
+}
+
+// TestPannelloRegolaNonLetta prova sul router vero le rotte del pannello che
+// leggono una regola di condivisione per id: se il database non la legge
+// rispondono code 101 "Errore di sistema.", con l'errore nel log, e non
+// cambiano niente. Prima rispondevano "Elemento non trovato.". Una regola che
+// non c'e' ha la risposta di prima.
+func TestPannelloRegolaNonLetta(t *testing.T) {
+	const erroreDiSistema = `{"code":101,"message":"Errore di sistema.","data":null}`
+	const nonTrovato = `{"code":101,"message":"Elemento non trovato.","data":null}`
+	const modifica = `{"id":REGOLA,"user_id":UTENTE,"collection_id":RUBRICA,"type":1,"to_id":AMICO,"rule":2}`
+	provaPannello(t, "address_book_collection_rules", "", []casoDelPannello{
+		{"GET", "/api/admin/address_book_collection_rule/detail/REGOLA", "", true, erroreDiSistema},
+		{"POST", "/api/admin/address_book_collection_rule/delete", `{"id":REGOLA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book_collection_rule/update", modifica, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book_collection_rule/delete", `{"id":REGOLA}`, true, erroreDiSistema},
+		{"GET", "/api/admin/address_book_collection_rule/detail/999999", "", false, nonTrovato},
+		{"POST", "/api/admin/address_book_collection_rule/delete", `{"id":999999}`, false, nonTrovato},
+		{"POST", "/api/admin/my/address_book_collection_rule/update", strings.Replace(modifica, "REGOLA", "999999", 1), false, nonTrovato},
+		{"POST", "/api/admin/my/address_book_collection_rule/delete", `{"id":999999}`, false, nonTrovato},
+	})
+}
+
+// TestPannelloRegolaDoppia prova sul router vero le rotte del pannello che
+// creano o cambiano una regola di condivisione, e prima guardano se ce n'e'
+// gia' una con lo stesso tipo, destinatario e rubrica: se il database non la
+// legge rispondono code 101 "Errore di sistema.", con l'errore nel log, e non
+// salvano niente. Prima la lettura fallita valeva "non c'e'" e la regola
+// doppia si salvava. Una regola che c'e' davvero ha la risposta di prima.
+func TestPannelloRegolaDoppia(t *testing.T) {
+	const erroreDiSistema = `{"code":101,"message":"Errore di sistema.","data":null}`
+	const regola = `"user_id":UTENTE,"collection_id":RUBRICA,"type":1,"to_id":AMICO`
+	provaPannello(t, "address_book_collection_rules", "to_id", []casoDelPannello{
+		{"POST", "/api/admin/address_book_collection_rule/create", `{` + regola + `,"rule":2}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book_collection_rule/create", `{` + regola + `,"rule":2}`, true, erroreDiSistema},
+		{"POST", "/api/admin/address_book_collection_rule/update", `{"id":REGOLA,` + regola + `,"rule":2}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book_collection_rule/update", `{"id":REGOLA,` + regola + `,"rule":2}`, true, erroreDiSistema},
+		{"POST", "/api/admin/address_book_collection_rule/create", `{` + regola + `,"rule":2}`, false, `{"code":101,"message":"L'elemento esiste già.","data":null}`},
+		{"POST", "/api/admin/my/address_book_collection_rule/create", `{` + regola + `,"rule":2}`, false, `{"code":101,"message":"L'elemento esiste già.","data":null}`},
+		{"POST", "/api/admin/my/address_book_collection_rule/update", `{"id":REGOLA,` + regola + `,"rule":2}`, false, `{"code":0,"message":"success","data":null}`},
+	})
+}
+
+// TestPannelloProprietarioNonLetto prova sul router vero le rotte del
+// pannello che, prima di mettere una voce, un tag o una regola in una
+// rubrica, guardano se la rubrica e' dell'utente: se il database non la
+// legge rispondono code 101 "Errore di sistema.", con l'errore nel log, e non
+// salvano niente. Prima rispondevano "Parametri non validi.", come a chi
+// sceglie la rubrica di un altro, e l'errore si perdeva. Una rubrica di un
+// altro o che non c'e' ha la risposta di prima.
+func TestPannelloProprietarioNonLetto(t *testing.T) {
+	const erroreDiSistema = `{"code":101,"message":"Errore di sistema.","data":null}`
+	const parametri = `{"code":101,"message":"Parametri non validi.","data":null}`
+	const voce = `"id":"999000111","user_id":UTENTE,"alias":"nuovo","collection_id":`
+	const tag = `{"id":TAG,"name":"lavoro","color":2,"user_id":UTENTE,"collection_id":`
+	const regola = `{"user_id":UTENTE,"type":1,"to_id":AMICO,"rule":2,"collection_id":`
+	provaPannello(t, "address_book_collections", "", []casoDelPannello{
+		{"POST", "/api/admin/address_book/create", `{` + voce + `RUBRICA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/address_book/update", `{"row_id":VOCE,` + voce + `RUBRICA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book/create", `{` + voce + `RUBRICA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book/update", `{"row_id":VOCE,` + voce + `RUBRICA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/tag/update", tag + `RUBRICA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/address_book_collection_rule/create", regola + `RUBRICA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/my/address_book_collection_rule/create", regola + `RUBRICA}`, true, erroreDiSistema},
+		{"POST", "/api/admin/address_book/create", `{` + voce + `ALTRUI}`, false, parametri},
+		{"POST", "/api/admin/my/address_book/update", `{"row_id":VOCE,` + voce + `999999}`, false, parametri},
+		{"POST", "/api/admin/my/tag/update", tag + `ALTRUI}`, false, parametri},
+		{"POST", "/api/admin/address_book_collection_rule/create", regola + `999999}`, false, parametri},
+		{"POST", "/api/admin/my/address_book_collection_rule/create", regola + `ALTRUI}`, false, parametri},
+	})
 }

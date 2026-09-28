@@ -298,35 +298,44 @@ func (s *AddressBookService) DeleteCollection(t *model.AddressBookCollection) er
 	})
 }
 
-func (s *AddressBookService) RuleInfoById(u uint) *model.AddressBookCollectionRule {
+// RuleInfoById restituisce la regola id; ErrNotFound se non c'e'.
+func (s *AddressBookService) RuleInfoById(id uint) (*model.AddressBookCollectionRule, error) {
 	p := &model.AddressBookCollectionRule{}
-	DB.Where("id = ?", u).First(p)
-	return p
+	if err := DB.Where("id = ?", id).First(p).Error; err != nil {
+		return nil, fmt.Errorf("regola %d: %w", id, nonTrovato(err))
+	}
+	return p, nil
 }
-func (s *AddressBookService) RulePersonalInfoByToIdAndCid(toid, cid uint) *model.AddressBookCollectionRule {
-	return s.RuleInfoByToIdAndCid(model.ShareAddressBookRuleTypePersonal, toid, cid)
-}
-func (s *AddressBookService) RuleInfoByToIdAndCid(t int, toid, cid uint) *model.AddressBookCollectionRule {
+
+// RuleInfoByToIdAndCid restituisce la regola di tipo t che condivide la
+// collezione cid con toid, utente o gruppo; ErrNotFound se non c'e'.
+func (s *AddressBookService) RuleInfoByToIdAndCid(t int, toid, cid uint) (*model.AddressBookCollectionRule, error) {
 	p := &model.AddressBookCollectionRule{}
-	DB.Where("type = ? and to_id = ? and collection_id = ?", t, toid, cid).First(p)
-	return p
+	if err := DB.Where("type = ? and to_id = ? and collection_id = ?", t, toid, cid).First(p).Error; err != nil {
+		return nil, fmt.Errorf("regola di tipo %d per %d sulla collezione %d: %w", t, toid, cid, nonTrovato(err))
+	}
+	return p, nil
 }
 func (s *AddressBookService) CreateRule(t *model.AddressBookCollectionRule) error {
 	return DB.Create(t).Error
 }
 
-func (s *AddressBookService) ListRules(page uint, size uint, f func(tx *gorm.DB)) *model.AddressBookCollectionRuleList {
-	res := &model.AddressBookCollectionRuleList{}
+func (s *AddressBookService) ListRules(page uint, size uint, f func(tx *gorm.DB)) (res *model.AddressBookCollectionRuleList, err error) {
+	res = &model.AddressBookCollectionRuleList{}
 	res.Page = int64(page)
 	res.PageSize = int64(size)
 	tx := DB.Model(&model.AddressBookCollectionRule{})
 	if f != nil {
 		f(tx)
 	}
-	tx.Count(&res.Total)
+	if err = tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio delle regole: %w", err)
+	}
 	tx.Scopes(Paginate(page, size))
-	tx.Find(&res.AddressBookCollectionRule)
-	return res
+	if err = tx.Find(&res.AddressBookCollectionRule).Error; err != nil {
+		return nil, fmt.Errorf("regole: %w", err)
+	}
+	return res, nil
 }
 
 func (s *AddressBookService) UpdateRule(t *model.AddressBookCollectionRule) error {
@@ -337,12 +346,22 @@ func (s *AddressBookService) DeleteRule(t *model.AddressBookCollectionRule) erro
 	return DB.Delete(t).Error
 }
 
-// CheckCollectionOwner dice se la collezione cid e' dell'utente uid. Una
-// collezione che non si legge vale come non sua: il pannello rifiuta, ma
-// l'errore non arriva ancora al log.
-func (s *AddressBookService) CheckCollectionOwner(uid uint, cid uint) bool {
+// CheckCollectionOwner dice se la collezione cid e' dell'utente uid. La
+// collezione 0, la rubrica personale, e' di ogni utente; una collezione che
+// non c'e' non e' di nessuno. Se la collezione non si legge restituisce
+// false e l'errore: chi la chiede non la ottiene.
+func (s *AddressBookService) CheckCollectionOwner(uid uint, cid uint) (bool, error) {
+	if cid == 0 {
+		return true, nil
+	}
 	p, err := s.CollectionInfoById(cid)
-	return err == nil && p.UserId == uid
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return false, nil
+	case err != nil:
+		return false, err
+	}
+	return p.UserId == uid, nil
 }
 
 func (s *AddressBookService) BatchUpdateTags(abs []*model.AddressBook, tags []string) error {
