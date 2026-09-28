@@ -72,13 +72,23 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   `ldaps://`. Nel `conf/config.yaml` d'esempio `bind-password` e' vuota.
 
 ### Corretto
+- Un ID di PC compare una volta sola nei dispositivi. All'avvio l'API crea
+  l'indice unico `idx_peers_id_unico` su `peers.id`; il pannello non crea
+  ne' salva un dispositivo senza ID o con l'ID di un altro ("Un altro PC ha
+  già questo ID."). Prima un ID poteva stare su piu' righe, e il legame
+  ID-uuid valeva per la prima. Chi ha ID doppi nel database trova a ogni
+  avvio nel log la riga error `peers ha N ID di PC su piu' righe: l'indice
+  unico idx_peers_id_unico non si crea ...`: l'API parte lo stesso, senza
+  l'indice; dal pannello, in Dispositivi, si cercano gli ID doppi (anche
+  vuoti) e si cancellano le righe in piu', e al riavvio l'indice si crea.
+  Nessuna riga si cancella da sola.
 - Pannello: la modifica di un dispositivo, di un utente, di un provider
   OAuth o di un comando del server salva anche i campi svuotati (alias,
   nome del PC, gruppo del dispositivo; email, nickname, avatar e nota
   dell'utente; issuer e scope del provider; alias, opzione e spiegazione
   del comando). Prima il pannello rispondeva successo ma quei campi
-  restavano com'erano. Non cambiano: ID e uuid del dispositivo mandati vuoti
-  restano quelli di prima, come la password dell'utente e il ruolo se
+  restavano com'erano. Non cambiano: l'uuid del dispositivo mandato vuoto
+  resta quello di prima, come la password dell'utente e il ruolo se
   `is_admin` non c'e'; utente, ultimo contatto e IP del dispositivo non sono
   nel modulo e non si toccano. Il pannello (rustdesk-api-web `3998c2a`)
   manda l'alias del dispositivo solo se l'utente tocca quel campo: se nel

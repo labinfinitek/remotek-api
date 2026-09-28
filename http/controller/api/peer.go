@@ -45,11 +45,15 @@ func (p *Peer) SysInfo(c *gin.Context) {
 	switch {
 	case err != nil:
 		// Un dispositivo che non si legge non e' nuovo: crearlo farebbe un
-		// doppione, perche' peers.id non e' unico. Il client riprova piu' tardi.
+		// doppione su un database senza indice unico su peers.id. Il client
+		// riprova piu' tardi.
 		response.ErrorErr(c, "SystemError", err)
 		return
 	case esito == service.PcSconosciuto:
-		// Il primo sysinfo di un ID crea il PC e lo lega al suo uuid.
+		// Il primo sysinfo di un ID crea il PC e lo lega al suo uuid. Di due
+		// sysinfo insieme di un ID nuovo, quello che crea per secondo trova
+		// l'indice unico e risponde OperationFailed: il client riprova dopo
+		// 120 s e trova il PC.
 		pe = f.ToPeer()
 		pe.UserId = ultimoUtente(c, pe.Uuid, pe.Id)
 		err = service.AllService.PeerService.Create(pe)

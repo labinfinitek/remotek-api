@@ -45,9 +45,10 @@ const (
 // non e' mai lo stesso dispositivo, neanche per un PC senza uuid. Un
 // errore del database torna come errore, con esito 0.
 //
-// Se peers ha piu' righe con lo stesso ID (l'indice non e' unico) vale
-// quella che FindById restituisce, la prima per row_id: le righe doppie
-// sono un altro compito.
+// Con l'indice unico su peers.id, creato all'avvio, un ID ha una riga sola.
+// Su un database vecchio con righe doppie l'indice non c'e' (l'avvio lo
+// scrive nel log) e vale quella che FindById restituisce, la prima per
+// row_id, finche' le altre non si cancellano dal pannello.
 func (ps *PeerService) Riconosci(id, uuid string) (*model.Peer, Riconoscimento, error) {
 	p, err := ps.FindById(id)
 	if errors.Is(err, ErrNotFound) {
@@ -60,6 +61,40 @@ func (ps *PeerService) Riconosci(id, uuid string) (*model.Peer, Riconoscimento, 
 		return p, UuidDiverso, nil
 	}
 	return p, StessoDispositivo, nil
+}
+
+// IndiceIdUnico e' l'indice unico su peers.id: un ID di PC su una riga
+// sola, perche' il legame ID-uuid (Riconosci) sia di un dispositivo solo.
+const IndiceIdUnico = "idx_peers_id_unico"
+
+// CreaIndiceIdUnico crea l'indice IndiceIdUnico se non c'e' e peers non ha ID
+// doppi; creato dice se l'ha creato ora. Se ci sono ID doppi non lo crea e
+// restituisce quanti sono; non cancella righe.
+func (ps *PeerService) CreaIndiceIdUnico() (creato bool, doppi int64, err error) {
+	if DB.Migrator().HasIndex(&model.Peer{}, IndiceIdUnico) {
+		return false, 0, nil
+	}
+	err = DB.Raw("SELECT count(*) FROM (SELECT id FROM peers GROUP BY id HAVING count(*) > 1)").Scan(&doppi).Error
+	if err != nil {
+		return false, 0, fmt.Errorf("conteggio degli ID doppi in peers: %w", err)
+	}
+	if doppi > 0 {
+		return false, doppi, nil
+	}
+	if err := DB.Exec("CREATE UNIQUE INDEX " + IndiceIdUnico + " ON peers(id)").Error; err != nil {
+		return false, 0, fmt.Errorf("indice %s: %w", IndiceIdUnico, err)
+	}
+	return true, 0, nil
+}
+
+// IdUsato dice se un PC diverso da quello con row_id rowId ha l'ID id; per
+// un PC nuovo rowId e' 0.
+func (ps *PeerService) IdUsato(id string, rowId uint) (bool, error) {
+	var n int64
+	if err := DB.Model(&model.Peer{}).Where("id = ? and row_id <> ?", id, rowId).Count(&n).Error; err != nil {
+		return false, fmt.Errorf("ID del dispositivo gia' usato: %w", err)
+	}
+	return n > 0, nil
 }
 
 // InfoByRowId restituisce il dispositivo con row_id id; ErrNotFound se non

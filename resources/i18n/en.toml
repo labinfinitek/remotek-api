@@ -333,3 +333,13 @@ other = "Device info"
 description = "The device does not match the one registered with this ID."
 one = "The device does not match the registered one."
 other = "The device does not match the registered one."
+
+[PeerId]
+description = "Field name: PC ID."
+one = "PC ID"
+other = "PC ID"
+
+[PeerIdExists]
+description = "Another PC already has this ID."
+one = "Another PC already has this ID."
+other = "Another PC already has this ID."
