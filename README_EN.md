@@ -165,9 +165,9 @@ default when the key is missing from the file.
 | `gin.resources-path` | `RUSTDESK_API_GIN_RESOURCES_PATH` | `resources` | directory of panel, languages and templates; without the language files startup stops |
 | `gin.trust-proxy` \* | `RUSTDESK_API_GIN_TRUST_PROXY` | empty | trusted proxy IPs or CIDRs, comma separated; empty = none, `X-Forwarded-For` and `X-Real-IP` ignored. Behind a reverse proxy it must be set, otherwise captcha and ban count every client as the proxy IP. An invalid value stops startup |
 | `gorm.type` | `RUSTDESK_API_GORM_TYPE` | `sqlite` | only `sqlite` (empty is the same); any other value stops startup. The database is `data/rustdeskapi.db` |
-| `rustdesk.id-server` | `RUSTDESK_API_RUSTDESK_ID_SERVER` | example address | `host:21116` of `hbbs`, to be set; shown by the panel |
-| `rustdesk.relay-server` | `RUSTDESK_API_RUSTDESK_RELAY_SERVER` | example address | `host:21117` of `hbbr`, to be set |
-| `rustdesk.api-server` | `RUSTDESK_API_RUSTDESK_API_SERVER` | `http://127.0.0.1:21114` | address of this API as clients and browsers see it; gives the OIDC callback `<api-server>/api/oidc/callback` |
+| `rustdesk.id-server` | `RUSTDESK_API_RUSTDESK_ID_SERVER` | empty | `host:21116` of `hbbs`, to be set; shown by the panel. Empty: a warning at startup; a RustDesk client without an ID server uses RustDesk's public servers |
+| `rustdesk.relay-server` | `RUSTDESK_API_RUSTDESK_RELAY_SERVER` | empty | `host:21117` of `hbbr`, to be set; shown by the panel |
+| `rustdesk.api-server` | `RUSTDESK_API_RUSTDESK_API_SERVER` | empty | address of this API as clients and browsers see it, to be set; shown by the panel and gives the OIDC callback `<api-server>/api/oidc/callback`. Empty: a warning at startup, and OIDC login and `webauth` send to addresses without a host |
 | `rustdesk.key` | `RUSTDESK_API_RUSTDESK_KEY` | empty | public key of `hbbs`; empty = `rustdesk.key-file` is read |
 | `rustdesk.key-file` | `RUSTDESK_API_RUSTDESK_KEY_FILE` | `/data/id_ed25519.pub` | key file; if it cannot be read, the key stays empty without an error |
 | `rustdesk.personal` | `RUSTDESK_API_RUSTDESK_PERSONAL` | `1` | `1` personal address book on, `0` off |
