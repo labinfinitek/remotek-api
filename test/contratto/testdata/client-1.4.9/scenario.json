@@ -14,10 +14,6 @@
       "nome": "non-autenticato"
     },
     {
-      "gruppo": "anonime",
-      "nome": "audit-conn-active-404"
-    },
-    {
       "gruppo": "non-implementate",
       "nome": "audit-alarm-404"
     },
@@ -28,10 +24,6 @@
     {
       "gruppo": "non-implementate",
       "nome": "devices-cli-404"
-    },
-    {
-      "gruppo": "non-implementate",
-      "nome": "audit-nota-guid-404"
     },
     {
       "gruppo": "utente",

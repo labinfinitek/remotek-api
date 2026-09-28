@@ -1,6 +1,8 @@
 package service
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -31,10 +33,17 @@ func (as *AuditService) AuditConnList(page, pageSize uint, where func(tx *gorm.D
 	return res, nil
 }
 
-// CreateAuditConn 创建
+// CreateAuditConn salva la connessione u; a quella nuova (azione "new")
+// da' un guid casuale di 128 bit, che serve alla nota di fine connessione.
 func (as *AuditService) CreateAuditConn(u *model.AuditConn) error {
-	res := DB.Create(u).Error
-	return res
+	if u.Action == model.AuditActionNew && u.Guid == "" {
+		b := make([]byte, 16)
+		if _, err := rand.Read(b); err != nil {
+			return fmt.Errorf("guid della connessione: %w", err)
+		}
+		u.Guid = hex.EncodeToString(b)
+	}
+	return DB.Create(u).Error
 }
 func (as *AuditService) DeleteAuditConn(u *model.AuditConn) error {
 	return DB.Delete(u).Error
@@ -53,6 +62,48 @@ func (as *AuditService) InfoByPeerIdAndConnId(peerId string, connId int64) (*mod
 		return nil, fmt.Errorf("connessione %d del dispositivo %s: %w", connId, peerId, nonTrovato(err))
 	}
 	return res, nil
+}
+
+// NotaDiSessione scrive note sulla connessione piu' recente del dispositivo
+// peerId con quel sessionId; ErrNotFound se non ce n'e' nessuna. Non crea
+// righe.
+func (as *AuditService) NotaDiSessione(peerId, sessionId, note string) error {
+	ex := &model.AuditConn{}
+	if err := DB.Where("peer_id = ? and session_id = ?", peerId, sessionId).Order("id desc").First(ex).Error; err != nil {
+		return fmt.Errorf("connessione della sessione %s del dispositivo %s: %w", sessionId, peerId, nonTrovato(err))
+	}
+	if err := DB.Model(ex).Update("note", note).Error; err != nil {
+		return fmt.Errorf("nota della connessione %d: %w", ex.Id, err)
+	}
+	return nil
+}
+
+// GuidConnessioneAperta restituisce il guid della connessione aperta piu'
+// recente del dispositivo peerId, con quel sessionId e di quel tipo;
+// ErrNotFound se non ce n'e' nessuna.
+func (as *AuditService) GuidConnessioneAperta(peerId, sessionId string, tipo int) (string, error) {
+	ex := &model.AuditConn{}
+	err := DB.Where("peer_id = ? and session_id = ? and type = ? and close_time = 0", peerId, sessionId, tipo).Order("id desc").First(ex).Error
+	if err != nil {
+		return "", fmt.Errorf("connessione aperta della sessione %s del dispositivo %s: %w", sessionId, peerId, nonTrovato(err))
+	}
+	return ex.Guid, nil
+}
+
+// NotaPerGuid scrive note sulla connessione col guid guid; ErrNotFound se
+// non c'e', anche per il guid vuoto delle connessioni di prima.
+func (as *AuditService) NotaPerGuid(guid, note string) error {
+	if guid == "" {
+		return fmt.Errorf("connessione col guid vuoto: %w", ErrNotFound)
+	}
+	res := DB.Model(&model.AuditConn{}).Where("guid = ?", guid).Update("note", note)
+	if res.Error != nil {
+		return fmt.Errorf("nota della connessione per guid: %w", res.Error)
+	}
+	if res.RowsAffected == 0 {
+		return fmt.Errorf("connessione per guid: %w", ErrNotFound)
+	}
+	return nil
 }
 
 // ConnInfoById restituisce la connessione id; ErrNotFound se non c'e'.

@@ -90,6 +90,12 @@ func ApiInit(g *gin.Engine) {
 		frg.POST("/currentUser", u.Info)
 	}
 	{
+		au := &api.Audit{}
+		// Nota di fine connessione del tecnico (ADR-0019, regola 6).
+		frg.GET("/audit/conn/active", au.ConnAttiva)
+		frg.PUT("/audit", au.Nota)
+	}
+	{
 		l := &api.Login{}
 		frg.POST("/logout", l.Logout)
 	}

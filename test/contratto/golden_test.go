@@ -14,8 +14,8 @@ import (
 )
 
 // recorded sono i passi del gruppo anonime, i primi di scenario.json. Gli
-// altri 41 passi registrati li carica TestContract in cmd/.
-var recorded = []string{"version", "login-options", "non-autenticato", "audit-conn-active-404"}
+// altri 47 passi registrati li carica TestContract in cmd/.
+var recorded = []string{"version", "login-options", "non-autenticato"}
 
 func TestLoadScenario(t *testing.T) {
 	sc, err := LoadScenario(os.DirFS("testdata/client-1.4.9"))

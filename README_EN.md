@@ -22,6 +22,13 @@ changed since v2.7 is in [REMOTEK.md](REMOTEK.md), news in
 - **Groups** of users (regular and shared) and device groups.
 - **Devices**: clients send their system information, the panel shows it.
 - **Audit**: log of connections and file transfers sent by the clients.
+- **Session notes**: the technician annotates the connection and the panel
+  shows the note in the connection log. During the session the note is
+  written from the technician's client; the end-of-connection note needs
+  the client option `allow-ask-for-note` (off by default) on the
+  technician's PC, and the login. A note only attaches to a connection
+  already registered, at most 2000 characters (longer ones are cut), and
+  its text never goes to the log.
 - **Login log**: every login, from the client and from the panel.
 - **Admin panel** on `/_admin/`: [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)
   built into the image at a pinned commit, with the Remotek brand. Users,
