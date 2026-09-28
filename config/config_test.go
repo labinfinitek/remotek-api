@@ -18,6 +18,7 @@ type sicuri struct {
 	CaptchaThreshold int
 	BanThreshold     int
 	TrustProxy       string
+	LdapTlsVerify    bool
 }
 
 // TestDefaultSicuri verifica che, senza variabili RUSTDESK_API_*, un file
@@ -37,7 +38,7 @@ func TestDefaultSicuri(t *testing.T) {
 	}
 
 	want := sicuri{WebSso: false, Register: false, ShowSwagger: 0,
-		CaptchaThreshold: 3, BanThreshold: 10, TrustProxy: ""}
+		CaptchaThreshold: 3, BanThreshold: 10, TrustProxy: "", LdapTlsVerify: true}
 	for _, tc := range []struct{ name, path string }{
 		{"file senza le chiavi", fileSenzaChiavi(t)},
 		{"conf/config.yaml", filepath.Join("..", "conf", "config.yaml")},
@@ -56,9 +57,11 @@ func TestDefaultSicuri(t *testing.T) {
 func TestVariabiliBattonoDefault(t *testing.T) {
 	t.Setenv("RUSTDESK_API_APP_BAN_THRESHOLD", "0")
 	t.Setenv("RUSTDESK_API_GIN_TRUST_PROXY", "192.0.2.1")
+	t.Setenv("RUSTDESK_API_LDAP_TLS_VERIFY", "false")
 	got := leggi(fileSenzaChiavi(t))
-	if got.BanThreshold != 0 || got.TrustProxy != "192.0.2.1" {
-		t.Errorf("ban-threshold %d, trust-proxy %q; want 0, %q", got.BanThreshold, got.TrustProxy, "192.0.2.1")
+	if got.BanThreshold != 0 || got.TrustProxy != "192.0.2.1" || got.LdapTlsVerify {
+		t.Errorf("ban-threshold %d, trust-proxy %q, ldap.tls-verify %t; want 0, %q, false",
+			got.BanThreshold, got.TrustProxy, got.LdapTlsVerify, "192.0.2.1")
 	}
 }
 
@@ -81,6 +84,7 @@ func leggi(path string) sicuri {
 		WebSso: c.App.WebSso, Register: c.App.Register,
 		ShowSwagger: c.App.ShowSwagger, CaptchaThreshold: c.App.CaptchaThreshold,
 		BanThreshold: c.App.BanThreshold, TrustProxy: c.Gin.TrustProxy,
+		LdapTlsVerify: c.Ldap.TlsVerify,
 	}
 }
 

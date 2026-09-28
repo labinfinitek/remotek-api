@@ -172,10 +172,10 @@ default when the key is missing from the file.
 | `ldap.enable` | `RUSTDESK_API_LDAP_ENABLE` | `false` | LDAP login; if LDAP refuses or does not answer, the local user is tried |
 | `ldap.url` | `RUSTDESK_API_LDAP_URL` | `ldap://ldap.example.com:389` | `ldap://` or `ldaps://` |
 | `ldap.tls-ca-file` | `RUSTDESK_API_LDAP_TLS_CA_FILE` | empty | server CA, with `ldaps://` |
-| `ldap.tls-verify` | `RUSTDESK_API_LDAP_TLS_VERIFY` | `false` | with `ldaps://`, `false` does not verify the certificate: set it to `true` |
+| `ldap.tls-verify` | `RUSTDESK_API_LDAP_TLS_VERIFY` | `true` | with `ldaps://` the server certificate is verified; for an internal certificate use `ldap.tls-ca-file`. `false` does not verify it, and a warning at startup says so |
 | `ldap.base-dn` | `RUSTDESK_API_LDAP_BASE_DN` | `dc=example,dc=com` | base DN |
 | `ldap.bind-dn` | `RUSTDESK_API_LDAP_BIND_DN` | `cn=admin,dc=example,dc=com` | service user for searches |
-| `ldap.bind-password` | `RUSTDESK_API_LDAP_BIND_PASSWORD` | example value | password of the service user: from the variable, not in the file |
+| `ldap.bind-password` | `RUSTDESK_API_LDAP_BIND_PASSWORD` | empty | password of the service user: from the variable, not in the file |
 | `ldap.user.base-dn` | `RUSTDESK_API_LDAP_USER_BASE_DN` | `ou=users,dc=example,dc=com` | where to search for users |
 | `ldap.user.filter` | `RUSTDESK_API_LDAP_USER_FILTER` | `(cn=*)` | filter added to the search |
 | `ldap.user.username` | `RUSTDESK_API_LDAP_USER_USERNAME` | `uid` | username attribute (`sAMAccountName` in AD) |
@@ -252,8 +252,10 @@ Not renamed: the `RUSTDESK_API_` prefix, the `rustdesk:` section, the
 - **No external resources** in the pages the API generates (OAuth/OIDC login
   result). Files under `/brand/` are served with a `Content-Security-Policy`
   that runs no scripts and with `X-Content-Type-Options: nosniff`.
-- **LDAP**: with `ldaps://` set `ldap.tls-verify: true`; the default `false`
-  does not verify the certificate.
+- **LDAP**: with `ldaps://` the server certificate is verified
+  (`ldap.tls-verify` is `true`); for an internal certificate use
+  `ldap.tls-ca-file`. At startup a warning flags `ldap://`, which sends
+  passwords in clear text, and `ldap.tls-verify: false`.
 - Report vulnerabilities as described in [SECURITY.md](SECURITY.md), not with
   public issues.
 
