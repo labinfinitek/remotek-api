@@ -108,6 +108,38 @@ func TestNotaDuranteLaSessione(t *testing.T) {
 	}
 }
 
+// TestNotaSessioneZero prova sul router vero che la nota durante la
+// sessione con session_id 0, o senza, non scrive niente. Il PC controllato
+// col client 1.4.9 registra la connessione nuova con session_id 0 (lr
+// ancora vuoto, connection.rs:550 e 1438) e manda quello vero solo dopo
+// l'autorizzazione; il client del tecnico non manda mai 0 (client.rs:
+// 1866-1871). Prima una nota con solo l'ID del PC, senza token, finiva
+// sulla riga di una connessione non autorizzata o in attesa del clic. La
+// risposta resta quella del golden, con la riga di info della sessione
+// sconosciuta.
+func TestNotaSessioneZero(t *testing.T) {
+	const ok = `{"code":0,"message":"success","data":""}`
+	for _, tc := range []struct{ nome, corpo string }{
+		{"session_id 0", `{"id":"999000111","note":"` + testoDellaNota + `","session_id":0}`},
+		{"senza session_id", `{"id":"999000111","note":"` + testoDellaNota + `"}`},
+	} {
+		t.Run(tc.nome, func(t *testing.T) {
+			g, registro := connessioniDiProva(t, &model.AuditConn{Action: model.AuditActionNew, ConnId: 5, PeerId: "999000111", SessionId: "0", Guid: "in-attesa"})
+			rec := daTecnico(g, "POST", "/api/audit/conn", "", tc.corpo)
+			if rec.Code != 200 || rec.Body.String() != ok {
+				t.Errorf("POST /api/audit/conn: %d %s, attesi 200 e %s", rec.Code, rec.Body, ok)
+			}
+			if got, want := note(t), map[int64]string{5: ""}; !reflect.DeepEqual(want, got) {
+				t.Errorf("note per conn_id: %v, attese %v", got, want)
+			}
+			if nelLog := registro.String(); !strings.Contains(nelLog, "level=info") || !strings.Contains(nelLog, "nota di sessione senza connessione registrata") {
+				t.Errorf("manca la riga di info, log:\n%s", nelLog)
+			}
+			senzaNota(t, registro)
+		})
+	}
+}
+
 // TestNotaTroncata prova sul router vero che una nota di 2001 caratteri, per
 // tutte e due le strade, si salva coi primi 2000 e che il log lo dice senza
 // il testo. Prima non c'era limite.
@@ -139,7 +171,8 @@ func TestNotaTroncata(t *testing.T) {
 // TestConnessioneAttiva prova sul router vero GET /api/audit/conn/active:
 // senza token, o con un token non valido, la risposta di RustAuth; col
 // token il guid, come stringa JSON, della connessione aperta di quel PC con
-// quel session_id e di quel tipo, e "" se non c'e' (il client riprova).
+// quel session_id e di quel tipo, e "" se non c'e' (il client riprova) o
+// se il session_id e' 0, quello delle connessioni non ancora autorizzate.
 // Prima rispondeva 404 (golden audit-conn-active-404).
 func TestConnessioneAttiva(t *testing.T) {
 	g, _ := connessioniDiProva(t,
@@ -148,6 +181,8 @@ func TestConnessioneAttiva(t *testing.T) {
 		&model.AuditConn{Action: model.AuditActionNew, ConnId: 8, PeerId: "999000111", SessionId: "5", Type: 1, Guid: "file"},
 		&model.AuditConn{Action: model.AuditActionNew, ConnId: 9, PeerId: "999000111", SessionId: "6", Type: 0, Guid: "altra-sessione"},
 		&model.AuditConn{Action: model.AuditActionNew, ConnId: 10, PeerId: "999000222", SessionId: "5", Type: 0, Guid: "altro-pc"},
+		// Come la registra il client 1.4.9 prima dell'autorizzazione.
+		&model.AuditConn{Action: model.AuditActionNew, ConnId: 11, PeerId: "999000111", SessionId: "0", Type: 0, Guid: "in-attesa"},
 	)
 	for _, tc := range []struct {
 		nome, query, token string
@@ -160,6 +195,7 @@ func TestConnessioneAttiva(t *testing.T) {
 		{"trasferimento file", "id=999000111&session_id=5&conn_type=1", tokenDelPannello, 200, `"file"`},
 		{"sessione senza connessione aperta", "id=999000111&session_id=7&conn_type=0", tokenDelPannello, 200, `""`},
 		{"PC senza connessione", "id=999000333&session_id=5&conn_type=0", tokenDelPannello, 200, `""`},
+		{"session_id 0", "id=999000111&session_id=0&conn_type=0", tokenDelPannello, 200, `""`},
 	} {
 		rec := daTecnico(g, "GET", "/api/audit/conn/active?"+tc.query, tc.token, "")
 		if rec.Code != tc.stato || rec.Body.String() != tc.want {

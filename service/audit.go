@@ -64,10 +64,19 @@ func (as *AuditService) InfoByPeerIdAndConnId(peerId string, connId int64) (*mod
 	return res, nil
 }
 
+// sessioneNonAutorizzata e' il session_id con cui il client 1.4.9 registra
+// la connessione prima dell'autorizzazione: il tecnico non lo manda mai, e
+// una nota o un guid cercati con questo arriverebbero alle connessioni
+// rifiutate o in attesa del clic.
+const sessioneNonAutorizzata = "0"
+
 // NotaDiSessione scrive note sulla connessione piu' recente del dispositivo
-// peerId con quel sessionId; ErrNotFound se non ce n'e' nessuna. Non crea
-// righe.
+// peerId con quel sessionId; ErrNotFound se non ce n'e' nessuna o se
+// sessionId e' "0". Non crea righe.
 func (as *AuditService) NotaDiSessione(peerId, sessionId, note string) error {
+	if sessionId == sessioneNonAutorizzata {
+		return fmt.Errorf("nota senza sessione del dispositivo %s: %w", peerId, ErrNotFound)
+	}
 	ex := &model.AuditConn{}
 	if err := DB.Where("peer_id = ? and session_id = ?", peerId, sessionId).Order("id desc").First(ex).Error; err != nil {
 		return fmt.Errorf("connessione della sessione %s del dispositivo %s: %w", sessionId, peerId, nonTrovato(err))
@@ -80,8 +89,11 @@ func (as *AuditService) NotaDiSessione(peerId, sessionId, note string) error {
 
 // GuidConnessioneAperta restituisce il guid della connessione aperta piu'
 // recente del dispositivo peerId, con quel sessionId e di quel tipo;
-// ErrNotFound se non ce n'e' nessuna.
+// ErrNotFound se non ce n'e' nessuna o se sessionId e' "0".
 func (as *AuditService) GuidConnessioneAperta(peerId, sessionId string, tipo int) (string, error) {
+	if sessionId == sessioneNonAutorizzata {
+		return "", fmt.Errorf("connessione aperta senza sessione del dispositivo %s: %w", peerId, ErrNotFound)
+	}
 	ex := &model.AuditConn{}
 	err := DB.Where("peer_id = ? and session_id = ? and type = ? and close_time = 0", peerId, sessionId, tipo).Order("id desc").First(ex).Error
 	if err != nil {
