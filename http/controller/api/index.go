@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -52,8 +53,12 @@ func (i *Index) Heartbeat(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{})
 		return
 	}
-	peer := service.AllService.PeerService.FindById(info.Id)
-	if peer == nil || peer.RowId == 0 {
+	peer, err := service.AllService.PeerService.FindById(info.Id)
+	if err != nil {
+		if !errors.Is(err, service.ErrNotFound) {
+			// Il client non legge l'errore: l'ultimo contatto resta quello di prima.
+			global.Logger.Warnf("%s %s: ultimo contatto del dispositivo non aggiornato: %v", c.Request.Method, c.FullPath(), err)
+		}
 		c.JSON(http.StatusOK, gin.H{})
 		return
 	}

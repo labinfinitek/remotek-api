@@ -35,8 +35,9 @@ func (p *Peer) SysInfo(c *gin.Context) {
 		return
 	}
 	fpe := f.ToPeer()
-	pe := service.AllService.PeerService.FindById(f.Id)
-	if pe.RowId == 0 {
+	pe, err := service.AllService.PeerService.FindById(f.Id)
+	switch {
+	case errors.Is(err, service.ErrNotFound):
 		pe = f.ToPeer()
 		pe.UserId = ultimoUtente(c, pe.Uuid, pe.Id)
 		err = service.AllService.PeerService.Create(pe)
@@ -44,7 +45,12 @@ func (p *Peer) SysInfo(c *gin.Context) {
 			response.ErrorErr(c, "OperationFailed", err)
 			return
 		}
-	} else {
+	case err != nil:
+		// Un dispositivo che non si legge non e' nuovo: crearlo farebbe un
+		// doppione, perche' peers.id non e' unico. Il client riprova piu' tardi.
+		response.ErrorErr(c, "SystemError", err)
+		return
+	default:
 		if pe.UserId == 0 {
 			pe.UserId = ultimoUtente(c, pe.Uuid, pe.Id)
 		}

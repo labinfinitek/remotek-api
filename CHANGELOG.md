@@ -194,6 +194,15 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   il callback rimanda ad associare l'account dal pannello; prima andava in
   panic (500). Il pannello, quando crea o aggiorna un provider senza
   `auto_register`, la salva spenta, come gia' `pkce_enable`.
+- Informazioni di sistema del client (`/api/sysinfo`): se il database non
+  legge il dispositivo risponde 400 "Errore di sistema." e non crea
+  niente, con l'errore nel log; il client riprova piu' tardi. Prima lo
+  prendeva per nuovo e ne creava un altro con lo stesso id, un doppione.
+  L'heartbeat (`/api/heartbeat`) risponde come sempre, ma l'errore va nel
+  log; prima l'ultimo contatto non si aggiornava senza traccia.
+  L'aggiunta di una voce in rubrica (`/api/ab/peer/add`) risponde 400
+  "Errore di sistema." e non crea la voce, come `POST /api/ab`; prima
+  nasceva senza piattaforma, utente e nome del computer.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

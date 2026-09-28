@@ -12,11 +12,13 @@ import (
 type PeerService struct {
 }
 
-// FindById 根据id查找
-func (ps *PeerService) FindById(id string) *model.Peer {
+// FindById restituisce il dispositivo con id id; ErrNotFound se non c'e'.
+func (ps *PeerService) FindById(id string) (*model.Peer, error) {
 	p := &model.Peer{}
-	DB.Where("id = ?", id).First(p)
-	return p
+	if err := DB.Where("id = ?", id).First(p).Error; err != nil {
+		return nil, fmt.Errorf("dispositivo per id: %w", nonTrovato(err))
+	}
+	return p, nil
 }
 func (ps *PeerService) InfoByRowId(id uint) *model.Peer {
 	p := &model.Peer{}

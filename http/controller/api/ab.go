@@ -660,11 +660,16 @@ func (a *Ab) PeerAdd(c *gin.Context) {
 	ab := f.ToAddressBook()
 	ab.CollectionId = cid
 	if ab.Platform == "" || ab.Username == "" || ab.Hostname == "" {
-		peer := service.AllService.PeerService.FindById(ab.Id)
-		if peer.RowId != 0 {
+		peer, err := service.AllService.PeerService.FindById(ab.Id)
+		switch {
+		case err == nil:
 			ab.Platform = service.AllService.AddressBookService.PlatformFromOs(peer.Os)
 			ab.Username = peer.Username
 			ab.Hostname = peer.Hostname
+		case !errors.Is(err, service.ErrNotFound):
+			// come POST /api/ab: la voce non nasce senza i dati del dispositivo
+			response.ErrorErr(c, "SystemError", err)
+			return
 		}
 	}
 
