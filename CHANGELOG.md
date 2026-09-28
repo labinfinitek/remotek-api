@@ -14,8 +14,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   `allow-ask-for-note`, spenta di fabbrica) passa da
   `GET /api/audit/conn/active` e `PUT /api/audit`, col login del tecnico e
   un guid casuale della connessione. Al massimo 2000 caratteri, oltre si
-  tronca; il testo della nota non va mai nel log. Il pannello mostra la
-  nota nel registro delle connessioni.
+  tronca; il testo della nota non va mai nel log. La nota si legge nel
+  JSON di `/api/admin/audit_conn/list` e nell'esportazione CSV del
+  pannello: il pannello (rustdesk-api-web `3998c2a`) non ha una colonna per
+  la nota.
 
 ### Sicurezza
 - Pannello, comandi del server (`/api/admin/rustdesk/sendCmd`, `cmdList`,

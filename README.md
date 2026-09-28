@@ -24,13 +24,15 @@ cambiato rispetto a v2.7 sta in [REMOTEK.md](REMOTEK.md), le novita' in
   le mostra.
 - **Audit**: registro delle connessioni e dei trasferimenti di file mandati
   dai client.
-- **Note di sessione**: il tecnico annota la connessione e il pannello
-  mostra la nota nel registro delle connessioni. Durante la sessione la
-  nota si scrive dal client del tecnico; quella di fine connessione chiede
-  sul PC del tecnico l'opzione del client `allow-ask-for-note` (spenta di
-  fabbrica) e il login. La nota si attacca solo a una connessione gia'
-  registrata, al massimo 2000 caratteri (oltre si tronca), e il suo testo
-  non va mai nel log.
+- **Note di sessione**: il tecnico annota la connessione e la nota si salva
+  nel registro delle connessioni. Si legge nel JSON di
+  `/api/admin/audit_conn/list` e nell'esportazione CSV del pannello: il
+  pannello (rustdesk-api-web `3998c2a`) non ha una colonna per la nota.
+  Durante la sessione la nota si scrive dal client del tecnico; quella di
+  fine connessione chiede sul PC del tecnico l'opzione del client
+  `allow-ask-for-note` (spenta di fabbrica) e il login. La nota si attacca
+  solo a una connessione gia' registrata, al massimo 2000 caratteri (oltre
+  si tronca), e il suo testo non va mai nel log.
 - **Log di accesso**: ogni login, dal client e dal pannello.
 - **Pannello di amministrazione** su `/_admin/`: [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)
   compilato nell'immagine a un commit fissato, con il marchio di Remotek.
