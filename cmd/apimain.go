@@ -133,6 +133,10 @@ func InitGlobal() {
 
 	global.InitI18n()
 
+	for _, a := range global.Config.Ldap.Avvisi() {
+		global.Logger.Warn(a)
+	}
+
 	// gorm: solo SQLite (A3). Un altro tipo, per esempio mysql di
 	// un'installazione vecchia, ferma l'avvio prima che si crei
 	// data/rustdeskapi.db: partire su un database nuovo e vuoto sembrerebbe una

@@ -48,10 +48,10 @@ ldap:
   enable: false
   url: "ldap://ldap.example.com:389"
   tls-ca-file: ""
-  tls-verify: false
+  tls-verify: true
   base-dn: "dc=example,dc=com"
   bind-dn: "cn=admin,dc=example,dc=com"
-  bind-password: "password"
+  bind-password: ""
 
   user:
     base-dn: "ou=users,dc=example,dc=com"

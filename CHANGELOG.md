@@ -6,6 +6,18 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Sicurezza
+- LDAP: `ldap.tls-verify` vale `true` anche senza configurazione, e con
+  `ldaps://` il certificato del server si verifica; prima valeva `false` e
+  un server qualsiasi poteva ricevere le password del bind e degli utenti.
+  **Rottura**: chi usa `ldaps://` con un certificato che il sistema non
+  riconosce (CA interna, autofirmato) deve indicarne la CA con
+  `ldap.tls-ca-file` (`RUSTDESK_API_LDAP_TLS_CA_FILE`), o scegliere
+  `ldap.tls-verify: false`; altrimenti il login LDAP non riesce e si prova
+  l'utente locale. Con LDAP acceso, all'avvio una riga di warn segnala
+  `ldap://` (password in chiaro sulla rete) e `ldap.tls-verify: false` con
+  `ldaps://`. Nel `conf/config.yaml` d'esempio `bind-password` e' vuota.
+
 ### Corretto
 - Rubriche condivise del client (`/api/ab/shared/profiles`): una rubrica
   condivisa il cui proprietario non c'e' piu' nel database (dati rimasti
