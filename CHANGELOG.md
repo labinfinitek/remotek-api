@@ -7,6 +7,14 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 ## [Non rilasciato]
 
 ### Sicurezza
+- Pannello, comandi del server (`/api/admin/rustdesk/sendCmd`, `cmdList`,
+  `cmdCreate`, `cmdDelete`): solo per gli amministratori (REM-2026-004). A
+  un utente del pannello non amministratore rispondono come le altre rotte
+  di amministrazione, "Non hai i permessi per questa operazione.", e non
+  mandano niente a hbbs e hbbr ne' cambiano i comandi salvati. Prima
+  qualunque utente del pannello poteva mandare a hbbs e hbbr i comandi di
+  gestione (server relay, blocco degli IP, `always-use-relay`, blacklist,
+  limiti di banda) e creare o cancellare i comandi salvati.
 - Rotte del client senza login (`/api/sysinfo`, `/api/heartbeat`,
   `/api/audit/conn`, `/api/audit/file`): accettano dati solo dal dispositivo
   registrato con quell'ID (REM-2026-002). Il primo sysinfo di un ID lega
