@@ -455,15 +455,21 @@ func (us *UserService) GenerateUsernameByOauth(name string) (string, error) {
 
 // UserThirdsByUserId restituisce le associazioni ai provider dell'utente
 // userId.
-func (us *UserService) UserThirdsByUserId(userId uint) (res []*model.UserThird) {
-	DB.Where("user_id = ?", userId).Find(&res)
-	return res
+func (us *UserService) UserThirdsByUserId(userId uint) (res []*model.UserThird, err error) {
+	if err = DB.Where("user_id = ?", userId).Find(&res).Error; err != nil {
+		return nil, fmt.Errorf("associazioni ai provider dell'utente %d: %w", userId, err)
+	}
+	return res, nil
 }
 
-func (us *UserService) UserThirdInfo(userId uint, op string) *model.UserThird {
+// UserThirdInfo restituisce l'associazione dell'utente userId al provider
+// op; ErrNotFound se non c'e'.
+func (us *UserService) UserThirdInfo(userId uint, op string) (*model.UserThird, error) {
 	ut := &model.UserThird{}
-	DB.Where("user_id = ? and op = ?", userId, op).First(ut)
-	return ut
+	if err := DB.Where("user_id = ? and op = ?", userId, op).First(ut).Error; err != nil {
+		return nil, fmt.Errorf("associazione dell'utente %d al provider: %w", userId, nonTrovato(err))
+	}
+	return ut, nil
 }
 
 // FindLatestUserIdFromLoginLogByUuid restituisce l'utente dell'ultimo login
@@ -515,7 +521,7 @@ func (us *UserService) Register(username string, email string, password string, 
 	return u
 }
 
-func (us *UserService) TokenList(page uint, size uint, f func(tx *gorm.DB)) *model.UserTokenList {
+func (us *UserService) TokenList(page uint, size uint, f func(tx *gorm.DB)) (*model.UserTokenList, error) {
 	res := &model.UserTokenList{}
 	res.Page = int64(page)
 	res.PageSize = int64(size)
@@ -523,16 +529,24 @@ func (us *UserService) TokenList(page uint, size uint, f func(tx *gorm.DB)) *mod
 	if f != nil {
 		f(tx)
 	}
-	tx.Count(&res.Total)
+	if err := tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio dei token di sessione: %w", err)
+	}
 	tx.Scopes(Paginate(page, size))
-	tx.Find(&res.UserTokens)
-	return res
+	if err := tx.Find(&res.UserTokens).Error; err != nil {
+		return nil, fmt.Errorf("token di sessione: %w", err)
+	}
+	return res, nil
 }
 
-func (us *UserService) TokenInfoById(id uint) *model.UserToken {
+// TokenInfoById restituisce il token di sessione id; ErrNotFound se non
+// c'e'.
+func (us *UserService) TokenInfoById(id uint) (*model.UserToken, error) {
 	ut := &model.UserToken{}
-	DB.Where("id = ?", id).First(ut)
-	return ut
+	if err := DB.Where("id = ?", id).First(ut).Error; err != nil {
+		return nil, fmt.Errorf("token di sessione %d: %w", id, nonTrovato(err))
+	}
+	return ut, nil
 }
 
 func (us *UserService) DeleteToken(l *model.UserToken) error {

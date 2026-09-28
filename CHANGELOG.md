@@ -171,6 +171,24 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   e la pagina del callback dice "Autorizzazione OAuth non riuscita.", e la
   creazione risponde "Errore di sistema.", con l'errore nel log; nessun
   utente nasce. Prima la lettura fallita valeva "nome libero".
+- Pannello, token di sessione (`/api/admin/user_token`): se il database non
+  li legge, l'elenco e la cancellazione rispondono "Errore di sistema." con
+  l'errore nel log. Prima l'elenco era vuoto e la cancellazione diceva
+  "Elemento non trovato.".
+- Pannello, associazioni dell'utente ai provider OAuth: se il database non
+  le legge, l'elenco dei provider dell'utente, l'associazione e lo
+  scollegamento rispondono "Errore di sistema." con l'errore nel log. Prima
+  l'elenco mostrava i provider come non associati, l'associazione partiva
+  anche se c'era gia', e lo scollegamento diceva "Elemento non trovato.".
+- Provider OAuth: se il database non li legge, `/api/oidc/auth` risponde
+  400 "Errore di sistema." invece di "Configurazione non trovata.", il
+  callback OIDC dice "Autorizzazione OAuth non riuscita." invece di andare
+  in panic (500) quando non legge il provider per l'autoregistrazione, e
+  nel pannello elenco, dettaglio, creazione e cancellazione dei provider, e
+  l'elenco dei provider dell'utente, rispondono "Errore di sistema.";
+  l'errore va nel log. Prima l'elenco era vuoto, dettaglio e cancellazione
+  dicevano "Elemento non trovato.", e la creazione salvava il provider
+  senza sapere se ce n'era gia' uno con lo stesso op.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

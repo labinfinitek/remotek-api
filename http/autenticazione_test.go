@@ -566,3 +566,153 @@ func TestNomeUtenteNonLetto(t *testing.T) {
 		}
 	})
 }
+
+// statoOauth descrive con Raw, che rifiutaLetture non ferma, provider OAuth,
+// associazioni e token di sessione.
+func statoOauth(t *testing.T) string {
+	t.Helper()
+	var provider, associazioni, token []string
+	err := service.DB.Raw("SELECT op FROM oauths ORDER BY id").Scan(&provider).Error
+	if err == nil {
+		err = service.DB.Raw("SELECT user_id || ' ' || op FROM user_thirds ORDER BY id").Scan(&associazioni).Error
+	}
+	if err == nil {
+		err = service.DB.Raw("SELECT token FROM user_tokens ORDER BY id").Scan(&token).Error
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	return strings.Join(provider, ",") + "; " + strings.Join(associazioni, ",") + "; " + strings.Join(token, ",")
+}
+
+// TestPannelloLettureAuth prova sul router vero le letture del modulo auth
+// che servono solo il pannello, dall'amministratore: token di sessione,
+// associazioni ai provider dell'utente e provider OAuth. Se il database non
+// li legge le rotte rispondono code 101 "Errore di sistema.", con l'errore
+// nel log, e non cambiano niente. Prima gli elenchi erano vuoti o senza
+// associazioni, dettaglio, cancellazione e scollegamento dicevano "Elemento
+// non trovato.", e associazione e creazione di un provider andavano avanti
+// come se non ci fosse niente. Una riga che non c'e' ha la risposta di prima.
+func TestPannelloLettureAuth(t *testing.T) {
+	const erroreDiSistema = `{"code":101,"message":"Errore di sistema.","data":null}`
+	const nonTrovato = `{"code":101,"message":"Elemento non trovato.","data":null}`
+	for _, tc := range []struct {
+		metodo, rotta, corpo string // PROVIDER e TOKEN diventano gli id
+		tabella, dove        string // le letture rifiutate: tutte quelle senza WHERE se dove e' "elenco"
+		risposta             string
+	}{
+		{"GET", "/api/admin/user_token/list?user_id=1", "", "user_tokens", "user_id", erroreDiSistema},
+		{"POST", "/api/admin/user_token/delete", `{"id":TOKEN}`, "user_tokens", "id = ?", erroreDiSistema},
+		{"POST", "/api/admin/user/myOauth", "", "user_thirds", "user_id", erroreDiSistema},
+		{"POST", "/api/admin/user/myOauth", "", "oauths", "elenco", erroreDiSistema},
+		{"POST", "/api/admin/oauth/bind", `{"op":"aziendale"}`, "user_thirds", "op", erroreDiSistema},
+		{"POST", "/api/admin/oauth/unbind", `{"op":"aziendale"}`, "user_thirds", "op", erroreDiSistema},
+		{"GET", "/api/admin/oauth/detail/PROVIDER", "", "oauths", "id = ?", erroreDiSistema},
+		{"POST", "/api/admin/oauth/delete", `{"id":PROVIDER}`, "oauths", "id = ?", erroreDiSistema},
+		{"POST", "/api/admin/oauth/create", `{"op":"nuovo","oauth_type":"oidc","client_id":"id","client_secret":"segreto","issuer":"https://esempio.it"}`,
+			"oauths", "op", erroreDiSistema},
+		{"GET", "/api/admin/oauth/list", "", "oauths", "elenco", erroreDiSistema},
+		{"POST", "/api/admin/user_token/delete", `{"id":999999}`, "", "", nonTrovato},
+		{"POST", "/api/admin/oauth/unbind", `{"op":"altro"}`, "", "", nonTrovato},
+		{"GET", "/api/admin/oauth/detail/999999", "", "", "", nonTrovato},
+		{"POST", "/api/admin/oauth/delete", `{"id":999999}`, "", "", nonTrovato},
+	} {
+		t.Run(tc.metodo+" "+tc.rotta+" "+tc.tabella, func(t *testing.T) {
+			g, utente, registro := pannello(t, true)
+			provider := &model.Oauth{Op: "aziendale", OauthType: model.OauthTypeOidc, ClientId: "id", ClientSecret: "segreto", Issuer: providerOidc(t)}
+			crea(t, provider)
+			crea(t, &model.UserThird{UserId: utente.Id, Op: "aziendale", OauthType: model.OauthTypeOidc, OauthUser: model.OauthUser{OpenId: "sub-1"}})
+			token := &model.UserToken{UserId: utente.Id, Token: "token-da-cancellare", ExpiredAt: time.Now().Add(time.Hour).Unix()}
+			crea(t, token)
+			id := func(n uint) string { return strconv.FormatUint(uint64(n), 10) }
+			sostituisci := strings.NewReplacer("PROVIDER", id(provider.Id), "TOKEN", id(token.Id))
+			prima := statoOauth(t)
+			switch tc.dove {
+			case "":
+			case "elenco":
+				rifiutaElenchi(t, tc.tabella)
+			default:
+				rifiutaLetture(t, tc.tabella, tc.dove)
+			}
+
+			rec := richiesta(g, tc.metodo, sostituisci.Replace(tc.rotta), "", sostituisci.Replace(tc.corpo))
+			if got := rec.Body.String(); rec.Code != 200 || got != tc.risposta {
+				t.Errorf("%s %s: stato %d\n got  %s\n want %s", tc.metodo, tc.rotta, rec.Code, got, tc.risposta)
+			}
+			if tc.dove == "" {
+				return
+			}
+			if dopo := statoOauth(t); dopo != prima {
+				t.Errorf("%s %s ha cambiato il database:\n prima %s\n dopo  %s", tc.metodo, tc.rotta, prima, dopo)
+			}
+			percorso, _, _ := strings.Cut(strings.Replace(tc.rotta, "/PROVIDER", "/:id", 1), "?")
+			if nelLog := registro.String(); !strings.Contains(nelLog, tc.metodo+" "+percorso+": ") || !strings.Contains(nelLog, "lettura rifiutata dal test") {
+				t.Errorf("%s %s, nel log mancano rotta o errore:\n%s", tc.metodo, tc.rotta, nelLog)
+			}
+		})
+	}
+}
+
+// rifiutaDopo fa fallire nel database dei servizi le letture della tabella
+// tabella dalla n+1-esima in poi: le prime n riescono.
+func rifiutaDopo(t *testing.T, tabella string, n int) {
+	t.Helper()
+	letture := 0
+	err := service.DB.Callback().Query().Before("gorm:query").Register("rifiuta_dopo_"+tabella, func(db *gorm.DB) {
+		if db.Statement.Table != tabella {
+			return
+		}
+		if letture++; letture > n {
+			_ = db.AddError(errors.New("lettura rifiutata dal test"))
+		}
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestProviderOidcNonLetto prova sul router vero le rotte del client che
+// leggono il provider OIDC: se il database non lo legge, /api/oidc/auth
+// risponde 400 "Errore di sistema." invece di "Configurazione non trovata.",
+// la risposta a un provider che non c'e' (golden oidc-auth-op-sconosciuto),
+// e il callback, se non legge il provider per l'autoregistrazione, dice
+// OauthFailed invece di andare in panic; l'errore va nel log.
+func TestProviderOidcNonLetto(t *testing.T) {
+	g, _, registro := pannello(t, false)
+	registra := true
+	crea(t, &model.Oauth{Op: "aziendale", OauthType: model.OauthTypeOidc, ClientId: "id", ClientSecret: "segreto",
+		Issuer: providerOidc(t), AutoRegister: &registra})
+
+	t.Run("auth", func(t *testing.T) {
+		rifiutaLetture(t, "oauths", "op")
+		t.Cleanup(func() { _ = service.DB.Callback().Query().Remove("rifiuta_letture_oauths") })
+		registro.Reset()
+		rec := richiesta(g, "POST", "/api/oidc/auth", "", `{"op":"aziendale","id":"999000111","uuid":"dXVpZA==","deviceInfo":{"os":"windows","type":"client","name":"PC-COLLAUDO"}}`)
+		if got, want := rec.Body.String(), `{"error":"Errore di sistema."}`; rec.Code != 400 || got != want {
+			t.Errorf("POST /api/oidc/auth: %d %s, attesi 400 e %s", rec.Code, got, want)
+		}
+		if nelLog := registro.String(); !strings.Contains(nelLog, "POST /api/oidc/auth: ") || !strings.Contains(nelLog, "lettura rifiutata dal test") {
+			t.Errorf("POST /api/oidc/auth, nel log mancano rotta o errore:\n%s", nelLog)
+		}
+	})
+
+	t.Run("callback", func(t *testing.T) {
+		// la prima lettura del provider e' quella della configurazione, la
+		// seconda quella dell'autoregistrazione
+		rifiutaDopo(t, "oauths", 1)
+		registro.Reset()
+		service.AllService.OauthService.SetOauthCache("prova-callback", &service.OauthCacheItem{Op: "aziendale", Action: service.OauthActionTypeLogin}, 0)
+		t.Cleanup(func() { service.AllService.OauthService.DeleteOauthCache("prova-callback") })
+		utenti := righe(t, "users")
+		rec := richiesta(g, "GET", "/api/oidc/callback?state=prova-callback&code="+codiceDelProvider, "", "")
+		if !strings.Contains(rec.Body.String(), "var msg = 'OauthFailed'") {
+			t.Errorf("GET /api/oidc/callback: %d, atteso il messaggio OauthFailed\n%s", rec.Code, rec.Body)
+		}
+		if nelLog := registro.String(); !strings.Contains(nelLog, "GET /api/oidc/callback: al client va OauthFailed") || !strings.Contains(nelLog, "lettura rifiutata dal test") {
+			t.Errorf("GET /api/oidc/callback, nel log mancano rotta o errore:\n%s", nelLog)
+		}
+		if n := righe(t, "users"); n != utenti {
+			t.Errorf("utenti dopo il callback: %d, erano %d", n, utenti)
+		}
+	})
+}

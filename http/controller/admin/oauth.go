@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -42,9 +43,12 @@ func (o *Oauth) ToBind(c *gin.Context) {
 	}
 	u := service.AllService.UserService.CurUser(c)
 
-	utr := service.AllService.UserService.UserThirdInfo(u.Id, f.Op)
-	if utr.Id > 0 {
+	switch _, err := service.AllService.UserService.UserThirdInfo(u.Id, f.Op); {
+	case err == nil:
 		response.Fail(c, 101, response.TranslateMsg(c, "OauthHasBindOtherUser"))
+		return
+	case !errors.Is(err, service.ErrNotFound):
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 
@@ -142,9 +146,8 @@ func (o *Oauth) Unbind(c *gin.Context) {
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
-	utr := service.AllService.UserService.UserThirdInfo(u.Id, f.Op)
-	if utr.Id == 0 {
-		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	if _, err := service.AllService.UserService.UserThirdInfo(u.Id, f.Op); err != nil {
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 	err = service.AllService.OauthService.UnBindOauthUser(u.Id, f.Op)
@@ -169,12 +172,12 @@ func (o *Oauth) Unbind(c *gin.Context) {
 func (o *Oauth) Detail(c *gin.Context) {
 	id := c.Param("id")
 	iid, _ := strconv.Atoi(id)
-	u := service.AllService.OauthService.InfoById(uint(iid))
-	if u.Id > 0 {
+	u, err := service.AllService.OauthService.InfoById(uint(iid))
+	if err == nil {
 		response.Success(c, u)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.FailErr(c, 101, "SystemError", err)
 }
 
 // Create 创建Oauth
@@ -205,9 +208,12 @@ func (o *Oauth) Create(c *gin.Context) {
 		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
-	ex := service.AllService.OauthService.InfoByOp(u.Op)
-	if ex.Id > 0 {
+	switch _, err := service.AllService.OauthService.InfoByOp(u.Op); {
+	case err == nil:
 		response.Fail(c, 101, response.TranslateMsg(c, "ItemExists"))
+		return
+	case !errors.Is(err, service.ErrNotFound):
+		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
 	err = service.AllService.OauthService.Create(u)
@@ -236,7 +242,11 @@ func (o *Oauth) List(c *gin.Context) {
 		response.FailErr(c, 101, "ParamsError", err)
 		return
 	}
-	res := service.AllService.OauthService.List(query.Page, query.PageSize, nil)
+	res, err := service.AllService.OauthService.List(query.Page, query.PageSize, nil)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	response.Success(c, res)
 }
 
@@ -298,8 +308,8 @@ func (o *Oauth) Delete(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
-	u := service.AllService.OauthService.InfoById(f.Id)
-	if u.Id > 0 {
+	u, err := service.AllService.OauthService.InfoById(f.Id)
+	if err == nil {
 		err := service.AllService.OauthService.Delete(u)
 		if err == nil {
 			response.Success(c, nil)
@@ -308,5 +318,5 @@ func (o *Oauth) Delete(c *gin.Context) {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
-	response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+	response.FailErr(c, 101, "SystemError", err)
 }
