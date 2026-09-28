@@ -328,3 +328,8 @@ other = "Auto login"
 description = "Field name: device info."
 one = "Device info"
 other = "Device info"
+
+[DeviceMismatch]
+description = "The device does not match the one registered with this ID."
+one = "The device does not match the registered one."
+other = "The device does not match the registered one."

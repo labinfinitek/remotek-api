@@ -7,6 +7,19 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 ## [Non rilasciato]
 
 ### Sicurezza
+- Rotte del client senza login (`/api/sysinfo`, `/api/heartbeat`):
+  accettano dati solo dal dispositivo registrato con quell'ID
+  (REM-2026-002). Il primo sysinfo di un ID lega l'ID all'uuid del PC, un
+  PC creato dal pannello si lega al primo uuid che arriva; poi un sysinfo
+  con un altro uuid non cambia la scheda e risponde 400 "Il dispositivo non
+  corrisponde a quello registrato.", un heartbeat con un altro uuid non
+  scrive niente e risponde come prima; nel log un warn con rotta e ID del
+  PC. Un sysinfo senza uuid non crea ne' aggiorna niente. Prima chi
+  conosceva l'ID di un PC ne sovrascriveva la scheda e ne cambiava ultimo
+  contatto e IP. **Per chi gestisce i PC**: un PC che cambia uuid (Windows
+  reinstallato, macchina sostituita) non si aggiorna piu' e resta con
+  l'ultimo contatto fermo; si sblocca cancellandolo dal pannello, e il
+  sysinfo successivo lo ricrea.
 - LDAP: `ldap.tls-verify` vale `true` anche senza configurazione, e con
   `ldaps://` il certificato del server si verifica; prima valeva `false` e
   un server qualsiasi poteva ricevere le password del bind e degli utenti.

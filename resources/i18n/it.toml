@@ -337,3 +337,8 @@ other = "Accesso automatico"
 description = "Field name: device info."
 one = "Informazioni sul dispositivo"
 other = "Informazioni sul dispositivo"
+
+[DeviceMismatch]
+description = "The device does not match the one registered with this ID."
+one = "Il dispositivo non corrisponde a quello registrato."
+other = "Il dispositivo non corrisponde a quello registrato."
