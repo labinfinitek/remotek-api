@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -37,9 +38,13 @@ func (g *Group) Users(c *gin.Context) {
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
-	gr := service.AllService.GroupService.InfoById(u.GroupId)
+	gruppo, err := vedeIlGruppo(u)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return
+	}
 	userList := &model.UserList{}
-	if !*u.IsAdmin && gr.Type != model.GroupTypeShare {
+	if !gruppo {
 		// 仅能获取到自己
 		userList.Users = append(userList.Users, u)
 		userList.Total = 1
@@ -61,6 +66,23 @@ func (g *Group) Users(c *gin.Context) {
 		Total: uint(userList.Total),
 		Data:  data,
 	})
+}
+
+// vedeIlGruppo dice se l'utente u vede utenti e dispositivi del suo gruppo:
+// se e' amministratore o se il gruppo e' condiviso. Un gruppo che non c'e'
+// non e' condiviso; uno che non si legge e' un errore, non "non condiviso".
+func vedeIlGruppo(u *model.User) (bool, error) {
+	if *u.IsAdmin {
+		return true, nil
+	}
+	gr, err := service.AllService.GroupService.InfoById(u.GroupId)
+	switch {
+	case errors.Is(err, service.ErrNotFound):
+		return false, nil
+	case err != nil:
+		return false, err
+	}
+	return gr.Type == model.GroupTypeShare, nil
 }
 
 // Peers restituisce i dispositivi degli utenti che l'utente vede: i suoi,
@@ -86,9 +108,13 @@ func (g *Group) Peers(c *gin.Context) {
 		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
-	gr := service.AllService.GroupService.InfoById(u.GroupId)
+	gruppo, err := vedeIlGruppo(u)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return
+	}
 	users := make([]*model.User, 0, 1)
-	if !*u.IsAdmin && gr.Type != model.GroupTypeShare {
+	if !gruppo {
 		// 仅能获取到自己
 		users = append(users, u)
 	} else {
@@ -106,11 +132,19 @@ func (g *Group) Peers(c *gin.Context) {
 		userIds = append(userIds, user.Id)
 	}
 	dGroupNameById := make(map[uint]string)
-	allGroup := service.AllService.GroupService.DeviceGroupList(1, 999, nil)
+	allGroup, err := service.AllService.GroupService.DeviceGroupList(1, 999, nil)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return
+	}
 	for _, group := range allGroup.DeviceGroups {
 		dGroupNameById[group.Id] = group.Name
 	}
-	peerList := service.AllService.PeerService.ListByUserIds(userIds, q.Page, q.PageSize)
+	peerList, err := service.AllService.PeerService.ListByUserIds(userIds, q.Page, q.PageSize)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return
+	}
 	data := make([]*apiResp.GroupPeerPayload, 0, len(peerList.Peers))
 	for _, peer := range peerList.Peers {
 		uname, ok := namesById[peer.UserId]
@@ -152,7 +186,11 @@ func (g *Group) Device(c *gin.Context) {
 		response.Error(c, "Permission denied")
 		return
 	}
-	allGroup := service.AllService.GroupService.DeviceGroupList(1, 999, nil)
+	allGroup, err := service.AllService.GroupService.DeviceGroupList(1, 999, nil)
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return
+	}
 
 	c.JSON(http.StatusOK, response.DataResponse{
 		Total: 0,

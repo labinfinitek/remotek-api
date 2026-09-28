@@ -194,6 +194,27 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   il callback rimanda ad associare l'account dal pannello; prima andava in
   panic (500). Il pannello, quando crea o aggiorna un provider senza
   `auto_register`, la salva spenta, come gia' `pkce_enable`.
+- Informazioni di sistema del client (`/api/sysinfo`): se il database non
+  legge il dispositivo risponde 400 "Errore di sistema." e non crea
+  niente, con l'errore nel log; il client riprova piu' tardi. Prima lo
+  prendeva per nuovo e ne creava un altro con lo stesso id, un doppione.
+  L'heartbeat (`/api/heartbeat`) risponde come sempre, ma l'errore va nel
+  log; prima l'ultimo contatto non si aggiornava senza traccia.
+  L'aggiunta di una voce in rubrica (`/api/ab/peer/add`) risponde 400
+  "Errore di sistema." e non crea la voce, come `POST /api/ab`; prima
+  nasceva senza piattaforma, utente e nome del computer.
+- Utenti, dispositivi e gruppi di dispositivi nel client (`/api/users`,
+  `/api/peers`, `/api/device-group/accessible`): se il database non legge
+  il gruppo dell'utente, i gruppi di dispositivi o i dispositivi del
+  gruppo, rispondono 400 "Errore di sistema." con l'errore nel log, mai
+  401. Prima il gruppo non letto valeva "non condiviso", e chi stava in un
+  gruppo condiviso vedeva solo se stesso; `/api/peers` perdeva i nomi dei
+  gruppi di dispositivi o dava un elenco vuoto, e il client salvava questi
+  elenchi nella cache. Nel pannello dettaglio e cancellazione di un
+  gruppo, le regole di condivisione verso un gruppo e l'elenco dei gruppi
+  di dispositivi rispondono "Errore di sistema." invece di "Elemento non
+  trovato." o di un elenco vuoto; un gruppo che non c'e' ha la risposta di
+  prima.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

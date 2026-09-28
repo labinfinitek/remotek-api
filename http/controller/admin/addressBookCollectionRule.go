@@ -141,9 +141,9 @@ func (abcr *AddressBookCollectionRule) CheckForm(t *model.AddressBookCollectionR
 			return err
 		}
 	case model.ShareAddressBookRuleTypeGroup:
-		tog := service.AllService.GroupService.InfoById(t.ToId)
-		if tog.Id == 0 {
-			return errors.New("ItemNotFound")
+		// ErrNotFound ha per testo ItemNotFound, la risposta di prima
+		if _, err := service.AllService.GroupService.InfoById(t.ToId); err != nil {
+			return err
 		}
 	default:
 		return errors.New("ParamsError")

@@ -1,6 +1,8 @@
 package service
 
 import (
+	"fmt"
+
 	"gorm.io/gorm"
 
 	"github.com/lejianwen/rustdesk-api/v2/model"
@@ -9,11 +11,13 @@ import (
 type GroupService struct {
 }
 
-// InfoById 根据用户id取用户信息
-func (us *GroupService) InfoById(id uint) *model.Group {
+// InfoById restituisce il gruppo di utenti id; ErrNotFound se non c'e'.
+func (us *GroupService) InfoById(id uint) (*model.Group, error) {
 	u := &model.Group{}
-	DB.Where("id = ?", id).First(u)
-	return u
+	if err := DB.Where("id = ?", id).First(u).Error; err != nil {
+		return nil, fmt.Errorf("gruppo %d: %w", id, nonTrovato(err))
+	}
+	return u, nil
 }
 
 func (us *GroupService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.GroupList) {
@@ -51,18 +55,24 @@ func (us *GroupService) DeviceGroupInfoById(id uint) *model.DeviceGroup {
 	return u
 }
 
-func (us *GroupService) DeviceGroupList(page, pageSize uint, where func(tx *gorm.DB)) (res *model.DeviceGroupList) {
-	res = &model.DeviceGroupList{}
+// DeviceGroupList restituisce la pagina page di pageSize gruppi di
+// dispositivi, filtrati da where se non e' nil.
+func (us *GroupService) DeviceGroupList(page, pageSize uint, where func(tx *gorm.DB)) (*model.DeviceGroupList, error) {
+	res := &model.DeviceGroupList{}
 	res.Page = int64(page)
 	res.PageSize = int64(pageSize)
 	tx := DB.Model(&model.DeviceGroup{})
 	if where != nil {
 		where(tx)
 	}
-	tx.Count(&res.Total)
+	if err := tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio dei gruppi di dispositivi: %w", err)
+	}
 	tx.Scopes(Paginate(page, pageSize))
-	tx.Find(&res.DeviceGroups)
-	return
+	if err := tx.Find(&res.DeviceGroups).Error; err != nil {
+		return nil, fmt.Errorf("gruppi di dispositivi: %w", err)
+	}
+	return res, nil
 }
 
 func (us *GroupService) DeviceGroupCreate(u *model.DeviceGroup) error {

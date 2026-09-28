@@ -128,9 +128,9 @@ func (abcr *AddressBookCollectionRule) CheckForm(u *model.User, t *model.Address
 		//	return "NoAccess", false
 		// }
 
-		tog := service.AllService.GroupService.InfoById(t.ToId)
-		if tog.Id == 0 {
-			return errors.New("ItemNotFound")
+		// ErrNotFound ha per testo ItemNotFound, la risposta di prima
+		if _, err := service.AllService.GroupService.InfoById(t.ToId); err != nil {
+			return err
 		}
 	default:
 		return errors.New("ParamsError")

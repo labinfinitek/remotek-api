@@ -12,11 +12,13 @@ import (
 type PeerService struct {
 }
 
-// FindById 根据id查找
-func (ps *PeerService) FindById(id string) *model.Peer {
+// FindById restituisce il dispositivo con id id; ErrNotFound se non c'e'.
+func (ps *PeerService) FindById(id string) (*model.Peer, error) {
 	p := &model.Peer{}
-	DB.Where("id = ?", id).First(p)
-	return p
+	if err := DB.Where("id = ?", id).First(p).Error; err != nil {
+		return nil, fmt.Errorf("dispositivo per id: %w", nonTrovato(err))
+	}
+	return p, nil
 }
 func (ps *PeerService) InfoByRowId(id uint) *model.Peer {
 	p := &model.Peer{}
@@ -64,17 +66,22 @@ func (ps *PeerService) EraseUserId(userId uint) error {
 	return DB.Model(&model.Peer{}).Where("user_id = ?", userId).Update("user_id", 0).Error
 }
 
-// ListByUserIds 根据用户id取列表
-func (ps *PeerService) ListByUserIds(userIds []uint, page, pageSize uint) (res *model.PeerList) {
-	res = &model.PeerList{}
+// ListByUserIds restituisce la pagina page di pageSize dispositivi degli
+// utenti userIds.
+func (ps *PeerService) ListByUserIds(userIds []uint, page, pageSize uint) (*model.PeerList, error) {
+	res := &model.PeerList{}
 	res.Page = int64(page)
 	res.PageSize = int64(pageSize)
 	tx := DB.Model(&model.Peer{})
 	tx.Where("user_id in (?)", userIds)
-	tx.Count(&res.Total)
+	if err := tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio dei dispositivi degli utenti: %w", err)
+	}
 	tx.Scopes(Paginate(page, pageSize))
-	tx.Find(&res.Peers)
-	return
+	if err := tx.Find(&res.Peers).Error; err != nil {
+		return nil, fmt.Errorf("dispositivi degli utenti: %w", err)
+	}
+	return res, nil
 }
 
 func (ps *PeerService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.PeerList) {
@@ -89,18 +96,6 @@ func (ps *PeerService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *
 	tx.Scopes(Paginate(page, pageSize))
 	tx.Find(&res.Peers)
 	return
-}
-
-// ListFilterByUserId 根据用户id过滤Peer列表
-func (ps *PeerService) ListFilterByUserId(page, pageSize uint, where func(tx *gorm.DB), userId uint) (res *model.PeerList) {
-	userWhere := func(tx *gorm.DB) {
-		tx.Where("user_id = ?", userId)
-		// 如果还有额外的筛选条件，执行它
-		if where != nil {
-			where(tx)
-		}
-	}
-	return ps.List(page, pageSize, userWhere)
 }
 
 // Create 创建
