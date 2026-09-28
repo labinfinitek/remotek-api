@@ -72,6 +72,17 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   `ldaps://`. Nel `conf/config.yaml` d'esempio `bind-password` e' vuota.
 
 ### Corretto
+- Pannello: la modifica di un dispositivo, di un utente, di un provider
+  OAuth o di un comando del server salva anche i campi svuotati (alias,
+  nome del PC, gruppo del dispositivo; email, nickname, avatar e nota
+  dell'utente; issuer e scope del provider; alias, opzione e spiegazione
+  del comando). Prima il pannello rispondeva successo ma quei campi
+  restavano com'erano. Non cambiano: ID e uuid del dispositivo mandati vuoti
+  restano quelli di prima, come la password dell'utente e il ruolo se
+  `is_admin` non c'e'; utente, ultimo contatto e IP del dispositivo non sono
+  nel modulo e non si toccano. Gruppi, gruppi di dispositivi, collezioni e
+  regole della rubrica non avevano il problema: il validatore non accetta
+  vuoti i loro campi.
 - File d'esempio `conf/config.yaml`: `rustdesk.id-server`,
   `rustdesk.relay-server` e `rustdesk.api-server` sono vuoti, da
   configurare, invece di `192.168.1.66:21116`, `192.168.1.66:21117` e

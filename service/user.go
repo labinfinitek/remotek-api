@@ -282,10 +282,38 @@ func (us *UserService) Delete(u *model.User) error {
 	return nil
 }
 
-// Update salva l'utente u. L'ultimo amministratore non si disabilita e non
-// perde il ruolo; se l'utente o il numero degli amministratori non si
-// leggono, non salva niente.
+// Update salva i campi non vuoti dell'utente u. L'ultimo amministratore non
+// si disabilita e non perde il ruolo; se l'utente o il numero degli
+// amministratori non si leggono, non salva niente.
 func (us *UserService) Update(u *model.User) error {
+	if err := us.controllaUltimoAdmin(u); err != nil {
+		return err
+	}
+	return DB.Model(u).Updates(u).Error
+}
+
+// UpdateDalPannello salva, con gli stessi controlli di Update, i campi del
+// modulo del pannello (admin.UserForm), anche vuoti: email, nickname, avatar
+// e nota svuotati restano vuoti. is_admin assente non cambia il ruolo; la
+// password non e' nel modulo e resta quella di prima.
+func (us *UserService) UpdateDalPannello(u *model.User) error {
+	if err := us.controllaUltimoAdmin(u); err != nil {
+		return err
+	}
+	campi := []string{"username", "email", "nickname", "avatar", "group_id", "status", "remark"}
+	if u.IsAdmin != nil {
+		campi = append(campi, "is_admin")
+	}
+	if err := DB.Model(u).Select(campi).Updates(u).Error; err != nil {
+		return fmt.Errorf("utente %d: %w", u.Id, err)
+	}
+	return nil
+}
+
+// controllaUltimoAdmin restituisce un errore se u disabiliterebbe o
+// toglierebbe il ruolo all'ultimo amministratore, o se l'utente o il numero
+// degli amministratori non si leggono.
+func (us *UserService) controllaUltimoAdmin(u *model.User) error {
 	currentUser, err := us.InfoById(u.Id)
 	if err != nil {
 		return diSistema(err)
@@ -301,7 +329,7 @@ func (us *UserService) Update(u *model.User) error {
 			return errors.New("the last admin user cannot be disabled or demoted")
 		}
 	}
-	return DB.Model(u).Updates(u).Error
+	return nil
 }
 
 // FlushToken 清空token

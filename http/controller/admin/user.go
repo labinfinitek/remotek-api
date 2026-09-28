@@ -129,7 +129,7 @@ func (ct *User) Update(c *gin.Context) {
 		return
 	}
 	u := f.ToUser()
-	err := service.AllService.UserService.Update(u)
+	err := service.AllService.UserService.UpdateDalPannello(u)
 	if err != nil {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
