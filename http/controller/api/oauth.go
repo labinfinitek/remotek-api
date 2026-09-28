@@ -196,8 +196,14 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 	case service.OauthActionTypeBind:
 		// fmt.Println("bind", ty, userData)
 		// 检查此openid是否已经绑定过
-		utr := oauthService.UserThirdInfo(op, openid)
-		if utr.UserId > 0 {
+		utr, err := oauthService.UserThirdInfo(op, openid)
+		if err != nil && !errors.Is(err, service.ErrNotFound) {
+			c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
+				"message": response.IDErr(c, "OauthFailed", err),
+			})
+			return
+		}
+		if err == nil && utr.UserId > 0 {
 			c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
 				"message": "OauthHasBindOtherUser",
 			})
@@ -211,7 +217,7 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 			return
 		}
 		// 绑定
-		err := oauthService.BindOauthUser(userId, oauthUser, op)
+		err = oauthService.BindOauthUser(userId, oauthUser, op)
 		if err != nil {
 			c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
 				"message": "BindFail",

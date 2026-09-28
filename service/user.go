@@ -331,9 +331,9 @@ func (us *UserService) RouteNames(u *model.User) []string {
 // InfoByOauthId restituisce l'utente dell'associazione all'account openId del
 // provider op; ErrNotFound se non c'e' l'associazione o il suo utente.
 func (us *UserService) InfoByOauthId(op string, openId string) (*model.User, error) {
-	ut := AllService.OauthService.UserThirdInfo(op, openId)
-	if ut.Id == 0 {
-		return nil, ErrNotFound
+	ut, err := AllService.OauthService.UserThirdInfo(op, openId)
+	if err != nil {
+		return nil, err
 	}
 	return us.InfoById(ut.UserId)
 }

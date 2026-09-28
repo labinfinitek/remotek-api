@@ -151,6 +151,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   "Utente non trovato.", e il callback, che dice "Elemento non trovato.":
   prima davano il token di un utente vuoto e associavano l'account a un
   utente che non c'e'.
+- Login OIDC: se il database non legge l'associazione dell'account al
+  provider, la pagina del callback dice "Autorizzazione OAuth non
+  riuscita." con l'errore nel log. Prima l'associazione chiesta dal
+  pannello si salvava lo stesso, anche per un account gia' associato a un
+  altro utente, e il login con l'autoregistrazione spenta rimandava ad
+  associare l'account.
 
 ## [0.2.0] - 2026-09-27
 Immagine `ghcr.io/labinfinitek/remotek-api:0.2.0`. Due cambi incompatibili,

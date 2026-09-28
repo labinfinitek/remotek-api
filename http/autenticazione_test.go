@@ -253,9 +253,9 @@ func TestAuthQueryUtenteNonLetto(t *testing.T) {
 }
 
 // TestCallbackOidcLetturaFallita prova sul router vero il callback OIDC
-// quando il database non legge un utente: la pagina dice OauthFailed, con
-// l'errore nel log, come per gli altri errori del callback, e non nascono
-// associazioni. Prima l'associazione chiesta dal
+// quando il database non legge l'associazione al provider o un utente: la
+// pagina dice OauthFailed, con l'errore nel log, come per gli altri errori
+// del callback, e non nascono associazioni. Prima l'associazione chiesta dal
 // pannello riusciva lo stesso, anche per un utente che non c'e' (ora
 // ItemNotFound, il messaggio che il codice aveva per questo caso ma non dava
 // mai), e il login con l'autoregistrazione spenta di un account con la sua
@@ -271,12 +271,21 @@ func TestCallbackOidcLetturaFallita(t *testing.T) {
 			rifiutaLetture(t, "users", "")
 			return utente.Id
 		}},
+		{"associazione, associazioni non lette", service.OauthActionTypeBind, "OauthFailed", func(t *testing.T, utente *model.User) uint {
+			rifiutaLetture(t, "user_thirds", "")
+			return utente.Id
+		}},
 		{"associazione, utente che non c'e'", service.OauthActionTypeBind, "ItemNotFound", func(*testing.T, *model.User) uint {
 			return 999999
 		}},
 		{"login, utente dell'associazione non letto", service.OauthActionTypeLogin, "OauthFailed", func(t *testing.T, utente *model.User) uint {
 			crea(t, &model.UserThird{UserId: utente.Id, Op: "aziendale", OauthType: model.OauthTypeOidc, OauthUser: model.OauthUser{OpenId: "sub-1"}})
 			rifiutaLetture(t, "users", "")
+			return 0
+		}},
+		{"login, associazione non letta", service.OauthActionTypeLogin, "OauthFailed", func(t *testing.T, utente *model.User) uint {
+			crea(t, &model.UserThird{UserId: utente.Id, Op: "aziendale", OauthType: model.OauthTypeOidc, OauthUser: model.OauthUser{OpenId: "sub-1"}})
+			rifiutaLetture(t, "user_thirds", "")
 			return 0
 		}},
 	} {

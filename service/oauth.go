@@ -292,10 +292,14 @@ func (os *OauthService) Callback(code, verifier, op, nonce string) (oauthUser *m
 	return os.oidcCallback(oauthConfig, provider, code, verifier, nonce)
 }
 
-func (os *OauthService) UserThirdInfo(op string, openId string) *model.UserThird {
+// UserThirdInfo restituisce l'associazione all'account openId del provider
+// op; ErrNotFound se non c'e'.
+func (os *OauthService) UserThirdInfo(op string, openId string) (*model.UserThird, error) {
 	ut := &model.UserThird{}
-	DB.Where("open_id = ? and op = ?", openId, op).First(ut)
-	return ut
+	if err := DB.Where("open_id = ? and op = ?", openId, op).First(ut).Error; err != nil {
+		return nil, fmt.Errorf("associazione al provider: %w", nonTrovato(err))
+	}
+	return ut, nil
 }
 
 // BindOauthUser binds a third party account.
