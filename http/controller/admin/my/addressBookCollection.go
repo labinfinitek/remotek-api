@@ -103,10 +103,6 @@ func (abc *AddressBookCollection) Update(c *gin.Context) {
 		return
 	}
 	u := service.AllService.UserService.CurUser(c)
-	// if f.UserId != u.Id {
-	//	response.Fail(c, 101, response.TranslateMsg(c, "NoAccess"))
-	//	return
-	// }
 	ex, err := service.AllService.AddressBookService.CollectionInfoById(f.Id)
 	if err != nil {
 		response.FailErr(c, 101, "SystemError", err)
@@ -116,6 +112,8 @@ func (abc *AddressBookCollection) Update(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "NoAccess"))
 		return
 	}
+	// la rubrica resta di chi ce l'ha: lo user_id del corpo non conta
+	f.UserId = ex.UserId
 
 	err = service.AllService.AddressBookService.UpdateCollection(f)
 	if err != nil {
