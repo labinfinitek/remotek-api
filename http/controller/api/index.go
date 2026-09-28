@@ -1,7 +1,6 @@
 package api
 
 import (
-	"errors"
 	"net/http"
 	"time"
 
@@ -53,12 +52,21 @@ func (i *Index) Heartbeat(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{})
 		return
 	}
-	peer, err := service.AllService.PeerService.FindById(info.Id)
+	peer, esito, err := service.AllService.PeerService.Riconosci(info.Id, info.Uuid)
 	if err != nil {
-		if !errors.Is(err, service.ErrNotFound) {
-			// Il client non legge l'errore: l'ultimo contatto resta quello di prima.
-			global.Logger.Warnf("%s %s: ultimo contatto del dispositivo non aggiornato: %v", c.Request.Method, c.FullPath(), err)
-		}
+		// Il client non legge l'errore: l'ultimo contatto resta quello di prima.
+		global.Logger.Warnf("%s %s: ultimo contatto del dispositivo non aggiornato: %v", c.Request.Method, c.FullPath(), err)
+		c.JSON(http.StatusOK, gin.H{})
+		return
+	}
+	switch esito {
+	case service.PcSconosciuto:
+		c.JSON(http.StatusOK, gin.H{})
+		return
+	case service.UuidDiverso:
+		// Ultimo contatto e IP sono del dispositivo salvato, non di chi
+		// ne conosce l'ID.
+		dispositivoDiverso(c, info.Id, "uuid diverso da quello salvato")
 		c.JSON(http.StatusOK, gin.H{})
 		return
 	}

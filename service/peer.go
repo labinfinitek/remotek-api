@@ -21,6 +21,47 @@ func (ps *PeerService) FindById(id string) (*model.Peer, error) {
 	return p, nil
 }
 
+// ErrDispositivoDiverso dice che l'uuid arrivato con l'ID di un PC non e'
+// quello del dispositivo salvato. Il testo e' l'ID del messaggio
+// DeviceMismatch: ErrorErr lo trova nella catena dell'errore.
+var ErrDispositivoDiverso = errors.New("DeviceMismatch")
+
+// Riconoscimento e' l'esito di Riconosci.
+type Riconoscimento int
+
+const (
+	// StessoDispositivo: il PC con quell'ID ha quell'uuid.
+	StessoDispositivo Riconoscimento = iota + 1
+	// UuidDiverso: il PC con quell'ID ha un altro uuid, o nessuno.
+	UuidDiverso
+	// PcSconosciuto: nessun PC ha quell'ID.
+	PcSconosciuto
+)
+
+// Riconosci dice se chi manda l'ID id e l'uuid uuid, senza token ne' firma,
+// e' il dispositivo salvato con quell'ID (REM-2026-002): le rotte del
+// client senza login scrivono solo per StessoDispositivo. Per
+// StessoDispositivo e UuidDiverso restituisce anche il PC; un uuid vuoto
+// non e' mai lo stesso dispositivo, neanche per un PC senza uuid. Un
+// errore del database torna come errore, con esito 0.
+//
+// Se peers ha piu' righe con lo stesso ID (l'indice non e' unico) vale
+// quella che FindById restituisce, la prima per row_id: le righe doppie
+// sono un altro compito.
+func (ps *PeerService) Riconosci(id, uuid string) (*model.Peer, Riconoscimento, error) {
+	p, err := ps.FindById(id)
+	if errors.Is(err, ErrNotFound) {
+		return nil, PcSconosciuto, nil
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+	if uuid == "" || p.Uuid != uuid {
+		return p, UuidDiverso, nil
+	}
+	return p, StessoDispositivo, nil
+}
+
 // InfoByRowId restituisce il dispositivo con row_id id; ErrNotFound se non
 // c'e'.
 func (ps *PeerService) InfoByRowId(id uint) (*model.Peer, error) {

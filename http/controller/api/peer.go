@@ -34,10 +34,22 @@ func (p *Peer) SysInfo(c *gin.Context) {
 		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
+	if f.Uuid == "" {
+		// Senza uuid il dispositivo non si riconosce: niente da creare o
+		// aggiornare. Il client 1.4.9 lo manda sempre.
+		response.ErrorErr(c, "ParamsError", fmt.Errorf("dispositivo %s: sysinfo senza uuid", f.Id))
+		return
+	}
 	fpe := f.ToPeer()
-	pe, err := service.AllService.PeerService.FindById(f.Id)
+	pe, esito, err := service.AllService.PeerService.Riconosci(f.Id, f.Uuid)
 	switch {
-	case errors.Is(err, service.ErrNotFound):
+	case err != nil:
+		// Un dispositivo che non si legge non e' nuovo: crearlo farebbe un
+		// doppione, perche' peers.id non e' unico. Il client riprova piu' tardi.
+		response.ErrorErr(c, "SystemError", err)
+		return
+	case esito == service.PcSconosciuto:
+		// Il primo sysinfo di un ID crea il PC e lo lega al suo uuid.
 		pe = f.ToPeer()
 		pe.UserId = ultimoUtente(c, pe.Uuid, pe.Id)
 		err = service.AllService.PeerService.Create(pe)
@@ -45,14 +57,17 @@ func (p *Peer) SysInfo(c *gin.Context) {
 			response.ErrorErr(c, "OperationFailed", err)
 			return
 		}
-	case err != nil:
-		// Un dispositivo che non si legge non e' nuovo: crearlo farebbe un
-		// doppione, perche' peers.id non e' unico. Il client riprova piu' tardi.
-		response.ErrorErr(c, "SystemError", err)
+	case esito == service.UuidDiverso && pe.Uuid != "":
+		// Un altro dispositivo con lo stesso ID: la scheda non cambia. Il
+		// warn di ErrorErr ha rotta e ID del PC, non gli uuid. Il legame si
+		// riapre cancellando il PC dal pannello.
+		response.ErrorErr(c, "DeviceMismatch", fmt.Errorf("dispositivo %s: %w", f.Id, service.ErrDispositivoDiverso))
 		return
 	default:
+		// Lo stesso dispositivo, o un PC creato dal pannello senza uuid,
+		// che si lega al primo uuid che arriva: fpe lo porta con se'.
 		if pe.UserId == 0 {
-			pe.UserId = ultimoUtente(c, pe.Uuid, pe.Id)
+			pe.UserId = ultimoUtente(c, fpe.Uuid, pe.Id)
 		}
 		fpe.RowId = pe.RowId
 		fpe.UserId = pe.UserId
@@ -77,6 +92,13 @@ func ultimoUtente(c *gin.Context, uuid, id string) uint {
 		global.Logger.Warnf("%s %s: dispositivo salvato senza utente: %v", c.Request.Method, c.FullPath(), err)
 	}
 	return userId
+}
+
+// dispositivoDiverso scrive nel log, a livello warn, la richiesta scartata
+// perche' l'ID id non e' un PC salvato con l'uuid arrivato. Nel log vanno
+// rotta e ID, non gli uuid.
+func dispositivoDiverso(c *gin.Context, id, perche string) {
+	global.Logger.Warnf("%s %s: dispositivo %s: %s, niente salvato", c.Request.Method, c.FullPath(), id, perche)
 }
 
 // SysInfoVer restituisce la versione dell'API e l'ora di avvio.
