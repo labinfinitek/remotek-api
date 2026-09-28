@@ -47,9 +47,19 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   ne sovrascriveva la scheda e scriveva nel registro delle connessioni e dei
   file. **Per chi gestisce i PC**: un PC che cambia uuid (Windows
   reinstallato, macchina sostituita) non si aggiorna piu' e resta con
-  l'ultimo contatto fermo; si sblocca cancellandolo dal pannello, e il
-  sysinfo successivo lo ricrea. L'audit salva il `session_id` esatto; prima,
-  sopra 2^53, lo arrotondava.
+  l'ultimo contatto fermo; si sblocca cancellandolo dal pannello mentre e'
+  acceso (per esempio quando nel log arriva il warn col suo ID, che
+  l'heartbeat manda ogni 15 secondi). Con il PC acceso e il servizio Remotek
+  attivo il client riprova da solo il sysinfo rifiutato circa ogni 2 minuti
+  e il primo tentativo dopo la cancellazione lo ricrea col nuovo uuid; fino
+  ad allora (al massimo circa 2 minuti) l'ID lo prende il primo che manda un
+  sysinfo con quell'ID. Con il PC spento o il servizio fermo nessuno
+  riprova, e l'ID resta libero finche' il PC non torna in linea; riavviare
+  subito il servizio Remotek sul PC (o il PC) chiude prima la finestra. Un
+  PC cancellato mentre era legato al suo uuid attuale va invece riavviato:
+  il client rimanda il sysinfo solo all'avvio del servizio o quando
+  cambiano l'utente, l'ID o l'indirizzo dell'API. L'audit salva il
+  `session_id` esatto; prima, sopra 2^53, lo arrotondava.
 - LDAP: `ldap.tls-verify` vale `true` anche senza configurazione, e con
   `ldaps://` il certificato del server si verifica; prima valeva `false` e
   un server qualsiasi poteva ricevere le password del bind e degli utenti.

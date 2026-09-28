@@ -273,8 +273,19 @@ Not renamed: the `RUSTDESK_API_` prefix, the `rustdesk:` section, the
   does not match the registered one." and heartbeat and audit write
   nothing; the log keeps a warning with the route and the PC's ID. If the
   PC really changes uuid (Windows reinstalled, hardware replaced) the
-  binding is reopened by deleting the PC from the panel: the next sysinfo
-  creates it again with the new uuid.
+  binding is reopened by deleting the PC from the panel while it is switched
+  on: for example when the log shows the warning with its ID, which the
+  heartbeat sends every 15 seconds. With the PC switched on and the Remotek
+  service running, the refused sysinfo is retried on its own about every 2
+  minutes and the first attempt after the deletion creates the PC again
+  with the new uuid; until then (at most about 2 minutes) the ID goes to
+  whoever first sends a sysinfo with it. With the PC switched off or the
+  service stopped nothing retries, and the ID stays free until the PC is
+  back online. Restarting the Remotek service on the PC (or rebooting it)
+  right away closes the window sooner. For a PC deleted while bound to its
+  current uuid (by mistake, for example) the restart is required: the
+  client sends sysinfo again only when the service starts or the user, the
+  ID or the API address changes.
 - Report vulnerabilities as described in [SECURITY.md](SECURITY.md), not with
   public issues.
 
