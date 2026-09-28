@@ -184,12 +184,13 @@ func TestClientGruppiNonLetti(t *testing.T) {
 }
 
 // TestPannelloDispositiviEGruppiNonLetti prova sul router vero le rotte del
-// pannello che leggono un gruppo di utenti per id e l'elenco dei gruppi di
+// pannello che leggono dispositivi, gruppi di utenti e gruppi di
 // dispositivi. Se il database non li legge rispondono code 101 "Errore di
 // sistema.", con l'errore nel log, e non cambiano niente. Prima dettaglio e
-// cancellazione del gruppo e la regola di condivisione verso un gruppo
-// dicevano "Elemento non trovato.", e l'elenco era vuoto. Una riga che non
-// c'e' ha la risposta di prima.
+// cancellazione dicevano "Elemento non trovato.", gli elenchi erano vuoti, e
+// l'aggiunta in rubrica dai dispositivi e la regola di condivisione verso un
+// gruppo dicevano "Elemento non trovato.". Una riga che non c'e' ha la
+// risposta di prima.
 func TestPannelloDispositiviEGruppiNonLetti(t *testing.T) {
 	const erroreDiSistema = `{"code":101,"message":"Errore di sistema.","data":null}`
 	const nonTrovato = `{"code":101,"message":"Elemento non trovato.","data":null}`
@@ -199,15 +200,30 @@ func TestPannelloDispositiviEGruppiNonLetti(t *testing.T) {
 		tabella, dove        string // le letture rifiutate: tutte quelle senza WHERE se dove e' "elenco"
 		risposta             string
 	}{
+		{"GET", "/api/admin/peer/detail/PEER", "", "peers", "row_id", erroreDiSistema},
+		{"POST", "/api/admin/peer/delete", `{"row_id":PEER}`, "peers", "row_id", erroreDiSistema},
+		{"GET", "/api/admin/peer/list", "", "peers", "elenco", erroreDiSistema},
+		{"POST", "/api/admin/peer/simpleData", `{"ids":["999000111"]}`, "peers", "id in", erroreDiSistema},
+		{"GET", "/api/admin/my/peer/list", "", "peers", "user_id", erroreDiSistema},
+		{"POST", "/api/admin/address_book/batchCreateFromPeers", `{"user_id":UTENTE,"peer_ids":[PEER]}`, "peers", "row_id in", erroreDiSistema},
+		{"POST", "/api/admin/my/address_book/batchCreateFromPeers", `{"peer_ids":[PEER]}`, "peers", "row_id in", erroreDiSistema},
 		{"GET", "/api/admin/group/detail/GRUPPO", "", "groups", "id = ?", erroreDiSistema},
 		{"POST", "/api/admin/group/delete", `{"id":GRUPPO}`, "groups", "id = ?", erroreDiSistema},
+		{"GET", "/api/admin/group/list", "", "groups", "elenco", erroreDiSistema},
+		{"POST", "/api/admin/user/groupUsers", "", "groups", "elenco", erroreDiSistema},
 		{"POST", "/api/admin/address_book_collection_rule/create", regola + `GRUPPO}`, "groups", "id = ?", erroreDiSistema},
 		{"POST", "/api/admin/my/address_book_collection_rule/create", regola + `GRUPPO}`, "groups", "id = ?", erroreDiSistema},
+		{"GET", "/api/admin/device_group/detail/REPARTO", "", "device_groups", "id = ?", erroreDiSistema},
+		{"POST", "/api/admin/device_group/delete", `{"id":REPARTO}`, "device_groups", "id = ?", erroreDiSistema},
 		{"GET", "/api/admin/device_group/list", "", "device_groups", "elenco", erroreDiSistema},
+		{"GET", "/api/admin/peer/detail/999999", "", "", "", nonTrovato},
+		{"POST", "/api/admin/peer/delete", `{"row_id":999999}`, "", "", nonTrovato},
 		{"GET", "/api/admin/group/detail/999999", "", "", "", nonTrovato},
 		{"POST", "/api/admin/group/delete", `{"id":999999}`, "", "", nonTrovato},
 		{"POST", "/api/admin/address_book_collection_rule/create", regola + `999999}`, "", "", nonTrovato},
 		{"POST", "/api/admin/my/address_book_collection_rule/create", regola + `999999}`, "", "", nonTrovato},
+		{"GET", "/api/admin/device_group/detail/999999", "", "", "", nonTrovato},
+		{"POST", "/api/admin/device_group/delete", `{"id":999999}`, "", "", nonTrovato},
 	} {
 		t.Run(tc.metodo+" "+tc.rotta+" "+tc.tabella, func(t *testing.T) {
 			g, utente, registro := pannello(t, true)

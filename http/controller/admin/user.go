@@ -306,7 +306,11 @@ func (ct *User) MyOauth(c *gin.Context) {
 
 // GroupUsers risponde coi gruppi e con gli utenti (i primi 999 e 9999).
 func (ct *User) GroupUsers(c *gin.Context) {
-	aG := service.AllService.GroupService.List(1, 999, nil)
+	aG, err := service.AllService.GroupService.List(1, 999, nil)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	aU, err := service.AllService.UserService.List(1, 9999, nil)
 	if err != nil {
 		response.FailErr(c, 101, "SystemError", err)

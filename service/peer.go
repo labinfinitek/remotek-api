@@ -20,10 +20,15 @@ func (ps *PeerService) FindById(id string) (*model.Peer, error) {
 	}
 	return p, nil
 }
-func (ps *PeerService) InfoByRowId(id uint) *model.Peer {
+
+// InfoByRowId restituisce il dispositivo con row_id id; ErrNotFound se non
+// c'e'.
+func (ps *PeerService) InfoByRowId(id uint) (*model.Peer, error) {
 	p := &model.Peer{}
-	DB.Where("row_id = ?", id).First(p)
-	return p
+	if err := DB.Where("row_id = ?", id).First(p).Error; err != nil {
+		return nil, fmt.Errorf("dispositivo %d: %w", id, nonTrovato(err))
+	}
+	return p, nil
 }
 
 // UuidBindUserId lega all'utente userId il dispositivo con uuid. Se il
@@ -84,18 +89,24 @@ func (ps *PeerService) ListByUserIds(userIds []uint, page, pageSize uint) (*mode
 	return res, nil
 }
 
-func (ps *PeerService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.PeerList) {
-	res = &model.PeerList{}
+// List restituisce la pagina page di pageSize dispositivi, filtrati da where
+// se non e' nil.
+func (ps *PeerService) List(page, pageSize uint, where func(tx *gorm.DB)) (*model.PeerList, error) {
+	res := &model.PeerList{}
 	res.Page = int64(page)
 	res.PageSize = int64(pageSize)
 	tx := DB.Model(&model.Peer{})
 	if where != nil {
 		where(tx)
 	}
-	tx.Count(&res.Total)
+	if err := tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio dei dispositivi: %w", err)
+	}
 	tx.Scopes(Paginate(page, pageSize))
-	tx.Find(&res.Peers)
-	return
+	if err := tx.Find(&res.Peers).Error; err != nil {
+		return nil, fmt.Errorf("dispositivi: %w", err)
+	}
+	return res, nil
 }
 
 // Create 创建

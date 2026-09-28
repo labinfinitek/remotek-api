@@ -20,18 +20,24 @@ func (us *GroupService) InfoById(id uint) (*model.Group, error) {
 	return u, nil
 }
 
-func (us *GroupService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.GroupList) {
-	res = &model.GroupList{}
+// List restituisce la pagina page di pageSize gruppi di utenti, filtrati da
+// where se non e' nil.
+func (us *GroupService) List(page, pageSize uint, where func(tx *gorm.DB)) (*model.GroupList, error) {
+	res := &model.GroupList{}
 	res.Page = int64(page)
 	res.PageSize = int64(pageSize)
 	tx := DB.Model(&model.Group{})
 	if where != nil {
 		where(tx)
 	}
-	tx.Count(&res.Total)
+	if err := tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio dei gruppi: %w", err)
+	}
 	tx.Scopes(Paginate(page, pageSize))
-	tx.Find(&res.Groups)
-	return
+	if err := tx.Find(&res.Groups).Error; err != nil {
+		return nil, fmt.Errorf("gruppi: %w", err)
+	}
+	return res, nil
 }
 
 // Create 创建
@@ -48,11 +54,14 @@ func (us *GroupService) Update(u *model.Group) error {
 	return DB.Model(u).Updates(u).Error
 }
 
-// DeviceGroupInfoById 根据用户id取用户信息
-func (us *GroupService) DeviceGroupInfoById(id uint) *model.DeviceGroup {
+// DeviceGroupInfoById restituisce il gruppo di dispositivi id; ErrNotFound
+// se non c'e'.
+func (us *GroupService) DeviceGroupInfoById(id uint) (*model.DeviceGroup, error) {
 	u := &model.DeviceGroup{}
-	DB.Where("id = ?", id).First(u)
-	return u
+	if err := DB.Where("id = ?", id).First(u).Error; err != nil {
+		return nil, fmt.Errorf("gruppo di dispositivi %d: %w", id, nonTrovato(err))
+	}
+	return u, nil
 }
 
 // DeviceGroupList restituisce la pagina page di pageSize gruppi di

@@ -235,10 +235,14 @@ func (ct *AddressBook) BatchCreateFromPeers(c *gin.Context) {
 		return
 	}
 	pl := int64(len(f.PeerIds))
-	peers := service.AllService.PeerService.List(1, uint(pl), func(tx *gorm.DB) {
+	peers, err := service.AllService.PeerService.List(1, uint(pl), func(tx *gorm.DB) {
 		tx.Where("row_id in ?", f.PeerIds)
 		tx.Where("user_id = ?", u.Id)
 	})
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
 	if peers.Total == 0 || pl != peers.Total {
 		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
 		return
