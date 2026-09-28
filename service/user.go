@@ -245,11 +245,17 @@ func (us *UserService) Logout(u *model.User, token string) error {
 
 // Delete cancella l'utente con le sue associazioni ai provider e le sue
 // voci, collezioni e regole della rubrica, in una transazione che su errore
-// o panic si annulla; poi scollega i suoi dispositivi.
+// o panic si annulla; poi scollega i suoi dispositivi. Un amministratore
+// non si cancella se e' l'ultimo o se gli amministratori non si contano.
 func (us *UserService) Delete(u *model.User) error {
-	userCount := us.getAdminUserCount()
-	if userCount <= 1 && us.IsAdmin(u) {
-		return errors.New("the last admin user cannot be deleted")
+	if us.IsAdmin(u) {
+		userCount, err := us.getAdminUserCount()
+		if err != nil {
+			return diSistema(err)
+		}
+		if userCount <= 1 {
+			return errors.New("the last admin user cannot be deleted")
+		}
 	}
 	err := DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Delete(u).Error; err != nil {
@@ -273,7 +279,9 @@ func (us *UserService) Delete(u *model.User) error {
 	return nil
 }
 
-// Update 更新
+// Update salva l'utente u. L'ultimo amministratore non si disabilita e non
+// perde il ruolo; se l'utente o il numero degli amministratori non si
+// leggono, non salva niente.
 func (us *UserService) Update(u *model.User) error {
 	currentUser, err := us.InfoById(u.Id)
 	if err != nil {
@@ -281,7 +289,10 @@ func (us *UserService) Update(u *model.User) error {
 	}
 	// 如果当前用户是管理员并且 IsAdmin 不为空，进行检查
 	if us.IsAdmin(currentUser) {
-		adminCount := us.getAdminUserCount()
+		adminCount, err := us.getAdminUserCount()
+		if err != nil {
+			return diSistema(err)
+		}
 		// 如果这是唯一的管理员，确保不能禁用或取消管理员权限
 		if adminCount <= 1 && (!us.IsAdmin(u) || u.Status == model.COMMON_STATUS_DISABLED) {
 			return errors.New("the last admin user cannot be disabled or demoted")
@@ -524,11 +535,13 @@ func (us *UserService) formatUsername(username string) string {
 	return username
 }
 
-// helper functions, getAdminUserCount
-func (us *UserService) getAdminUserCount() int64 {
+// getAdminUserCount restituisce quanti amministratori ci sono.
+func (us *UserService) getAdminUserCount() (int64, error) {
 	var count int64
-	DB.Model(&model.User{}).Where("is_admin = ?", true).Count(&count)
-	return count
+	if err := DB.Model(&model.User{}).Where("is_admin = ?", true).Count(&count).Error; err != nil {
+		return 0, fmt.Errorf("conteggio degli amministratori: %w", err)
+	}
+	return count, nil
 }
 
 // UserTokenExpireTimestamp 生成用户token过期时间

@@ -455,3 +455,48 @@ func TestPannelloDestinatarioNonLetto(t *testing.T) {
 		{"POST", "/api/admin/my/address_book_collection_rule/create", regola + `999999}`, false, nonTrovato},
 	})
 }
+
+// TestPannelloAmministratoriNonContati prova sul router vero la
+// cancellazione e il declassamento di un amministratore quando il database
+// non conta gli amministratori: la risposta e' code 101 "Errore di
+// sistema.", con l'errore nel log, e l'utente resta com'era. Prima la
+// lettura fallita valeva zero amministratori: le rotte rispondevano
+// "Operazione non riuscita.", come per l'ultimo amministratore, e l'errore si
+// perdeva. Con due amministratori contati, cancellazione e declassamento
+// riescono.
+func TestPannelloAmministratoriNonContati(t *testing.T) {
+	for _, tc := range []struct{ rotta, corpo string }{
+		{"/api/admin/user/delete", `{"id":SECONDO}`},
+		{"/api/admin/user/update", `{"id":SECONDO,"username":"secondo","group_id":1,"status":1,"is_admin":false}`},
+	} {
+		for _, rifiuta := range []bool{true, false} {
+			t.Run(tc.rotta+" amministratori non contati "+strconv.FormatBool(rifiuta), func(t *testing.T) {
+				g, _, registro := pannello(t, true)
+				// le tabelle che la cancellazione di un utente svuota
+				if err := service.DB.AutoMigrate(&model.AddressBook{}, &model.AddressBookCollection{}, &model.AddressBookCollectionRule{}, &model.Peer{}); err != nil {
+					t.Fatal(err)
+				}
+				amministratore := true
+				crea(t, &model.User{Username: "secondo", GroupId: 1, Status: model.COMMON_STATUS_ENABLE, IsAdmin: &amministratore})
+				corpo := strings.Replace(tc.corpo, "SECONDO", idDi(t, "secondo"), 1)
+				prima := statoUtenti(t)
+				risposta := `{"code":0,"message":"success","data":null}`
+				if rifiuta {
+					rifiutaLetture(t, "users", "is_admin")
+					risposta = `{"code":101,"message":"Errore di sistema.","data":null}`
+				}
+
+				rec := alPannello(g, tc.rotta, corpo)
+				if got := rec.Body.String(); rec.Code != 200 || got != risposta {
+					t.Errorf("POST %s: stato %d\n got  %s\n want %s", tc.rotta, rec.Code, got, risposta)
+				}
+				if cambiato := statoUtenti(t) != prima; cambiato == rifiuta {
+					t.Errorf("POST %s: utenti cambiati %t, atteso %t", tc.rotta, cambiato, !rifiuta)
+				}
+				if nelLog := registro.String(); rifiuta && (!strings.Contains(nelLog, "POST "+tc.rotta+": ") || !strings.Contains(nelLog, "lettura rifiutata dal test")) {
+					t.Errorf("POST %s, nel log mancano rotta o errore:\n%s", tc.rotta, nelLog)
+				}
+			})
+		}
+	}
+}
