@@ -1,7 +1,4 @@
 .idea
-runtime/*
-!runtime
-!runtime/.gitkeep
 resources/admin
 release
 data/rustdeskapi.db*

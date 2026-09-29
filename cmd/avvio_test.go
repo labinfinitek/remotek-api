@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 }
 
 // sandbox prepara, come TestContract, la cartella in cui gira il figlio:
-// conf/ e resources/ del repo, data/ e runtime/ vuote.
+// conf/ e resources/ del repo, data/ vuota.
 func sandbox(t *testing.T) string {
 	t.Helper()
 	root, err := filepath.Abs("..")
@@ -52,10 +52,8 @@ func sandbox(t *testing.T) string {
 		t.Fatal(err)
 	}
 	dir := t.TempDir()
-	for _, d := range []string{"data", "runtime"} {
-		if err := os.Mkdir(filepath.Join(dir, d), 0o750); err != nil {
-			t.Fatal(err)
-		}
+	if err := os.Mkdir(filepath.Join(dir, "data"), 0o750); err != nil {
+		t.Fatal(err)
 	}
 	for _, d := range []string{"resources", "conf"} {
 		if err := os.Symlink(filepath.Join(root, d), filepath.Join(dir, d)); err != nil {

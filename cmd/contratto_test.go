@@ -58,10 +58,8 @@ func TestContract(t *testing.T) {
 	// La cartella corrente resta la sandbox fino alla fine del test, perche'
 	// sqlite apre le connessioni quando servono, col percorso relativo.
 	sandbox := t.TempDir()
-	for _, dir := range []string{"data", "runtime"} {
-		if err := os.MkdirAll(filepath.Join(sandbox, dir), 0o750); err != nil {
-			t.Fatalf("sandbox: %v", err)
-		}
+	if err := os.MkdirAll(filepath.Join(sandbox, "data"), 0o750); err != nil {
+		t.Fatalf("sandbox: %v", err)
 	}
 	for _, dir := range []string{"resources", "conf"} {
 		if err := os.Symlink(filepath.Join(root, dir), filepath.Join(sandbox, dir)); err != nil {

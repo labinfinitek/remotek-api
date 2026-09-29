@@ -39,6 +39,11 @@ func TestPercorsoDiLogIgnorato(t *testing.T) {
 	if codice, out := esegui(t, dir); codice != 0 || logger.Conta(out, "WARN", "logger.path") != 0 {
 		t.Fatalf("avvio senza logger.path: codice %d, o warn su logger.path\n%s", codice, out)
 	}
+	// Il vecchio default, in una cartella che c'e': se il logger aprisse il
+	// file, nascerebbe.
+	if err := os.Mkdir(filepath.Join(dir, "runtime"), 0o750); err != nil {
+		t.Fatal(err)
+	}
 	file := filepath.Join(dir, "runtime", "log.txt")
 	t.Setenv("RUSTDESK_API_LOGGER_PATH", file)
 	codice, out := esegui(t, dir)
