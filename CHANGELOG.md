@@ -6,6 +6,18 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+## [0.3.0] - 2026-09-29
+Immagine `ghcr.io/labinfinitek/remotek-api:0.3.0`. Due cambi incompatibili,
+sotto Sicurezza: `ldap.tls-verify` vale `true` anche senza configurazione, e
+chi usa `ldaps://` con una CA interna deve indicarla con `ldap.tls-ca-file`;
+il login OIDC richiede un `id_token` valido, e un provider che non lo manda
+non fa piu' entrare.
+Le rotte del client senza login accettano dati solo dal PC registrato con
+quell'ID (REM-2026-002): un PC che cambia uuid si sblocca cancellandolo dal
+pannello mentre e' acceso (Sicurezza). Al primo avvio il database passa alla
+versione 266 (nota di sessione nel registro delle connessioni) e `peers.id`
+riceve l'indice unico, se non ci sono ID doppi (Corretto).
+
 ### Aggiunto
 - Note di sessione del tecnico nel registro delle connessioni, che l'API
   prima perdeva. La nota che il client manda durante la sessione si salva
