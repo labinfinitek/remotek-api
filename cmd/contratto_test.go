@@ -52,7 +52,7 @@ func TestContract(t *testing.T) {
 	}
 
 	// Il codice apre percorsi relativi alla cartella corrente
-	// (./data/rustdeskapi.db, ./runtime/log.txt, resources/templates/*,
+	// (./data/rustdeskapi.db, resources/templates/*,
 	// resources/version, resources/i18n, ./conf/admin/hello.html): nella
 	// sandbox si risolvono tutti li' dentro e nel repo non si scrive nulla.
 	// La cartella corrente resta la sandbox fino alla fine del test, perche'

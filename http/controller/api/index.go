@@ -55,7 +55,7 @@ func (i *Index) Heartbeat(c *gin.Context) {
 	peer, esito, err := service.AllService.PeerService.Riconosci(info.Id, info.Uuid)
 	if err != nil {
 		// Il client non legge l'errore: l'ultimo contatto resta quello di prima.
-		global.Logger.Warnf("%s %s: ultimo contatto del dispositivo non aggiornato: %v", c.Request.Method, c.FullPath(), err)
+		global.Logger.Per(c.Request.Context()).Warnf("%s %s: ultimo contatto del dispositivo non aggiornato: %v", c.Request.Method, c.FullPath(), err)
 		c.JSON(http.StatusOK, gin.H{})
 		return
 	}
@@ -80,7 +80,7 @@ func (i *Index) Heartbeat(c *gin.Context) {
 		upp := &model.Peer{RowId: peer.RowId, LastOnlineTime: time.Now().Unix(), LastOnlineIp: c.ClientIP()}
 		if err := service.AllService.PeerService.Update(upp); err != nil {
 			// Il client non legge l'errore: l'ultimo contatto resta quello di prima.
-			global.Logger.Warnf("%s %s: ultimo contatto del dispositivo non salvato: %v", c.Request.Method, c.FullPath(), err)
+			global.Logger.Per(c.Request.Context()).Warnf("%s %s: ultimo contatto del dispositivo non salvato: %v", c.Request.Method, c.FullPath(), err)
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{})

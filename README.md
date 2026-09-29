@@ -87,6 +87,12 @@ JSON, una riga per evento:
 {"time":"2026-09-29T13:33:09.69Z","level":"WARN","source":{"function":"...","file":"...","line":64},"msg":"rustdesk.id-server vuoto: ..."}
 ```
 
+Ogni risposta ha l'header `X-Request-Id`, un id casuale che l'API sceglie
+per la richiesta (un `X-Request-Id` mandato dal chiamante non si usa); le
+righe scritte durante la richiesta lo hanno come `request_id`. A livello
+`debug` c'e' anche una riga `richiesta` per ogni richiesta, con metodo, rotta,
+stato e durata, senza IP ne' query.
+
 Backup: ad API accesa con `sqlite3 rustdeskapi.db "VACUUM INTO '<file>'"` (o
 `.backup` di `sqlite3`), mai copiando il solo `rustdeskapi.db`, a cui
 mancherebbero le scritture ancora nel `-wal`; ad API ferma, dopo uno stop
@@ -182,8 +188,8 @@ stesso default se la chiave manca dal file.
 | `rustdesk.key` | `RUSTDESK_API_RUSTDESK_KEY` | vuoto | chiave pubblica di `hbbs`; vuota = si legge `rustdesk.key-file` |
 | `rustdesk.key-file` | `RUSTDESK_API_RUSTDESK_KEY_FILE` | `/data/id_ed25519.pub` | file della chiave; se non si legge, la chiave resta vuota senza errore |
 | `rustdesk.personal` | `RUSTDESK_API_RUSTDESK_PERSONAL` | `1` | `1` rubrica personale attiva, `0` spenta |
-| `logger.path` | `RUSTDESK_API_LOGGER_PATH` | vuoto | ignorata: il log va solo su stdout; se impostata, all'avvio un warn lo dice |
-| `logger.level` | `RUSTDESK_API_LOGGER_LEVEL` | `info` | `debug`, `info`, `warn`, `error`; un altro valore ferma l'avvio |
+| `logger.path` \* | `RUSTDESK_API_LOGGER_PATH` | vuoto | ignorata: il log va solo su stdout; se impostata, all'avvio un warn lo dice |
+| `logger.level` \* | `RUSTDESK_API_LOGGER_LEVEL` | `info` | `debug`, `info`, `warn`, `error`; un altro valore ferma l'avvio |
 | `logger.report-caller` | `RUSTDESK_API_LOGGER_REPORT_CALLER` | `true` | `source` (funzione, file e riga del codice) in ogni riga di log |
 | `proxy.enable` | `RUSTDESK_API_PROXY_ENABLE` | `false` | proxy HTTP per le richieste dell'API al provider OAuth/OIDC |
 | `proxy.host` | `RUSTDESK_API_PROXY_HOST` | `http://127.0.0.1:1080` | indirizzo del proxy |

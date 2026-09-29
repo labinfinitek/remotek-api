@@ -188,7 +188,7 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 	oauthUser, err := oauthService.Callback(code, verifier, op, nonce)
 	if err != nil {
 		// L'errore del provider va solo nel log, la pagina dice OauthFailed.
-		global.Logger.Warnf("%s %s: alla pagina va OauthFailed, errore %q", c.Request.Method, c.FullPath(), err)
+		global.Logger.Per(c.Request.Context()).Warnf("%s %s: alla pagina va OauthFailed, errore %q", c.Request.Method, c.FullPath(), err)
 		c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
 			"message": "OauthFailed",
 		})

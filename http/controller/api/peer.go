@@ -93,7 +93,7 @@ func (p *Peer) SysInfo(c *gin.Context) {
 func ultimoUtente(c *gin.Context, uuid, id string) uint {
 	userId, err := service.AllService.UserService.FindLatestUserIdFromLoginLogByUuid(uuid, id)
 	if err != nil && !errors.Is(err, service.ErrNotFound) {
-		global.Logger.Warnf("%s %s: dispositivo salvato senza utente: %v", c.Request.Method, c.FullPath(), err)
+		global.Logger.Per(c.Request.Context()).Warnf("%s %s: dispositivo salvato senza utente: %v", c.Request.Method, c.FullPath(), err)
 	}
 	return userId
 }
@@ -102,7 +102,7 @@ func ultimoUtente(c *gin.Context, uuid, id string) uint {
 // perche' l'ID id non e' un PC salvato con l'uuid arrivato. Nel log vanno
 // rotta e ID, non gli uuid.
 func dispositivoDiverso(c *gin.Context, id, perche string) {
-	global.Logger.Warnf("%s %s: dispositivo %s: %s, niente salvato", c.Request.Method, c.FullPath(), id, perche)
+	global.Logger.Per(c.Request.Context()).Warnf("%s %s: dispositivo %s: %s, niente salvato", c.Request.Method, c.FullPath(), id, perche)
 }
 
 // SysInfoVer restituisce la versione dell'API e l'ora di avvio.

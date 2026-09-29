@@ -85,6 +85,12 @@ are folded back into it and removed. The log goes to stdout only
 {"time":"2026-09-29T13:33:09.69Z","level":"WARN","source":{"function":"...","file":"...","line":64},"msg":"rustdesk.id-server vuoto: ..."}
 ```
 
+Every response has the `X-Request-Id` header, a random id the API picks for
+the request (an `X-Request-Id` sent by the caller is not used); lines written
+while handling the request carry it as `request_id`. At `debug` level there
+is also one `richiesta` line per request, with method, route, status and
+duration, without IP or query.
+
 Backup: with the API running use `sqlite3 rustdeskapi.db "VACUUM INTO '<file>'"`
 (or `sqlite3`'s `.backup`), never a copy of `rustdeskapi.db` alone, which
 would miss the writes still in the `-wal`; with the API stopped, after a
@@ -178,8 +184,8 @@ default when the key is missing from the file.
 | `rustdesk.key` | `RUSTDESK_API_RUSTDESK_KEY` | empty | public key of `hbbs`; empty = `rustdesk.key-file` is read |
 | `rustdesk.key-file` | `RUSTDESK_API_RUSTDESK_KEY_FILE` | `/data/id_ed25519.pub` | key file; if it cannot be read, the key stays empty without an error |
 | `rustdesk.personal` | `RUSTDESK_API_RUSTDESK_PERSONAL` | `1` | `1` personal address book on, `0` off |
-| `logger.path` | `RUSTDESK_API_LOGGER_PATH` | empty | ignored: the log goes to stdout only; if set, a warn at startup says so |
-| `logger.level` | `RUSTDESK_API_LOGGER_LEVEL` | `info` | `debug`, `info`, `warn`, `error`; any other value stops startup |
+| `logger.path` \* | `RUSTDESK_API_LOGGER_PATH` | empty | ignored: the log goes to stdout only; if set, a warn at startup says so |
+| `logger.level` \* | `RUSTDESK_API_LOGGER_LEVEL` | `info` | `debug`, `info`, `warn`, `error`; any other value stops startup |
 | `logger.report-caller` | `RUSTDESK_API_LOGGER_REPORT_CALLER` | `true` | `source` (function, file and line of the code) in every log line |
 | `proxy.enable` | `RUSTDESK_API_PROXY_ENABLE` | `false` | HTTP proxy for the API's requests to the OAuth/OIDC provider |
 | `proxy.host` | `RUSTDESK_API_PROXY_HOST` | `http://127.0.0.1:1080` | proxy address |

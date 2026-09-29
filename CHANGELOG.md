@@ -7,6 +7,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 ## [Non rilasciato]
 
 ### Aggiunto
+- Header `X-Request-Id` in ogni risposta, con un id casuale scelto dall'API
+  (quello mandato dal chiamante non si usa), e lo stesso id come
+  `request_id` nelle righe di log scritte durante la richiesta. A debug, una
+  riga per richiesta con metodo, rotta, stato e durata; quella di prima, con
+  URL e IP, non c'e' piu'.
 - Colonna "Remark" nel registro delle connessioni del pannello, con la nota
   di sessione del tecnico; il testo lungo si legge nel tooltip. Il pannello
   nell'immagine e' ora rustdesk-api-web modificato dalle patch in
@@ -14,6 +19,9 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   in `resources/admin/LICENSE`.
 
 ### Corretto
+- `reset-admin-pwd`, `reset-pwd` o un comando sconosciuto con gli argomenti
+  sbagliati escono con codice 1 e il messaggio su stderr: prima, dopo il
+  messaggio, il processo andava in panic e usciva con 2.
 - Comandi del server nel pannello: "Aggiungi" dopo "Modifica" crea un
   comando nuovo invece di riscrivere quello appena modificato. L'API, in
   `POST /api/admin/rustdesk/cmdCreate`, ignora l'id del corpo: prima un id

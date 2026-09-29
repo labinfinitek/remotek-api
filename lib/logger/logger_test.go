@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -73,5 +74,21 @@ func TestLivelli(t *testing.T) {
 		if n := len(Righe(out.String())); n != 1 {
 			t.Errorf("livello %q: %d righe, attesa 1 (info)", livello, n)
 		}
+	}
+}
+
+// TestPer: le righe del logger di Per hanno il request_id del contesto;
+// senza request-id nel contesto, Per restituisce lo stesso logger.
+func TestPer(t *testing.T) {
+	var out strings.Builder
+	l := Su(&out)
+	if l.Per(context.Background()) != l {
+		t.Error("Per senza request-id: logger diverso")
+	}
+	l.Per(ConId(context.Background(), "abc")).Warnf("con id")
+	l.Warn("senza id")
+	righe := Righe(out.String())
+	if len(righe) != 2 || righe[0].RequestId != "abc" || righe[1].RequestId != "" {
+		t.Errorf("righe %+v, attese una con request_id abc e una senza", righe)
 	}
 }
