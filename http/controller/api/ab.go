@@ -314,7 +314,6 @@ func (a *Ab) TagDel(c *gin.Context) {
 		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
-	// fmt.Println(t)
 	u := service.AllService.UserService.CurUser(c)
 	guid := c.Param("guid")
 	_, uid, cid, err := a.CheckGuid(u, guid)
@@ -663,7 +662,6 @@ func (a *Ab) PeerAdd(c *gin.Context) {
 		return
 	}
 
-	// fmt.Println(f)
 	f.UserId = uid
 	ab := f.ToAddressBook()
 	ab.CollectionId = cid
@@ -769,7 +767,6 @@ func (a *Ab) PeerUpdate(c *gin.Context) {
 	if !a.permesso(c, u, uid, cid, model.ShareAddressBookRuleRuleReadWrite) {
 		return
 	}
-	// fmt.Println(f)
 	// 判断f["Id"]是否存在
 	fid, ok := f["id"]
 	if !ok {
@@ -791,7 +788,6 @@ func (a *Ab) PeerUpdate(c *gin.Context) {
 			delete(f, k)
 		}
 	}
-	// fmt.Println(f)
 	if tags, _ok := f["tags"]; _ok {
 		f["tags"], _ = json.Marshal(tags)
 	}

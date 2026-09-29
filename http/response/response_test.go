@@ -11,9 +11,9 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 
 	"github.com/lejianwen/rustdesk-api/v2/global"
+	"github.com/lejianwen/rustdesk-api/v2/lib/logger"
 )
 
 // TestErrorErr prova ErrorErr e FailErr su un router di gin, con i file di
@@ -26,9 +26,7 @@ func TestErrorErr(t *testing.T) {
 	global.Config.Gin.ResourcesPath = filepath.Join("..", "..", "resources")
 	global.Config.Lang = "en"
 	var registro strings.Builder
-	global.Logger = logrus.New()
-	global.Logger.SetOutput(&registro)
-	global.Logger.SetFormatter(&logrus.TextFormatter{DisableQuote: true, DisableTimestamp: true})
+	global.Logger = logger.Su(&registro)
 	global.InitI18n()
 
 	interno := errors.New("dial tcp 192.0.2.1:5432: connect: connection refused")
@@ -63,8 +61,9 @@ func TestErrorErr(t *testing.T) {
 			if rec.Code != f.stato || rec.Body.String() != f.corpo {
 				t.Errorf("%s, %s:\n got  %d %s\n want %d %s", tc.nome, f.nome, rec.Code, rec.Body, f.stato, f.corpo)
 			}
-			if riga := "level=warning msg=POST /prova/:guid: al client va " + tc.nelLog + "\n"; registro.String() != riga {
-				t.Errorf("%s, %s, log:\n got  %s want %s", tc.nome, f.nome, registro.String(), riga)
+			righe := logger.Righe(registro.String())
+			if msg := "POST /prova/:guid: al client va " + tc.nelLog; len(righe) != 1 || righe[0].Level != "WARN" || righe[0].Msg != msg {
+				t.Errorf("%s, %s, log:\n got  %s want una riga WARN %s", tc.nome, f.nome, registro.String(), msg)
 			}
 		}
 	}
@@ -87,8 +86,7 @@ func TestRipiegoInglese(t *testing.T) {
 	global.Config.Gin.ResourcesPath = filepath.Dir(dir)
 	global.Config.Lang = "it"
 	var registro strings.Builder
-	global.Logger = logrus.New()
-	global.Logger.SetOutput(&registro)
+	global.Logger = logger.Su(&registro)
 	global.InitI18n()
 
 	for _, lingua := range []string{"it-IT", ""} {
@@ -116,8 +114,7 @@ func TestIDErr(t *testing.T) {
 	global.Config.Gin.ResourcesPath = filepath.Join("..", "..", "resources")
 	global.Config.Lang = "en"
 	var registro strings.Builder
-	global.Logger = logrus.New()
-	global.Logger.SetOutput(&registro)
+	global.Logger = logger.Su(&registro)
 	global.InitI18n()
 
 	interno := errors.New("dial tcp 192.0.2.1:5432: connect: connection refused")

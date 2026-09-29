@@ -24,6 +24,20 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   risposta di `sendCmd` ("Parametri non validi."). Prima il comando si
   salvava e poi non si poteva mandare.
 
+### Modificato
+- Log in JSON su stdout con `log/slog`, una riga per evento con `time`,
+  `level` (`DEBUG`, `INFO`, `WARN`, `ERROR`), `msg` e, con
+  `logger.report-caller`, `source`; prima testo `[AAAA-MM-GG hh:mm:ss]
+  [WARN] ...`. Le righe SQL lente o in errore di gorm escono a warn, senza
+  codici colore; il panic di una richiesta esce a error con metodo, rotta e
+  stack, senza gli header della richiesta.
+- **Rottura:** niente piu' file di log: `logger.path` (prima
+  `./runtime/log.txt`, fuori dal volume dei dati e fuori dalla rotazione, con
+  nomi utente e IP) e' ignorata, e se impostata all'avvio un warn lo dice.
+  `logger.level` accetta solo `debug`, `info`, `warn`, `error` (vuoto =
+  `info`): `trace`, `fatal`, `panic` o un valore non valido fermano l'avvio,
+  dove prima un valore non valido valeva `debug`.
+
 ### Sicurezza
 - Esportazioni CSV del pannello (connessioni, file, utenti, dispositivi, i
   miei dispositivi, login) senza formule: un `=`, `+`, `-`, `@`, tab o

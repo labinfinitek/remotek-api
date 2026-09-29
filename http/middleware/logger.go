@@ -2,20 +2,17 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 
 	"github.com/lejianwen/rustdesk-api/v2/global"
 )
 
-// Logger 日志中间件
+// Logger scrive a debug una riga per richiesta.
 func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		global.Logger.WithFields(
-			logrus.Fields{
-				"uri":    c.Request.URL,
-				"ip":     c.ClientIP(),
-				"method": c.Request.Method,
-			}).Debug("Request")
+		global.Logger.Slog().Debug("Request",
+			"uri", c.Request.URL.String(),
+			"ip", c.ClientIP(),
+			"method", c.Request.Method)
 		c.Next()
 	}
 }

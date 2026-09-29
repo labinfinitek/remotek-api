@@ -13,6 +13,7 @@ import (
 
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/lib/jwt"
+	"github.com/lejianwen/rustdesk-api/v2/lib/logger"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 )
@@ -100,7 +101,7 @@ func TestNotaDuranteLaSessione(t *testing.T) {
 			if got := note(t); !reflect.DeepEqual(tc.want, got) {
 				t.Errorf("note per conn_id: %v, attese %v", got, tc.want)
 			}
-			if nelLog := registro.String(); tc.info != strings.Contains(nelLog, "level=info") || tc.info != strings.Contains(nelLog, "999000111") {
+			if nelLog := registro.String(); tc.info != (logger.Conta(nelLog, "INFO", "999000111") == 1) || tc.info != strings.Contains(nelLog, "999000111") {
 				t.Errorf("riga di info attesa %v, log:\n%s", tc.info, nelLog)
 			}
 			senzaNota(t, registro)
@@ -132,7 +133,7 @@ func TestNotaSessioneZero(t *testing.T) {
 			if got, want := note(t), map[int64]string{5: ""}; !reflect.DeepEqual(want, got) {
 				t.Errorf("note per conn_id: %v, attese %v", got, want)
 			}
-			if nelLog := registro.String(); !strings.Contains(nelLog, "level=info") || !strings.Contains(nelLog, "nota di sessione senza connessione registrata") {
+			if nelLog := registro.String(); logger.Conta(nelLog, "INFO", "nota di sessione senza connessione registrata") != 1 {
 				t.Errorf("manca la riga di info, log:\n%s", nelLog)
 			}
 			senzaNota(t, registro)

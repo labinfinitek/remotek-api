@@ -10,7 +10,6 @@ import (
 func Cors() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
-		// fmt.Println("origin", origin)
 		c.Header("Access-Control-Allow-Origin", origin)
 		c.Header("Access-Control-Allow-Headers", "api-token,content-type,authorization ")
 		c.Header("Access-Control-Allow-Methods", c.Request.Method)

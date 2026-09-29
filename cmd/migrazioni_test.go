@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -11,6 +10,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	applog "github.com/lejianwen/rustdesk-api/v2/lib/logger"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 )
 
@@ -73,12 +73,8 @@ func TestVincoloDispositivi(t *testing.T) {
 	if err := salva(); err != nil {
 		t.Errorf("dispositivo senza utente dopo l'avvio, con foreign_keys acceso: %v", err)
 	}
-	registro, err := os.ReadFile(filepath.Join(dir, "runtime", "log.txt"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(registro), "tolta da peers la chiave esterna fk_peers_user") {
-		t.Errorf("il log non dice della chiave tolta:\n%s", registro)
+	if applog.Conta(out, "INFO", "tolta da peers la chiave esterna fk_peers_user") != 1 {
+		t.Errorf("il log non dice della chiave tolta:\n%s", out)
 	}
 }
 

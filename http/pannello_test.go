@@ -12,12 +12,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm/logger"
 
 	"github.com/lejianwen/rustdesk-api/v2/config"
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/lib/lock"
+	applog "github.com/lejianwen/rustdesk-api/v2/lib/logger"
 	"github.com/lejianwen/rustdesk-api/v2/lib/orm"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
@@ -37,8 +37,7 @@ func pannello(t *testing.T, admin bool) (*gin.Engine, *model.User, *strings.Buil
 	t.Chdir("..") // il router legge resources/ dalla cartella corrente
 	global.Viper = config.Init(&global.Config, filepath.Join("conf", "config.yaml"))
 	registro := &strings.Builder{}
-	global.Logger = logrus.New()
-	global.Logger.SetOutput(registro)
+	global.Logger = applog.Su(registro)
 	global.InitI18n()
 	global.ApiInitValidator()
 	db, err := orm.ApriSqlite(filepath.Join(t.TempDir(), "api.db"), logger.Discard)

@@ -78,8 +78,12 @@ The repository's `docker-compose.yaml` builds the image from source instead.
 `rustdeskapi.db` and `admin-password.txt`; while the API runs,
 `rustdeskapi.db-wal` and `rustdeskapi.db-shm` (SQLite in WAL mode) sit next
 to the database, and on a clean stop (SIGTERM, `docker compose stop`) they
-are folded back into it and removed. The log goes to stdout
-(`docker compose logs`) and to `/app/runtime/log.txt`, inside the container.
+are folded back into it and removed. The log goes to stdout only
+(`docker compose logs`), as JSON, one line per event:
+
+```json
+{"time":"2026-09-29T13:33:09.69Z","level":"WARN","source":{"function":"...","file":"...","line":64},"msg":"rustdesk.id-server vuoto: ..."}
+```
 
 Backup: with the API running use `sqlite3 rustdeskapi.db "VACUUM INTO '<file>'"`
 (or `sqlite3`'s `.backup`), never a copy of `rustdeskapi.db` alone, which
@@ -174,9 +178,9 @@ default when the key is missing from the file.
 | `rustdesk.key` | `RUSTDESK_API_RUSTDESK_KEY` | empty | public key of `hbbs`; empty = `rustdesk.key-file` is read |
 | `rustdesk.key-file` | `RUSTDESK_API_RUSTDESK_KEY_FILE` | `/data/id_ed25519.pub` | key file; if it cannot be read, the key stays empty without an error |
 | `rustdesk.personal` | `RUSTDESK_API_RUSTDESK_PERSONAL` | `1` | `1` personal address book on, `0` off |
-| `logger.path` | `RUSTDESK_API_LOGGER_PATH` | `./runtime/log.txt` | log file (0600), besides stdout; empty = stdout only. If it cannot be opened, startup stops |
-| `logger.level` | `RUSTDESK_API_LOGGER_LEVEL` | `info` | `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic`; an invalid value means `debug` |
-| `logger.report-caller` | `RUSTDESK_API_LOGGER_REPORT_CALLER` | `true` | source file and line in every log line |
+| `logger.path` | `RUSTDESK_API_LOGGER_PATH` | empty | ignored: the log goes to stdout only; if set, a warn at startup says so |
+| `logger.level` | `RUSTDESK_API_LOGGER_LEVEL` | `info` | `debug`, `info`, `warn`, `error`; any other value stops startup |
+| `logger.report-caller` | `RUSTDESK_API_LOGGER_REPORT_CALLER` | `true` | `source` (function, file and line of the code) in every log line |
 | `proxy.enable` | `RUSTDESK_API_PROXY_ENABLE` | `false` | HTTP proxy for the API's requests to the OAuth/OIDC provider |
 | `proxy.host` | `RUSTDESK_API_PROXY_HOST` | `http://127.0.0.1:1080` | proxy address |
 | `jwt.key` | `RUSTDESK_API_JWT_KEY` | empty | empty: random session tokens (16 bytes, hex); set: JWT tokens signed with this key. With the official server leave it empty |

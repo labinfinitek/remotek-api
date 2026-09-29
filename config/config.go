@@ -85,6 +85,10 @@ func Init(rowVal *Config, path string) *viper.Viper {
 	v.SetDefault("brand.name", DefaultBrandName)
 	v.SetDefault("brand.dir", DefaultBrandDir)
 	v.SetDefault("admin.title", "") // vuoto: brand.name (Admin.Init)
+	// Log: info, e logger.path nota a viper solo perche' l'avvio dica che
+	// RUSTDESK_API_LOGGER_PATH e' ignorata.
+	v.SetDefault("logger.level", "info")
+	v.SetDefault("logger.path", "")
 	v.AutomaticEnv()
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	v.SetEnvPrefix("RUSTDESK_API")
@@ -94,36 +98,11 @@ func Init(rowVal *Config, path string) *viper.Viper {
 	if err != nil {
 		panic(fmt.Errorf("lettura della configurazione %s: %w", path, err))
 	}
-	/*
-		v.WatchConfig()
-
-
-			//监听配置修改没什么必要
-			v.OnConfigChange(func(e fsnotify.Event) {
-				//配置文件修改监听
-				fmt.Println("config file changed:", e.Name)
-				if err2 := v.Unmarshal(rowVal); err2 != nil {
-					fmt.Println(err2)
-				}
-				rowVal.Rustdesk.LoadKeyFile()
-				rowVal.Rustdesk.ParsePort()
-			})
-	*/
 	if err := v.Unmarshal(rowVal); err != nil {
 		panic(fmt.Errorf("configurazione %s non valida: %w", path, err))
 	}
 	rowVal.Rustdesk.LoadKeyFile()
 	rowVal.Brand.Init()
 	rowVal.Admin.Init(rowVal.Brand)
-	return v
-}
-
-// ReadEnv 读取环境变量
-func ReadEnv(rowVal interface{}) *viper.Viper {
-	v := viper.New()
-	v.AutomaticEnv()
-	if err := v.Unmarshal(rowVal); err != nil {
-		fmt.Println(err)
-	}
 	return v
 }

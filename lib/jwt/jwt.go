@@ -1,7 +1,7 @@
 package jwt
 
 import (
-	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -26,7 +26,7 @@ func NewJwt(key string, tokenExpireDuration time.Duration) *Jwt {
 
 func (s *Jwt) GenerateToken(userId uint) string {
 	if len(s.Key) == 0 {
-		fmt.Println("jwt key is nil")
+		slog.Error("jwt.key vuota: token non generato")
 		return ""
 	}
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256,
@@ -38,7 +38,7 @@ func (s *Jwt) GenerateToken(userId uint) string {
 		})
 	token, err := t.SignedString(s.Key)
 	if err != nil {
-		fmt.Printf("jwt token generate error: %v", err)
+		slog.Error("token jwt non generato", "err", err)
 		return ""
 	}
 	return token

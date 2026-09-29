@@ -3,6 +3,8 @@ package main
 import (
 	"strings"
 	"testing"
+
+	"github.com/lejianwen/rustdesk-api/v2/lib/logger"
 )
 
 // TestAvvisiLdap prova sul binario vero che l'avvio con LDAP acceso scriva
@@ -12,8 +14,8 @@ import (
 // con LDAP spento.
 func TestAvvisiLdap(t *testing.T) {
 	const (
-		inChiaro      = "[WARN] LDAP: ldap.url usa ldap:// senza TLS, le password del bind e degli utenti passano in chiaro"
-		nonVerificato = "[WARN] LDAP: ldap.tls-verify e' false, con ldaps:// i certificati del server non si verificano"
+		inChiaro      = "LDAP: ldap.url usa ldap:// senza TLS, le password del bind e degli utenti passano in chiaro"
+		nonVerificato = "LDAP: ldap.tls-verify e' false, con ldaps:// i certificati del server non si verificano"
 	)
 	for _, tc := range []struct {
 		caso, enable, url, verify, want string
@@ -32,12 +34,12 @@ func TestAvvisiLdap(t *testing.T) {
 				t.Fatalf("avvio: codice %d\n%s", codice, out)
 			}
 			for _, riga := range []string{inChiaro, nonVerificato} {
-				n, want := strings.Count(out, riga), 0
+				n, want := logger.Conta(out, "WARN", riga), 0
 				if riga == tc.want {
 					want = 1
 				}
 				if n != want {
-					t.Errorf("%d righe %q, attese %d\n%s", n, riga, want, out)
+					t.Errorf("%d righe WARN %q, attese %d\n%s", n, riga, want, out)
 				}
 			}
 			if strings.Contains(out, "segreto") {

@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/lejianwen/rustdesk-api/v2/lib/logger"
 )
 
 // TestFileDiLinguaRotto avvia il binario vero con una cartella di lingue
@@ -52,8 +54,8 @@ func TestLangNonSupportato(t *testing.T) {
 			t.Setenv("RUSTDESK_API_LANG", lang)
 			codice, out := esegui(t, dir)
 			messaggio := `lang "` + lang + `" non supportato, l'API non parte: i valori ammessi sono "en", "it", o vuoto per l'inglese`
-			if codice != 1 || !strings.Contains(out, messaggio) {
-				t.Errorf("codice %d, attesi 1 e %q nel messaggio\n%s", codice, messaggio, out)
+			if codice != 1 || logger.Conta(out, "ERROR", messaggio) != 1 {
+				t.Errorf("codice %d, attesi 1 e una riga ERROR %q\n%s", codice, messaggio, out)
 			}
 			if _, err := os.Stat(filepath.Join(dir, "data", "rustdeskapi.db")); !errors.Is(err, os.ErrNotExist) {
 				t.Errorf("data/rustdeskapi.db creato o illeggibile (%v): l'avvio doveva fermarsi prima", err)

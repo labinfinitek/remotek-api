@@ -41,7 +41,6 @@ func (l *Login) Login(c *gin.Context) {
 
 	f := &api.LoginForm{}
 	err := c.ShouldBindJSON(f)
-	// fmt.Println(f)
 	if err != nil {
 		loginLimiter.RecordFailedAttempt(clientIp)
 		global.Logger.Warn(fmt.Sprintf("Login Fail: %s %s %s", "ParamsError", c.RemoteIP(), c.ClientIP()))

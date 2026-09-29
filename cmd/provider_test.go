@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/lejianwen/rustdesk-api/v2/lib/logger"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 )
 
@@ -37,13 +38,15 @@ func TestAvvioProviderNonSupportati(t *testing.T) {
 		t.Fatalf("avvio coi provider dei tipi tolti: codice %d, atteso 0\n%s", codice, out)
 	}
 	for _, p := range provider[:3] {
-		riga := `[WARN] provider OAuth "` + p.Op + `" di tipo "` + p.OauthType + `" ignorato: il login usa solo il tipo oidc`
-		if n := strings.Count(out, riga); n != 1 {
-			t.Errorf("%d righe %q, attesa 1\n%s", n, riga, out)
+		riga := `provider OAuth "` + p.Op + `" di tipo "` + p.OauthType + `" ignorato: il login usa solo il tipo oidc`
+		if n := logger.Conta(out, "WARN", riga); n != 1 {
+			t.Errorf("%d righe WARN %q, attesa 1\n%s", n, riga, out)
 		}
 	}
-	if strings.Contains(out, `"aziendale"`) {
-		t.Errorf("warn per il provider oidc\n%s", out)
+	for _, r := range logger.Righe(out) {
+		if strings.Contains(r.Msg, `"aziendale"`) {
+			t.Errorf("riga per il provider oidc\n%s", out)
+		}
 	}
 	var ops []string
 	if err := db.Model(&model.Oauth{}).Order("id").Pluck("op", &ops).Error; err != nil {

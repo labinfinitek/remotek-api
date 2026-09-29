@@ -4,7 +4,6 @@ go 1.26.8
 
 require (
 	github.com/BurntSushi/toml v1.3.2
-	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/coreos/go-oidc/v3 v3.12.0
 	github.com/fvbock/endless v0.0.0-20170109170031-447134032cb6
 	github.com/gin-gonic/gin v1.9.1
@@ -17,7 +16,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.23
 	github.com/mojocn/base64Captcha v1.3.6
 	github.com/nicksnyder/go-i18n/v2 v2.4.0
-	github.com/sirupsen/logrus v1.8.3
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.9.0
 	github.com/swaggo/files v1.0.1
