@@ -26,4 +26,5 @@ model
 model/custom_types
 service
 test/contratto
+test/oidcfinto
 utils
