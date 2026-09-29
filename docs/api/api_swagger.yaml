@@ -16,12 +16,16 @@ definitions:
         type: string
       ip:
         type: string
+      note:
+        description: c'e' solo nella nota durante la sessione
+        type: string
       peer:
         items:
           type: string
         type: array
       session_id:
-        type: number
+        description: 'u64 casuale nel client: un float64 lo arrotonda sopra 2^53'
+        type: integer
       type:
         type: integer
       uuid:
@@ -42,6 +46,13 @@ definitions:
       type:
         type: integer
       uuid:
+        type: string
+    type: object
+  api.AuditNotaForm:
+    properties:
+      guid:
+        type: string
+      note:
         type: string
     type: object
   api.DeviceInfoInLogin:
@@ -265,7 +276,7 @@ paths:
       summary: 地址更新
       tags:
       - 地址
-  /ab/peer/add/{guid}:
+  /ab/peer/{guid}:
     delete:
       consumes:
       - application/json
@@ -292,6 +303,7 @@ paths:
       summary: 删除地址
       tags:
       - 地址[Personal]
+  /ab/peer/add/{guid}:
     post:
       consumes:
       - application/json
@@ -598,6 +610,33 @@ paths:
       summary: 标签
       tags:
       - 地址[Personal]
+  /audit:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: guid e nota
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.AuditNotaForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - token: []
+      summary: nota di fine connessione
+      tags:
+      - 审计
   /audit/conn:
     post:
       consumes:
@@ -622,6 +661,40 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
       summary: 审计连接
+      tags:
+      - 审计
+  /audit/conn/active:
+    get:
+      parameters:
+      - description: ID del dispositivo
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: session_id
+        in: query
+        name: session_id
+        required: true
+        type: string
+      - description: tipo della connessione
+        in: query
+        name: conn_type
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - token: []
+      summary: guid della connessione aperta
       tags:
       - 审计
   /audit/file:
@@ -651,7 +724,7 @@ paths:
       tags:
       - 审计
   /currentUser:
-    get:
+    post:
       consumes:
       - application/json
       description: 用户信息
@@ -792,6 +865,44 @@ paths:
       summary: 登出
       tags:
       - 登录
+  /oauth/callback:
+    get:
+      consumes:
+      - application/json
+      description: OauthCallback
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.LoginRes'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: OauthCallback
+      tags:
+      - Oauth
+  /oauth/login:
+    get:
+      consumes:
+      - application/json
+      description: OauthCallback
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.LoginRes'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: OauthCallback
+      tags:
+      - Oauth
   /oidc/auth:
     post:
       consumes:
@@ -849,6 +960,25 @@ paths:
       summary: OauthCallback
       tags:
       - Oauth
+  /oidc/login:
+    get:
+      consumes:
+      - application/json
+      description: OauthCallback
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.LoginRes'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: OauthCallback
+      tags:
+      - Oauth
   /peers:
     get:
       consumes:
@@ -887,67 +1017,6 @@ paths:
       summary: 机器
       tags:
       - 群组
-  /server-config:
-    get:
-      consumes:
-      - application/json
-      description: 服务配置,给webclient提供api-server
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.Response'
-      security:
-      - token: []
-      summary: 服务配置
-      tags:
-      - WEBCLIENT
-  /server-config-v2:
-    get:
-      consumes:
-      - application/json
-      description: 服务配置,给webclient提供api-server
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.Response'
-      security:
-      - token: []
-      summary: 服务配置
-      tags:
-      - WEBCLIENT_V2
-  /shared-peer:
-    post:
-      consumes:
-      - application/json
-      description: 分享的peer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.Response'
-      summary: 分享的peer
-      tags:
-      - WEBCLIENT
   /sysinfo:
     post:
       consumes:
@@ -993,6 +1062,27 @@ paths:
       summary: 获取系统版本信息
       tags:
       - System
+  /user/info:
+    get:
+      consumes:
+      - application/json
+      description: 用户信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.UserPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - token: []
+      summary: 用户信息
+      tags:
+      - 用户
   /users:
     get:
       consumes:

@@ -128,7 +128,8 @@ cartella usa `-c <percorso>/conf/config.yaml` e
 `RUSTDESK_API_GIN_RESOURCES_PATH=<percorso>/resources`. Il pannello non e'
 nel repo (lo compila il `Dockerfile` in `resources/admin/`): senza, `/_admin/`
 non ha pagine. La documentazione swagger si rigenera con
-`go generate -tags tools ./tools` (serve `swag` nel `PATH`).
+`go generate -tags tools ./tools` (serve nel `PATH` `swag` v1.16.3, la
+versione di `go.mod`).
 
 ## Configurazione
 

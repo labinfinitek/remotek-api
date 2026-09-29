@@ -162,14 +162,16 @@ const docTemplateapi = `{
                         }
                     }
                 }
-            },
-            "delete": {
+            }
+        },
+        "/ab/peer/update/{guid}": {
+            "put": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "删除地址",
+                "description": "更新地址",
                 "consumes": [
                     "application/json"
                 ],
@@ -179,7 +181,7 @@ const docTemplateapi = `{
                 "tags": [
                     "地址[Personal]"
                 ],
-                "summary": "删除地址",
+                "summary": "更新地址",
                 "parameters": [
                     {
                         "type": "string",
@@ -205,14 +207,14 @@ const docTemplateapi = `{
                 }
             }
         },
-        "/ab/peer/update/{guid}": {
-            "put": {
+        "/ab/peer/{guid}": {
+            "delete": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "更新地址",
+                "description": "删除地址",
                 "consumes": [
                     "application/json"
                 ],
@@ -222,7 +224,7 @@ const docTemplateapi = `{
                 "tags": [
                     "地址[Personal]"
                 ],
-                "summary": "更新地址",
+                "summary": "删除地址",
                 "parameters": [
                     {
                         "type": "string",
@@ -653,6 +655,50 @@ const docTemplateapi = `{
                 }
             }
         },
+        "/audit": {
+            "put": {
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "审计"
+                ],
+                "summary": "nota di fine connessione",
+                "parameters": [
+                    {
+                        "description": "guid e nota",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.AuditNotaForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/audit/conn": {
             "post": {
                 "description": "审计连接",
@@ -688,6 +734,59 @@ const docTemplateapi = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/audit/conn/active": {
+            "get": {
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "审计"
+                ],
+                "summary": "guid della connessione aperta",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del dispositivo",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "session_id",
+                        "name": "session_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "tipo della connessione",
+                        "name": "conn_type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
                         }
                     }
                 }
@@ -734,7 +833,7 @@ const docTemplateapi = `{
             }
         },
         "/currentUser": {
-            "get": {
+            "post": {
                 "security": [
                     {
                         "token": []
@@ -954,6 +1053,64 @@ const docTemplateapi = `{
                 }
             }
         },
+        "/oauth/callback": {
+            "get": {
+                "description": "OauthCallback",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Oauth"
+                ],
+                "summary": "OauthCallback",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.LoginRes"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth/login": {
+            "get": {
+                "description": "OauthCallback",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Oauth"
+                ],
+                "summary": "OauthCallback",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.LoginRes"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/oidc/auth": {
             "post": {
                 "description": "OidcAuth",
@@ -1013,6 +1170,35 @@ const docTemplateapi = `{
             }
         },
         "/oidc/callback": {
+            "get": {
+                "description": "OauthCallback",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Oauth"
+                ],
+                "summary": "OauthCallback",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.LoginRes"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/oidc/login": {
             "get": {
                 "description": "OauthCallback",
                 "consumes": [
@@ -1101,103 +1287,6 @@ const docTemplateapi = `{
                 }
             }
         },
-        "/server-config": {
-            "get": {
-                "security": [
-                    {
-                        "token": []
-                    }
-                ],
-                "description": "服务配置,给webclient提供api-server",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "WEBCLIENT"
-                ],
-                "summary": "服务配置",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/server-config-v2": {
-            "get": {
-                "security": [
-                    {
-                        "token": []
-                    }
-                ],
-                "description": "服务配置,给webclient提供api-server",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "WEBCLIENT_V2"
-                ],
-                "summary": "服务配置",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/shared-peer": {
-            "post": {
-                "description": "分享的peer",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "WEBCLIENT"
-                ],
-                "summary": "分享的peer",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/sysinfo": {
             "post": {
                 "description": "提交系统信息",
@@ -1262,6 +1351,40 @@ const docTemplateapi = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/info": {
+            "get": {
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "description": "用户信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户"
+                ],
+                "summary": "用户信息",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.UserPayload"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1397,6 +1520,10 @@ const docTemplateapi = `{
                 "ip": {
                     "type": "string"
                 },
+                "note": {
+                    "description": "c'e' solo nella nota durante la sessione",
+                    "type": "string"
+                },
                 "peer": {
                     "type": "array",
                     "items": {
@@ -1404,7 +1531,8 @@ const docTemplateapi = `{
                     }
                 },
                 "session_id": {
-                    "type": "number"
+                    "description": "u64 casuale nel client: un float64 lo arrotonda sopra 2^53",
+                    "type": "integer"
                 },
                 "type": {
                     "type": "integer"
@@ -1436,6 +1564,17 @@ const docTemplateapi = `{
                     "type": "integer"
                 },
                 "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.AuditNotaForm": {
+            "type": "object",
+            "properties": {
+                "guid": {
+                    "type": "string"
+                },
+                "note": {
                     "type": "string"
                 }
             }

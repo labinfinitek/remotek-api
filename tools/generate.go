@@ -10,7 +10,12 @@
 // swag nel PATH:
 //
 //	go generate -tags tools ./tools
+//
+// swag ricava il percorso di import dei pacchetti da quello della cartella
+// di ricerca: la radice non ha piu' file Go, quindi le cartelle si danno una
+// per una (-d), ognuna con file Go propri. Una cartella nuova con tipi citati
+// dalle annotazioni va aggiunta a -d.
 package tools
 
-//go:generate sh -c "cd .. && swag init -g cmd/apimain.go --output docs/api --instanceName api --exclude http/controller/admin"
-//go:generate sh -c "cd .. && swag init -g cmd/apimain.go --output docs/admin --instanceName admin --exclude http/controller/api"
+//go:generate sh -c "cd .. && swag init -g apimain.go -d ./cmd,./http,./model --output docs/api --instanceName api --exclude http/controller/admin"
+//go:generate sh -c "cd .. && swag init -g apimain.go -d ./cmd,./http,./model --output docs/admin --instanceName admin --exclude http/controller/api"
