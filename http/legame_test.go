@@ -137,6 +137,31 @@ func TestHeartbeatUuidDiverso(t *testing.T) {
 		t.Errorf("la scheda e' cambiata: %+v, prima %+v", got, prima)
 	}
 	senzaUuid(t, registro, "/api/heartbeat")
+	if !strings.Contains(registro.String(), "uuid diverso da quello salvato") {
+		t.Errorf("POST /api/heartbeat: nel log manca il motivo:\n%s", registro)
+	}
+}
+
+// TestHeartbeatPcSenzaUuid prova sul router vero che l'heartbeat di un PC
+// creato dal pannello senza uuid, che si lega al primo sysinfo (ADR-0019),
+// risponde {} (golden heartbeat), non cambia la scheda e scrive nel log che
+// il PC aspetta il primo sysinfo, non che l'uuid e' diverso da quello
+// salvato, che e' vuoto.
+func TestHeartbeatPcSenzaUuid(t *testing.T) {
+	g, registro := dispositiviDiProva(t, &model.Peer{Id: "999000111", LastOnlineIp: "198.51.100.1"})
+	prima := scheda(t)
+
+	rec := richiesta(g, "POST", "/api/heartbeat", "", `{"id":"999000111","modified_at":0,"uuid":"`+uuidAltro+`","ver":1004090}`)
+	if rec.Code != 200 || rec.Body.String() != "{}" {
+		t.Errorf("POST /api/heartbeat: %d %s, attesi 200 e {}", rec.Code, rec.Body)
+	}
+	if got := scheda(t); !reflect.DeepEqual(prima, got) {
+		t.Errorf("la scheda e' cambiata: %+v, prima %+v", got, prima)
+	}
+	senzaUuid(t, registro, "/api/heartbeat")
+	if nelLog := registro.String(); !strings.Contains(nelLog, "PC senza uuid, in attesa del primo sysinfo") || strings.Contains(nelLog, "diverso") {
+		t.Errorf("POST /api/heartbeat: nel log il motivo non e' quello del PC senza uuid:\n%s", nelLog)
+	}
 }
 
 // TestSysinfoInsieme prova sul router vero due sysinfo dello stesso ID

@@ -65,8 +65,13 @@ func (i *Index) Heartbeat(c *gin.Context) {
 		return
 	case service.UuidDiverso:
 		// Ultimo contatto e IP sono del dispositivo salvato, non di chi
-		// ne conosce l'ID.
-		dispositivoDiverso(c, info.Id, "uuid diverso da quello salvato")
+		// ne conosce l'ID. Un PC creato dal pannello senza uuid si lega al
+		// primo sysinfo (ADR-0019), non all'heartbeat.
+		perche := "uuid diverso da quello salvato"
+		if peer.Uuid == "" {
+			perche = "PC senza uuid, in attesa del primo sysinfo"
+		}
+		dispositivoDiverso(c, info.Id, perche)
 		c.JSON(http.StatusOK, gin.H{})
 		return
 	}

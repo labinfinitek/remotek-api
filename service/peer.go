@@ -92,7 +92,7 @@ func (ps *PeerService) CreaIndiceIdUnico() (creato bool, doppi int64, err error)
 func (ps *PeerService) IdUsato(id string, rowId uint) (bool, error) {
 	var n int64
 	if err := DB.Model(&model.Peer{}).Where("id = ? and row_id <> ?", id, rowId).Count(&n).Error; err != nil {
-		return false, fmt.Errorf("ID del dispositivo gia' usato: %w", err)
+		return false, fmt.Errorf("controllo dell'ID del dispositivo: %w", err)
 	}
 	return n > 0, nil
 }
@@ -247,10 +247,12 @@ func (ps *PeerService) Update(u *model.Peer) error {
 // UpdateDalPannello salva i campi del modulo del pannello (admin.PeerForm),
 // anche vuoti, cosi' un nome del PC o un gruppo tolti restano tolti. L'alias
 // si scrive solo con conAlias, cioe' se il corpo aveva la chiave: il pannello
-// la manda solo se l'alias si e' toccato. ID e uuid vuoti non si scrivono:
-// il modulo li manda vuoti per non cambiarli, e un uuid vuoto scioglierebbe
-// il legame ID-uuid. Utente, ultimo contatto e IP non sono nel modulo e
-// restano quelli di prima.
+// la manda solo se l'alias si e' toccato. L'uuid vuoto non si scrive: il
+// modulo lo manda vuoto per non cambiarlo, e scriverlo scioglierebbe il
+// legame ID-uuid. L'ID vuoto il validatore di admin.PeerForm lo rifiuta
+// prima di qui; il controllo resta per chi chiamasse senza passare dal
+// modulo, perche' un PC senza ID non si riconosce piu'. Utente, ultimo
+// contatto e IP non sono nel modulo e restano quelli di prima.
 func (ps *PeerService) UpdateDalPannello(u *model.Peer, conAlias bool) error {
 	campi := []string{"cpu", "hostname", "memory", "os", "username", "version", "group_id"}
 	if conAlias {
