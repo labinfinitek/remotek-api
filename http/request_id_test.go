@@ -8,6 +8,7 @@ import (
 
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/lib/logger"
+	"github.com/lejianwen/rustdesk-api/v2/model"
 )
 
 // TestRequestId prova sul router vero che ogni risposta abbia X-Request-Id,
@@ -45,6 +46,28 @@ func TestRequestId(t *testing.T) {
 	}
 	if strings.Contains(registro.String(), "scelto-dal-chiamante") {
 		t.Errorf("X-Request-Id del chiamante nel log:\n%s", registro)
+	}
+}
+
+// TestRequestIdDelGestore prova sul router vero che anche la riga scritta da
+// un gestore del client con global.Logger.Per (qui il warn di /api/heartbeat
+// per un uuid diverso da quello salvato) abbia come request_id l'id
+// dell'header della sua risposta.
+func TestRequestIdDelGestore(t *testing.T) {
+	g, registro := dispositiviDiProva(t, &model.Peer{Id: "999000111", Uuid: uuidSalvato})
+	rec := richiesta(g, "POST", "/api/heartbeat", "", `{"id":"999000111","modified_at":0,"uuid":"`+uuidAltro+`","ver":1004090}`)
+	id := rec.Header().Get("X-Request-Id")
+	if rec.Code != 200 || id == "" {
+		t.Fatalf("POST /api/heartbeat: %d, X-Request-Id %q; attesi 200 e un id", rec.Code, id)
+	}
+	var righe []logger.Riga
+	for _, r := range logger.Righe(registro.String()) {
+		if r.Level == "WARN" && strings.Contains(r.Msg, "POST /api/heartbeat: dispositivo 999000111") {
+			righe = append(righe, r)
+		}
+	}
+	if len(righe) != 1 || righe[0].RequestId != id {
+		t.Errorf("righe di warn %+v, attesa una con request_id %q\n%s", righe, id, registro)
 	}
 }
 

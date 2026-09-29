@@ -73,7 +73,7 @@ in `package main` perche' li' c'e' `InitGlobal()`: e' provvisorio, finche'
 il bootstrap non esce da `cmd/`. Gira nel processo di `go test`:
 `InitGlobal()` vero, router vero (`http.NewEngine()`) servito da
 `httptest.NewServer`, cartella corrente spostata in una cartella temporanea
-con `data/`, `runtime/` e i collegamenti a `resources/` e `conf/`, quindi
+con `data/` e i collegamenti a `resources/` e `conf/`, quindi
 sqlite su un file temporaneo.
 La configurazione dell'istanza di riferimento e' fissata con le variabili
 `RUSTDESK_API_*`, cosi' un cambio dei default nel codice non sposta i golden

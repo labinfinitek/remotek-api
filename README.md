@@ -88,8 +88,12 @@ JSON, una riga per evento:
 ```
 
 Ogni risposta ha l'header `X-Request-Id`, un id casuale che l'API sceglie
-per la richiesta (un `X-Request-Id` mandato dal chiamante non si usa); le
-righe scritte durante la richiesta lo hanno come `request_id`. A livello
+per la richiesta (un `X-Request-Id` mandato dal chiamante non si usa). Lo
+hanno come `request_id` le righe che cominciano con metodo e rotta (per
+esempio `POST /api/heartbeat: ...`: errori mandati al client, avvisi dei
+gestori, panic) e la riga `richiesta`; le altre righe scritte durante la
+richiesta no, per esempio i `Login Fail`, quelle dei servizi e le query SQL
+lente o in errore di gorm. A livello
 `debug` c'e' anche una riga `richiesta` per ogni richiesta, con metodo, rotta,
 stato e durata, senza IP ne' query.
 

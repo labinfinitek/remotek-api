@@ -113,8 +113,8 @@ COPY --from=pannello-sorgente /pannello/LICENSE ./resources/admin/LICENSE
 # /api/version legge resources/version (service.AppService); l'a capo finale
 # e' quello dell'immagine di v2.7.
 RUN echo "$VERSION" > resources/version \
- && mkdir -p data runtime \
- && chown remotek:remotek data runtime
+ && mkdir -p data \
+ && chown remotek:remotek data
 USER 10001:10001
 VOLUME /app/data
 EXPOSE 21114
