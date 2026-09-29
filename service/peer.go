@@ -251,8 +251,9 @@ func (ps *PeerService) Update(u *model.Peer) error {
 // modulo lo manda vuoto per non cambiarlo, e scriverlo scioglierebbe il
 // legame ID-uuid. L'ID vuoto il validatore di admin.PeerForm lo rifiuta
 // prima di qui; il controllo resta per chi chiamasse senza passare dal
-// modulo, perche' un PC senza ID non si riconosce piu'. Utente, ultimo
-// contatto e IP non sono nel modulo e restano quelli di prima.
+// modulo, perche' un PC senza ID non si riconosce piu'. L'utente legato
+// (user_id), l'ultimo contatto e l'IP non sono nel modulo e restano quelli di
+// prima; username, l'utente del PC, il modulo lo manda e si salva.
 func (ps *PeerService) UpdateDalPannello(u *model.Peer, conAlias bool) error {
 	campi := []string{"cpu", "hostname", "memory", "os", "username", "version", "group_id"}
 	if conAlias {
