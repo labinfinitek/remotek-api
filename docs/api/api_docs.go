@@ -232,6 +232,18 @@ const docTemplateapi = `{
                         "name": "guid",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "id delle voci da cancellare",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
                     }
                 ],
                 "responses": {
@@ -1055,28 +1067,40 @@ const docTemplateapi = `{
         },
         "/oauth/callback": {
             "get": {
-                "description": "OauthCallback",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Risponde una pagina HTML (oauth_success.html o oauth_fail.html\ncol messaggio), o 302 verso il pannello per associare l'account.",
                 "produces": [
-                    "application/json"
+                    "text/html"
                 ],
                 "tags": [
                     "Oauth"
                 ],
                 "summary": "OauthCallback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "codice del login",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "codice del provider",
+                        "name": "code",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "pagina HTML",
                         "schema": {
-                            "$ref": "#/definitions/api.LoginRes"
+                            "type": "string"
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "302": {
+                        "description": "verso il pannello",
                         "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -1084,28 +1108,40 @@ const docTemplateapi = `{
         },
         "/oauth/login": {
             "get": {
-                "description": "OauthCallback",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Risponde una pagina HTML (oauth_success.html o oauth_fail.html\ncol messaggio), o 302 verso il pannello per associare l'account.",
                 "produces": [
-                    "application/json"
+                    "text/html"
                 ],
                 "tags": [
                     "Oauth"
                 ],
                 "summary": "OauthCallback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "codice del login",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "codice del provider",
+                        "name": "code",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "pagina HTML",
                         "schema": {
-                            "$ref": "#/definitions/api.LoginRes"
+                            "type": "string"
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "302": {
+                        "description": "verso il pannello",
                         "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -1171,28 +1207,40 @@ const docTemplateapi = `{
         },
         "/oidc/callback": {
             "get": {
-                "description": "OauthCallback",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Risponde una pagina HTML (oauth_success.html o oauth_fail.html\ncol messaggio), o 302 verso il pannello per associare l'account.",
                 "produces": [
-                    "application/json"
+                    "text/html"
                 ],
                 "tags": [
                     "Oauth"
                 ],
                 "summary": "OauthCallback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "codice del login",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "codice del provider",
+                        "name": "code",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "pagina HTML",
                         "schema": {
-                            "$ref": "#/definitions/api.LoginRes"
+                            "type": "string"
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "302": {
+                        "description": "verso il pannello",
                         "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -1200,28 +1248,40 @@ const docTemplateapi = `{
         },
         "/oidc/login": {
             "get": {
-                "description": "OauthCallback",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Risponde una pagina HTML (oauth_success.html o oauth_fail.html\ncol messaggio), o 302 verso il pannello per associare l'account.",
                 "produces": [
-                    "application/json"
+                    "text/html"
                 ],
                 "tags": [
                     "Oauth"
                 ],
                 "summary": "OauthCallback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "codice del login",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "codice del provider",
+                        "name": "code",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "pagina HTML",
                         "schema": {
-                            "$ref": "#/definitions/api.LoginRes"
+                            "type": "string"
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "302": {
+                        "description": "verso il pannello",
                         "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
