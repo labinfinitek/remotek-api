@@ -13,11 +13,11 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"strings"
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/lejianwen/rustdesk-api/v2/lib/logger"
 )
 
 // avviaServer fa partire in dir il figlio col server API su addr e
@@ -67,14 +67,8 @@ func TestPortaOccupata(t *testing.T) {
 	if c := codice(t, cmd, out); c != 1 {
 		t.Errorf("codice %d, atteso 1\n%s", c, out)
 	}
-	registro, err := os.ReadFile(filepath.Join(dir, "runtime", "log.txt"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, s := range []string{"server API fermato", occupata.Addr().String(), "address already in use"} {
-		if !strings.Contains(string(registro), s) {
-			t.Errorf("il log non contiene %q:\n%s", s, registro)
-		}
+	if logger.Conta(out.String(), "ERROR", "server API fermato", occupata.Addr().String(), "address already in use") != 1 {
+		t.Errorf("il log non ha la riga ERROR sul server fermato:\n%s", out)
 	}
 }
 

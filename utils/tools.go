@@ -3,9 +3,6 @@ package utils
 import (
 	crand "crypto/rand"
 	"encoding/json"
-	"fmt"
-	"reflect"
-	"runtime/debug"
 	"strings"
 )
 
@@ -26,36 +23,6 @@ func CopyStructToMap(src interface{}) map[string]interface{} {
 		return nil
 	}
 	return res
-}
-
-// SafeGo is a common function to recover panic for goroutines
-func SafeGo(f interface{}, params ...interface{}) {
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				fmt.Printf("Recovered in SafeGo: %v\n", r)
-				debug.PrintStack()
-			}
-		}()
-
-		// Convert f to a reflect.Value
-		funcValue := reflect.ValueOf(f)
-
-		// Check if the f is a function
-		if funcValue.Kind() != reflect.Func {
-			fmt.Println("SafeGo: value is not a function")
-			return
-		}
-
-		// Convert params to reflect.Value
-		paramsValue := make([]reflect.Value, len(params))
-		for i, param := range params {
-			paramsValue[i] = reflect.ValueOf(param)
-		}
-
-		// Call the function f with params
-		funcValue.Call(paramsValue)
-	}()
 }
 
 // RandomString 生成随机字符串

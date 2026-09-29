@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/lejianwen/rustdesk-api/v2/lib/logger"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 )
 
@@ -59,17 +60,13 @@ func TestDatabaseNonApribile(t *testing.T) {
 			if strings.Contains(out, "panic") {
 				t.Errorf("panic nell'uscita:\n%s", out)
 			}
-			registro, err := os.ReadFile(filepath.Join(dir, "runtime", "log.txt"))
-			if err != nil {
-				t.Fatal(err)
-			}
 			for _, atteso := range []string{
 				"database " + filepath.Join(data, "rustdeskapi.db") + " non aperto, l'API non parte",
 				"la cartella " + data + " esista",
 				"scrivibile dall'utente del processo (nell'immagine Docker 10001:10001",
 			} {
-				if !strings.Contains(string(registro), atteso) {
-					t.Errorf("il log non contiene %q:\n%s", atteso, registro)
+				if logger.Conta(out, "ERROR", atteso) != 1 {
+					t.Errorf("il log non ha una riga ERROR con %q:\n%s", atteso, out)
 				}
 			}
 		})
@@ -151,18 +148,14 @@ func TestDatabaseNonScrivibile(t *testing.T) {
 				if strings.Contains(out, "panic") {
 					t.Errorf("panic nell'uscita:\n%s", out)
 				}
-				registro, err := os.ReadFile(filepath.Join(dir, "runtime", "log.txt"))
-				if err != nil {
-					t.Fatal(err)
-				}
 				for _, atteso := range []string{
 					"database " + filepath.Join(data, "rustdeskapi.db") + " non scrivibile, l'API non parte",
 					p.cosa,
 					"la cartella " + data + " devono essere dell'utente del processo",
 					"chown -R 10001:10001 della cartella dati",
 				} {
-					if !strings.Contains(string(registro), atteso) {
-						t.Errorf("il log non contiene %q:\n%s", atteso, registro)
+					if logger.Conta(out, "ERROR", atteso) != 1 {
+						t.Errorf("il log non ha una riga ERROR con %q:\n%s", atteso, out)
 					}
 				}
 				// Un database in WAL si legge solo potendo creare -wal e -shm
@@ -255,17 +248,13 @@ func TestDatabaseDanneggiato(t *testing.T) {
 			if codice != 1 {
 				t.Errorf("codice %d, atteso 1\n%s", codice, out)
 			}
-			registro, err := os.ReadFile(filepath.Join(dir, "runtime", "log.txt"))
-			if err != nil {
-				t.Fatal(err)
-			}
 			for _, atteso := range []string{
 				"database " + filepath.Join(dir, "data", "rustdeskapi.db") + " danneggiato, l'API non parte",
 				p.cosa,
 				"Ripristina l'ultimo backup",
 			} {
-				if !strings.Contains(string(registro), atteso) {
-					t.Errorf("il log non contiene %q:\n%s", atteso, registro)
+				if logger.Conta(out, "ERROR", atteso) != 1 {
+					t.Errorf("il log non ha una riga ERROR con %q:\n%s", atteso, out)
 				}
 			}
 		})

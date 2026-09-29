@@ -16,6 +16,7 @@ import (
 
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/lib/jwt"
+	"github.com/lejianwen/rustdesk-api/v2/lib/logger"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 )
@@ -158,7 +159,7 @@ func TestRubricheCondiviseProprietarioTolto(t *testing.T) {
 		t.Errorf("rubriche nella risposta: %q, attese %q", got, want)
 	}
 	riga := fmt.Sprintf("POST /api/ab/shared/profiles: rubrica %d saltata, il proprietario %d non c'e'", orfana.Id, orfana.UserId)
-	if nelLog := registro.String(); !strings.Contains(nelLog, "level=warning") || !strings.Contains(nelLog, riga) {
+	if nelLog := registro.String(); logger.Conta(nelLog, "WARN", riga) != 1 {
 		t.Errorf("nel log manca il warn %q:\n%s", riga, nelLog)
 	}
 }

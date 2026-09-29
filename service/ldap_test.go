@@ -8,11 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
 	"github.com/lejianwen/rustdesk-api/v2/config"
+	applog "github.com/lejianwen/rustdesk-api/v2/lib/logger"
 	"github.com/lejianwen/rustdesk-api/v2/lib/orm"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 )
@@ -23,8 +23,7 @@ func registroDiProva(t *testing.T) *strings.Builder {
 	t.Helper()
 	registro := &strings.Builder{}
 	prec := Logger
-	Logger = logrus.New()
-	Logger.SetOutput(registro)
+	Logger = applog.Su(registro)
 	t.Cleanup(func() { Logger = prec })
 	return registro
 }
@@ -95,7 +94,7 @@ func TestBindLdapRifiutato(t *testing.T) {
 	if conn != nil || !errors.Is(err, ErrLdapBindService) {
 		t.Fatalf("connectAndBind: connessione %v, errore %v; attesi nessuna connessione e ErrLdapBindService", conn, err)
 	}
-	if nelLog := registro.String(); !strings.Contains(nelLog, "level=warning") || !strings.Contains(nelLog, "Invalid Credentials") {
+	if nelLog := registro.String(); applog.Conta(nelLog, "WARN", "Invalid Credentials") == 0 {
 		t.Errorf("nel log manca il bind rifiutato col motivo:\n%s", nelLog)
 	}
 }
@@ -111,7 +110,7 @@ func TestUserAccountControlNonNumerico(t *testing.T) {
 	if (&LdapService{}).isUserEnabled(cfg, lu) || lu.Enabled {
 		t.Errorf("utente con userAccountControl %q: abilitato, atteso disabilitato", lu.EnableAttrValue)
 	}
-	if nelLog := registro.String(); !strings.Contains(nelLog, "level=error") || !strings.Contains(nelLog, "mrossi") || !strings.Contains(nelLog, "non-numero") {
+	if nelLog := registro.String(); applog.Conta(nelLog, "ERROR", "mrossi", "non-numero") != 1 {
 		t.Errorf("nel log manca l'errore di userAccountControl:\n%s", nelLog)
 	}
 }

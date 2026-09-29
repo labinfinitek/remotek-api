@@ -6,6 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/lejianwen/rustdesk-api/v2/lib/logger"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 )
@@ -56,9 +57,9 @@ func TestIndiceUnicoDispositivi(t *testing.T) {
 	if indiceUnico(t, db) {
 		t.Errorf("avvio con un ID doppio: l'indice %s c'e'", service.IndiceIdUnico)
 	}
-	riga := "[ERRO] peers ha 1 ID di PC su piu' righe: l'indice unico " + service.IndiceIdUnico + " non si crea"
-	if n := strings.Count(out, riga); n != 1 {
-		t.Errorf("%d righe %q, attesa 1\n%s", n, riga, out)
+	riga := "peers ha 1 ID di PC su piu' righe: l'indice unico " + service.IndiceIdUnico + " non si crea"
+	if n := logger.Conta(out, "ERROR", riga); n != 1 {
+		t.Errorf("%d righe ERROR %q, attesa 1\n%s", n, riga, out)
 	}
 	for _, pc := range pcs {
 		for _, s := range []string{pc.Id, pc.Uuid, pc.Hostname, pc.Username} {
@@ -78,7 +79,7 @@ func TestIndiceUnicoDispositivi(t *testing.T) {
 	}
 	if codice, out := esegui(t, dir); codice != 0 {
 		t.Fatalf("avvio senza piu' doppioni: codice %d\n%s", codice, out)
-	} else if strings.Contains(out, "[ERRO]") {
+	} else if logger.Conta(out, "ERROR") != 0 {
 		t.Errorf("avvio senza piu' doppioni: riga error\n%s", out)
 	}
 	if !indiceUnico(t, db) {

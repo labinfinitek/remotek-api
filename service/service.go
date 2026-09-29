@@ -3,12 +3,12 @@ package service
 import (
 	"errors"
 
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 
 	"github.com/lejianwen/rustdesk-api/v2/config"
 	"github.com/lejianwen/rustdesk-api/v2/lib/jwt"
 	"github.com/lejianwen/rustdesk-api/v2/lib/lock"
+	"github.com/lejianwen/rustdesk-api/v2/lib/logger"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 )
 
@@ -31,20 +31,20 @@ type Service struct {
 type Dependencies struct {
 	Config *config.Config
 	DB     *gorm.DB
-	Logger *log.Logger
+	Logger *logger.Logger
 	Jwt    *jwt.Jwt
 	Lock   *lock.Locker
 }
 
 var Config *config.Config
 var DB *gorm.DB
-var Logger *log.Logger
+var Logger *logger.Logger
 var Jwt *jwt.Jwt
 var Lock lock.Locker
 
 var AllService *Service
 
-func New(c *config.Config, g *gorm.DB, l *log.Logger, j *jwt.Jwt, lo lock.Locker) *Service {
+func New(c *config.Config, g *gorm.DB, l *logger.Logger, j *jwt.Jwt, lo lock.Locker) *Service {
 	Config = c
 	DB = g
 	Logger = l

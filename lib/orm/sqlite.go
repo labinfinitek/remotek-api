@@ -92,7 +92,7 @@ func NewSqlite(logwriter logger.Writer) (*gorm.DB, error) {
 			LogLevel:                  logger.Warn, // Log level
 			IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
 			ParameterizedQueries:      true,        // Don't include params in the SQL log
-			Colorful:                  true,
+			Colorful:                  false,
 		},
 	))
 	if err != nil {

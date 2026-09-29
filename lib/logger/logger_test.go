@@ -1,60 +1,77 @@
 package logger
 
 import (
-	"os"
-	"path/filepath"
+	"encoding/json"
 	"strings"
 	"testing"
-
-	log "github.com/sirupsen/logrus"
 )
 
-// TestPermessiFileDiLog: il file di log contiene nomi utente e indirizzi IP,
-// quindi esce 0600 sia quando New lo crea sia quando esisteva gia' 0644.
-func TestPermessiFileDiLog(t *testing.T) {
-	t.Cleanup(func() { log.SetOutput(os.Stderr) })
-	dir := t.TempDir()
-	vecchio := filepath.Join(dir, "vecchio.txt")
-	if err := os.WriteFile(vecchio, []byte("riga di prima\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chmod(vecchio, 0o644); err != nil {
-		t.Fatal(err)
-	}
-	for _, f := range []string{filepath.Join(dir, "nuovo.txt"), vecchio} {
-		New(&Config{Path: f, Level: "info"})
-		info, err := os.Stat(f)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if info.Mode().Perm() != 0o600 {
-			t.Errorf("%s: permessi %v, attesi 0600", filepath.Base(f), info.Mode().Perm())
-		}
-	}
-	righe, err := os.ReadFile(vecchio)
+// TestRigaJSON: ogni riga e' un oggetto JSON con time, level e msg e, con
+// ReportCaller, la source di chi ha chiamato, non di Logger.
+func TestRigaJSON(t *testing.T) {
+	var out strings.Builder
+	l, err := NewSu(&out, &Config{Level: "info", ReportCaller: true})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasPrefix(string(righe), "riga di prima\n") {
-		t.Errorf("il file che c'era ha perso il contenuto: %q", righe)
+	l.Warnf("prova %d con \"virgolette\"", 1)
+	var riga struct {
+		Time, Level, Msg string
+		Source           struct{ File string }
+	}
+	if err := json.Unmarshal([]byte(out.String()), &riga); err != nil {
+		t.Fatalf("riga non JSON: %v\n%s", err, out.String())
+	}
+	if riga.Time == "" || riga.Level != "WARN" || riga.Msg != `prova 1 con "virgolette"` {
+		t.Errorf("riga %+v, attesi time, level WARN e il messaggio", riga)
+	}
+	if !strings.HasSuffix(riga.Source.File, "logger_test.go") {
+		t.Errorf("source %q, atteso questo file", riga.Source.File)
 	}
 }
 
-// TestFileDiLogNonApribile: se il file non si apre, il panic dice quale file
-// e perche'.
-func TestFileDiLogNonApribile(t *testing.T) {
-	f := filepath.Join(t.TempDir(), "manca", "log.txt")
-	defer func() {
-		r := recover()
-		err, ok := r.(error)
-		if !ok {
-			t.Fatalf("panic %v, atteso un errore", r)
+// TestLivelli: vuoto vale info; i quattro livelli filtrano; un valore non
+// valido, anche uno che logrus accettava, e' un errore che nomina i valori
+// ammessi, e il logger restituito scrive a info.
+func TestLivelli(t *testing.T) {
+	for _, tc := range []struct {
+		livello string
+		righe   []string
+	}{
+		{"", []string{"INFO", "WARN", "WARN", "ERROR"}},
+		{"debug", []string{"DEBUG", "INFO", "WARN", "WARN", "ERROR"}},
+		{"INFO", []string{"INFO", "WARN", "WARN", "ERROR"}},
+		{"warn", []string{"WARN", "WARN", "ERROR"}},
+		{"error", []string{"ERROR"}},
+	} {
+		var out strings.Builder
+		l, err := NewSu(&out, &Config{Level: tc.livello})
+		if err != nil {
+			t.Fatalf("livello %q: %v", tc.livello, err)
 		}
-		for _, s := range []string{f, "no such file or directory"} {
-			if !strings.Contains(err.Error(), s) {
-				t.Errorf("il panic %q non contiene %q", err, s)
-			}
+		l.Debugf("d")
+		l.Info("i")
+		l.Warn("w")
+		l.Printf("sql %s", "lento") // gorm: a warn
+		l.Errorf("e")
+		var livelli []string
+		for _, r := range Righe(out.String()) {
+			livelli = append(livelli, r.Level)
 		}
-	}()
-	New(&Config{Path: f, Level: "info"})
+		if strings.Join(livelli, " ") != strings.Join(tc.righe, " ") {
+			t.Errorf("livello %q: righe %v, attese %v", tc.livello, livelli, tc.righe)
+		}
+	}
+	for _, livello := range []string{"trace", "fatal", "panic", "warning", "info+2"} {
+		var out strings.Builder
+		l, err := NewSu(&out, &Config{Level: livello})
+		if err == nil || !strings.Contains(err.Error(), "debug, info, warn, error") {
+			t.Errorf("livello %q: errore %v, atteso uno che nomina i valori ammessi", livello, err)
+		}
+		l.Debugf("d")
+		l.Info("i")
+		if n := len(Righe(out.String())); n != 1 {
+			t.Errorf("livello %q: %d righe, attesa 1 (info)", livello, n)
+		}
+	}
 }

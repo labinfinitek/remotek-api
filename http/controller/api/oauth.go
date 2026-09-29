@@ -56,7 +56,6 @@ func (o *Oauth) OidcAuth(c *gin.Context) {
 		Verifier:   verifier,
 		Nonce:      nonce,
 	}, 5*60)
-	// fmt.Println("code url", code, url)
 	c.JSON(http.StatusOK, gin.H{
 		"code": state,
 		"url":  url,
@@ -199,7 +198,6 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 	openid := oauthUser.OpenId
 	switch action {
 	case service.OauthActionTypeBind:
-		// fmt.Println("bind", ty, userData)
 		// 检查此openid是否已经绑定过
 		utr, err := oauthService.UserThirdInfo(op, openid)
 		if err != nil && !errors.Is(err, service.ErrNotFound) {

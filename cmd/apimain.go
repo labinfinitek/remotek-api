@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -124,12 +125,19 @@ func InitGlobal() {
 	// 配置解析
 	global.Viper = config.Init(&global.Config, global.ConfigPath)
 
-	// 日志
-	global.Logger = logger.New(&logger.Config{
-		Path:         global.Config.Logger.Path,
+	// Log: prima del resto, che ci scrive
+	l, err := logger.New(&logger.Config{
 		Level:        global.Config.Logger.Level,
 		ReportCaller: global.Config.Logger.ReportCaller,
 	})
+	global.Logger = l
+	slog.SetDefault(l.Slog())
+	if err != nil {
+		global.Logger.Fatalf("%v, l'API non parte", err)
+	}
+	if global.Config.Logger.Path != "" {
+		global.Logger.Warnf("logger.path %q ignorata: il log va solo su stdout", global.Config.Logger.Path)
+	}
 
 	global.InitI18n()
 
@@ -177,7 +185,6 @@ func InitGlobal() {
 	global.ApiInitValidator()
 
 	// jwt
-	// fmt.Println(global.Config.Jwt.PrivateKey)
 	global.Jwt = jwt.NewJwt(global.Config.Jwt.Key, global.Config.Jwt.ExpireDuration)
 	// locker
 	global.Lock = lock.NewLocal()

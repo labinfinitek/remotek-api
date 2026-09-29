@@ -1,11 +1,12 @@
 package http
 
 import (
+	"io"
 	"net/http"
+	"runtime/debug"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/middleware"
@@ -21,16 +22,10 @@ func NewEngine() *gin.Engine {
 		panic(err)
 	}
 
-	if global.Config.Gin.Mode == gin.ReleaseMode {
-		// 修改gin Recovery日志 输出为logger的输出点
-		if global.Logger != nil {
-			gin.DefaultErrorWriter = global.Logger.WriterLevel(logrus.ErrorLevel)
-		}
-	}
 	g.NoRoute(func(c *gin.Context) {
 		c.String(http.StatusNotFound, "404 not found")
 	})
-	g.Use(middleware.Logger(), middleware.Limiter(), gin.Recovery())
+	g.Use(middleware.Logger(), middleware.Limiter(), recupera())
 	router.WebInit(g)
 	router.Init(g)
 	router.ApiInit(g)
@@ -54,4 +49,14 @@ func setTrustedProxies(g *gin.Engine, trustProxy string) error {
 // restituisce l'errore di Run, nil allo stop normale.
 func ApiInit() error {
 	return Run(NewEngine(), global.Config.Gin.ApiAddr)
+}
+
+// recupera e' gin.Recovery con il panic nel log a error, con metodo, rotta e
+// stack, e senza la richiesta: gin ne scriverebbe gli header, cookie compresi.
+// Al client, come gin.Recovery, un 500 senza corpo.
+func recupera() gin.HandlerFunc {
+	return gin.CustomRecoveryWithWriter(io.Discard, func(c *gin.Context, err any) {
+		global.Logger.Errorf("%s %s: panic: %v\n%s", c.Request.Method, c.FullPath(), err, debug.Stack())
+		c.AbortWithStatus(http.StatusInternalServerError)
+	})
 }

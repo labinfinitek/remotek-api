@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"github.com/lejianwen/rustdesk-api/v2/lib/logger"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 )
@@ -50,7 +51,7 @@ func scheda(t *testing.T) []model.Peer {
 func senzaUuid(t *testing.T, registro *strings.Builder, rotta string) {
 	t.Helper()
 	nelLog := registro.String()
-	if !strings.Contains(nelLog, "level=warn") || !strings.Contains(nelLog, "POST "+rotta+": ") || !strings.Contains(nelLog, "999000111") {
+	if logger.Conta(nelLog, "WARN", "POST "+rotta+": ", "999000111") == 0 {
 		t.Errorf("POST %s: nel log manca il warn con rotta e ID:\n%s", rotta, nelLog)
 	}
 	for _, u := range []string{uuidSalvato, uuidAltro} {

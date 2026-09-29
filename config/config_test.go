@@ -19,6 +19,8 @@ type sicuri struct {
 	BanThreshold     int
 	TrustProxy       string
 	LdapTlsVerify    bool
+	LoggerLevel      string // info: debug scrive di piu'
+	LoggerPath       string // vuoto: nessun file di log
 }
 
 // TestDefaultSicuri verifica che, senza variabili RUSTDESK_API_*, un file
@@ -38,7 +40,8 @@ func TestDefaultSicuri(t *testing.T) {
 	}
 
 	want := sicuri{WebSso: false, Register: false, ShowSwagger: 0,
-		CaptchaThreshold: 3, BanThreshold: 10, TrustProxy: "", LdapTlsVerify: true}
+		CaptchaThreshold: 3, BanThreshold: 10, TrustProxy: "", LdapTlsVerify: true,
+		LoggerLevel: "info", LoggerPath: ""}
 	for _, tc := range []struct{ name, path string }{
 		{"file senza le chiavi", fileSenzaChiavi(t)},
 		{"conf/config.yaml", filepath.Join("..", "conf", "config.yaml")},
@@ -85,6 +88,7 @@ func leggi(path string) sicuri {
 		ShowSwagger: c.App.ShowSwagger, CaptchaThreshold: c.App.CaptchaThreshold,
 		BanThreshold: c.App.BanThreshold, TrustProxy: c.Gin.TrustProxy,
 		LdapTlsVerify: c.Ldap.TlsVerify,
+		LoggerLevel:   c.Logger.Level, LoggerPath: c.Logger.Path,
 	}
 }
 

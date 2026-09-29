@@ -20,6 +20,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	applog "github.com/lejianwen/rustdesk-api/v2/lib/logger"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/utils"
 )
@@ -65,7 +66,7 @@ func sandbox(t *testing.T) string {
 }
 
 // esegui fa girare il figlio in dir con args e restituisce il codice d'uscita
-// e cio' che ha scritto, incluso il log. Log a trace: la password non deve
+// e cio' che ha scritto, incluso il log. Log a debug: la password non deve
 // esserci a nessun livello.
 func esegui(t *testing.T, dir string, args ...string) (int, string) {
 	t.Helper()
@@ -77,7 +78,8 @@ func esegui(t *testing.T, dir string, args ...string) (int, string) {
 	defer cancel()
 	cmd := exec.CommandContext(ctx, bin, args...)
 	cmd.Dir = dir
-	cmd.Env = append(os.Environ(), figlio+"=1", "PWD="+dir, "RUSTDESK_API_LOGGER_LEVEL=trace")
+	// Il livello prima di os.Environ: un t.Setenv del test lo sostituisce.
+	cmd.Env = append(append([]string{"RUSTDESK_API_LOGGER_LEVEL=debug"}, os.Environ()...), figlio+"=1", "PWD="+dir)
 	out, err := cmd.CombinedOutput()
 	var uscita *exec.ExitError
 	if ctx.Err() != nil || (err != nil && !errors.As(err, &uscita)) {
@@ -192,14 +194,10 @@ func TestPrimoAvvio(t *testing.T) {
 	if info.Mode().Perm() != 0o600 {
 		t.Errorf("permessi del file %v, attesi 0600", info.Mode().Perm())
 	}
-	registro, err := os.ReadFile(filepath.Join(dir, "runtime", "log.txt"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if strings.Contains(out, string(pwd)) || strings.Contains(string(registro), string(pwd)) {
+	if strings.Contains(out, string(pwd)) {
 		t.Error("la password iniziale e' nel log")
 	}
-	if !strings.Contains(out, "password iniziale di admin in "+file) {
+	if applog.Conta(out, "WARN", "password iniziale di admin in "+file) != 1 {
 		t.Errorf("il log non dice dov'e' il file:\n%s", out)
 	}
 }
@@ -263,12 +261,8 @@ func TestSoloSqlite(t *testing.T) {
 				t.Errorf("codice %d, atteso 1\n%s", codice, out)
 			}
 			messaggio := "gorm.type \"" + tipo + "\" non supportato, l'API non parte"
-			registro, err := os.ReadFile(filepath.Join(dir, "runtime", "log.txt"))
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !strings.Contains(string(registro), messaggio) {
-				t.Errorf("il log non contiene %q:\n%s", messaggio, registro)
+			if applog.Conta(out, "ERROR", messaggio) != 1 {
+				t.Errorf("il log non ha una riga ERROR %q:\n%s", messaggio, out)
 			}
 			if _, err := os.Stat(filepath.Join(dir, "data", "rustdeskapi.db")); !errors.Is(err, os.ErrNotExist) {
 				t.Errorf("data/rustdeskapi.db creato o illeggibile (%v): l'avvio doveva fermarsi prima", err)

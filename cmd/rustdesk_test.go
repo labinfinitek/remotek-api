@@ -3,6 +3,8 @@ package main
 import (
 	"strings"
 	"testing"
+
+	"github.com/lejianwen/rustdesk-api/v2/lib/logger"
 )
 
 // TestAvvisiIndirizzi prova sul binario vero che l'avvio col file
@@ -12,8 +14,8 @@ import (
 // hbbs.
 func TestAvvisiIndirizzi(t *testing.T) {
 	const (
-		idVuoto  = "[WARN] rustdesk.id-server vuoto: "
-		apiVuoto = "[WARN] rustdesk.api-server vuoto: "
+		idVuoto  = "rustdesk.id-server vuoto: "
+		apiVuoto = "rustdesk.api-server vuoto: "
 	)
 	for _, tc := range []struct {
 		caso, id, api string
@@ -32,14 +34,14 @@ func TestAvvisiIndirizzi(t *testing.T) {
 				t.Fatalf("avvio: codice %d\n%s", codice, out)
 			}
 			for _, riga := range []string{idVuoto, apiVuoto} {
-				n, want := strings.Count(out, riga), 0
+				n, want := logger.Conta(out, "WARN", riga), 0
 				for _, w := range tc.want {
 					if w == riga {
 						want = 1
 					}
 				}
 				if n != want {
-					t.Errorf("%d righe %q, attese %d\n%s", n, riga, want, out)
+					t.Errorf("%d righe WARN %q, attese %d\n%s", n, riga, want, out)
 				}
 			}
 			if strings.Contains(out, "relay-server vuoto") {

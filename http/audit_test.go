@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/lejianwen/rustdesk-api/v2/lib/logger"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 )
@@ -190,7 +191,7 @@ func TestAuditPcNonLetto(t *testing.T) {
 				}
 			}
 			nelLog := registro.String()
-			if !strings.Contains(nelLog, "level=error") || !strings.Contains(nelLog, "POST "+tc.rotta+": audit non salvato") || !strings.Contains(nelLog, "lettura rifiutata dal test") {
+			if logger.Conta(nelLog, "ERROR", "POST "+tc.rotta+": audit non salvato", "lettura rifiutata dal test") != 1 {
 				t.Errorf("POST %s, nel log manca l'errore con rotta:\n%s", tc.rotta, nelLog)
 			}
 		})
