@@ -74,6 +74,10 @@ func (r *Rustdesk) CmdCreate(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
+	if !targetValido(f.Target) {
+		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError"))
+		return
+	}
 	// L'id lo sceglie il database: con quello del corpo un create
 	// riscriverebbe o urterebbe una voce esistente.
 	f.Id = 0
@@ -107,6 +111,10 @@ func (r *Rustdesk) CmdUpdate(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
+	if !targetValido(f.Target) {
+		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError"))
+		return
+	}
 	if _, err := service.AllService.ServerCmdService.Info(f.Id); err != nil {
 		response.FailErr(c, 101, "SystemError", err)
 		return
@@ -117,6 +125,12 @@ func (r *Rustdesk) CmdUpdate(c *gin.Context) {
 		return
 	}
 	response.Success(c, nil)
+}
+
+// targetValido dice se target e' uno dei server a cui SendCmd manda i
+// comandi: una voce salvata con un altro target non si potrebbe mandare.
+func targetValido(target string) bool {
+	return target == model.ServerCmdTargetIdServer || target == model.ServerCmdTargetRelayServer
 }
 
 func (r *Rustdesk) SendCmd(c *gin.Context) {
@@ -133,7 +147,7 @@ func (r *Rustdesk) SendCmd(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError"))
 		return
 	}
-	if rc.Target != model.ServerCmdTargetIdServer && rc.Target != model.ServerCmdTargetRelayServer {
+	if !targetValido(rc.Target) {
 		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError"))
 		return
 	}

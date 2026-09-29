@@ -19,19 +19,28 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   `POST /api/admin/rustdesk/cmdCreate`, ignora l'id del corpo: prima un id
   esistente faceva fallire il create e uno libero dava la riga con l'id
   scelto.
+- Comandi del server nel pannello: `cmdCreate` e `cmdUpdate` rifiutano un
+  target diverso da hbbs (21115) o hbbr (21117), anche vuoto, con la stessa
+  risposta di `sendCmd` ("Parametri non validi."). Prima il comando si
+  salvava e poi non si poteva mandare.
 
 ### Sicurezza
 - Esportazioni CSV del pannello (connessioni, file, utenti, dispositivi, i
-  miei dispositivi, login) senza formule: un `=`, `+`, `-`, `@`, tab o a
-  capo all'inizio di una cella, o dopo un `;`, una `,` o un a capo del
-  valore, anche seguiti da virgolette o spazi (Excel in italiano separa le
-  celle ai `;` e le righe agli a capo, anche dentro le virgolette), prende
-  davanti un apostrofo, e non diventa
-  una formula quando il file si apre in un foglio di calcolo. I
-  numeri puri e il segnaposto `-` restano come sono. Note di sessione, nomi
-  dei PC, alias e note degli utenti sono testo libero.
-  Un valore vuoto (null) non ferma piu' l'esportazione, e un elenco vuoto
-  da' un file vuoto invece di un errore.
+  miei dispositivi, login) senza formule: un `=`, `+`, `-`, `@`, tab o
+  ritorno a capo (`\r`) all'inizio di una cella, o dopo un `;`, una `,` o
+  un a capo (`\n` o `\r`) del valore, anche dopo virgolette o spazi (Excel
+  in italiano separa le celle ai `;` e le righe agli a capo, anche dentro
+  le virgolette), prende davanti un apostrofo, e non diventa una formula
+  quando il file si apre in un foglio di calcolo. I numeri puri e il
+  segnaposto `-` restano come sono. Note di sessione, nomi dei PC, alias e
+  note degli utenti sono testo libero. Un valore vuoto (null) non ferma
+  piu' l'esportazione, e un elenco vuoto da' un file vuoto invece di un
+  errore.
+- Login OIDC: un `id_token` senza `sub` non fa entrare. Prima, se il `sub`
+  mancava anche nella userinfo, il confronto passava e l'associazione al
+  provider nasceva con l'account vuoto, lo stesso per ogni utente di quel
+  provider. Il login si ferma come per un `sub` diverso da quello della
+  userinfo: la pagina dice OauthFailed e il motivo va nel log.
 
 ## [0.3.0] - 2026-09-29
 Immagine `ghcr.io/labinfinitek/remotek-api:0.3.0`. Due cambi incompatibili,

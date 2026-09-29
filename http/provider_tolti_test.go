@@ -35,6 +35,8 @@ type idTokenFinto struct {
 	assente bool   // la risposta del token non ha l'id_token
 	nonce   string // nonce al posto di quello del login in corso
 	sub     string // sub al posto di sub-1
+	// senzaSub toglie il sub dall'id_token e dalla userinfo
+	senzaSub bool
 }
 
 // providerOidcCon e' providerOidc con l'id_token deciso da it.
@@ -80,6 +82,9 @@ func providerOidcCon(t *testing.T, it idTokenFinto) string {
 		if it.sub != "" {
 			claims["sub"] = it.sub
 		}
+		if it.senzaSub {
+			delete(claims, "sub")
+		}
 		idToken, err := chiave.IDToken(claims)
 		if err != nil {
 			t.Error(err)
@@ -93,7 +98,11 @@ func providerOidcCon(t *testing.T, it idTokenFinto) string {
 			http.Error(w, "token sbagliato", http.StatusUnauthorized)
 			return
 		}
-		scrivi(w, `{"sub":"sub-1","name":"Utente OIDC","email":"utente@esempio.it","email_verified":true,"preferred_username":"utente-oidc"}`)
+		sub := `"sub":"sub-1",`
+		if it.senzaSub {
+			sub = ""
+		}
+		scrivi(w, `{`+sub+`"name":"Utente OIDC","email":"utente@esempio.it","email_verified":true,"preferred_username":"utente-oidc"}`)
 	})
 	return srv.URL
 }

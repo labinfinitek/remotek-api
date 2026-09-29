@@ -209,3 +209,47 @@ func TestPannelloCreaComandoIgnoraId(t *testing.T) {
 		t.Errorf("voce esistente dopo i create: %q, attesa %q", got, want)
 	}
 }
+
+// TestPannelloComandoServerTargetNonValido prova sul router vero che
+// POST /api/admin/rustdesk/cmdCreate e cmdUpdate rifiutano un target che non
+// e' hbbs (21115) ne' hbbr (21117), anche vuoto, con la risposta di sendCmd
+// per lo stesso target, e che la tabella resta com'era. Prima la voce si
+// salvava lo stesso e poi non si poteva mandare: il pannello, dopo
+// "Aggiungi", parte col target vuoto.
+func TestPannelloComandoServerTargetNonValido(t *testing.T) {
+	g, _, _ := pannello(t, true)
+	if err := service.DB.AutoMigrate(&model.ServerCmd{}); err != nil {
+		t.Fatal(err)
+	}
+	salvato := &model.ServerCmd{Cmd: "salvato", Explain: "prima", Target: model.ServerCmdTargetIdServer}
+	crea(t, salvato)
+	id := strconv.FormatUint(uint64(salvato.Id), 10)
+
+	for _, target := range []string{"", "21116", "hbbs"} {
+		invio := richiesta(g, "POST", "/api/admin/rustdesk/sendCmd", "", `{"cmd": "h", "target": "`+target+`"}`)
+		if !strings.HasPrefix(invio.Body.String(), `{"code":101,`) {
+			t.Fatalf("POST /api/admin/rustdesk/sendCmd col target %q: %s, atteso un rifiuto", target, invio.Body)
+		}
+		for _, tc := range []struct{ rotta, corpo string }{
+			{"/api/admin/rustdesk/cmdCreate", `{"cmd": "nuovo", "target": "` + target + `"}`},
+			{"/api/admin/rustdesk/cmdUpdate", `{"id": ` + id + `, "cmd": "cambiato", "explain": "dopo", "target": "` + target + `"}`},
+		} {
+			rec := richiesta(g, "POST", tc.rotta, "", tc.corpo)
+			if rec.Code != invio.Code || rec.Body.String() != invio.Body.String() {
+				t.Errorf("POST %s col target %q: stato %d\n got  %s\n want %d %s, come sendCmd", tc.rotta, target, rec.Code, rec.Body, invio.Code, invio.Body)
+			}
+		}
+	}
+
+	var voci []string
+	var salvati []*model.ServerCmd
+	if err := service.DB.Order("id").Find(&salvati).Error; err != nil {
+		t.Fatal(err)
+	}
+	for _, v := range salvati {
+		voci = append(voci, v.Cmd+"/"+v.Explain+"/"+v.Target)
+	}
+	if want := []string{"salvato/prima/" + model.ServerCmdTargetIdServer}; !slices.Equal(voci, want) {
+		t.Errorf("comandi salvati dopo le richieste rifiutate: %q, attesi %q", voci, want)
+	}
+}
