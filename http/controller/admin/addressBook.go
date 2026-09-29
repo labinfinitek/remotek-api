@@ -17,17 +17,8 @@ import (
 type AddressBook struct {
 }
 
-// Detail 地址簿
-// @Tags 地址簿
-// @Summary 地址簿详情
-// @Description 地址簿详情
-// @Accept  json
-// @Produce  json
-// @Param id path int true "ID"
-// @Success 200 {object} response.Response{data=model.AddressBook}
-// @Failure 500 {object} response.Response
-// @Router /admin/address_book/detail/{id} [get]
-// @Security token
+// Detail legge una voce di rubrica per id. Non ha rotta (in
+// router/admin.go e' commentata), quindi niente annotazioni swagger.
 func (ct *AddressBook) Detail(c *gin.Context) {
 	id := c.Param("id")
 	iid, _ := strconv.Atoi(id)

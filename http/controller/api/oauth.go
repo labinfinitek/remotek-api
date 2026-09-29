@@ -154,6 +154,9 @@ func (o *Oauth) OidcAuthQuery(c *gin.Context) {
 // @Success 200 {object} apiResp.LoginRes
 // @Failure 500 {object} response.ErrorResponse
 // @Router /oidc/callback [get]
+// @Router /oidc/login [get]
+// @Router /oauth/callback [get]
+// @Router /oauth/login [get]
 func (o *Oauth) OauthCallback(c *gin.Context) {
 	state := c.Query("state")
 	if state == "" {

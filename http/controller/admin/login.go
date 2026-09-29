@@ -170,7 +170,7 @@ func (ct *Login) Logout(c *gin.Context) {
 // @Produce  json
 // @Success 200 {object} []string
 // @Failure 500 {object} response.ErrorResponse
-// @Router /admin/login-options [post]
+// @Router /admin/login-options [get]
 func (ct *Login) LoginOptions(c *gin.Context) {
 	loginLimiter := global.LoginLimiter
 	clientIp := c.ClientIP()

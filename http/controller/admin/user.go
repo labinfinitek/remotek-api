@@ -182,7 +182,7 @@ func (ct *User) Delete(c *gin.Context) {
 // @Param body body admin.UserPasswordForm true "用户信息"
 // @Success 200 {object} response.Response
 // @Failure 500 {object} response.Response
-// @Router /admin/user/updatePassword [post]
+// @Router /admin/user/changePwd [post]
 // @Security token
 func (ct *User) UpdatePassword(c *gin.Context) {
 	f := &admin.UserPasswordForm{}
@@ -274,7 +274,7 @@ func (ct *User) ChangeCurPwd(c *gin.Context) {
 // @Produce  json
 // @Success 200 {object} response.Response{data=[]adResp.UserOauthItem}
 // @Failure 500 {object} response.Response
-// @Router /admin/user/myOauth [get]
+// @Router /admin/user/myOauth [post]
 // @Security token
 func (ct *User) MyOauth(c *gin.Context) {
 	u := service.AllService.UserService.CurUser(c)

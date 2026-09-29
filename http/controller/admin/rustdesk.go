@@ -82,6 +82,17 @@ func (r *Rustdesk) CmdCreate(c *gin.Context) {
 	response.Success(c, nil)
 }
 
+// CmdUpdate modifica uno dei comandi del server salvati.
+// @Tags Comandi
+// @Summary Modifica uno dei comandi del server
+// @Description Modifica uno dei comandi del server salvati; solo amministratori.
+// @Accept  json
+// @Produce  json
+// @Param body body model.ServerCmd true "voce dei comandi, con id"
+// @Success 200 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /admin/rustdesk/cmdUpdate [post]
+// @Security token
 func (r *Rustdesk) CmdUpdate(c *gin.Context) {
 	f := &model.ServerCmd{}
 	if err := c.ShouldBindJSON(f); err != nil {
