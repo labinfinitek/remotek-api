@@ -235,6 +235,13 @@ func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.
 		Logger.Warn("IdTokenVerifyError: ", err)
 		return errors.New("IdTokenVerifyError")
 	}
+	// Il sub c'e' sempre (OIDC Core 2): senza, il confronto con la userinfo
+	// passerebbe con "" == "" e l'associazione al provider nascerebbe con
+	// open_id vuoto, uguale per ogni account del provider.
+	if idToken.Subject == "" {
+		Logger.Warn("l'id_token non ha il sub")
+		return errors.New("IdTokenVerifyError")
+	}
 	// verifica del nonce
 	var claims struct {
 		Nonce string `json:"nonce"`

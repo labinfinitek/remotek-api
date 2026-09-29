@@ -12,10 +12,12 @@ import (
 
 // TestIdTokenRichiesto prova sul router vero che il login OIDC si ferma, con
 // OauthFailed e senza creare utenti ne' associazioni, se l'id_token manca,
-// ha un nonce che non e' quello del login o un sub che non e' quello della
-// userinfo (OIDC Core 3.1.3.3 e 5.3.2); il motivo va nel log. Prima senza
-// id_token il login andava avanti con la sola userinfo, un nonce nell'id_token
-// di un login senza nonce passava, e il sub della userinfo non si confrontava.
+// ha un nonce che non e' quello del login, un sub che non e' quello della
+// userinfo o nessun sub (OIDC Core 2, 3.1.3.3 e 5.3.2); il motivo va nel log.
+// Prima senza id_token il login andava avanti con la sola userinfo, un nonce
+// nell'id_token di un login senza nonce passava, il sub della userinfo non si
+// confrontava, e senza sub ne' nell'id_token ne' nella userinfo l'associazione
+// nasceva con open_id vuoto.
 func TestIdTokenRichiesto(t *testing.T) {
 	for _, tc := range []struct {
 		nome    string
@@ -27,6 +29,7 @@ func TestIdTokenRichiesto(t *testing.T) {
 		{"nonce diverso", idTokenFinto{nonce: "nonce-di-un-altro-login"}, false, "Nonce does not match"},
 		{"nonce nell'id_token di un login senza nonce", idTokenFinto{nonce: "nonce-di-un-altro-login"}, true, "Nonce does not match"},
 		{"sub diverso dalla userinfo", idTokenFinto{sub: "sub-2"}, false, "il sub della userinfo non e' quello dell'id_token"},
+		{"senza sub", idTokenFinto{senzaSub: true}, false, "l'id_token non ha il sub"},
 	} {
 		t.Run(tc.nome, func(t *testing.T) {
 			g, _, registro := pannello(t, false)

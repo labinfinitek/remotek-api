@@ -32,6 +32,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   dei PC, alias e note degli utenti sono testo libero.
   Un valore vuoto (null) non ferma piu' l'esportazione, e un elenco vuoto
   da' un file vuoto invece di un errore.
+- Login OIDC: un `id_token` senza `sub` non fa entrare. Prima, se il `sub`
+  mancava anche nella userinfo, il confronto passava e l'associazione al
+  provider nasceva con l'account vuoto, lo stesso per ogni utente di quel
+  provider. Il login si ferma come per un `sub` diverso da quello della
+  userinfo: la pagina dice OauthFailed e il motivo va nel log.
 
 ## [0.3.0] - 2026-09-29
 Immagine `ghcr.io/labinfinitek/remotek-api:0.3.0`. Due cambi incompatibili,
