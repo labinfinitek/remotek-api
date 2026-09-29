@@ -141,7 +141,6 @@ func AddressBookBind(rg *gin.RouterGroup) {
 		cont := &admin.AddressBook{}
 		arp := aR.Use(middleware.AdminPrivilege())
 		arp.GET("/list", cont.List)
-		// arp.GET("/detail/:id", cont.Detail)
 		arp.POST("/create", cont.Create)
 		arp.POST("/update", cont.Update)
 		arp.POST("/delete", cont.Delete)

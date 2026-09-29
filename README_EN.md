@@ -155,7 +155,7 @@ default when the key is missing from the file.
 | `app.show-swagger` \* | `RUSTDESK_API_APP_SHOW_SWAGGER` | `0` | `1` publishes `/swagger/index.html` and `/admin/swagger/index.html` |
 | `app.token-expire` | `RUSTDESK_API_APP_TOKEN_EXPIRE` | `168h` | session lifetime (Go duration: `72h`, `30m`) |
 | `app.web-sso` \* | `RUSTDESK_API_APP_WEB_SSO` | `false` | turns on the client login confirmed from the panel (`webauth`); off, `/api/oidc/auth` rejects it like a provider that does not exist |
-| `app.disable-pwd-login` | `RUSTDESK_API_APP_DISABLE_PWD_LOGIN` | `false` | `true` removes password login, OIDC and LDAP remain |
+| `app.disable-pwd-login` | `RUSTDESK_API_APP_DISABLE_PWD_LOGIN` | `false` | `true` removes username and password login, LDAP included, since it goes through it; OIDC remains |
 | `admin.title` \* | `RUSTDESK_API_ADMIN_TITLE` | empty | panel title; empty = `brand.name` |
 | `admin.hello` | `RUSTDESK_API_ADMIN_HELLO` | empty | panel welcome message (HTML); when not empty, `admin.hello-file` is not read |
 | `admin.hello-file` | `RUSTDESK_API_ADMIN_HELLO_FILE` | `./conf/admin/hello.html` | welcome file; `{{username}}` and `{{brand}}` are replaced |

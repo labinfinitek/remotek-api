@@ -19,8 +19,9 @@ import (
 )
 
 // providerMuto avvia un provider OIDC finto che accetta qualsiasi codice, e
-// risponde con un id_token firmato senza nonce, ma dalla userinfo non risponde, finche' il test non finisce o chi chiama non
-// rinuncia. Restituisce il provider e la configurazione OAuth2 del client.
+// risponde con un id_token firmato senza nonce, ma dalla userinfo non
+// risponde, finche' il test non finisce o chi chiama non rinuncia.
+// Restituisce il provider e la configurazione OAuth2 del client.
 func providerMuto(t *testing.T) (*oidc.Provider, *oauth2.Config) {
 	t.Helper()
 	sblocca := make(chan struct{})
@@ -35,11 +36,22 @@ func providerMuto(t *testing.T) (*oidc.Provider, *oauth2.Config) {
 	})
 	chiave := oidcfinto.Nuova(t)
 	mux.HandleFunc("/jwks", func(w http.ResponseWriter, _ *http.Request) {
+		jwks, err := chiave.JWKS()
+		if err != nil {
+			t.Error(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, chiave.JWKS())
+		_, _ = io.WriteString(w, jwks)
 	})
 	mux.HandleFunc("/token", func(w http.ResponseWriter, _ *http.Request) {
-		idToken := chiave.IDToken(t, map[string]any{"iss": srv.URL, "aud": "id", "sub": "sub-1", "exp": time.Now().Add(time.Hour).Unix()})
+		idToken, err := chiave.IDToken(map[string]any{"iss": srv.URL, "aud": "id", "sub": "sub-1", "exp": time.Now().Add(time.Hour).Unix()})
+		if err != nil {
+			t.Error(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = fmt.Fprintf(w, `{"access_token":"at-1","token_type":"Bearer","expires_in":3600,"id_token":%q}`, idToken)
 	})

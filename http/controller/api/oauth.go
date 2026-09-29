@@ -148,11 +148,13 @@ func (o *Oauth) OidcAuthQuery(c *gin.Context) {
 // OauthCallback 回调
 // @Tags Oauth
 // @Summary OauthCallback
-// @Description OauthCallback
-// @Accept  json
-// @Produce  json
-// @Success 200 {object} apiResp.LoginRes
-// @Failure 500 {object} response.ErrorResponse
+// @Description Risponde una pagina HTML (oauth_success.html o oauth_fail.html
+// @Description col messaggio), o 302 verso il pannello per associare l'account.
+// @Produce  html
+// @Param state query string true "codice del login"
+// @Param code query string false "codice del provider"
+// @Success 200 {string} string "pagina HTML"
+// @Success 302 {string} string "verso il pannello"
 // @Router /oidc/callback [get]
 // @Router /oidc/login [get]
 // @Router /oauth/callback [get]

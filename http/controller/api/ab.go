@@ -696,6 +696,7 @@ func (a *Ab) PeerAdd(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param guid path string true "guid"
+// @Param body body []string true "id delle voci da cancellare"
 // @Success 200 {string} string
 // @Failure 500 {object} response.ErrorResponse
 // @Router /ab/peer/{guid} [delete]

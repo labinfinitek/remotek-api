@@ -3,7 +3,6 @@ package admin
 import (
 	"encoding/json"
 	"errors"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -15,19 +14,6 @@ import (
 )
 
 type AddressBook struct {
-}
-
-// Detail legge una voce di rubrica per id. Non ha rotta (in
-// router/admin.go e' commentata), quindi niente annotazioni swagger.
-func (ct *AddressBook) Detail(c *gin.Context) {
-	id := c.Param("id")
-	iid, _ := strconv.Atoi(id)
-	t, err := service.AllService.AddressBookService.InfoByRowId(uint(iid))
-	if err != nil {
-		response.FailErr(c, 101, "SystemError", err)
-		return
-	}
-	response.Success(c, t)
 }
 
 // Create 创建地址簿

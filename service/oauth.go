@@ -228,14 +228,14 @@ func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.
 		Logger.Warn("il provider non ha mandato l'id_token: controllare che gli scope comprendano openid")
 		return errors.New("IdTokenVerifyError")
 	}
-	// 验证 ID Token
+	// verifica dell'id_token: firma, iss, aud, exp
 	v := provider.Verifier(&oidc.Config{ClientID: oauthConfig.ClientID})
 	idToken, err := v.Verify(ctx, rawIDToken)
 	if err != nil {
 		Logger.Warn("IdTokenVerifyError: ", err)
 		return errors.New("IdTokenVerifyError")
 	}
-	// 验证 nonce
+	// verifica del nonce
 	var claims struct {
 		Nonce string `json:"nonce"`
 	}

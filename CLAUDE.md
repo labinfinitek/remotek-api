@@ -94,7 +94,11 @@ govulncheck, zizmor) e lo si riporta.
   `cmd/contratto_test.go` con i golden in `test/contratto/`: deve restare
   verde **senza toccare i golden**. I golden si registrano solo contro
   l'istanza di riferimento, che da qui non si raggiunge: se un golden va
-  cambiato, ci si ferma e lo si scrive nella MR.
+  cambiato, ci si ferma e lo si scrive nella MR. Eccezioni decise (#63): un
+  errore del database nel leggere token o utente risponde 500 "Errore di
+  sistema." (`http/middleware/rustauth.go`) e non 401, che il client prende
+  per un logout; gli errori del database rispondono 400 "Errore di sistema."
+  dove prima c'erano elenchi vuoti (CHANGELOG, Corretto).
 - Prima di toccare un modulo, ogni endpoint del client che quel modulo serve
   deve avere il suo passo nel test del contratto; se manca, lo si segnala.
 - Ogni chiamata gorm legge `.Error` e lo propaga con `%w`; "non trovato" e'
