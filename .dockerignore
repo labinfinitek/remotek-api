@@ -30,3 +30,6 @@
 !resources/
 resources/admin/
 resources/version
+
+# Patch del pannello (ADR-0020), applicate dal Dockerfile.
+!pannello/*.patch

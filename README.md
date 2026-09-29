@@ -26,8 +26,8 @@ cambiato rispetto a v2.7 sta in [REMOTEK.md](REMOTEK.md), le novita' in
   dai client.
 - **Note di sessione**: il tecnico annota la connessione e la nota si salva
   nel registro delle connessioni. Si legge nel JSON di
-  `/api/admin/audit_conn/list` e nell'esportazione CSV del pannello: il
-  pannello (rustdesk-api-web `3998c2a`) non ha una colonna per la nota.
+  `/api/admin/audit_conn/list`, nella colonna "Remark" del registro delle
+  connessioni del pannello e nella sua esportazione CSV.
   Durante la sessione la nota si scrive dal client del tecnico; quella di
   fine connessione chiede sul PC del tecnico l'opzione del client
   `allow-ask-for-note` (spenta di fabbrica) e il login. La nota si attacca
@@ -35,7 +35,8 @@ cambiato rispetto a v2.7 sta in [REMOTEK.md](REMOTEK.md), le novita' in
   si tronca), e il suo testo non va mai nel log.
 - **Log di accesso**: ogni login, dal client e dal pannello.
 - **Pannello di amministrazione** su `/_admin/`: [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)
-  compilato nell'immagine a un commit fissato, con il marchio di Remotek.
+  compilato nell'immagine a un commit fissato, con il marchio di Remotek e
+  le modifiche delle patch in [`pannello/`](pannello/README.md).
   Utenti, dispositivi, rubriche, tag, gruppi, OAuth, registri.
 - **Login**: con password; con un provider **OIDC** generico, configurato dal
   pannello; con **LDAP** (upstream lo dichiara provato con OpenLDAP e Active Directory;
@@ -98,9 +99,11 @@ docker build \
   -t remotek-api .
 ```
 
-Tre stadi: binario Go statico (CGO per SQLite), pannello rustdesk-api-web al
-commit fissato, immagine finale Alpine. Le immagini di base sono fissate per
-digest. Argomenti:
+Quattro stadi: binario Go statico (CGO per SQLite), sorgente di
+rustdesk-api-web al commit fissato col marchio e le patch di `pannello/`
+applicate in ordine di nome (una patch che non si applica ferma la build),
+build del pannello, immagine finale Alpine. Le immagini di base sono fissate
+per digest. Argomenti:
 
 | Argomento | Default | Uso |
 |---|---|---|
@@ -302,5 +305,8 @@ Remotek API e' basato su [rustdesk-api](https://github.com/lejianwen/rustdesk-ap
 di lejianwen, versione v2.7, rilasciato con licenza MIT. Anche questo fork e'
 MIT: [LICENSE](LICENSE) resta intatto, con l'attribuzione a lejianwen. Il
 pannello e' [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web),
-dello stesso autore, compilato dal sorgente. Le modifiche rispetto a v2.7
-sono elencate in [REMOTEK.md](REMOTEK.md).
+dello stesso autore, anch'esso MIT, compilato dal sorgente e **modificato**
+dalle patch in [`pannello/`](pannello/README.md), opera derivata con la
+stessa licenza; il suo `LICENSE` e' nell'immagine in
+`resources/admin/LICENSE`. Le modifiche rispetto a v2.7, patch del pannello
+incluse, sono elencate in [REMOTEK.md](REMOTEK.md).

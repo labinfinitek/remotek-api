@@ -6,6 +6,13 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Aggiunto
+- Colonna "Remark" nel registro delle connessioni del pannello, con la nota
+  di sessione del tecnico; il testo lungo si legge nel tooltip. Il pannello
+  nell'immagine e' ora rustdesk-api-web modificato dalle patch in
+  `pannello/`, applicate dal `Dockerfile`; il suo `LICENSE` e' nell'immagine
+  in `resources/admin/LICENSE`.
+
 ## [0.3.0] - 2026-09-29
 Immagine `ghcr.io/labinfinitek/remotek-api:0.3.0`. Due cambi incompatibili,
 sotto Sicurezza: `ldap.tls-verify` vale `true` anche senza configurazione, e

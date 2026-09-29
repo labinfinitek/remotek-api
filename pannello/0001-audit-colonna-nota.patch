@@ -1,0 +1,23 @@
+Subject: [PATCH 0001] registro delle connessioni: colonna della nota di sessione
+
+Perche': dalla #77 l'API salva la nota di sessione del tecnico e la manda
+come "note" nel JSON di /api/admin/audit_conn/list, ma la tabella del
+registro delle connessioni non ha una colonna che la mostri.
+Cosa: una colonna dopo "CloseTime", prop "note", etichetta T('Remark')
+(gia' tradotta in tutte e sette le lingue del pannello, nessun file di
+lingua toccato); il testo lungo si taglia e si legge nel tooltip.
+Licenza: MIT, come rustdesk-api-web (Copyright (c) 2016-2021
+vue-manage-system); questa patch e' opera derivata con la stessa licenza.
+---
+diff --git a/src/views/audit/connList.vue b/src/views/audit/connList.vue
+index 171db87..09ec791 100644
+--- a/src/views/audit/connList.vue
++++ b/src/views/audit/connList.vue
+@@ -32,6 +32,7 @@
+         <el-table-column prop="uuid" label="uuid" align="center" width="120" show-overflow-tooltip/>
+         <el-table-column prop="created_at" :label="T('CreatedAt')" align="center"/>
+         <el-table-column :label="T('CloseTime')" prop="close_time" align="center"/>
++        <el-table-column :label="T('Remark')" prop="note" align="center" min-width="160" show-overflow-tooltip/>
+         <el-table-column :label="T('Actions')" align="center" width="150">
+           <template #default="{row}">
+             <el-button type="danger" @click="del(row)">{{ T('Delete') }}</el-button>
