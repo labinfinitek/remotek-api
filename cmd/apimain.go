@@ -114,9 +114,15 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&global.ConfigPath, "config", "c", "./conf/config.yaml", "choose config file")
 	rootCmd.AddCommand(resetPwdCmd, resetUserPwdCmd)
 }
+
+// main esce con 1 se cobra restituisce un errore. Cobra lo ha gia' scritto su
+// stderr; nel log va solo se InitGlobal ha gia' creato il logger: un errore
+// degli argomenti arriva prima.
 func main() {
 	if err := rootCmd.Execute(); err != nil {
-		global.Logger.Error(err)
+		if global.Logger != nil {
+			global.Logger.Error(err)
+		}
 		os.Exit(1)
 	}
 }

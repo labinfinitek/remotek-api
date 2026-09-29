@@ -14,6 +14,9 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   in `resources/admin/LICENSE`.
 
 ### Corretto
+- `reset-admin-pwd`, `reset-pwd` o un comando sconosciuto con gli argomenti
+  sbagliati escono con codice 1 e il messaggio su stderr: prima, dopo il
+  messaggio, il processo andava in panic e usciva con 2.
 - Comandi del server nel pannello: "Aggiungi" dopo "Modifica" crea un
   comando nuovo invece di riscrivere quello appena modificato. L'API, in
   `POST /api/admin/rustdesk/cmdCreate`, ignora l'id del corpo: prima un id
