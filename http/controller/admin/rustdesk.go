@@ -74,6 +74,9 @@ func (r *Rustdesk) CmdCreate(c *gin.Context) {
 		response.Fail(c, 101, errList[0])
 		return
 	}
+	// L'id lo sceglie il database: con quello del corpo un create
+	// riscriverebbe o urterebbe una voce esistente.
+	f.Id = 0
 	err := service.AllService.ServerCmdService.Create(f)
 	if err != nil {
 		response.FailErr(c, 101, "OperationFailed", err)
