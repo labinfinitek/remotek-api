@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"testing"
 )
@@ -32,29 +33,33 @@ func Nuova(t testing.TB) *Chiave {
 }
 
 // JWKS restituisce il corpo del jwks_uri che pubblica la chiave.
-func (c *Chiave) JWKS() string {
+func (c *Chiave) JWKS() (string, error) {
 	b64 := base64.RawURLEncoding.EncodeToString
-	jwks, _ := json.Marshal(map[string]any{"keys": []map[string]string{{
+	jwks, err := json.Marshal(map[string]any{"keys": []map[string]string{{
 		"kty": "RSA", "alg": "RS256", "use": "sig", "kid": kid,
 		"n": b64(c.privata.N.Bytes()),
 		"e": b64(big.NewInt(int64(c.privata.E)).Bytes()),
 	}}})
-	return string(jwks)
+	if err != nil {
+		return "", fmt.Errorf("JWKS: %w", err)
+	}
+	return string(jwks), nil
 }
 
-// IDToken restituisce il JWT firmato RS256 con i claims dati.
-func (c *Chiave) IDToken(t testing.TB, claims map[string]any) string {
-	t.Helper()
+// IDToken restituisce il JWT firmato RS256 con i claims dati. Non riceve il
+// testing.TB perche' lo chiama il gestore HTTP del provider finto, fuori
+// dalla goroutine del test, dove t.Fatal non si puo' chiamare.
+func (c *Chiave) IDToken(claims map[string]any) (string, error) {
 	b64 := base64.RawURLEncoding.EncodeToString
 	corpo, err := json.Marshal(claims)
 	if err != nil {
-		t.Fatal(err)
+		return "", fmt.Errorf("claims dell'id_token: %w", err)
 	}
 	firmato := b64([]byte(`{"alg":"RS256","typ":"JWT","kid":"`+kid+`"}`)) + "." + b64(corpo)
 	h := sha256.Sum256([]byte(firmato))
 	firma, err := rsa.SignPKCS1v15(rand.Reader, c.privata, crypto.SHA256, h[:])
 	if err != nil {
-		t.Fatal(err)
+		return "", fmt.Errorf("firma dell'id_token: %w", err)
 	}
-	return firmato + "." + b64(firma)
+	return firmato + "." + b64(firma), nil
 }

@@ -53,7 +53,13 @@ func providerOidcCon(t *testing.T, it idTokenFinto) string {
 			srv.URL, srv.URL+"/auth", srv.URL+"/token", srv.URL+"/userinfo", srv.URL+"/jwks"))
 	})
 	mux.HandleFunc("/jwks", func(w http.ResponseWriter, _ *http.Request) {
-		scrivi(w, chiave.JWKS())
+		jwks, err := chiave.JWKS()
+		if err != nil {
+			t.Error(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		scrivi(w, jwks)
 	})
 	mux.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
 		if r.FormValue("code") != codiceDelProvider {
@@ -74,7 +80,13 @@ func providerOidcCon(t *testing.T, it idTokenFinto) string {
 		if it.sub != "" {
 			claims["sub"] = it.sub
 		}
-		scrivi(w, fmt.Sprintf(`{"access_token":"at-1","token_type":"Bearer","expires_in":3600,"id_token":%q}`, chiave.IDToken(t, claims)))
+		idToken, err := chiave.IDToken(claims)
+		if err != nil {
+			t.Error(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		scrivi(w, fmt.Sprintf(`{"access_token":"at-1","token_type":"Bearer","expires_in":3600,"id_token":%q}`, idToken))
 	})
 	mux.HandleFunc("/userinfo", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer at-1" {
