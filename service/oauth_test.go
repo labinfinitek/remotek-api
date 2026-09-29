@@ -19,8 +19,9 @@ import (
 )
 
 // providerMuto avvia un provider OIDC finto che accetta qualsiasi codice, e
-// risponde con un id_token firmato senza nonce, ma dalla userinfo non risponde, finche' il test non finisce o chi chiama non
-// rinuncia. Restituisce il provider e la configurazione OAuth2 del client.
+// risponde con un id_token firmato senza nonce, ma dalla userinfo non
+// risponde, finche' il test non finisce o chi chiama non rinuncia.
+// Restituisce il provider e la configurazione OAuth2 del client.
 func providerMuto(t *testing.T) (*oidc.Provider, *oauth2.Config) {
 	t.Helper()
 	sblocca := make(chan struct{})
