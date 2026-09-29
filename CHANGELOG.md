@@ -20,6 +20,19 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   esistente faceva fallire il create e uno libero dava la riga con l'id
   scelto.
 
+### Sicurezza
+- Esportazioni CSV del pannello (connessioni, file, utenti, dispositivi, i
+  miei dispositivi, login) senza formule: un `=`, `+`, `-`, `@`, tab o a
+  capo all'inizio di una cella, o dopo un `;`, una `,` o un a capo del
+  valore, anche seguiti da virgolette o spazi (Excel in italiano separa le
+  celle ai `;` e le righe agli a capo, anche dentro le virgolette), prende
+  davanti un apostrofo, e non diventa
+  una formula quando il file si apre in un foglio di calcolo. I
+  numeri puri e il segnaposto `-` restano come sono. Note di sessione, nomi
+  dei PC, alias e note degli utenti sono testo libero.
+  Un valore vuoto (null) non ferma piu' l'esportazione, e un elenco vuoto
+  da' un file vuoto invece di un errore.
+
 ## [0.3.0] - 2026-09-29
 Immagine `ghcr.io/labinfinitek/remotek-api:0.3.0`. Due cambi incompatibili,
 sotto Sicurezza: `ldap.tls-verify` vale `true` anche senza configurazione, e
