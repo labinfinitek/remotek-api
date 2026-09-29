@@ -1,6 +1,7 @@
 # Immagine dell'API di Remotek costruita dal sorgente, in quattro stadi:
-# binario Go, sorgente e build del pannello rustdesk-api-web, immagine finale. Le immagini di base sono
-# fissate per digest: per aggiornarne una si cambiano tag e digest insieme.
+# binario Go, sorgente e build del pannello rustdesk-api-web, immagine
+# finale. Le immagini di base sono fissate per digest: per aggiornarne una si
+# cambiano tag e digest insieme.
 #
 #   docker build --build-arg VERSION=<versione> \
 #     --build-arg REVISION="$(git rev-parse HEAD)" -t remotek-api .

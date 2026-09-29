@@ -17,7 +17,12 @@ Come funziona:
   primo `diff --git`) perche';
 - il marchio resta in `adatta`, non in una patch;
 - [REMOTEK.md](../REMOTEK.md) elenca ogni patch col motivo;
-- oltre 500 righe di patch in tutto si passa al fork del pannello.
+- quando si alza `PANNELLO_COMMIT`, le patch che non si applicano piu' si
+  rifanno nella stessa MR: la build non passa finche' non si applicano
+  tutte;
+- si passa al fork del pannello oltre 500 righe di patch in tutto, oppure
+  per tradurre in italiano l'intero pannello (tutti i file di lingua e i
+  testi fissi), anche sotto le 500 righe.
 
 Per scrivere una patch: si clona rustdesk-api-web al commit fissato, si
 applicano le patch che ci sono, si modifica, e `git diff` va in un file
