@@ -85,6 +85,12 @@ are folded back into it and removed. The log goes to stdout only
 {"time":"2026-09-29T13:33:09.69Z","level":"WARN","source":{"function":"...","file":"...","line":64},"msg":"rustdesk.id-server vuoto: ..."}
 ```
 
+Every response has the `X-Request-Id` header, a random id the API picks for
+the request (an `X-Request-Id` sent by the caller is not used); lines written
+while handling the request carry it as `request_id`. At `debug` level there
+is also one `richiesta` line per request, with method, route, status and
+duration, without IP or query.
+
 Backup: with the API running use `sqlite3 rustdeskapi.db "VACUUM INTO '<file>'"`
 (or `sqlite3`'s `.backup`), never a copy of `rustdeskapi.db` alone, which
 would miss the writes still in the `-wal`; with the API stopped, after a

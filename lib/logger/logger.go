@@ -65,6 +65,24 @@ func Su(w io.Writer) *Logger {
 // Slog restituisce il logger slog sottostante, per le righe con attributi.
 func (l *Logger) Slog() *slog.Logger { return slog.New(l.h) }
 
+// chiaveId e' la chiave del request-id nel contesto della richiesta.
+type chiaveId struct{}
+
+// ConId restituisce ctx col request-id id, che Per mette nelle righe.
+func ConId(ctx context.Context, id string) context.Context {
+	return context.WithValue(ctx, chiaveId{}, id)
+}
+
+// Per restituisce il logger per la richiesta di ctx: le sue righe hanno
+// request_id, se ctx ne ha uno (ConId), altrimenti sono quelle di l.
+func (l *Logger) Per(ctx context.Context) *Logger {
+	id, ok := ctx.Value(chiaveId{}).(string)
+	if !ok {
+		return l
+	}
+	return &Logger{h: l.h.WithAttrs([]slog.Attr{slog.String("request_id", id)})}
+}
+
 // scrivi scrive msg al livello dato; source e' chi ha chiamato il metodo di
 // Logger, non Logger stesso.
 func (l *Logger) scrivi(livello slog.Level, msg string) {
@@ -108,9 +126,10 @@ func (l *Logger) Printf(format string, args ...any) {
 
 // Riga e' una riga del log letta da Righe.
 type Riga struct {
-	Time  time.Time `json:"time"`
-	Level string    `json:"level"`
-	Msg   string    `json:"msg"`
+	Time      time.Time `json:"time"`
+	Level     string    `json:"level"`
+	Msg       string    `json:"msg"`
+	RequestId string    `json:"request_id"`
 }
 
 // Righe legge le righe JSON di testo; le altre (per esempio quelle di gin in

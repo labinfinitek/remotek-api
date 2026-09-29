@@ -24,7 +24,7 @@ func NewEngine() *gin.Engine {
 	g.NoRoute(func(c *gin.Context) {
 		c.String(http.StatusNotFound, "404 not found")
 	})
-	g.Use(middleware.Logger(), middleware.Limiter(), recupera())
+	g.Use(middleware.RequestId(), middleware.Limiter(), recupera())
 	router.WebInit(g)
 	router.Init(g)
 	router.ApiInit(g)
@@ -56,7 +56,7 @@ func ApiInit() error {
 // gin.Recovery, un 500 senza corpo.
 func recupera() gin.HandlerFunc {
 	return gin.CustomRecoveryWithWriter(nil, func(c *gin.Context, err any) {
-		global.Logger.Errorf("%s %s: panic: %v\n%s", c.Request.Method, c.FullPath(), err, debug.Stack())
+		global.Logger.Per(c.Request.Context()).Errorf("%s %s: panic: %v\n%s", c.Request.Method, c.FullPath(), err, debug.Stack())
 		c.AbortWithStatus(http.StatusInternalServerError)
 	})
 }

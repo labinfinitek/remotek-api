@@ -97,7 +97,7 @@ func notaDiSessione(c *gin.Context, peerId, sessionId, nota string) {
 	err := service.AllService.AuditService.NotaDiSessione(peerId, sessionId, tronca(c, nota))
 	switch {
 	case errors.Is(err, service.ErrNotFound):
-		global.Logger.Infof("%s %s: nota di sessione senza connessione registrata del dispositivo %s, non salvata", c.Request.Method, c.FullPath(), peerId)
+		global.Logger.Per(c.Request.Context()).Infof("%s %s: nota di sessione senza connessione registrata del dispositivo %s, non salvata", c.Request.Method, c.FullPath(), peerId)
 	case err != nil:
 		auditNonSalvato(c, err)
 	}
@@ -111,7 +111,7 @@ func tronca(c *gin.Context, nota string) string {
 	if n <= model.NotaMax {
 		return nota
 	}
-	global.Logger.Warnf("%s %s: nota di %d caratteri troncata a %d", c.Request.Method, c.FullPath(), n, model.NotaMax)
+	global.Logger.Per(c.Request.Context()).Warnf("%s %s: nota di %d caratteri troncata a %d", c.Request.Method, c.FullPath(), n, model.NotaMax)
 	return string([]rune(nota)[:model.NotaMax])
 }
 
@@ -214,7 +214,7 @@ func dalDispositivo(c *gin.Context, id, uuid string) bool {
 // non ha salvato. Al client va successo lo stesso: ignora la risposta, e un
 // errore non gli farebbe rimandare niente.
 func auditNonSalvato(c *gin.Context, err error) {
-	global.Logger.Errorf("%s %s: audit non salvato: %v", c.Request.Method, c.FullPath(), err)
+	global.Logger.Per(c.Request.Context()).Errorf("%s %s: audit non salvato: %v", c.Request.Method, c.FullPath(), err)
 }
 
 // AuditFile salva nell'audit un trasferimento di file.

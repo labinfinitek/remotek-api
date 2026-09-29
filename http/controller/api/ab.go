@@ -475,7 +475,7 @@ func (a *Ab) SharedProfiles(c *gin.Context) {
 			// della cancellazione a cascata): la rubrica si salta, perche'
 			// una risposta d'errore farebbe sparire dal client tutte le
 			// rubriche condivise
-			global.Logger.Warnf("%s %s: rubrica %d saltata, il proprietario %d non c'e'", c.Request.Method, c.FullPath(), collection.Id, collection.UserId)
+			global.Logger.Per(c.Request.Context()).Warnf("%s %s: rubrica %d saltata, il proprietario %d non c'e'", c.Request.Method, c.FullPath(), collection.Id, collection.UserId)
 			continue
 		}
 		res = append(res, &api.SharedProfilesPayload{

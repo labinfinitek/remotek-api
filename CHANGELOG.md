@@ -7,6 +7,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 ## [Non rilasciato]
 
 ### Aggiunto
+- Header `X-Request-Id` in ogni risposta, con un id casuale scelto dall'API
+  (quello mandato dal chiamante non si usa), e lo stesso id come
+  `request_id` nelle righe di log scritte durante la richiesta. A debug, una
+  riga per richiesta con metodo, rotta, stato e durata; quella di prima, con
+  URL e IP, non c'e' piu'.
 - Colonna "Remark" nel registro delle connessioni del pannello, con la nota
   di sessione del tecnico; il testo lungo si legge nel tooltip. Il pannello
   nell'immagine e' ora rustdesk-api-web modificato dalle patch in

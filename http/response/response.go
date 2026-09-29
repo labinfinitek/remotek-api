@@ -134,7 +134,7 @@ func IDErr(c *gin.Context, id string, err error) string {
 	if trovato := idNellaCatena(localizer, err); trovato != "" {
 		id = trovato
 	}
-	global.Logger.Warnf("%s %s: al client va %s, errore %q", c.Request.Method, c.FullPath(), id, err)
+	global.Logger.Per(c.Request.Context()).Warnf("%s %s: al client va %s, errore %q", c.Request.Method, c.FullPath(), id, err)
 	return id
 }
 

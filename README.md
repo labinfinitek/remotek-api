@@ -87,6 +87,12 @@ JSON, una riga per evento:
 {"time":"2026-09-29T13:33:09.69Z","level":"WARN","source":{"function":"...","file":"...","line":64},"msg":"rustdesk.id-server vuoto: ..."}
 ```
 
+Ogni risposta ha l'header `X-Request-Id`, un id casuale che l'API sceglie
+per la richiesta (un `X-Request-Id` mandato dal chiamante non si usa); le
+righe scritte durante la richiesta lo hanno come `request_id`. A livello
+`debug` c'e' anche una riga `richiesta` per ogni richiesta, con metodo, rotta,
+stato e durata, senza IP ne' query.
+
 Backup: ad API accesa con `sqlite3 rustdeskapi.db "VACUUM INTO '<file>'"` (o
 `.backup` di `sqlite3`), mai copiando il solo `rustdeskapi.db`, a cui
 mancherebbero le scritture ancora nel `-wal`; ad API ferma, dopo uno stop
