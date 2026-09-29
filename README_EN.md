@@ -24,16 +24,16 @@ changed since v2.7 is in [REMOTEK.md](REMOTEK.md), news in
 - **Audit**: log of connections and file transfers sent by the clients.
 - **Session notes**: the technician annotates the connection and the note
   is saved in the connection log. It can be read in the JSON of
-  `/api/admin/audit_conn/list` and in the panel's CSV export: the panel
-  (rustdesk-api-web `3998c2a`) has no column for the note. During the
-  session the note is written from the technician's client; the
+  `/api/admin/audit_conn/list`, in the "Remark" column of the panel's
+  connection log and in its CSV export. During the session the note is written from the technician's client; the
   end-of-connection note needs the client option `allow-ask-for-note` (off
   by default) on the technician's PC, and the login. A note only attaches
   to a connection already registered, at most 2000 characters (longer ones
   are cut), and its text never goes to the log.
 - **Login log**: every login, from the client and from the panel.
 - **Admin panel** on `/_admin/`: [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)
-  built into the image at a pinned commit, with the Remotek brand. Users,
+  built into the image at a pinned commit, with the Remotek brand and the
+  changes of the patches in [`pannello/`](pannello/README.md). Users,
   devices, address books, tags, groups, OAuth, logs.
 - **Login**: with a password; with a generic **OIDC** provider, configured
   from the panel; with **LDAP** (upstream reports it tested with OpenLDAP and Active Directory;
@@ -96,9 +96,10 @@ docker build \
   -t remotek-api .
 ```
 
-Three stages: static Go binary (CGO for SQLite), rustdesk-api-web panel at the
-pinned commit, final Alpine image. Base images are pinned by digest.
-Arguments:
+Four stages: static Go binary (CGO for SQLite), rustdesk-api-web source at
+the pinned commit with the brand and the patches of `pannello/` applied in
+name order (a patch that does not apply stops the build), panel build, final
+Alpine image. Base images are pinned by digest. Arguments:
 
 | Argument | Default | Use |
 |---|---|---|
@@ -300,5 +301,8 @@ Remotek API is based on [rustdesk-api](https://github.com/lejianwen/rustdesk-api
 by lejianwen, version v2.7, released under the MIT licence. This fork is MIT
 too: [LICENSE](LICENSE) is unchanged, with the attribution to lejianwen. The
 panel is [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web), by
-the same author, built from source. The changes since v2.7 are listed in
+the same author, also MIT, built from source and **modified** by the patches
+in [`pannello/`](pannello/README.md), a derivative work under the same
+licence; its `LICENSE` is in the image at `resources/admin/LICENSE`. The
+changes since v2.7, panel patches included, are listed in
 [REMOTEK.md](REMOTEK.md).
