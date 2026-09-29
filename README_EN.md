@@ -86,8 +86,12 @@ are folded back into it and removed. The log goes to stdout only
 ```
 
 Every response has the `X-Request-Id` header, a random id the API picks for
-the request (an `X-Request-Id` sent by the caller is not used); lines written
-while handling the request carry it as `request_id`. At `debug` level there
+the request (an `X-Request-Id` sent by the caller is not used). It appears as
+`request_id` in the lines that start with method and route (for example
+`POST /api/heartbeat: ...`: errors sent to the client, handler warnings,
+panics) and in the `richiesta` line; other lines written while handling the
+request do not carry it, for example `Login Fail`, service-layer lines and
+gorm's slow or failed SQL queries. At `debug` level there
 is also one `richiesta` line per request, with method, route, status and
 duration, without IP or query.
 
