@@ -11,18 +11,34 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
+	"github.com/lejianwen/rustdesk-api/v2/test/oidcfinto"
 )
 
-// providerOidc avvia un provider OIDC finto: discovery, token senza
-// id_token per il codice codiceDelProvider e userinfo con l'utente sub-1.
-// Restituisce l'issuer.
+// providerOidc avvia un provider OIDC finto: discovery, token per il codice
+// codiceDelProvider con un id_token firmato per l'utente sub-1 e col nonce
+// del login in corso, e userinfo con l'utente sub-1. Restituisce l'issuer.
 func providerOidc(t *testing.T) string {
+	t.Helper()
+	return providerOidcCon(t, idTokenFinto{})
+}
+
+// idTokenFinto dice come il provider finto sbaglia l'id_token: vuoto, lo
+// manda giusto.
+type idTokenFinto struct {
+	assente bool   // la risposta del token non ha l'id_token
+	nonce   string // nonce al posto di quello del login in corso
+	sub     string // sub al posto di sub-1
+}
+
+// providerOidcCon e' providerOidc con l'id_token deciso da it.
+func providerOidcCon(t *testing.T, it idTokenFinto) string {
 	t.Helper()
 	mux := http.NewServeMux()
 	srv := httptest.NewServer(mux)
@@ -31,16 +47,34 @@ func providerOidc(t *testing.T) string {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = io.WriteString(w, corpo)
 	}
+	chiave, prima := oidcfinto.Nuova(t), cacheDeiLogin()
 	mux.HandleFunc("/.well-known/openid-configuration", func(w http.ResponseWriter, _ *http.Request) {
 		scrivi(w, fmt.Sprintf(`{"issuer":%q,"authorization_endpoint":%q,"token_endpoint":%q,"userinfo_endpoint":%q,"jwks_uri":%q}`,
 			srv.URL, srv.URL+"/auth", srv.URL+"/token", srv.URL+"/userinfo", srv.URL+"/jwks"))
+	})
+	mux.HandleFunc("/jwks", func(w http.ResponseWriter, _ *http.Request) {
+		scrivi(w, chiave.JWKS())
 	})
 	mux.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
 		if r.FormValue("code") != codiceDelProvider {
 			http.Error(w, `{"error":"invalid_grant"}`, http.StatusBadRequest)
 			return
 		}
-		scrivi(w, `{"access_token":"at-1","token_type":"Bearer","expires_in":3600}`)
+		if it.assente {
+			scrivi(w, `{"access_token":"at-1","token_type":"Bearer","expires_in":3600}`)
+			return
+		}
+		claims := map[string]any{"iss": srv.URL, "aud": "id", "sub": "sub-1", "exp": time.Now().Add(time.Hour).Unix(), "iat": time.Now().Unix()}
+		if nonce := loginInCorso(t, prima); nonce != "" {
+			claims["nonce"] = nonce
+		}
+		if it.nonce != "" {
+			claims["nonce"] = it.nonce
+		}
+		if it.sub != "" {
+			claims["sub"] = it.sub
+		}
+		scrivi(w, fmt.Sprintf(`{"access_token":"at-1","token_type":"Bearer","expires_in":3600,"id_token":%q}`, chiave.IDToken(t, claims)))
 	})
 	mux.HandleFunc("/userinfo", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer at-1" {
@@ -50,6 +84,35 @@ func providerOidc(t *testing.T) string {
 		scrivi(w, `{"sub":"sub-1","name":"Utente OIDC","email":"utente@esempio.it","email_verified":true,"preferred_username":"utente-oidc"}`)
 	})
 	return srv.URL
+}
+
+// loginInCorso restituisce il nonce del login OIDC in corso, quello che un
+// provider vero ricorda dalla richiesta di autorizzazione: e' l'unico login
+// della cache dei login che non c'era in prima, la cache quando il test ha
+// avviato il provider (altri test ne lasciano).
+func loginInCorso(t *testing.T, prima map[any]any) string {
+	var nonce []string
+	service.OauthCache.Range(func(k, v any) bool {
+		if voce := v.(*service.OauthCacheItem); prima[k] != v && voce.Op != model.OauthTypeWebauth {
+			nonce = append(nonce, voce.Nonce)
+		}
+		return true
+	})
+	if len(nonce) != 1 {
+		t.Errorf("provider finto: %d login OIDC in corso nella cache, atteso uno", len(nonce))
+		return ""
+	}
+	return nonce[0]
+}
+
+// cacheDeiLogin restituisce la cache dei login di adesso.
+func cacheDeiLogin() map[any]any {
+	m := map[any]any{}
+	service.OauthCache.Range(func(k, v any) bool {
+		m[k] = v
+		return true
+	})
+	return m
 }
 
 // codiceDelProvider e' il codice che il provider finto accetta al token.

@@ -202,8 +202,11 @@ stesso default se la chiave manca dal file.
 | `ldap.user.allow-group` | `RUSTDESK_API_LDAP_USER_ALLOW_GROUP` | `cn=users,dc=example,dc=com` | DN del gruppo di chi puo' entrare; vuoto = tutti |
 
 Il provider OIDC si configura dal pannello (OAuth, tipo `oidc`): serve
-l'`Issuer`, `Scopes` di default `openid,profile,email`, URL di callback
-`<rustdesk.api-server>/api/oidc/callback`. L'autoregistrazione
+l'`Issuer`, `Scopes` di default `openid,profile,email` (`openid` si chiede
+sempre, anche se non e' negli scope salvati), URL di callback
+`<rustdesk.api-server>/api/oidc/callback`. Serve un provider che nella
+risposta del token manda l'`id_token` (OIDC Core): senza, o con un
+`id_token` che non si verifica, il login si ferma. L'autoregistrazione
 (`auto_register`) e' spenta se non la si accende: un account del provider
 senza utente viene rimandato ad associarsi dal pannello; accesa, l'utente
 nasce al primo login.

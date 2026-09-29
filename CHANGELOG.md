@@ -21,6 +21,16 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   pannello (rustdesk-api-web `3998c2a`) non ha una colonna per la nota.
 
 ### Sicurezza
+- Login OIDC: l'`id_token` nella risposta del token e' obbligatorio (OIDC
+  Core 3.1.3.3). Senza, il login si ferma come per un `id_token` non valido
+  (la pagina dice `OauthFailed`), con un warn nel log che dice di controllare
+  che gli scope comprendano `openid`; il nonce dell'`id_token` si confronta
+  sempre, e il `sub` della userinfo deve essere quello dell'`id_token` (OIDC
+  Core 5.3.2). `openid` si chiede sempre al provider, anche se gli scope
+  salvati non lo hanno. Prima, senza `id_token`, firma e nonce non si
+  verificavano e l'account si associava col solo `sub` della userinfo.
+  **Rottura:** un provider che non manda l'`id_token` non fa piu' entrare
+  nessuno; va configurato perche' lo mandi.
 - Pannello, "le mie rubriche" (`/api/admin/my/address_book_collection/update`):
   la rubrica resta di chi la modifica, e lo `user_id` nel corpo non conta.
   Prima un utente del pannello non amministratore poteva passare una sua
