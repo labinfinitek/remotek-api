@@ -6,6 +6,14 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+## [0.4.0] - 2026-09-29
+Immagine `ghcr.io/labinfinitek/remotek-api:0.4.0`. Un cambio incompatibile,
+sotto Modificato: il log esce solo in JSON su stdout, `logger.path` e'
+ignorata e `logger.level` accetta solo `debug`, `info`, `warn`, `error`. Il
+pannello nell'immagine e' modificato da patch (`pannello/`): nota di
+sessione visibile, comandi del server e esportazioni CSV corretti. Ogni
+risposta ha l'header `X-Request-Id`. Nessuna migrazione del database.
+
 ### Aggiunto
 - Header `X-Request-Id` in ogni risposta, con un id casuale scelto dall'API
   (quello mandato dal chiamante non si usa), e lo stesso id come
