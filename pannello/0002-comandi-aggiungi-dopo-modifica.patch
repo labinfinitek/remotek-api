@@ -1,0 +1,27 @@
+Subject: [PATCH 0002] comandi del server: "Aggiungi" dopo "Modifica" crea
+
+Perche': "Modifica" mette nel modulo id e target della riga, "Aggiungi"
+azzera cmd, alias, option ed explain ma non id ne' target, e il salvataggio
+sceglie update se c'e' un id. Aggiungere un comando dopo averne modificato
+uno riscriveva quello modificato (dalla #76, che ha registrato cmdUpdate;
+prima finiva in un 404).
+Cosa: "Aggiungi" azzera anche id e target, come all'apertura della pagina.
+Licenza: MIT, come rustdesk-api-web (Copyright (c) 2016-2021
+vue-manage-system); questa patch e' opera derivata con la stessa licenza.
+---
+diff --git a/src/views/rustdesk/control.vue b/src/views/rustdesk/control.vue
+index 0df9ea1..c54f5ee 100644
+--- a/src/views/rustdesk/control.vue
++++ b/src/views/rustdesk/control.vue
+@@ -223,9 +223,11 @@
+   const formVisible = ref(false)
+   const toAdd = () => {
+     formVisible.value = true
++    formData.id = 0
+     formData.cmd = ''
+     formData.alias = ''
+     formData.option = ''
++    formData.target = ''
+     formData.explain = ''
+   }
+   const toUpdate = (row) => {

@@ -167,3 +167,45 @@ func TestPannelloModificaComandoServer(t *testing.T) {
 		})
 	}
 }
+
+// TestPannelloCreaComandoIgnoraId prova sul router vero che
+// POST /api/admin/rustdesk/cmdCreate crea sempre una voce nuova con l'id
+// scelto dal database, anche se il corpo porta un id: quello di una voce
+// esistente, che resta com'era, o uno libero. Prima l'id del corpo arrivava
+// a DB.Create: con quello di una voce esistente il create falliva sul
+// vincolo della chiave, con uno libero la riga nasceva con l'id scelto. Il
+// pannello lo mandava con "Aggiungi" dopo "Modifica".
+func TestPannelloCreaComandoIgnoraId(t *testing.T) {
+	g, _, _ := pannello(t, true)
+	if err := service.DB.AutoMigrate(&model.ServerCmd{}); err != nil {
+		t.Fatal(err)
+	}
+	salvato := &model.ServerCmd{Cmd: "salvato", Explain: "prima", Target: model.ServerCmdTargetIdServer}
+	crea(t, salvato)
+	libero := salvato.Id + 1000
+
+	const rotta = "/api/admin/rustdesk/cmdCreate"
+	for _, id := range []uint{salvato.Id, libero} {
+		cmd := "nuovo" + strconv.FormatUint(uint64(id), 10)
+		corpo := `{"id": ` + strconv.FormatUint(uint64(id), 10) + `, "cmd": "` + cmd + `", "target": "` + model.ServerCmdTargetRelayServer + `"}`
+		rec := richiesta(g, "POST", rotta, "", corpo)
+		if got, want := rec.Body.String(), `{"code":0,"message":"success","data":null}`; rec.Code != 200 || got != want {
+			t.Errorf("POST %s con id %d: stato %d\n got  %s\n want %s", rotta, id, rec.Code, got, want)
+			continue
+		}
+		nuovo := &model.ServerCmd{}
+		if err := service.DB.Where("cmd = ?", cmd).First(nuovo).Error; err != nil {
+			t.Fatalf("voce %q dopo POST %s: %v", cmd, rotta, err)
+		}
+		if nuovo.Id == salvato.Id || nuovo.Id == libero {
+			t.Errorf("POST %s con id %d: voce nuova con id %d, scelto dal corpo", rotta, id, nuovo.Id)
+		}
+	}
+	dopo := &model.ServerCmd{}
+	if err := service.DB.First(dopo, salvato.Id).Error; err != nil {
+		t.Fatal(err)
+	}
+	if got, want := dopo.Cmd+"/"+dopo.Explain+"/"+dopo.Target, "salvato/prima/"+model.ServerCmdTargetIdServer; got != want {
+		t.Errorf("voce esistente dopo i create: %q, attesa %q", got, want)
+	}
+}

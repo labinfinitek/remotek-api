@@ -13,6 +13,13 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   `pannello/`, applicate dal `Dockerfile`; il suo `LICENSE` e' nell'immagine
   in `resources/admin/LICENSE`.
 
+### Corretto
+- Comandi del server nel pannello: "Aggiungi" dopo "Modifica" crea un
+  comando nuovo invece di riscrivere quello appena modificato. L'API, in
+  `POST /api/admin/rustdesk/cmdCreate`, ignora l'id del corpo: prima un id
+  esistente faceva fallire il create e uno libero dava la riga con l'id
+  scelto.
+
 ## [0.3.0] - 2026-09-29
 Immagine `ghcr.io/labinfinitek/remotek-api:0.3.0`. Due cambi incompatibili,
 sotto Sicurezza: `ldap.tls-verify` vale `true` anche senza configurazione, e
