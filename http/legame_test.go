@@ -1,11 +1,13 @@
 package http
 
 import (
+	"net/http/httptest"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
@@ -135,4 +137,70 @@ func TestHeartbeatUuidDiverso(t *testing.T) {
 		t.Errorf("la scheda e' cambiata: %+v, prima %+v", got, prima)
 	}
 	senzaUuid(t, registro, "/api/heartbeat")
+	if !strings.Contains(registro.String(), "uuid diverso da quello salvato") {
+		t.Errorf("POST /api/heartbeat: nel log manca il motivo:\n%s", registro)
+	}
+}
+
+// TestHeartbeatPcSenzaUuid prova sul router vero che l'heartbeat di un PC
+// creato dal pannello senza uuid, che si lega al primo sysinfo (ADR-0019),
+// risponde {} (golden heartbeat), non cambia la scheda e scrive nel log che
+// il PC aspetta il primo sysinfo, non che l'uuid e' diverso da quello
+// salvato, che e' vuoto.
+func TestHeartbeatPcSenzaUuid(t *testing.T) {
+	g, registro := dispositiviDiProva(t, &model.Peer{Id: "999000111", LastOnlineIp: "198.51.100.1"})
+	prima := scheda(t)
+
+	rec := richiesta(g, "POST", "/api/heartbeat", "", `{"id":"999000111","modified_at":0,"uuid":"`+uuidAltro+`","ver":1004090}`)
+	if rec.Code != 200 || rec.Body.String() != "{}" {
+		t.Errorf("POST /api/heartbeat: %d %s, attesi 200 e {}", rec.Code, rec.Body)
+	}
+	if got := scheda(t); !reflect.DeepEqual(prima, got) {
+		t.Errorf("la scheda e' cambiata: %+v, prima %+v", got, prima)
+	}
+	senzaUuid(t, registro, "/api/heartbeat")
+	if nelLog := registro.String(); !strings.Contains(nelLog, "PC senza uuid, in attesa del primo sysinfo") || strings.Contains(nelLog, "diverso") {
+		t.Errorf("POST /api/heartbeat: nel log il motivo non e' quello del PC senza uuid:\n%s", nelLog)
+	}
+}
+
+// TestSysinfoInsieme prova sul router vero due sysinfo dello stesso ID
+// nuovo, con l'indice unico su peers.id: il secondo arriva quando il primo
+// ha gia' letto "PC sconosciuto" ma non ha ancora creato, e crea per primo.
+// Il primo trova allora l'indice e risponde 400 OperationFailed, come per
+// ogni errore del database, senza panic; in peers resta una riga sola, col
+// PC del secondo. Il client 1.4.9 riprova dopo 120 s e trova il PC.
+func TestSysinfoInsieme(t *testing.T) {
+	g, _ := dispositiviDiProva(t)
+	if _, _, err := service.AllService.PeerService.CreaIndiceIdUnico(); err != nil {
+		t.Fatal(err)
+	}
+	// La richiesta del secondo parte prima della transazione della Create
+	// del primo, quando la connessione al database e' libera.
+	var secondo *httptest.ResponseRecorder
+	err := service.DB.Callback().Create().Before("gorm:begin_transaction").Register("sysinfo_insieme", func(db *gorm.DB) {
+		if db.Statement.Table != "peers" || secondo != nil {
+			return
+		}
+		secondo = httptest.NewRecorder()
+		g.ServeHTTP(secondo, httptest.NewRequest("POST", "/api/sysinfo", strings.NewReader(corpoSysinfo(uuidAltro, "SECONDO"))))
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	primo := richiesta(g, "POST", "/api/sysinfo", "", corpoSysinfo(uuidSalvato, "PRIMO"))
+	if want := `{"error":"Operazione non riuscita."}`; primo.Code != 400 || primo.Body.String() != want {
+		t.Errorf("primo sysinfo: %d %s, attesi 400 e %s", primo.Code, primo.Body, want)
+	}
+	if secondo == nil {
+		t.Fatal("il secondo sysinfo non e' partito")
+	}
+	if secondo.Code != 200 || secondo.Body.String() != "SYSINFO_UPDATED" {
+		t.Errorf("secondo sysinfo: %d %s, attesi 200 e SYSINFO_UPDATED (golden sysinfo)", secondo.Code, secondo.Body)
+	}
+	want := []model.Peer{{Id: "999000111", Hostname: "SECONDO", Username: "SECONDO", Uuid: uuidAltro}}
+	if got := scheda(t); !reflect.DeepEqual(want, got) {
+		t.Errorf("scheda: %+v, attesa %+v", got, want)
+	}
 }
