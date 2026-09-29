@@ -88,6 +88,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   `ldaps://`. Nel `conf/config.yaml` d'esempio `bind-password` e' vuota.
 
 ### Corretto
+- `/api/login-options` senza provider OIDC e con `app.web-sso` spento
+  risponde `["common-oidc/[]"]` invece di `["common-oidc/null"]`. Per il
+  client 1.4.9 non cambia niente (nessun pulsante in entrambi i casi): prima
+  la lista vuota ci arrivava solo passando dal ramo d'errore.
 - Un ID di PC compare una volta sola nei dispositivi. All'avvio l'API crea
   l'indice unico `idx_peers_id_unico` su `peers.id`; il pannello non crea
   ne' salva un dispositivo senza ID o con l'ID di un altro ("Un altro PC ha
