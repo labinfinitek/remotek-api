@@ -19,6 +19,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   `POST /api/admin/rustdesk/cmdCreate`, ignora l'id del corpo: prima un id
   esistente faceva fallire il create e uno libero dava la riga con l'id
   scelto.
+- Comandi del server nel pannello: `cmdCreate` e `cmdUpdate` rifiutano un
+  target diverso da hbbs (21115) o hbbr (21117), anche vuoto, con la stessa
+  risposta di `sendCmd` ("Parametri non validi."). Prima il comando si
+  salvava e poi non si poteva mandare.
 
 ### Sicurezza
 - Esportazioni CSV del pannello (connessioni, file, utenti, dispositivi, i
