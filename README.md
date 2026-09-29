@@ -284,10 +284,11 @@ rotte `/api/admin/rustdesk/*`, il module path Go.
   primo che manda un sysinfo con quell'ID. Con il PC spento o il servizio
   fermo nessuno riprova, e l'ID resta libero finche' il PC non torna in
   linea. Riavviare subito il servizio Remotek sul PC (o il PC) chiude prima
-  la finestra. Per un PC cancellato mentre era legato al suo uuid attuale
-  (per esempio per errore) il riavvio e' necessario: il client rimanda il
-  sysinfo solo all'avvio del servizio o quando cambiano l'utente, l'ID o
-  l'indirizzo dell'API.
+  la finestra. Un PC cancellato mentre era legato al suo uuid attuale (per
+  esempio per errore) va riavviato subito (il servizio Remotek o il PC): il
+  client rimanda il sysinfo solo all'avvio del servizio o quando cambiano
+  l'utente di Windows, l'ID o l'indirizzo dell'API, e fino al riavvio l'ID
+  resta libero senza limite di tempo.
 - Le vulnerabilita' si segnalano come dice [SECURITY.md](SECURITY.md), non
   con issue pubbliche.
 

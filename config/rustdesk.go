@@ -37,11 +37,11 @@ func (rd *Rustdesk) LoadKeyFile() {
 }
 
 // Avvisi restituisce una riga per ogni indirizzo vuoto che serve e che
-// nessun errore segnalerebbe: senza id-server il pannello da' al client un
-// server ID vuoto, e il client RustDesk usa allora i server pubblici; senza
-// api-server la callback OIDC e l'URL di webauth restano senza host, e il
-// login fallisce dal provider o dal client. relay-server vuoto no: il client
-// prende il relay da hbbs.
+// nessun errore segnalerebbe: senza id-server il pannello mostra un server
+// ID vuoto, e un client RustDesk in cui lo si copia usa i server
+// pubblici; senza api-server la callback OIDC e l'URL di webauth restano
+// senza host, e il login fallisce dal provider o dal client. relay-server
+// vuoto no: il client prende il relay da hbbs.
 func (rd *Rustdesk) Avvisi() []string {
 	var avvisi []string
 	if rd.IdServer == "" {

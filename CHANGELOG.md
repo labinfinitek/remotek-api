@@ -61,9 +61,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   sysinfo con quell'ID. Con il PC spento o il servizio fermo nessuno
   riprova, e l'ID resta libero finche' il PC non torna in linea; riavviare
   subito il servizio Remotek sul PC (o il PC) chiude prima la finestra. Un
-  PC cancellato mentre era legato al suo uuid attuale va invece riavviato:
-  il client rimanda il sysinfo solo all'avvio del servizio o quando
-  cambiano l'utente, l'ID o l'indirizzo dell'API. L'audit salva il
+  PC cancellato mentre era legato al suo uuid attuale va invece riavviato
+  subito: il client rimanda il sysinfo solo all'avvio del servizio o quando
+  cambiano l'utente di Windows, l'ID o l'indirizzo dell'API, e fino al
+  riavvio l'ID resta libero senza limite di tempo. L'audit salva il
   `session_id` esatto; prima, sopra 2^53, lo arrotondava.
 - LDAP: `ldap.tls-verify` vale `true` anche senza configurazione, e con
   `ldaps://` il certificato del server si verifica; prima valeva `false` e
@@ -88,11 +89,14 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   vuoti) e si cancellano le righe in piu', e al riavvio l'indice si crea.
   Nessuna riga si cancella da sola.
 - Pannello: la modifica di un dispositivo, di un utente, di un provider
-  OAuth o di un comando del server salva anche i campi svuotati (alias,
-  nome del PC, gruppo del dispositivo; email, nickname, avatar e nota
-  dell'utente; issuer e scope del provider; alias, opzione e spiegazione
-  del comando). Prima il pannello rispondeva successo ma quei campi
-  restavano com'erano. Non cambiano: l'uuid del dispositivo mandato vuoto
+  OAuth o di un comando del server salva vuoti i campi del modulo che
+  arrivano vuoti. Prima il pannello rispondeva successo ma quei campi
+  restavano com'erano. Dal pannello di oggi (rustdesk-api-web `3998c2a`) si
+  svuotano alias e nome del PC; email, nickname e nota dell'utente; scope
+  del provider; alias, opzione e spiegazione del comando. Gruppo del
+  dispositivo, avatar dell'utente e issuer del provider quel pannello non
+  li manda vuoti: il gruppo e' una scelta senza voce vuota, l'avatar non e'
+  nel modulo dell'utente, l'issuer e' obbligatorio. Non cambiano: l'uuid del dispositivo mandato vuoto
   resta quello di prima, come la password dell'utente e il ruolo se
   `is_admin` non c'e'; utente, ultimo contatto e IP del dispositivo non sono
   nel modulo e non si toccano. Il pannello (rustdesk-api-web `3998c2a`)

@@ -282,10 +282,11 @@ Not renamed: the `RUSTDESK_API_` prefix, the `rustdesk:` section, the
   whoever first sends a sysinfo with it. With the PC switched off or the
   service stopped nothing retries, and the ID stays free until the PC is
   back online. Restarting the Remotek service on the PC (or rebooting it)
-  right away closes the window sooner. For a PC deleted while bound to its
-  current uuid (by mistake, for example) the restart is required: the
-  client sends sysinfo again only when the service starts or the user, the
-  ID or the API address changes.
+  right away closes the window sooner. A PC deleted while bound to its
+  current uuid (by mistake, for example) must be restarted right away (the
+  Remotek service or the PC): the client sends sysinfo again only when the
+  service starts or the Windows user, the ID or the API address changes,
+  and until the restart the ID stays free with no time limit.
 - Report vulnerabilities as described in [SECURITY.md](SECURITY.md), not with
   public issues.
 
