@@ -1,0 +1,52 @@
+Subject: [PATCH 0003] esportazioni CSV: niente formule, null e elenco vuoto
+
+Perche': jsonToCsv, usata da tutte e sei le esportazioni del pannello
+(audit connessioni e file, utenti, dispositivi, i miei dispositivi, login),
+mette ogni valore tra virgolette ma lascia com'e' una cella che comincia
+con = + - @, tab o \r: aperta in un foglio di calcolo diventa una formula
+(CSV injection). Note di sessione, nomi dei PC, alias e note degli utenti
+sono testo libero e arrivano in queste celle. Inoltre un valore null o
+undefined fermava l'esportazione (row[key].toString()) e un elenco vuoto
+anche (data[0] undefined).
+Cosa: una cella che comincia con uno di quei caratteri prende davanti un
+apostrofo, dentro le virgolette (OWASP, CSV injection); null e undefined
+sono una cella vuota; un elenco vuoto da' un CSV vuoto.
+Licenza: MIT, come rustdesk-api-web (Copyright (c) 2016-2021
+vue-manage-system); questa patch e' opera derivata con la stessa licenza.
+---
+diff --git a/src/utils/file.js b/src/utils/file.js
+index e5f3438..6fc14db 100644
+--- a/src/utils/file.js
++++ b/src/utils/file.js
+@@ -33,13 +33,26 @@ export function b64_to_utf8 (str) {
+   return decodeURIComponent(escape(window.atob(str)))
+ }
+ 
++// Una cella che comincia con = + - @, tab o \r diventa una formula quando il
++// CSV si apre in un foglio di calcolo (CSV injection, OWASP): prende davanti
++// un apostrofo. null e undefined sono una cella vuota.
++function csvCell (value) {
++  let s = value === null || value === undefined ? '' : String(value)
++  if (/^[=+\-@\t\r]/.test(s)) {
++    s = "'" + s
++  }
++  return `"${s.replaceAll('"', '""')}"`
++}
++
+ export function jsonToCsv (data) {
+   let csv = ''
+-  let keys = Object.keys(data[0])
+-  csv += keys.join(',') + '\n'
+-  data.forEach(row => {
+-    csv += keys.map(key => `"${row[key].toString().replaceAll('"', '""')}"`).join(',') + '\n'
+-  })
++  if (data && data.length > 0) {
++    const keys = Object.keys(data[0])
++    csv += keys.join(',') + '\n'
++    data.forEach(row => {
++      csv += keys.map(key => csvCell(row[key])).join(',') + '\n'
++    })
++  }
+   return new Blob([csv], { type: 'text/csv' })
+ }
+ 
