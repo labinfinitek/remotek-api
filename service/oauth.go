@@ -201,7 +201,7 @@ func getHTTPClientWithProxy() *http.Client {
 // proxy il client HTTP non ha timeout. I test lo accorciano.
 var tempoProviderOidc = 30 * time.Second
 
-func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.Provider, code string, verifier string, nonce string, userData interface{}) error {
+func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.Provider, code string, verifier string, nonce string, userData *model.OidcUser) error {
 
 	// 设置代理客户端
 	httpClient := getHTTPClientWithProxy()
@@ -221,33 +221,31 @@ func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.
 		return errors.New("GetOauthTokenError")
 	}
 
-	// Senza id_token si saltano la verifica del token e quella del nonce: la
-	// tolleranza era per GitHub e Linux.do, che non sono OIDC e sono usciti
-	// (A3).
-	rawIDToken, ok := token.Extra("id_token").(string)
-	if ok && rawIDToken != "" {
-		// 验证 ID Token
-		v := provider.Verifier(&oidc.Config{ClientID: oauthConfig.ClientID})
-		idToken, err2 := v.Verify(ctx, rawIDToken)
-		if err2 != nil {
-			Logger.Warn("IdTokenVerifyError: ", err2)
-			return errors.New("IdTokenVerifyError")
-		}
-		if nonce != "" {
-			// 验证 nonce
-			var claims struct {
-				Nonce string `json:"nonce"`
-			}
-			if err2 = idToken.Claims(&claims); err2 != nil {
-				Logger.Warn("Failed to parse ID Token claims: ", err)
-				return errors.New("IDTokenClaimsError")
-			}
-
-			if claims.Nonce != nonce {
-				Logger.Warn("Nonce does not match")
-				return errors.New("NonceDoesNotMatch")
-			}
-		}
+	// L'id_token e' obbligatorio (OIDC Core 3.1.3.3): senza, niente
+	// verifica della firma ne' del nonce, e il login si ferma.
+	rawIDToken, _ := token.Extra("id_token").(string)
+	if rawIDToken == "" {
+		Logger.Warn("il provider non ha mandato l'id_token: controllare che gli scope comprendano openid")
+		return errors.New("IdTokenVerifyError")
+	}
+	// 验证 ID Token
+	v := provider.Verifier(&oidc.Config{ClientID: oauthConfig.ClientID})
+	idToken, err := v.Verify(ctx, rawIDToken)
+	if err != nil {
+		Logger.Warn("IdTokenVerifyError: ", err)
+		return errors.New("IdTokenVerifyError")
+	}
+	// 验证 nonce
+	var claims struct {
+		Nonce string `json:"nonce"`
+	}
+	if err = idToken.Claims(&claims); err != nil {
+		Logger.Warn("Failed to parse ID Token claims: ", err)
+		return errors.New("IDTokenClaimsError")
+	}
+	if claims.Nonce != nonce {
+		Logger.Warn("Nonce does not match")
+		return errors.New("NonceDoesNotMatch")
 	}
 
 	// 获取用户信息
@@ -272,6 +270,12 @@ func (os *OauthService) callbackBase(oauthConfig *oauth2.Config, provider *oidc.
 	if err = json.NewDecoder(resp.Body).Decode(userData); err != nil {
 		Logger.Warn("failed decoding user info: ", err)
 		return errors.New("DecodeOauthUserInfoError")
+	}
+	// La userinfo e' dello stesso utente dell'id_token (OIDC Core 5.3.2):
+	// l'associazione al provider prende il sub dalla userinfo.
+	if userData.Sub != idToken.Subject {
+		Logger.Warn("il sub della userinfo non e' quello dell'id_token")
+		return errors.New("IdTokenVerifyError")
 	}
 
 	return nil
@@ -349,13 +353,20 @@ func (os *OauthService) InfoByOp(op string) (*model.Oauth, error) {
 	return oauthInfo, nil
 }
 
-// Helper function to construct scopes
+// constructScopes restituisce gli scope del provider, con openid sempre:
+// senza, il provider non manda l'id_token che il login richiede.
 func (os *OauthService) constructScopes(scopes string) []string {
 	scopes = strings.TrimSpace(scopes)
 	if scopes == "" {
 		scopes = model.OIDC_DEFAULT_SCOPES
 	}
-	return strings.Split(scopes, ",")
+	res := strings.Split(scopes, ",")
+	for _, s := range res {
+		if strings.TrimSpace(s) == "openid" {
+			return res
+		}
+	}
+	return append([]string{"openid"}, res...)
 }
 
 func (os *OauthService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.OauthList, err error) {
