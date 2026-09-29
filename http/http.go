@@ -1,7 +1,6 @@
 package http
 
 import (
-	"io"
 	"net/http"
 	"runtime/debug"
 	"strings"
@@ -53,9 +52,10 @@ func ApiInit() error {
 
 // recupera e' gin.Recovery con il panic nel log a error, con metodo, rotta e
 // stack, e senza la richiesta: gin ne scriverebbe gli header, cookie compresi.
-// Al client, come gin.Recovery, un 500 senza corpo.
+// Col writer nil gin non costruisce nemmeno il dump. Al client, come
+// gin.Recovery, un 500 senza corpo.
 func recupera() gin.HandlerFunc {
-	return gin.CustomRecoveryWithWriter(io.Discard, func(c *gin.Context, err any) {
+	return gin.CustomRecoveryWithWriter(nil, func(c *gin.Context, err any) {
 		global.Logger.Errorf("%s %s: panic: %v\n%s", c.Request.Method, c.FullPath(), err, debug.Stack())
 		c.AbortWithStatus(http.StatusInternalServerError)
 	})
