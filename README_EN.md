@@ -178,8 +178,8 @@ default when the key is missing from the file.
 | `rustdesk.key` | `RUSTDESK_API_RUSTDESK_KEY` | empty | public key of `hbbs`; empty = `rustdesk.key-file` is read |
 | `rustdesk.key-file` | `RUSTDESK_API_RUSTDESK_KEY_FILE` | `/data/id_ed25519.pub` | key file; if it cannot be read, the key stays empty without an error |
 | `rustdesk.personal` | `RUSTDESK_API_RUSTDESK_PERSONAL` | `1` | `1` personal address book on, `0` off |
-| `logger.path` | `RUSTDESK_API_LOGGER_PATH` | empty | ignored: the log goes to stdout only; if set, a warn at startup says so |
-| `logger.level` | `RUSTDESK_API_LOGGER_LEVEL` | `info` | `debug`, `info`, `warn`, `error`; any other value stops startup |
+| `logger.path` \* | `RUSTDESK_API_LOGGER_PATH` | empty | ignored: the log goes to stdout only; if set, a warn at startup says so |
+| `logger.level` \* | `RUSTDESK_API_LOGGER_LEVEL` | `info` | `debug`, `info`, `warn`, `error`; any other value stops startup |
 | `logger.report-caller` | `RUSTDESK_API_LOGGER_REPORT_CALLER` | `true` | `source` (function, file and line of the code) in every log line |
 | `proxy.enable` | `RUSTDESK_API_PROXY_ENABLE` | `false` | HTTP proxy for the API's requests to the OAuth/OIDC provider |
 | `proxy.host` | `RUSTDESK_API_PROXY_HOST` | `http://127.0.0.1:1080` | proxy address |
