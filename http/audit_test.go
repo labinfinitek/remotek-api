@@ -139,6 +139,33 @@ func TestAuditDaAltri(t *testing.T) {
 	}
 }
 
+// TestAuditPcSenzaUuid prova sul router vero l'audit per un PC creato dal
+// pannello senza uuid: non scrive niente, come per un uuid diverso, e il
+// warn nel log dice che il PC aspetta il primo sysinfo, non che l'uuid e'
+// diverso da quello salvato. Come TestHeartbeatPcSenzaUuid.
+func TestAuditPcSenzaUuid(t *testing.T) {
+	for _, tc := range []struct{ nome, rotta, corpo string }{
+		{"connessione nuova", "/api/audit/conn", `{"action":"new","conn_id":8,"id":"999000111","ip":"192.0.2.10","session_id":1,"uuid":"` + uuidAltro + `"}`},
+		{"file", "/api/audit/file", `{"conn_id":7,"id":"999000111","info":"{}","is_file":false,"path":"C:\\prova","peer_id":"999000222","type":0,"uuid":"` + uuidAltro + `"}`},
+	} {
+		t.Run(tc.nome, func(t *testing.T) {
+			g, registro := dispositiviDiProva(t, &model.Peer{Id: "999000111"})
+
+			rec := richiesta(g, "POST", tc.rotta, "", tc.corpo)
+			if got, want := rec.Body.String(), `{"code":0,"message":"success","data":""}`; rec.Code != 200 || got != want {
+				t.Errorf("POST %s: %d %s, attesi 200 e %s", tc.rotta, rec.Code, got, want)
+			}
+			if n := righe(t, "audit_conns") + righe(t, "audit_files"); n != 0 {
+				t.Errorf("audit_conns e audit_files hanno %d righe, attese 0", n)
+			}
+			senzaUuid(t, registro, tc.rotta)
+			if nelLog := registro.String(); !strings.Contains(nelLog, "PC senza uuid, in attesa del primo sysinfo") || strings.Contains(nelLog, "diverso") {
+				t.Errorf("POST %s: nel log il motivo non e' quello del PC senza uuid:\n%s", tc.rotta, nelLog)
+			}
+		})
+	}
+}
+
 // TestAuditPcNonLetto prova sul router vero che l'audit mandato dal PC
 // salvato, col suo uuid, non scrive niente se il database non legge il PC:
 // il legame non si puo' controllare. La risposta resta quella dei golden

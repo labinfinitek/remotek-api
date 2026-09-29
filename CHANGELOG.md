@@ -91,19 +91,21 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 - Pannello: la modifica di un dispositivo, di un utente, di un provider
   OAuth o di un comando del server salva vuoti i campi del modulo che
   arrivano vuoti. Prima il pannello rispondeva successo ma quei campi
-  restavano com'erano. Dal pannello di oggi (rustdesk-api-web `3998c2a`) si
-  svuotano alias e nome del PC; email, nickname e nota dell'utente; scope
+  restavano com'erano. Dal pannello di oggi (rustdesk-api-web `3998c2a`)
+  si svuotano alias, nome del PC, utente del PC, CPU, memoria, OS e
+  versione del dispositivo; email, nickname e nota dell'utente; scope
   del provider; alias, opzione e spiegazione del comando. Gruppo del
-  dispositivo, avatar dell'utente e issuer del provider quel pannello non
-  li manda vuoti: il gruppo e' una scelta senza voce vuota, l'avatar non e'
-  nel modulo dell'utente, l'issuer e' obbligatorio. Non cambiano: l'uuid del dispositivo mandato vuoto
-  resta quello di prima, come la password dell'utente e il ruolo se
-  `is_admin` non c'e'; utente, ultimo contatto e IP del dispositivo non sono
-  nel modulo e non si toccano. Il pannello (rustdesk-api-web `3998c2a`)
-  manda l'alias del dispositivo solo se l'utente tocca quel campo: se nel
-  corpo manca, l'alias resta quello di prima. Gruppi, gruppi di dispositivi, collezioni e
-  regole della rubrica non avevano il problema: il validatore non accetta
-  vuoti i loro campi.
+  dispositivo, avatar dell'utente e issuer del provider quel pannello
+  non li manda vuoti: il gruppo e' una scelta senza voce vuota, l'avatar
+  non e' nel modulo dell'utente, l'issuer e' obbligatorio. Non cambiano:
+  l'uuid del dispositivo mandato vuoto resta quello di prima, come la
+  password dell'utente e il ruolo se `is_admin` non c'e'; utente
+  assegnato, ultimo contatto e IP del dispositivo non sono nel modulo e
+  non si toccano. Il pannello (rustdesk-api-web `3998c2a`) manda l'alias
+  del dispositivo solo se l'utente tocca quel campo: se nel corpo manca,
+  l'alias resta quello di prima. Gruppi, gruppi di dispositivi,
+  collezioni e regole della rubrica non avevano il problema: il
+  validatore non accetta vuoti i loro campi.
 - File d'esempio `conf/config.yaml`: `rustdesk.id-server`,
   `rustdesk.relay-server` e `rustdesk.api-server` sono vuoti, da
   configurare, invece di `192.168.1.66:21116`, `192.168.1.66:21117` e

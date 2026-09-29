@@ -189,7 +189,7 @@ func connessioneAudit(c *gin.Context, peerId string, connId int64) (*model.Audit
 // ID, niente uuid, o l'errore del database con auditNonSalvato. Al client
 // va successo lo stesso: ignora la risposta.
 func dalDispositivo(c *gin.Context, id, uuid string) bool {
-	_, esito, err := service.AllService.PeerService.Riconosci(id, uuid)
+	peer, esito, err := service.AllService.PeerService.Riconosci(id, uuid)
 	switch {
 	case err != nil:
 		auditNonSalvato(c, err)
@@ -198,7 +198,13 @@ func dalDispositivo(c *gin.Context, id, uuid string) bool {
 		dispositivoDiverso(c, id, "nessun PC salvato con questo ID")
 		return false
 	case esito == service.UuidDiverso:
-		dispositivoDiverso(c, id, "uuid diverso da quello salvato")
+		// Come nell'heartbeat: un PC creato dal pannello senza uuid si lega
+		// al primo sysinfo (ADR-0019), e il motivo nel log lo dice.
+		perche := "uuid diverso da quello salvato"
+		if peer.Uuid == "" {
+			perche = "PC senza uuid, in attesa del primo sysinfo"
+		}
+		dispositivoDiverso(c, id, perche)
 		return false
 	}
 	return true
