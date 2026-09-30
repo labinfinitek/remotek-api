@@ -98,9 +98,10 @@ func ultimoUtente(c *gin.Context, uuid, id string) uint {
 	return userId
 }
 
-// dispositivoDiverso scrive nel log, a livello warn, la richiesta scartata
-// perche' l'ID id non e' un PC salvato con l'uuid arrivato. Nel log vanno
-// rotta e ID, non gli uuid.
+// dispositivoDiverso scrive nel log, a livello warn, la richiesta del
+// dispositivo id scartata per il motivo perche': l'ID non e' un PC salvato
+// con l'uuid arrivato, o un blocco della trascrizione del terminale non
+// passa i controlli. Nel log vanno rotta e ID, non gli uuid ne' contenuti.
 func dispositivoDiverso(c *gin.Context, id, perche string) {
 	global.Logger.Per(c.Request.Context()).Warnf("%s %s: dispositivo %s: %s, niente salvato", c.Request.Method, c.FullPath(), id, perche)
 }

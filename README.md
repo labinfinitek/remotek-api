@@ -33,6 +33,9 @@ cambiato rispetto a v2.7 sta in [REMOTEK.md](REMOTEK.md), le novita' in
   `allow-ask-for-note` (spenta di fabbrica) e il login. La nota si attacca
   solo a una connessione gia' registrata, al massimo 2000 caratteri (oltre
   si tronca), e il suo testo non va mai nel log.
+- **Trascrizione del terminale**: il PC controllato manda all'API, a
+  blocchi concatenati da hash, quello che passa nelle sessioni terminale;
+  la leggono e la verificano solo gli amministratori (formato qui sotto).
 - **Log di accesso**: ogni login, dal client e dal pannello.
 - **Pannello di amministrazione** su `/_admin/`: [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)
   compilato nell'immagine a un commit fissato, con il marchio di Remotek e
@@ -47,6 +50,55 @@ cambiato rispetto a v2.7 sta in [REMOTEK.md](REMOTEK.md), le novita' in
   del pannello offre ancora non sono piu' supportati (decisione A3).
 - **Lingue**: italiano (predefinito) e inglese.
 - **Marchio configurabile**: nome, logo e favicon senza toccare il codice.
+
+## Trascrizione delle sessioni terminale
+
+Ogni sessione terminale (type 4 nel registro delle connessioni) si
+trascrive dal PC controllato: una copia resta sul PC, una va all'API con
+`POST /api/audit/terminal`, senza login, un blocco per richiesta. Questo e'
+il formato che il client segue. Corpo JSON:
+
+| Campo | Tipo | Valore |
+|---|---|---|
+| `id` | stringa | ID del PC controllato |
+| `uuid` | stringa | uuid del PC, come in `/api/sysinfo` e `/api/audit/conn` |
+| `conn_id` | int64 | lo stesso `conn_id` dell'audit `new` della sessione |
+| `seq` | intero | 1 per il primo blocco, +1 a ogni blocco |
+| `dir` | stringa | `in` (arrivato da chi controlla) o `out` (uscito dalla shell) |
+| `data` | stringa | base64 standard (con `=`) dei byte, al massimo 64 KiB decodificati |
+| `hash` | stringa | esadecimale minuscolo di SHA-256( H(seq-1) ‖ d ‖ data ) |
+| `fine` | bool | `true` sull'ultimo blocco della sessione |
+
+H(0) sono 32 byte a zero, H(n) i 32 byte grezzi (non l'esadecimale)
+dell'hash del blocco n; d e' il byte `i` (0x69) per `in` e `o` (0x6f) per
+`out`; data sono i byte decodificati.
+
+Ogni blocco si lega alla riga del registro delle connessioni della
+sessione: la piu' recente del PC con quel `conn_id`. Il client fa
+ripartire `conn_id` da un valore casuale a ogni avvio del servizio, quindi
+dopo un riavvio lo stesso numero puo' tornare: la sessione nuova ha la sua
+riga e la sua trascrizione, da `seq` 1, e quella vecchia resta com'era.
+
+L'API controlla, nell'ordine: che `id` e `uuid` siano del PC registrato;
+che quella riga ci sia e sia di type 4 (il blocco va mandato dopo l'audit
+che autentica la connessione); `dir`; `data` in base64 ed entro 64 KiB;
+`seq` uguale all'ultimo salvato per quella riga piu' uno; `hash`; nessun
+blocco dopo quello con `fine`; al massimo 20 MiB di dati per sessione. Un blocco
+che non passa non si salva e nel log resta un warn con rotta, ID del PC e
+motivo, senza uuid ne' contenuto. La risposta e' sempre quella delle altre
+rotte dell'audit, `{"code":0,"message":"success","data":""}` (400 solo per
+un corpo che non e' JSON): il client non la guarda, e un blocco scartato
+non si rimanda.
+
+Dal pannello, solo per gli amministratori, con `audit_conn_id` nella query
+(l'id della riga nel registro delle connessioni): `GET /api/admin/audit_conn/terminal/list` elenca i blocchi in
+ordine di `seq`, con `data` in base64 (paginato con `page` e `page_size`,
+10 per pagina se manca); `GET /api/admin/audit_conn/terminal/verify`
+ricalcola la catena dal database e risponde `integra`, `blocchi`, `fine`,
+`hash` (quello salvato dell'ultimo blocco, da confrontare con la copia sul
+PC) e `primo_errato`, il primo `seq` che non torna (0 se integra).
+Cancellare dal pannello una connessione terminale cancella anche la sua
+trascrizione.
 
 ## Installazione
 

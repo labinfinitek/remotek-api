@@ -55,6 +55,26 @@ definitions:
       note:
         type: string
     type: object
+  api.AuditTerminalForm:
+    properties:
+      conn_id:
+        type: integer
+      data:
+        description: base64 standard
+        type: string
+      dir:
+        type: string
+      fine:
+        type: boolean
+      hash:
+        type: string
+      id:
+        type: string
+      seq:
+        type: integer
+      uuid:
+        type: string
+    type: object
   api.DeviceInfoInLogin:
     properties:
       name:
@@ -729,6 +749,31 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
       summary: 审计文件
+      tags:
+      - 审计
+  /audit/terminal:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: blocco
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.AuditTerminalForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: blocco della trascrizione del terminale
       tags:
       - 审计
   /currentUser:

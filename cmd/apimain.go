@@ -27,7 +27,7 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/utils"
 )
 
-const DatabaseVersion = 266
+const DatabaseVersion = 267
 
 // fileAdminPassword e' il file in cui il primo avvio scrive la password
 // iniziale di admin, nella cartella di rustdeskapi.db (nel container
@@ -328,6 +328,7 @@ func Migrate(version uint) {
 		&model.LoginLog{},
 		&model.AuditConn{},
 		&model.AuditFile{},
+		&model.AuditTerminal{},
 		&model.AddressBookCollection{},
 		&model.AddressBookCollectionRule{},
 		&model.ServerCmd{},

@@ -844,6 +844,45 @@ const docTemplateapi = `{
                 }
             }
         },
+        "/audit/terminal": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "审计"
+                ],
+                "summary": "blocco della trascrizione del terminale",
+                "parameters": [
+                    {
+                        "description": "blocco",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.AuditTerminalForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/currentUser": {
             "post": {
                 "security": [
@@ -1635,6 +1674,36 @@ const docTemplateapi = `{
                     "type": "string"
                 },
                 "note": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.AuditTerminalForm": {
+            "type": "object",
+            "properties": {
+                "conn_id": {
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "base64 standard",
+                    "type": "string"
+                },
+                "dir": {
+                    "type": "string"
+                },
+                "fine": {
+                    "type": "boolean"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "seq": {
+                    "type": "integer"
+                },
+                "uuid": {
                     "type": "string"
                 }
             }

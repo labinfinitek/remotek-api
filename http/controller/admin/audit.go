@@ -217,3 +217,53 @@ func (a *Audit) BatchFileDelete(c *gin.Context) {
 	}
 	response.FailErr(c, 101, "OperationFailed", err)
 }
+
+// TerminalList restituisce una pagina dei blocchi della trascrizione della
+// connessione audit_conn_id, in ordine di seq, con data in base64.
+// @Tags 链接日志
+// @Summary blocchi della trascrizione del terminale
+// @Produce  json
+// @Param audit_conn_id query int true "id della connessione nel registro"
+// @Param page query int false "pagina"
+// @Param page_size query int false "blocchi per pagina"
+// @Success 200 {object} response.Response{data=model.AuditTerminalList}
+// @Failure 500 {object} response.Response
+// @Router /admin/audit_conn/terminal/list [get]
+// @Security token
+func (a *Audit) TerminalList(c *gin.Context) {
+	query := &admin.AuditTerminalQuery{}
+	if err := c.ShouldBindQuery(query); err != nil {
+		response.FailErr(c, 101, "ParamsError", err)
+		return
+	}
+	res, err := service.AllService.AuditService.BlocchiTerminale(query.AuditConnId, query.Page, query.PageSize)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
+	response.Success(c, res)
+}
+
+// TerminalVerify ricalcola dal database la catena degli hash della
+// trascrizione della connessione audit_conn_id.
+// @Tags 链接日志
+// @Summary verifica della trascrizione del terminale
+// @Produce  json
+// @Param audit_conn_id query int true "id della connessione nel registro"
+// @Success 200 {object} response.Response{data=model.AuditTerminalVerifica}
+// @Failure 500 {object} response.Response
+// @Router /admin/audit_conn/terminal/verify [get]
+// @Security token
+func (a *Audit) TerminalVerify(c *gin.Context) {
+	query := &admin.AuditTerminalQuery{}
+	if err := c.ShouldBindQuery(query); err != nil {
+		response.FailErr(c, 101, "ParamsError", err)
+		return
+	}
+	res, err := service.AllService.AuditService.VerificaTerminale(query.AuditConnId)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return
+	}
+	response.Success(c, res)
+}

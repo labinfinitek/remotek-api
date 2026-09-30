@@ -482,6 +482,57 @@ definitions:
       total:
         type: integer
     type: object
+  model.AuditTerminal:
+    properties:
+      audit_conn_id:
+        type: integer
+      conn_id:
+        type: integer
+      created_at:
+        type: string
+      data:
+        items:
+          type: integer
+        type: array
+      dir:
+        type: string
+      fine:
+        type: boolean
+      hash:
+        type: string
+      id:
+        type: integer
+      peer_id:
+        type: string
+      seq:
+        type: integer
+    type: object
+  model.AuditTerminalList:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/model.AuditTerminal'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  model.AuditTerminalVerifica:
+    properties:
+      blocchi:
+        type: integer
+      fine:
+        type: boolean
+      hash:
+        type: string
+      integra:
+        type: boolean
+      primo_errato:
+        type: integer
+    type: object
   model.DeviceGroup:
     properties:
       created_at:
@@ -1419,6 +1470,72 @@ paths:
       security:
       - token: []
       summary: 链接日志列表
+      tags:
+      - 链接日志
+  /admin/audit_conn/terminal/list:
+    get:
+      parameters:
+      - description: id della connessione nel registro
+        in: query
+        name: audit_conn_id
+        required: true
+        type: integer
+      - description: pagina
+        in: query
+        name: page
+        type: integer
+      - description: blocchi per pagina
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AuditTerminalList'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - token: []
+      summary: blocchi della trascrizione del terminale
+      tags:
+      - 链接日志
+  /admin/audit_conn/terminal/verify:
+    get:
+      parameters:
+      - description: id della connessione nel registro
+        in: query
+        name: audit_conn_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AuditTerminalVerifica'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - token: []
+      summary: verifica della trascrizione del terminale
       tags:
       - 链接日志
   /admin/audit_file/batchDelete:
