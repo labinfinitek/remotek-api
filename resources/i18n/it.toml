@@ -352,3 +352,28 @@ other = "ID del PC"
 description = "Another PC already has this ID."
 one = "Un altro PC ha già questo ID."
 other = "Un altro PC ha già questo ID."
+
+[AgentOwnerInvalid]
+description = "The technician of an AI agent must be another user, a person."
+one = "Il tecnico di un agente AI deve essere un altro utente, una persona."
+other = "Il tecnico di un agente AI deve essere un altro utente, una persona."
+
+[AgentNotAdmin]
+description = "An AI agent cannot be an administrator."
+one = "Un agente AI non può essere amministratore."
+other = "Un agente AI non può essere amministratore."
+
+[AgentOwnerHasAgents]
+description = "A user responsible for AI agents cannot become an agent."
+one = "Un utente che risponde di agenti AI non può diventare un agente."
+other = "Un utente che risponde di agenti AI non può diventare un agente."
+
+[UserHasAgents]
+description = "This user is responsible for AI agents: delete them or assign them to another technician first."
+one = "Questo utente risponde di agenti AI: cancellali o assegnali a un altro tecnico prima."
+other = "Questo utente risponde di agenti AI: cancellali o assegnali a un altro tecnico prima."
+
+[AgentOwnerDisabled]
+description = "The technician of this AI agent is disabled: the agent cannot be enabled."
+one = "Il tecnico di questo agente AI è disattivato: l'agente non si attiva."
+other = "Il tecnico di questo agente AI è disattivato: l'agente non si attiva."

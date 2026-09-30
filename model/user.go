@@ -12,6 +12,9 @@ type User struct {
 	IsAdmin  *bool      `json:"is_admin" gorm:"default:0;not null;"`
 	Status   StatusCode `json:"status" gorm:"default:1;not null;"`
 	Remark   string     `json:"remark" gorm:"default:'';not null;"`
+	// AgenteDi e' l'id del tecnico che risponde di questo account di agente
+	// AI; 0 per una persona.
+	AgenteDi uint `json:"agente_di" gorm:"default:0;not null;index"`
 	TimeModel
 }
 

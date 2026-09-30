@@ -5337,6 +5337,10 @@ const docTemplateadmin = `{
                 "username"
             ],
             "properties": {
+                "agente_di": {
+                    "description": "AgenteDi e' l'id del tecnico se l'utente e' un agente AI, 0 per una\npersona; nella modifica, se manca resta com'e' (il pannello non lo\nconosce).",
+                    "type": "integer"
+                },
                 "avatar": {
                     "type": "string"
                 },
@@ -5757,10 +5761,8 @@ const docTemplateadmin = `{
                     "type": "string"
                 },
                 "data": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "type": "string",
+                    "format": "base64"
                 },
                 "dir": {
                     "type": "string"
@@ -6178,6 +6180,10 @@ const docTemplateadmin = `{
         "model.User": {
             "type": "object",
             "properties": {
+                "agente_di": {
+                    "description": "AgenteDi e' l'id del tecnico che risponde di questo account di agente\nAI; 0 per una persona.",
+                    "type": "integer"
+                },
                 "avatar": {
                     "type": "string"
                 },

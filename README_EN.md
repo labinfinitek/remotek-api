@@ -288,6 +288,7 @@ docker compose: `sudo cat remotek-data/admin-password.txt`. Log in on
 ```bash
 ./apimain reset-admin-pwd <password>        # admin password
 ./apimain reset-pwd <userId> <password>     # password of another user
+./apimain agente-ai <username> <technician> # account of an AI agent
 ./apimain -h                                # help
 ```
 
@@ -295,6 +296,27 @@ The password must be 15 to 32 characters long (characters, not bytes), like
 every new password set from the panel or at registration. When the password
 is refused, the user does not exist or the update fails, the command exits
 with a non-zero code.
+
+**AI agents.** Every AI agent has its own account, tied to the technician
+responsible for it (the user's `agente_di` field: the technician's id, 0 for
+a person). `agente-ai <username> <technician's username>` creates it in the
+technician's group, never as administrator, and prints its random
+24-character password on stdout, once (not in the log); it exits with code 1
+if the username already exists or is not 2 to 32 characters long (as in the
+panel), or if the technician does not exist or is not a person. The same rules apply from the panel (`/api/admin/user/create`
+and `update`, field `agente_di`): the technician is another existing user
+and a person, an agent is not an administrator, and a user responsible for
+agents does not become an agent. An agent follows its technician: disabling
+the technician disables their agents; an agent whose technician is disabled
+cannot be enabled; a technician with agents cannot be deleted until their
+agents are deleted or assigned to another technician. With `ldap.user.sync`
+the sync does not give an agent the role of the `ldap.user.admin-group`
+group (a warn says so). An update without `agente_di`, like those of
+today's panel, leaves it as it is. The command-line client asks, with the
+login token, `GET /api/agente`, which answers
+`{"agente":true,"tecnico":"<name>"}` (the technician's nickname, or the
+username if the nickname is empty) or `{"agente":false,"tecnico":""}`;
+`/api/login` and `/api/currentUser` do not change.
 
 **Connecting the client.** In the RustDesk or Remotek client, under
 Settings > Network: ID server, relay server, API server (`rustdesk.api-server`)
