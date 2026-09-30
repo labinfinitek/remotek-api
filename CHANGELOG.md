@@ -15,6 +15,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   `GET /api/agente` per il client a riga di comando; la sincronizzazione
   LDAP non rende amministratore un agente. Migrazione del database:
   versione 268, colonna `users.agente_di`.
+- Trascrizione del terminale nel registro delle connessioni del pannello: la
+  colonna Type mostra "Terminal" per le sessioni terminale, e il pulsante
+  "Transcript" apre in sola lettura i blocchi in ordine con l'esito della
+  verifica (integra o no, hash finale); "No transcript" se non ci sono
+  blocchi.
 - Trascrizione delle sessioni terminale: `POST /api/audit/terminal` salva i
   blocchi mandati dal PC controllato, concatenati da SHA-256, e solo per
   gli amministratori `GET /api/admin/audit_conn/terminal/list` li elenca e
