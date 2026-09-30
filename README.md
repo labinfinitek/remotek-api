@@ -316,8 +316,10 @@ un agente non e' amministratore, e chi risponde di agenti non diventa un
 agente. Un agente segue il suo tecnico: disattivare il tecnico disattiva i
 suoi agenti; un agente il cui tecnico e' disattivato non si riattiva; un
 tecnico che ha agenti non si cancella, prima si cancellano o si assegnano a
-un altro tecnico i suoi agenti. Una modifica senza `agente_di`, come quelle
-del pannello di oggi, lo lascia com'e'. Il client a riga di comando chiede con il token del login
+un altro tecnico i suoi agenti. Con `ldap.user.sync` la sincronizzazione non
+da' a un agente il ruolo del gruppo `ldap.user.admin-group` (un warn lo
+dice). Una modifica senza `agente_di`, come quelle del pannello di oggi, lo
+lascia com'e'. Il client a riga di comando chiede con il token del login
 `GET /api/agente`, che risponde `{"agente":true,"tecnico":"<nome>"}` (il
 nickname del tecnico, o lo username se il nickname e' vuoto) o
 `{"agente":false,"tecnico":""}`; `/api/login` e `/api/currentUser` non

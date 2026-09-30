@@ -232,7 +232,13 @@ func (ls *LdapService) mapToLocalUser(cfg *config.Ldap, lu *LdapUser) (*model.Us
 		originalIsAdmin := localUser.IsAdmin
 		originalStatus := localUser.Status
 		lu.ToUser(localUser) // merges LDAP data into the existing user
-		localUser.IsAdmin = &isAdmin
+		// Un agente AI non e' mai amministratore (ADR-0021): per lui il ruolo
+		// non si sincronizza.
+		if localUser.AgenteDi == 0 {
+			localUser.IsAdmin = &isAdmin
+		} else if isAdmin {
+			Logger.Warnf("LDAP: l'utente %d e' un agente AI, il ruolo di amministratore del gruppo LDAP non si applica", localUser.Id)
+		}
 		if err := userService.Update(localUser); err != nil {
 			// If the update fails, revert to original data
 			localUser.Email = originalEmail

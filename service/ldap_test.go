@@ -152,3 +152,47 @@ func TestLdapUtenteLocaleNonLetto(t *testing.T) {
 		t.Errorf("utenti dopo mapToLocalUser: %d, atteso nessuno", n)
 	}
 }
+
+// TestLdapAgenteNonAdmin prova che la sincronizzazione LDAP non rende
+// amministratore un agente AI anche se e' nel gruppo degli amministratori:
+// il ruolo resta com'e' e un warn lo dice; una persona nello stesso gruppo
+// diventa amministratore come prima.
+func TestLdapAgenteNonAdmin(t *testing.T) {
+	registro := registroDiProva(t)
+	db, err := orm.ApriSqlite(filepath.Join(t.TempDir(), "api.db"), logger.Discard)
+	if err == nil {
+		err = db.AutoMigrate(&model.User{})
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	prec := DB
+	DB = db
+	t.Cleanup(func() { DB = prec })
+	no := false
+	for _, u := range []*model.User{
+		{Username: "mario", IsAdmin: &no, Status: model.COMMON_STATUS_ENABLE},
+		{Username: "agente-mario", IsAdmin: &no, Status: model.COMMON_STATUS_ENABLE, AgenteDi: 1},
+	} {
+		if err := db.Create(u).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	cfg := &config.Ldap{User: config.LdapUser{AdminGroup: "cn=admin,dc=esempio,dc=it", Sync: true}}
+	for _, nome := range []string{"agente-mario", "mario"} {
+		lu := &LdapUser{Username: nome, Enabled: true, MemberOf: []string{"cn=admin,dc=esempio,dc=it"}}
+		if _, err := (&LdapService{}).mapToLocalUser(cfg, lu); err != nil {
+			t.Fatalf("mapToLocalUser di %s: %v", nome, err)
+		}
+	}
+	var admin []string
+	if err := db.Raw("SELECT username FROM users WHERE is_admin ORDER BY id").Scan(&admin).Error; err != nil {
+		t.Fatal(err)
+	}
+	if len(admin) != 1 || admin[0] != "mario" {
+		t.Errorf("amministratori dopo la sincronizzazione: %v, atteso solo mario", admin)
+	}
+	if nelLog := registro.String(); applog.Conta(nelLog, "WARN", "utente 2 e' un agente AI") != 1 {
+		t.Errorf("nel log manca il warn sull'agente:\n%s", nelLog)
+	}
+}

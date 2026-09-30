@@ -12,8 +12,9 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   stampa una volta la sua password, regole nel pannello (il tecnico e' una
   persona, un agente non e' amministratore, disattivare il tecnico
   disattiva i suoi agenti, un tecnico con agenti non si cancella) e
-  `GET /api/agente` per il client a riga di comando. Migrazione del
-  database: versione 268, colonna `users.agente_di`.
+  `GET /api/agente` per il client a riga di comando; la sincronizzazione
+  LDAP non rende amministratore un agente. Migrazione del database:
+  versione 268, colonna `users.agente_di`.
 - Trascrizione delle sessioni terminale: `POST /api/audit/terminal` salva i
   blocchi mandati dal PC controllato, concatenati da SHA-256, e solo per
   gli amministratori `GET /api/admin/audit_conn/terminal/list` li elenca e
