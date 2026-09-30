@@ -76,7 +76,7 @@ type AuditTerminal struct {
 	ConnId      int64                 `json:"conn_id" gorm:"not null"`
 	Seq         int64                 `json:"seq" gorm:"not null;uniqueIndex:idx_audit_terminal_blocco,priority:2"`
 	Dir         string                `json:"dir" gorm:"size:3;not null"`
-	Data        []byte                `json:"data" gorm:"not null"`
+	Data        []byte                `json:"data" gorm:"not null" swaggertype:"string" format:"base64"`
 	Hash        string                `json:"hash" gorm:"size:64;not null"`
 	Fine        bool                  `json:"fine" gorm:"not null;default:false"`
 	CreatedAt   custom_types.AutoTime `json:"created_at" gorm:"type:timestamp;"`

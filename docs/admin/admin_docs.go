@@ -5757,10 +5757,8 @@ const docTemplateadmin = `{
                     "type": "string"
                 },
                 "data": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "type": "string",
+                    "format": "base64"
                 },
                 "dir": {
                     "type": "string"
