@@ -1,0 +1,239 @@
+Subject: [PATCH 0004] registro delle connessioni: trascrizione del terminale
+
+Perche': dalla #100 l'API salva la trascrizione delle sessioni terminale
+(type 4) e ne verifica la catena degli hash, ma il pannello non la mostra
+e nella colonna Type una sessione terminale risulta "Common" (ADR-0021).
+Cosa: la colonna Type mostra "Terminal" per type 4; sulle righe di type 4
+un pulsante "Transcript" apre una finestra in sola lettura
+(src/views/audit/terminal.vue) che chiede a
+/api/admin/audit_conn/terminal/verify l'esito (integra o no col primo
+blocco che non torna, fine, numero di blocchi, hash finale) e a
+/api/admin/audit_conn/terminal/list i blocchi, a pagine di 50, in ordine
+di seq; l'output si mostra com'e', come testo (niente HTML), l'input e'
+evidenziato; una connessione senza blocchi mostra "No transcript".
+Solo l'ultima apertura scrive nella finestra (una precedente ancora in
+corso esce dopo ogni attesa); se l'elenco da' meno blocchi di quelli
+contati dalla verifica la finestra dice "Incomplete transcript" invece di
+"Intact" e dell'hash finale, e non mostra piu' blocchi di quelli contati;
+se la verifica non riesce lo dice nella finestra.
+Funzioni nuove in src/api/audit.js; chiavi nuove solo in en.json (T()
+mostra la chiave se manca la traduzione).
+Licenza: MIT, come rustdesk-api-web (Copyright (c) 2016-2021
+vue-manage-system); questa patch e' opera derivata con la stessa licenza.
+---
+diff --git a/src/api/audit.js b/src/api/audit.js
+index bb7835d..a167fe1 100644
+--- a/src/api/audit.js
++++ b/src/api/audit.js
+@@ -45,3 +45,17 @@ export function fileBatchDelete (data) {
+     data,
+   })
+ }
++
++export function terminalList (params) {
++  return request({
++    url: '/audit_conn/terminal/list',
++    params,
++  })
++}
++
++export function terminalVerify (params) {
++  return request({
++    url: '/audit_conn/terminal/verify',
++    params,
++  })
++}
+diff --git a/src/utils/i18n/en.json b/src/utils/i18n/en.json
+index 386bb16..274e3c7 100644
+--- a/src/utils/i18n/en.json
++++ b/src/utils/i18n/en.json
+@@ -531,5 +531,44 @@
+   },
+   "Remark": {
+     "One": "Remark"
++  },
++  "Terminal": {
++    "One": "Terminal"
++  },
++  "Transcript": {
++    "One": "Transcript"
++  },
++  "NoTranscript": {
++    "One": "No transcript"
++  },
++  "Intact": {
++    "One": "Intact"
++  },
++  "Altered": {
++    "One": "Altered"
++  },
++  "FirstBadBlock": {
++    "One": "first block that does not match:"
++  },
++  "SessionEnded": {
++    "One": "Session ended"
++  },
++  "SessionNotEnded": {
++    "One": "Session not ended"
++  },
++  "Blocks": {
++    "One": "Blocks"
++  },
++  "FinalHash": {
++    "One": "Final hash"
++  },
++  "Input": {
++    "One": "Input"
++  },
++  "IncompleteTranscript": {
++    "One": "Incomplete transcript: {read} of {expected} blocks read. It is not shown as intact: reopen it."
++  },
++  "VerifyFailed": {
++    "One": "The transcript could not be verified: reopen it."
+   }
+ }
+diff --git a/src/views/audit/connList.vue b/src/views/audit/connList.vue
+index 09ec791..03daca5 100644
+--- a/src/views/audit/connList.vue
++++ b/src/views/audit/connList.vue
+@@ -26,6 +26,7 @@
+         <el-table-column pop="type" :label="T('Type')" align="center" width="120">
+           <template #default="{row}">
+             <el-tag v-if="row.type === 1" type="warning">{{ T('File') }}</el-tag>
++            <el-tag v-else-if="row.type === 4" type="danger">{{ T('Terminal') }}</el-tag>
+             <el-tag v-else>{{ T('Common') }}</el-tag>
+           </template>
+         </el-table-column>
+@@ -33,8 +34,9 @@
+         <el-table-column prop="created_at" :label="T('CreatedAt')" align="center"/>
+         <el-table-column :label="T('CloseTime')" prop="close_time" align="center"/>
+         <el-table-column :label="T('Remark')" prop="note" align="center" min-width="160" show-overflow-tooltip/>
+-        <el-table-column :label="T('Actions')" align="center" width="150">
++        <el-table-column :label="T('Actions')" align="center" width="220">
+           <template #default="{row}">
++            <el-button v-if="row.type === 4" @click="terminal.open(row)">{{ T('Transcript') }}</el-button>
+             <el-button type="danger" @click="del(row)">{{ T('Delete') }}</el-button>
+           </template>
+         </el-table-column>
+@@ -49,6 +51,7 @@
+                      :total="listRes.total">
+       </el-pagination>
+     </el-card>
++    <TerminalDialog ref="terminal"/>
+   </div>
+ </template>
+ 
+@@ -56,6 +59,7 @@
+   import { onActivated, onMounted, ref, watch } from 'vue'
+   import { useRepositories } from '@/views/audit/reponsitories'
+   import { T } from '@/utils/i18n'
++  import TerminalDialog from '@/views/audit/terminal.vue'
+ 
+   const {
+     listRes,
+@@ -73,6 +77,7 @@
+   watch(() => listQuery.page, getList)
+ 
+   watch(() => listQuery.page_size, handlerQuery)
++  const terminal = ref(null)
+   const multipleSelection = ref([])
+   const handleSelectionChange = (val) => {
+     multipleSelection.value = val
+diff --git a/src/views/audit/terminal.vue b/src/views/audit/terminal.vue
+new file mode 100644
+index 0000000..2e8b610
+--- /dev/null
++++ b/src/views/audit/terminal.vue
+@@ -0,0 +1,92 @@
++<template>
++  <el-dialog v-model="visible" :title="T('Transcript') + ' #' + (conn && conn.id)" width="900" destroy-on-close>
++    <div v-loading="loading">
++      <el-alert v-if="failed" type="error" :title="T('VerifyFailed')" :closable="false"/>
++      <template v-if="verify">
++        <el-empty v-if="!verify.blocchi" :description="T('NoTranscript')"/>
++        <template v-else>
++          <el-alert v-if="read < verify.blocchi" type="error" :closable="false"
++                    :title="T('IncompleteTranscript', { read: String(read), expected: String(verify.blocchi) })"/>
++          <template v-else>
++            <p>
++              <el-tag v-if="verify.integra" type="success">{{ T('Intact') }}</el-tag>
++              <el-tag v-else type="danger">{{ T('Altered') }}: {{ T('FirstBadBlock') }} {{ verify.primo_errato }}</el-tag>
++              <el-tag v-if="verify.fine" type="info">{{ T('SessionEnded') }}</el-tag>
++              <el-tag v-else type="warning">{{ T('SessionNotEnded') }}</el-tag>
++              {{ T('Blocks') }}: {{ verify.blocchi }}
++            </p>
++            <p>{{ T('FinalHash') }}: <code class="hash">{{ verify.hash }}</code></p>
++          </template>
++          <pre class="transcript"><span v-for="p in parts" :key="p.seq" :class="p.dir === 'in' ? 'input' : ''" :title="p.dir === 'in' ? T('Input') : ''">{{ p.text }}</span></pre>
++        </template>
++      </template>
++    </div>
++  </el-dialog>
++</template>
++
++<script setup>
++  import { ref } from 'vue'
++  import { terminalList, terminalVerify } from '@/api/audit'
++  import { T } from '@/utils/i18n'
++
++  const visible = ref(false)
++  const loading = ref(false)
++  const failed = ref(false)
++  const conn = ref(null)
++  const verify = ref(null)
++  const parts = ref([])
++  const read = ref(0)
++  let last = 0
++
++  // Blocchi in ordine di seq: l'output com'e' (sequenze di controllo
++  // comprese, come testo), l'input segnato. Un decoder per verso, perche' un
++  // carattere UTF-8 puo' stare a cavallo di due blocchi. Solo l'ultima
++  // apertura scrive nella finestra: una precedente ancora in corso, dopo
++  // ogni await, vede di non esserlo piu' ed esce. Si mostrano al massimo i
++  // blocchi contati dalla verifica; se ne arrivano meno, la trascrizione e'
++  // incompleta e non si mostra come integra.
++  const open = async (row) => {
++    const mine = ++last
++    conn.value = row
++    verify.value = null
++    parts.value = []
++    read.value = 0
++    failed.value = false
++    visible.value = true
++    loading.value = true
++    const decoders = { in: new TextDecoder(), out: new TextDecoder() }
++    const query = { audit_conn_id: row.id, page: 1, page_size: 50 }
++    const v = await terminalVerify(query).catch(_ => false)
++    if (mine !== last) {
++      return
++    }
++    const got = []
++    while (v && got.length < v.data.blocchi) {
++      const res = await terminalList(query).catch(_ => false)
++      if (mine !== last) {
++        return
++      }
++      if (!res || !res.data.list.length) {
++        break
++      }
++      for (const b of res.data.list.slice(0, v.data.blocchi - got.length)) {
++        const bytes = Uint8Array.from(atob(b.data), c => c.charCodeAt(0))
++        const d = decoders[b.dir] || decoders.out
++        got.push({ seq: b.seq, dir: b.dir, text: d.decode(bytes, { stream: true }) })
++      }
++      query.page++
++    }
++    failed.value = !v
++    parts.value = got
++    read.value = got.length
++    verify.value = v ? v.data : null
++    loading.value = false
++  }
++  defineExpose({ open })
++</script>
++
++<style scoped lang="scss">
++  .hash { word-break: break-all; }
++  .transcript { max-height: 60vh; overflow: auto; white-space: pre-wrap; word-break: break-all; background: #1e1e1e; color: #ddd; padding: 8px; }
++  .input { background: #3a3d7a; color: #fff; }
++</style>
