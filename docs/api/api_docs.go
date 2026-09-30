@@ -667,6 +667,36 @@ const docTemplateapi = `{
                 }
             }
         },
+        "/agente": {
+            "get": {
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户"
+                ],
+                "summary": "agente AI dell'utente",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.AgentePayload"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/audit": {
             "put": {
                 "security": [
@@ -1601,6 +1631,17 @@ const docTemplateapi = `{
                 "data": {
                     "type": "string",
                     "example": "{\"tags\":[\"tag1\",\"tag2\",\"tag3\"],\"peers\":[{\"id\":\"abc\",\"username\":\"abv-l\",\"hostname\":\"\",\"platform\":\"Windows\",\"alias\":\"\",\"tags\":[\"tag1\",\"tag2\"],\"hash\":\"hash\"}],\"tag_colors\":\"{\\\"tag1\\\":4288585374,\\\"tag2\\\":4278238420,\\\"tag3\\\":4291681337}\"}"
+                }
+            }
+        },
+        "api.AgentePayload": {
+            "type": "object",
+            "properties": {
+                "agente": {
+                    "type": "boolean"
+                },
+                "tecnico": {
+                    "type": "string"
                 }
             }
         },

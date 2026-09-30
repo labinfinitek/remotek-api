@@ -61,3 +61,10 @@ type LoginRes struct {
 	Secret      string      `json:"secret,omitempty"`
 	TfaType     string      `json:"tfa_type,omitempty"`
 }
+
+// AgentePayload dice al client CLI se l'utente del token e'
+// un agente AI e il nome del tecnico che ne risponde ("" per una persona).
+type AgentePayload struct {
+	Agente  bool   `json:"agente"`
+	Tecnico string `json:"tecnico"`
+}

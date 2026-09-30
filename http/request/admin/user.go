@@ -15,6 +15,10 @@ type UserForm struct {
 	IsAdmin  *bool            `json:"is_admin" `
 	Status   model.StatusCode `json:"status" validate:"required,gte=0"`
 	Remark   string           `json:"remark"`
+	// AgenteDi e' l'id del tecnico se l'utente e' un agente AI, 0 per una
+	// persona; nella modifica, se manca resta com'e' (il pannello non lo
+	// conosce).
+	AgenteDi *uint `json:"agente_di"`
 }
 
 func (uf *UserForm) FromUser(user *model.User) *UserForm {
@@ -27,6 +31,7 @@ func (uf *UserForm) FromUser(user *model.User) *UserForm {
 	uf.IsAdmin = user.IsAdmin
 	uf.Status = user.Status
 	uf.Remark = user.Remark
+	uf.AgenteDi = &user.AgenteDi
 	return uf
 }
 func (uf *UserForm) ToUser() *model.User {
@@ -40,6 +45,9 @@ func (uf *UserForm) ToUser() *model.User {
 	user.IsAdmin = uf.IsAdmin
 	user.Status = uf.Status
 	user.Remark = uf.Remark
+	if uf.AgenteDi != nil {
+		user.AgenteDi = *uf.AgenteDi
+	}
 	return user
 }
 

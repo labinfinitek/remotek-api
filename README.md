@@ -294,6 +294,7 @@ docker compose: `sudo cat remotek-data/admin-password.txt`. Entra su
 ```bash
 ./apimain reset-admin-pwd <password>        # password di admin
 ./apimain reset-pwd <idUtente> <password>   # password di un altro utente
+./apimain agente-ai <username> <tecnico>    # account di un agente AI
 ./apimain -h                                # aiuto
 ```
 
@@ -301,6 +302,23 @@ La password deve avere da 15 a 32 caratteri (caratteri, non byte), come ogni
 password nuova impostata dal pannello o in registrazione. Se la password e'
 rifiutata, l'utente non c'e' o l'aggiornamento non riesce, il comando esce
 con codice diverso da 0.
+
+**Agenti AI.** Ogni agente AI ha un account suo, legato al tecnico che ne
+risponde (campo `agente_di` dell'utente: l'id del tecnico, 0 per una
+persona). `agente-ai <username> <username del tecnico>` lo crea nel gruppo
+del tecnico, mai amministratore, e stampa su stdout, una volta sola, la sua
+password casuale di 24 caratteri (nel log no); esce con codice 1 se lo
+username c'e' gia' o non ha da 2 a 32 caratteri (come nel pannello), se il
+tecnico non c'e' o se non e' una persona. Dal
+pannello (`/api/admin/user/create` e `update`, campo `agente_di`) valgono le
+stesse regole: il tecnico e' un altro utente che esiste ed e' una persona,
+un agente non e' amministratore, e chi risponde di agenti non diventa un
+agente. Una modifica senza `agente_di`, come quelle del pannello di oggi,
+lo lascia com'e'. Il client a riga di comando chiede con il token del login
+`GET /api/agente`, che risponde `{"agente":true,"tecnico":"<nome>"}` (il
+nickname del tecnico, o lo username se il nickname e' vuoto) o
+`{"agente":false,"tecnico":""}`; `/api/login` e `/api/currentUser` non
+cambiano.
 
 **Collegare il client.** Nel client RustDesk o Remotek, in Impostazioni >
 Rete: server ID, server relay, server API (`rustdesk.api-server`) e chiave,

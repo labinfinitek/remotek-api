@@ -295,12 +295,13 @@ func (us *UserService) Update(u *model.User) error {
 // UpdateDalPannello salva, con gli stessi controlli di Update, i campi del
 // modulo del pannello (admin.UserForm), anche vuoti: email, nickname, avatar
 // e nota svuotati restano vuoti. is_admin assente non cambia il ruolo; la
-// password non e' nel modulo e resta quella di prima.
+// password non e' nel modulo e resta quella di prima. agente_di si salva
+// sempre: il gestore ci mette quello salvato se il modulo non lo manda.
 func (us *UserService) UpdateDalPannello(u *model.User) error {
 	if err := us.controllaUltimoAdmin(u); err != nil {
 		return err
 	}
-	campi := []string{"username", "email", "nickname", "avatar", "group_id", "status", "remark"}
+	campi := []string{"username", "email", "nickname", "avatar", "group_id", "status", "remark", "agente_di"}
 	if u.IsAdmin != nil {
 		campi = append(campi, "is_admin")
 	}
@@ -655,4 +656,49 @@ func (us *UserService) IsUsernameExistsLocal(username string) (bool, error) {
 
 func (us *UserService) IsEmailExistsLdap(email string) bool {
 	return AllService.LdapService.IsEmailExists(email)
+}
+
+// Errori delle regole degli account di agente AI: il testo e' l'ID del
+// messaggio per il pannello.
+var (
+	ErrTecnicoNonValido = errors.New("AgentOwnerInvalid")
+	ErrAgenteAdmin      = errors.New("AgentNotAdmin")
+	ErrTecnicoConAgenti = errors.New("AgentOwnerHasAgents")
+)
+
+// ControllaAgente restituisce un errore se u, con i valori che avra' dopo
+// il salvataggio, rompe le regole degli agenti AI: il tecnico (AgenteDi)
+// e' un altro utente che esiste ed e' una persona, un agente non e' mai
+// amministratore, e chi risponde di agenti non diventa un agente.
+func (us *UserService) ControllaAgente(u *model.User) error {
+	if u.AgenteDi == 0 {
+		return nil
+	}
+	if u.IsAdmin != nil && *u.IsAdmin {
+		return ErrAgenteAdmin
+	}
+	if u.AgenteDi == u.Id {
+		return fmt.Errorf("utente %d tecnico di se stesso: %w", u.Id, ErrTecnicoNonValido)
+	}
+	t, err := us.InfoById(u.AgenteDi)
+	if errors.Is(err, ErrNotFound) {
+		return fmt.Errorf("tecnico %d inesistente: %w", u.AgenteDi, ErrTecnicoNonValido)
+	}
+	if err != nil {
+		return diSistema(err)
+	}
+	if t.AgenteDi != 0 {
+		return fmt.Errorf("tecnico %d e' un agente: %w", u.AgenteDi, ErrTecnicoNonValido)
+	}
+	if u.Id == 0 {
+		return nil
+	}
+	var agenti int64
+	if err := DB.Model(&model.User{}).Where("agente_di = ?", u.Id).Count(&agenti).Error; err != nil {
+		return diSistema(fmt.Errorf("agenti dell'utente %d: %w", u.Id, err))
+	}
+	if agenti > 0 {
+		return fmt.Errorf("utente %d con %d agenti: %w", u.Id, agenti, ErrTecnicoConAgenti)
+	}
+	return nil
 }

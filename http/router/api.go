@@ -90,6 +90,8 @@ func ApiInit(g *gin.Engine) {
 		u := &api.User{}
 		frg.GET("/user/info", u.Info)
 		frg.POST("/currentUser", u.Info)
+		// Agente AI dell'utente, per il client CLI (ADR-0021).
+		frg.GET("/agente", u.Agente)
 	}
 	{
 		au := &api.Audit{}

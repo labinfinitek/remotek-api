@@ -63,6 +63,10 @@ func (ct *User) Create(c *gin.Context) {
 		return
 	}
 	u := f.ToUser()
+	if err := service.AllService.UserService.ControllaAgente(u); err != nil {
+		response.FailErr(c, 101, "ParamsError", err)
+		return
+	}
 	err := service.AllService.UserService.Create(u)
 	if err != nil {
 		response.FailErr(c, 101, "OperationFailed", err)
@@ -129,12 +133,39 @@ func (ct *User) Update(c *gin.Context) {
 		return
 	}
 	u := f.ToUser()
+	if !agenteValido(c, f, u) {
+		return
+	}
 	err := service.AllService.UserService.UpdateDalPannello(u)
 	if err != nil {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
 	response.Success(c, nil)
+}
+
+// agenteValido controlla le regole degli agenti AI sulla modifica u
+// dell'utente, con agente_di e is_admin che il modulo f non manda presi
+// dall'utente salvato; agente_di mancante resta quello salvato. Se rifiuta
+// risponde al pannello e restituisce false.
+func agenteValido(c *gin.Context, f *admin.UserForm, u *model.User) bool {
+	salvato, err := service.AllService.UserService.InfoById(u.Id)
+	if err != nil {
+		response.FailErr(c, 101, "SystemError", err)
+		return false
+	}
+	if f.AgenteDi == nil {
+		u.AgenteDi = salvato.AgenteDi
+	}
+	dopo := *u
+	if dopo.IsAdmin == nil {
+		dopo.IsAdmin = salvato.IsAdmin
+	}
+	if err := service.AllService.UserService.ControllaAgente(&dopo); err != nil {
+		response.FailErr(c, 101, "ParamsError", err)
+		return false
+	}
+	return true
 }
 
 // Delete 删除

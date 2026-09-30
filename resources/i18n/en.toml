@@ -343,3 +343,18 @@ other = "PC ID"
 description = "Another PC already has this ID."
 one = "Another PC already has this ID."
 other = "Another PC already has this ID."
+
+[AgentOwnerInvalid]
+description = "The technician of an AI agent must be another user, a person."
+one = "The technician of an AI agent must be another user, a person."
+other = "The technician of an AI agent must be another user, a person."
+
+[AgentNotAdmin]
+description = "An AI agent cannot be an administrator."
+one = "An AI agent cannot be an administrator."
+other = "An AI agent cannot be an administrator."
+
+[AgentOwnerHasAgents]
+description = "A user responsible for AI agents cannot become an agent."
+one = "A user responsible for AI agents cannot become an agent."
+other = "A user responsible for AI agents cannot become an agent."

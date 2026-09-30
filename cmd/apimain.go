@@ -27,7 +27,7 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/utils"
 )
 
-const DatabaseVersion = 267
+const DatabaseVersion = 268
 
 // fileAdminPassword e' il file in cui il primo avvio scrive la password
 // iniziale di admin, nella cartella di rustdeskapi.db (nel container
@@ -57,8 +57,8 @@ var rootCmd = &cobra.Command{
 			global.Logger.Fatalf("server API fermato: %v", err)
 		}
 	},
-	// Dopo lo stop normale del server e alla fine di reset-admin-pwd e
-	// reset-pwd, che ereditano da rootCmd.
+	// Dopo lo stop normale del server e alla fine di reset-admin-pwd,
+	// reset-pwd e agente-ai, che ereditano da rootCmd.
 	PersistentPostRun: func(_ *cobra.Command, _ []string) {
 		chiudiDB()
 	},
@@ -87,6 +87,51 @@ var resetUserPwdCmd = &cobra.Command{
 	},
 }
 
+var agenteAiCmd = &cobra.Command{
+	Use:     "agente-ai [username] [username del tecnico]",
+	Example: "agente-ai agente-mario mario",
+	Short:   "Crea l'account di un agente AI",
+	Args:    cobra.ExactArgs(2),
+	Run: func(_ *cobra.Command, args []string) {
+		creaAgente(args[0], args[1])
+	},
+}
+
+// creaAgente crea l'account dell'agente AI nome, del tecnico di username
+// tecnico e nel suo gruppo, mai amministratore, e stampa su stdout, una
+// volta sola, la sua password casuale di 24 caratteri; nel log non va.
+// Rifiuta con codice 1 se il tecnico non c'e' o non e' una persona, o se
+// nome c'e' gia'.
+func creaAgente(nome, tecnico string) {
+	us := service.AllService.UserService
+	if n := utf8.RuneCountInString(nome); n < 2 || n > 32 {
+		global.Logger.Fatalf("username rifiutato: servono da 2 a 32 caratteri, questo ne ha %d", n)
+	}
+	t, err := us.InfoByUsername(tecnico)
+	if errors.Is(err, service.ErrNotFound) {
+		global.Logger.Fatalf("tecnico %q non trovato", tecnico)
+	}
+	if err != nil {
+		global.Logger.Fatalf("lettura del tecnico %q: %v", tecnico, err)
+	}
+	if t.AgenteDi != 0 {
+		global.Logger.Fatalf("%q e' un agente AI, non una persona", tecnico)
+	}
+	pwd := utils.RandomString(24)
+	if pwd == "" {
+		global.Logger.Fatalf("password casuale non generata")
+	}
+	no := false
+	a := &model.User{Username: nome, Password: pwd, GroupId: t.GroupId, IsAdmin: &no, Status: model.COMMON_STATUS_ENABLE, AgenteDi: t.Id}
+	if err := us.Create(a); err != nil {
+		global.Logger.Fatalf("agente %q non creato: %v", nome, err)
+	}
+	global.Logger.Infof("agente AI %d creato per il tecnico %d", a.Id, t.Id)
+	if _, err := fmt.Fprintln(os.Stdout, pwd); err != nil {
+		global.Logger.Fatalf("password dell'agente %d non stampata: %v", a.Id, err)
+	}
+}
+
 // reimpostaPassword da' all'utente id la password pwd se ha da 15 a 32
 // caratteri, i limiti del validatore per le password nuove
 // (http/request/admin/user.go), contati come li conta lui: caratteri, non
@@ -112,7 +157,7 @@ func reimpostaPassword(id uint, pwd string) {
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&global.ConfigPath, "config", "c", "./conf/config.yaml", "choose config file")
-	rootCmd.AddCommand(resetPwdCmd, resetUserPwdCmd)
+	rootCmd.AddCommand(resetPwdCmd, resetUserPwdCmd, agenteAiCmd)
 }
 
 // main esce con 1 se cobra restituisce un errore. Cobra lo ha gia' scritto su
