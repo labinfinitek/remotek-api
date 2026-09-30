@@ -81,6 +81,8 @@ func ApiInit(g *gin.Engine) {
 		frg.POST("/audit/conn", au.AuditConn)
 		// [method:POST] [uri:/api/audit/file]
 		frg.POST("/audit/file", au.AuditFile)
+		// Trascrizione delle sessioni terminale (ADR-0021).
+		frg.POST("/audit/terminal", au.AuditTerminal)
 	}
 
 	frg.Use(middleware.RustAuth())

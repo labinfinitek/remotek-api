@@ -199,6 +199,8 @@ func AuditBind(rg *gin.RouterGroup) {
 	aR.GET("/list", cont.ConnList)
 	aR.POST("/delete", cont.ConnDelete)
 	aR.POST("/batchDelete", cont.BatchConnDelete)
+	aR.GET("/terminal/list", cont.TerminalList)
+	aR.GET("/terminal/verify", cont.TerminalVerify)
 	afR := rg.Group("/audit_file").Use(middleware.AdminPrivilege())
 	afR.GET("/list", cont.FileList)
 	afR.POST("/delete", cont.FileDelete)

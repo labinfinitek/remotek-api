@@ -2,6 +2,7 @@ package service
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 
@@ -45,8 +46,11 @@ func (as *AuditService) CreateAuditConn(u *model.AuditConn) error {
 	}
 	return DB.Create(u).Error
 }
+
+// DeleteAuditConn cancella la connessione u e la sua trascrizione, se ne ha
+// una, nella stessa transazione.
 func (as *AuditService) DeleteAuditConn(u *model.AuditConn) error {
-	return DB.Delete(u).Error
+	return as.BatchDeleteAuditConn([]uint{u.Id})
 }
 
 // UpdateAuditConn 更新
@@ -173,8 +177,123 @@ func (as *AuditService) UpdateAuditFile(u *model.AuditFile) error {
 	return DB.Model(u).Updates(u).Error
 }
 
+// BatchDeleteAuditConn cancella le connessioni ids e le loro trascrizioni,
+// nella stessa transazione.
 func (as *AuditService) BatchDeleteAuditConn(ids []uint) error {
-	return DB.Where("id in (?)", ids).Delete(&model.AuditConn{}).Error
+	return DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("audit_conn_id in (?)", ids).Delete(&model.AuditTerminal{}).Error; err != nil {
+			return fmt.Errorf("trascrizioni delle connessioni: %w", err)
+		}
+		if err := tx.Where("id in (?)", ids).Delete(&model.AuditConn{}).Error; err != nil {
+			return fmt.Errorf("connessioni dell'audit: %w", err)
+		}
+		return nil
+	})
+}
+
+// ConnTerminale restituisce la connessione della sessione connId del
+// dispositivo peerId, la piu' recente con quel conn_id, se e' un terminale;
+// ErrNotFound se non c'e' o non e' un terminale.
+func (as *AuditService) ConnTerminale(peerId string, connId int64) (*model.AuditConn, error) {
+	res, err := as.InfoByPeerIdAndConnId(peerId, connId)
+	if err != nil {
+		return nil, err
+	}
+	if res.Type != model.AuditConnTerminale {
+		return nil, fmt.Errorf("connessione %d del dispositivo %s di tipo %d: %w", connId, peerId, res.Type, ErrNotFound)
+	}
+	return res, nil
+}
+
+// UltimoBlocco restituisce l'ultimo blocco salvato della trascrizione della
+// connessione auditConnId e i byte di tutta la trascrizione; nil e 0 se
+// non ce n'e'.
+func (as *AuditService) UltimoBlocco(auditConnId uint) (*model.AuditTerminal, int64, error) {
+	var totale int64
+	tx := DB.Model(&model.AuditTerminal{}).Where("audit_conn_id = ?", auditConnId)
+	if err := tx.Select("coalesce(sum(length(data)), 0)").Scan(&totale).Error; err != nil {
+		return nil, 0, fmt.Errorf("byte della trascrizione della connessione %d: %w", auditConnId, err)
+	}
+	var blocchi []*model.AuditTerminal
+	err := DB.Where("audit_conn_id = ?", auditConnId).Order("seq desc").Limit(1).Find(&blocchi).Error
+	if err != nil {
+		return nil, 0, fmt.Errorf("ultimo blocco della trascrizione della connessione %d: %w", auditConnId, err)
+	}
+	if len(blocchi) == 0 {
+		return nil, 0, nil
+	}
+	return blocchi[0], totale, nil
+}
+
+// CreateBlocco salva il blocco b della trascrizione.
+func (as *AuditService) CreateBlocco(b *model.AuditTerminal) error {
+	if err := DB.Create(b).Error; err != nil {
+		return fmt.Errorf("blocco %d della trascrizione della connessione %d: %w", b.Seq, b.AuditConnId, err)
+	}
+	return nil
+}
+
+// HashBlocco restituisce SHA-256(prec || d || data), con d il byte 'i' per
+// dir "in" e 'o' per "out": l'hash di un blocco della trascrizione, dato
+// quello del blocco prima (32 byte a zero per il primo).
+func HashBlocco(prec []byte, dir string, data []byte) []byte {
+	msg := make([]byte, 0, len(prec)+1+len(data))
+	msg = append(append(append(msg, prec...), dir[0]), data...)
+	h := sha256.Sum256(msg)
+	return h[:]
+}
+
+// BlocchiTerminale restituisce la pagina page di pageSize blocchi della
+// trascrizione della connessione auditConnId, in ordine di seq.
+func (as *AuditService) BlocchiTerminale(auditConnId uint, page, pageSize uint) (*model.AuditTerminalList, error) {
+	res := &model.AuditTerminalList{}
+	res.Page = int64(page)
+	res.PageSize = int64(pageSize)
+	tx := DB.Model(&model.AuditTerminal{}).Where("audit_conn_id = ?", auditConnId)
+	if err := tx.Count(&res.Total).Error; err != nil {
+		return nil, fmt.Errorf("conteggio dei blocchi della trascrizione: %w", err)
+	}
+	if err := tx.Order("seq").Scopes(Paginate(page, pageSize)).Find(&res.Blocchi).Error; err != nil {
+		return nil, fmt.Errorf("blocchi della trascrizione: %w", err)
+	}
+	return res, nil
+}
+
+// VerificaTerminale ricalcola dal database la catena della trascrizione
+// della connessione auditConnId. Un seq fuori posto, un
+// dir sconosciuto, un hash che non torna o un blocco dopo quello con fine
+// rendono la catena non integra dal loro seq.
+func (as *AuditService) VerificaTerminale(auditConnId uint) (*model.AuditTerminalVerifica, error) {
+	rows, err := DB.Model(&model.AuditTerminal{}).Where("audit_conn_id = ?", auditConnId).Order("seq").Rows()
+	if err != nil {
+		return nil, fmt.Errorf("trascrizione della connessione %d: %w", auditConnId, err)
+	}
+	defer rows.Close()
+	res := &model.AuditTerminalVerifica{Integra: true}
+	prec := make([]byte, sha256.Size)
+	for rows.Next() {
+		b := &model.AuditTerminal{}
+		if err := DB.ScanRows(rows, b); err != nil {
+			return nil, fmt.Errorf("blocco della trascrizione della connessione %d: %w", auditConnId, err)
+		}
+		res.Blocchi++
+		if res.Integra {
+			valido := b.Dir == "in" || b.Dir == "out"
+			if valido {
+				prec = HashBlocco(prec, b.Dir, b.Data)
+			}
+			if !valido || b.Seq != res.Blocchi || res.Fine || hex.EncodeToString(prec) != b.Hash {
+				res.Integra = false
+				res.PrimoErrato = b.Seq
+			}
+		}
+		res.Fine = res.Fine || b.Fine
+		res.Hash = b.Hash
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("trascrizione della connessione %d: %w", auditConnId, err)
+	}
+	return res, nil
 }
 
 func (as *AuditService) BatchDeleteAuditFile(ids []uint) error {

@@ -1036,6 +1036,120 @@
                 }
             }
         },
+        "/admin/audit_conn/terminal/list": {
+            "get": {
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "链接日志"
+                ],
+                "summary": "blocchi della trascrizione del terminale",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id della connessione nel registro",
+                        "name": "audit_conn_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagina",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "blocchi per pagina",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.AuditTerminalList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/audit_conn/terminal/verify": {
+            "get": {
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "链接日志"
+                ],
+                "summary": "verifica della trascrizione del terminale",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id della connessione nel registro",
+                        "name": "audit_conn_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.AuditTerminalVerifica"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/audit_file/batchDelete": {
             "post": {
                 "security": [
@@ -5619,6 +5733,84 @@
                     "type": "integer"
                 },
                 "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.AuditTerminal": {
+            "type": "object",
+            "properties": {
+                "audit_conn_id": {
+                    "type": "integer"
+                },
+                "conn_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "dir": {
+                    "type": "string"
+                },
+                "fine": {
+                    "type": "boolean"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "peer_id": {
+                    "type": "string"
+                },
+                "seq": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.AuditTerminalList": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.AuditTerminal"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.AuditTerminalVerifica": {
+            "type": "object",
+            "properties": {
+                "blocchi": {
+                    "type": "integer"
+                },
+                "fine": {
+                    "type": "boolean"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "integra": {
+                    "type": "boolean"
+                },
+                "primo_errato": {
                     "type": "integer"
                 }
             }

@@ -1,7 +1,11 @@
 package api
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -243,4 +247,92 @@ func (a *Audit) AuditFile(c *gin.Context) {
 		auditNonSalvato(c, err)
 	}
 	response.Success(c, "")
+}
+
+// AuditTerminal salva un blocco della trascrizione di una sessione
+// terminale, mandato dal PC controllato. Un blocco che non passa i
+// controlli non si salva e va nel log a livello warn, con rotta e ID del PC
+// e senza contenuto; al client va successo lo stesso, come nelle altre
+// rotte dell'audit.
+// @Tags 审计
+// @Summary blocco della trascrizione del terminale
+// @Accept  json
+// @Produce  json
+// @Param body body request.AuditTerminalForm true "blocco"
+// @Success 200 {string} string ""
+// @Failure 400 {object} response.ErrorResponse
+// @Router /audit/terminal [post]
+func (a *Audit) AuditTerminal(c *gin.Context) {
+	f := &request.AuditTerminalForm{}
+	if err := c.ShouldBindBodyWith(f, binding.JSON); err != nil {
+		response.ErrorErr(c, "ParamsError", err)
+		return
+	}
+	if dalDispositivo(c, f.Id, f.Uuid) {
+		salvaBlocco(c, f)
+	}
+	response.Success(c, "")
+}
+
+// salvaBlocco controlla il blocco f, nell'ordine del README, e lo salva.
+func salvaBlocco(c *gin.Context, f *request.AuditTerminalForm) {
+	scarta := func(perche string) { dispositivoDiverso(c, f.Id, perche) }
+	as := service.AllService.AuditService
+	conn, err := as.ConnTerminale(f.Id, f.ConnId)
+	if err != nil {
+		if errors.Is(err, service.ErrNotFound) {
+			scarta("nessuna connessione terminale con questo conn_id")
+		} else {
+			auditNonSalvato(c, err)
+		}
+		return
+	}
+	if f.Dir != "in" && f.Dir != "out" {
+		scarta("dir sconosciuto")
+		return
+	}
+	// Prima di decodificare si scarta cio' che non puo' stare nel limite;
+	// EncodedLen arrotonda a gruppi di 3 byte, quindi dopo si ricontrolla.
+	if len(f.Data) > base64.StdEncoding.EncodedLen(model.BloccoTerminaleMax) {
+		scarta("blocco oltre 64 KiB")
+		return
+	}
+	data, err := base64.StdEncoding.DecodeString(f.Data)
+	if err != nil {
+		scarta("data non e' base64")
+		return
+	}
+	if len(data) > model.BloccoTerminaleMax {
+		scarta("blocco oltre 64 KiB")
+		return
+	}
+	ultimo, totale, err := as.UltimoBlocco(conn.Id)
+	if err != nil {
+		auditNonSalvato(c, err)
+		return
+	}
+	prec := make([]byte, sha256.Size)
+	atteso := int64(1)
+	if ultimo != nil {
+		atteso = ultimo.Seq + 1
+		if prec, err = hex.DecodeString(ultimo.Hash); err != nil {
+			auditNonSalvato(c, fmt.Errorf("hash del blocco %d: %w", ultimo.Seq, err))
+			return
+		}
+	}
+	switch {
+	case f.Seq != atteso:
+		scarta(fmt.Sprintf("seq %d invece di %d", f.Seq, atteso))
+	case hex.EncodeToString(service.HashBlocco(prec, f.Dir, data)) != f.Hash:
+		scarta(fmt.Sprintf("hash del blocco %d sbagliato", f.Seq))
+	case ultimo != nil && ultimo.Fine:
+		scarta(fmt.Sprintf("blocco %d dopo la fine della sessione", f.Seq))
+	case totale+int64(len(data)) > model.TrascrizioneTerminale:
+		scarta("trascrizione oltre 20 MiB")
+	default:
+		b := &model.AuditTerminal{AuditConnId: conn.Id, PeerId: f.Id, ConnId: f.ConnId, Seq: f.Seq, Dir: f.Dir, Data: data, Hash: f.Hash, Fine: f.Fine}
+		if err := as.CreateBlocco(b); err != nil {
+			auditNonSalvato(c, err)
+		}
+	}
 }

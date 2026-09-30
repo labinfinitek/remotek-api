@@ -6,6 +6,16 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Aggiunto
+- Trascrizione delle sessioni terminale: `POST /api/audit/terminal` salva i
+  blocchi mandati dal PC controllato, concatenati da SHA-256, e solo per
+  gli amministratori `GET /api/admin/audit_conn/terminal/list` li elenca e
+  `GET /api/admin/audit_conn/terminal/verify` ricalcola la catena, con
+  l'id della connessione. Ogni blocco si lega alla connessione piu'
+  recente del PC con quel `conn_id`. Formato e controlli nel README. Cancellare una connessione terminale dal pannello
+  cancella anche la sua trascrizione. Migrazione del database: versione
+  267, tabella `audit_terminals`.
+
 ### Corretto
 - Registro delle connessioni: chiusura, autenticazione e tipo di una
   connessione vanno sulla riga piu' recente del PC con quel `conn_id`.

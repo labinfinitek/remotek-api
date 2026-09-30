@@ -31,6 +31,9 @@ changed since v2.7 is in [REMOTEK.md](REMOTEK.md), news in
   technician's PC, and the login. A note only attaches to a connection
   already registered, at most 2000 characters (longer ones are cut), and
   its text never goes to the log.
+- **Terminal transcripts**: the controlled PC sends the API what goes
+  through terminal sessions, in hash-chained blocks; only administrators
+  read and verify them (format below).
 - **Login log**: every login, from the client and from the panel.
 - **Admin panel** on `/_admin/`: [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)
   built into the image at a pinned commit, with the Remotek brand and the
@@ -45,6 +48,53 @@ changed since v2.7 is in [REMOTEK.md](REMOTEK.md), news in
   the panel menu are no longer supported (decision A3).
 - **Languages**: Italian (default) and English.
 - **Configurable brand**: name, logo and favicon without touching the code.
+
+## Terminal session transcripts
+
+Every terminal session (type 4 in the connection log) is transcribed by the
+controlled PC: one copy stays on the PC, one is sent to the API with
+`POST /api/audit/terminal`, without login, one block per request. This is
+the format the client follows. JSON body:
+
+| Field | Type | Value |
+|---|---|---|
+| `id` | string | ID of the controlled PC |
+| `uuid` | string | uuid of the PC, as in `/api/sysinfo` and `/api/audit/conn` |
+| `conn_id` | int64 | the same `conn_id` as the session's `new` audit |
+| `seq` | integer | 1 for the first block, +1 for each block |
+| `dir` | string | `in` (from the controlling side) or `out` (from the shell) |
+| `data` | string | standard base64 (with `=`) of the bytes, at most 64 KiB decoded |
+| `hash` | string | lowercase hex of SHA-256( H(seq-1) ‖ d ‖ data ) |
+| `fine` | bool | `true` on the last block of the session |
+
+H(0) is 32 zero bytes, H(n) the 32 raw bytes (not the hex) of block n's
+hash; d is the byte `i` (0x69) for `in` and `o` (0x6f) for `out`; data is
+the decoded bytes.
+
+Each block is tied to the session's row in the connection log: the most
+recent one of the PC with that `conn_id`. The client restarts `conn_id`
+from a random value every time its service starts, so after a restart the
+same number can come back: the new session gets its own row and its own
+transcript, from `seq` 1, and the old one stays as it was.
+
+The API checks, in this order: `id` and `uuid` belong to the registered PC;
+that row exists and is type 4 (send the block after the audit that
+authenticates the connection); `dir`; `data` is base64 and within 64 KiB;
+`seq` equals the last saved one for that row plus one; `hash`; no block
+after the one with `fine`; at most 20 MiB of data per session. A block that fails is not saved and the
+log gets a warn with route, PC ID and reason, without uuid or content. The
+response is always the one of the other audit routes,
+`{"code":0,"message":"success","data":""}` (400 only for a body that is not
+JSON): the client ignores it, and a rejected block is not resent.
+
+From the admin panel, administrators only, with `audit_conn_id` in the
+query (the id of the row in the connection log): `GET /api/admin/audit_conn/terminal/list` lists the blocks by
+`seq`, with `data` in base64 (paginated with `page` and `page_size`, 10 per
+page by default); `GET /api/admin/audit_conn/terminal/verify` recomputes
+the chain from the database and returns `integra`, `blocchi`, `fine`,
+`hash` (the stored hash of the last block, to compare with the PC's copy)
+and `primo_errato`, the first `seq` that does not match (0 if intact).
+Deleting a terminal connection from the panel also deletes its transcript.
 
 ## Installation
 

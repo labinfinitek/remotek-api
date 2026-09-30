@@ -84,3 +84,16 @@ func (a *AuditFileForm) ToAuditFile() *model.AuditFile {
 		Num:      fi.Num,
 	}
 }
+
+// AuditTerminalForm e' un blocco della trascrizione di una sessione
+// terminale (POST /api/audit/terminal); il formato e' nel README.
+type AuditTerminalForm struct {
+	Id     string `json:"id"`
+	Uuid   string `json:"uuid"`
+	ConnId int64  `json:"conn_id"`
+	Seq    int64  `json:"seq"`
+	Dir    string `json:"dir"`
+	Data   string `json:"data"` // base64 standard
+	Hash   string `json:"hash"`
+	Fine   bool   `json:"fine"`
+}
