@@ -54,11 +54,13 @@ func (as *AuditService) UpdateAuditConn(u *model.AuditConn) error {
 	return DB.Model(u).Updates(u).Error
 }
 
-// InfoByPeerIdAndConnId restituisce la connessione connId del dispositivo
-// peerId; ErrNotFound se non c'e'.
+// InfoByPeerIdAndConnId restituisce la connessione connId piu' recente del
+// dispositivo peerId; ErrNotFound se non c'e'. Il client fa ripartire
+// conn_id da un valore casuale a ogni avvio del servizio, quindi lo stesso
+// conn_id puo' tornare: la sessione in corso e' l'ultima riga.
 func (as *AuditService) InfoByPeerIdAndConnId(peerId string, connId int64) (*model.AuditConn, error) {
 	res := &model.AuditConn{}
-	if err := DB.Where("peer_id = ? and conn_id = ?", peerId, connId).First(res).Error; err != nil {
+	if err := DB.Where("peer_id = ? and conn_id = ?", peerId, connId).Order("id desc").First(res).Error; err != nil {
 		return nil, fmt.Errorf("connessione %d del dispositivo %s: %w", connId, peerId, nonTrovato(err))
 	}
 	return res, nil

@@ -216,3 +216,30 @@ func TestAuditSessionId(t *testing.T) {
 		t.Errorf("session_id: %q, atteso %q", ids, want)
 	}
 }
+
+// TestAuditConnIdRipetuto prova sul router vero che con due "new" dello
+// stesso PC e con lo stesso conn_id (il client lo fa ripartire a ogni avvio
+// del servizio) la chiusura va sulla connessione piu' recente e la prima
+// resta aperta. Prima First prendeva la riga piu' vecchia.
+func TestAuditConnIdRipetuto(t *testing.T) {
+	g, registro := dispositiviDiProva(t, &model.Peer{Id: "999000111", Uuid: uuidSalvato})
+	for _, corpo := range []string{
+		`{"action":"new","conn_id":7,"id":"999000111","ip":"192.0.2.10","session_id":1,"uuid":"` + uuidSalvato + `"}`,
+		`{"action":"new","conn_id":7,"id":"999000111","ip":"192.0.2.11","session_id":2,"uuid":"` + uuidSalvato + `"}`,
+		`{"action":"close","conn_id":7,"id":"999000111","session_id":2,"uuid":"` + uuidSalvato + `"}`,
+	} {
+		if rec := richiesta(g, "POST", "/api/audit/conn", "", corpo); rec.Code != 200 {
+			t.Fatalf("POST /api/audit/conn: %d %s", rec.Code, rec.Body)
+		}
+	}
+	var chiuse []bool
+	if err := service.DB.Raw("SELECT close_time > 0 FROM audit_conns ORDER BY id").Scan(&chiuse).Error; err != nil {
+		t.Fatal(err)
+	}
+	if want := []bool{false, true}; !reflect.DeepEqual(want, chiuse) {
+		t.Errorf("connessioni chiuse, in ordine di id: %v, attese %v", chiuse, want)
+	}
+	if nelLog := registro.String(); nelLog != "" {
+		t.Errorf("nel log:\n%s", nelLog)
+	}
+}

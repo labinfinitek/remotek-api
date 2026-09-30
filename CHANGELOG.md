@@ -6,6 +6,13 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Corretto
+- Registro delle connessioni: chiusura, autenticazione e tipo di una
+  connessione vanno sulla riga piu' recente del PC con quel `conn_id`.
+  Il client fa ripartire `conn_id` a ogni avvio del servizio, e prima
+  finivano sulla riga piu' vecchia con lo stesso numero, lasciando aperta
+  quella nuova.
+
 ## [0.4.0] - 2026-09-29
 Immagine `ghcr.io/labinfinitek/remotek-api:0.4.0`. Un cambio incompatibile,
 sotto Modificato: il log esce solo in JSON su stdout, `logger.path` e'
