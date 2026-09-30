@@ -251,6 +251,13 @@ func (us *UserService) Logout(u *model.User, token string) error {
 // o panic si annulla; poi scollega i suoi dispositivi. Un amministratore
 // non si cancella se e' l'ultimo o se gli amministratori non si contano.
 func (us *UserService) Delete(u *model.User) error {
+	agenti, err := us.contaAgenti(u.Id)
+	if err != nil {
+		return err
+	}
+	if agenti > 0 {
+		return fmt.Errorf("utente %d con %d agenti: %w", u.Id, agenti, ErrTecnicoConAgentiCancellato)
+	}
 	if us.IsAdmin(u) {
 		userCount, err := us.getAdminUserCount()
 		if err != nil {
@@ -260,7 +267,7 @@ func (us *UserService) Delete(u *model.User) error {
 			return errors.New("the last admin user cannot be deleted")
 		}
 	}
-	err := DB.Transaction(func(tx *gorm.DB) error {
+	err = DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Delete(u).Error; err != nil {
 			return fmt.Errorf("utente %d: %w", u.Id, err)
 		}
@@ -289,7 +296,26 @@ func (us *UserService) Update(u *model.User) error {
 	if err := us.controllaUltimoAdmin(u); err != nil {
 		return err
 	}
-	return DB.Model(u).Updates(u).Error
+	return DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(u).Updates(u).Error; err != nil {
+			return fmt.Errorf("utente %d: %w", u.Id, err)
+		}
+		return disattivaAgenti(tx, u)
+	})
+}
+
+// disattivaAgenti disattiva con tx gli agenti AI di u se u e' disattivato:
+// un agente non resta attivo senza un tecnico attivo che ne risponda.
+func disattivaAgenti(tx *gorm.DB, u *model.User) error {
+	if u.Status != model.COMMON_STATUS_DISABLED {
+		return nil
+	}
+	err := tx.Model(&model.User{}).Where("agente_di = ? and status <> ?", u.Id, model.COMMON_STATUS_DISABLED).
+		Update("status", model.COMMON_STATUS_DISABLED).Error
+	if err != nil {
+		return fmt.Errorf("agenti dell'utente %d: %w", u.Id, err)
+	}
+	return nil
 }
 
 // UpdateDalPannello salva, con gli stessi controlli di Update, i campi del
@@ -297,6 +323,7 @@ func (us *UserService) Update(u *model.User) error {
 // e nota svuotati restano vuoti. is_admin assente non cambia il ruolo; la
 // password non e' nel modulo e resta quella di prima. agente_di si salva
 // sempre: il gestore ci mette quello salvato se il modulo non lo manda.
+// Disattivare un tecnico disattiva, nella stessa transazione, i suoi agenti.
 func (us *UserService) UpdateDalPannello(u *model.User) error {
 	if err := us.controllaUltimoAdmin(u); err != nil {
 		return err
@@ -305,10 +332,12 @@ func (us *UserService) UpdateDalPannello(u *model.User) error {
 	if u.IsAdmin != nil {
 		campi = append(campi, "is_admin")
 	}
-	if err := DB.Model(u).Select(campi).Updates(u).Error; err != nil {
-		return fmt.Errorf("utente %d: %w", u.Id, err)
-	}
-	return nil
+	return DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(u).Select(campi).Updates(u).Error; err != nil {
+			return fmt.Errorf("utente %d: %w", u.Id, err)
+		}
+		return disattivaAgenti(tx, u)
+	})
 }
 
 // controllaUltimoAdmin restituisce un errore se u disabiliterebbe o
@@ -664,12 +693,17 @@ var (
 	ErrTecnicoNonValido = errors.New("AgentOwnerInvalid")
 	ErrAgenteAdmin      = errors.New("AgentNotAdmin")
 	ErrTecnicoConAgenti = errors.New("AgentOwnerHasAgents")
+	// ErrTecnicoConAgentiCancellato: un tecnico con agenti non si cancella.
+	ErrTecnicoConAgentiCancellato = errors.New("UserHasAgents")
+	// ErrTecnicoDisattivato: un agente del tecnico disattivato non si attiva.
+	ErrTecnicoDisattivato = errors.New("AgentOwnerDisabled")
 )
 
 // ControllaAgente restituisce un errore se u, con i valori che avra' dopo
 // il salvataggio, rompe le regole degli agenti AI: il tecnico (AgenteDi)
 // e' un altro utente che esiste ed e' una persona, un agente non e' mai
-// amministratore, e chi risponde di agenti non diventa un agente.
+// amministratore, un agente attivo ha un tecnico attivo, e chi risponde di
+// agenti non diventa un agente.
 func (us *UserService) ControllaAgente(u *model.User) error {
 	if u.AgenteDi == 0 {
 		return nil
@@ -690,15 +724,27 @@ func (us *UserService) ControllaAgente(u *model.User) error {
 	if t.AgenteDi != 0 {
 		return fmt.Errorf("tecnico %d e' un agente: %w", u.AgenteDi, ErrTecnicoNonValido)
 	}
+	if u.Status == model.COMMON_STATUS_ENABLE && t.Status != model.COMMON_STATUS_ENABLE {
+		return fmt.Errorf("tecnico %d disattivato: %w", u.AgenteDi, ErrTecnicoDisattivato)
+	}
 	if u.Id == 0 {
 		return nil
 	}
-	var agenti int64
-	if err := DB.Model(&model.User{}).Where("agente_di = ?", u.Id).Count(&agenti).Error; err != nil {
-		return diSistema(fmt.Errorf("agenti dell'utente %d: %w", u.Id, err))
+	agenti, err := us.contaAgenti(u.Id)
+	if err != nil {
+		return err
 	}
 	if agenti > 0 {
 		return fmt.Errorf("utente %d con %d agenti: %w", u.Id, agenti, ErrTecnicoConAgenti)
 	}
 	return nil
+}
+
+// contaAgenti restituisce quanti agenti AI hanno per tecnico l'utente id.
+func (us *UserService) contaAgenti(id uint) (int64, error) {
+	var n int64
+	if err := DB.Model(&model.User{}).Where("agente_di = ?", id).Count(&n).Error; err != nil {
+		return 0, diSistema(fmt.Errorf("agenti dell'utente %d: %w", id, err))
+	}
+	return n, nil
 }

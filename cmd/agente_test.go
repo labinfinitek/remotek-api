@@ -15,7 +15,8 @@ import (
 // gruppo del tecnico, legato a lui e non amministratore, e stampa la sua
 // password di 24 caratteri una volta, fuori dalle righe di log; rifiuta con
 // codice 1, senza creare utenti, uno username che c'e' gia', un tecnico
-// che non c'e' e un tecnico che e' a sua volta un agente.
+// che non c'e', un tecnico che e' a sua volta un agente e un tecnico
+// disattivato.
 func TestComandoAgenteAi(t *testing.T) {
 	dir := sandbox(t)
 	db := apriDB(t, dir)
@@ -25,6 +26,10 @@ func TestComandoAgenteAi(t *testing.T) {
 	no := false
 	mario := &model.User{Username: "mario", GroupId: 7, IsAdmin: &no, Status: model.COMMON_STATUS_ENABLE}
 	if err := db.Create(mario).Error; err != nil {
+		t.Fatal(err)
+	}
+	spento := &model.User{Username: "spento", GroupId: 7, IsAdmin: &no, Status: model.COMMON_STATUS_DISABLED}
+	if err := db.Create(spento).Error; err != nil {
 		t.Fatal(err)
 	}
 
@@ -57,6 +62,7 @@ func TestComandoAgenteAi(t *testing.T) {
 		{"tecnico che non c'e'", []string{"agente-nuovo", "nessuno"}, "tecnico \\\"nessuno\\\" non trovato"},
 		{"tecnico agente", []string{"agente-nuovo", "agente-mario"}, "e' un agente AI, non una persona"},
 		{"username di un carattere", []string{"a", "mario"}, "da 2 a 32 caratteri"},
+		{"tecnico disattivato", []string{"agente-nuovo", "spento"}, "tecnico \\\"spento\\\" e' disattivato"},
 	} {
 		prima := utenti(t, db)
 		codice, out := esegui(t, dir, append([]string{"agente-ai"}, p.args...)...)

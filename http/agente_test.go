@@ -22,6 +22,10 @@ import (
 func agentiDiProva(t *testing.T) *gin.Engine {
 	t.Helper()
 	g, _, _ := pannello(t, true)
+	// Le tabelle che la cancellazione di un utente ripulisce.
+	if err := service.DB.AutoMigrate(&model.AddressBook{}, &model.AddressBookCollection{}, &model.AddressBookCollectionRule{}, &model.Peer{}); err != nil {
+		t.Fatal(err)
+	}
 	precJwt := global.Jwt
 	global.Jwt = jwt.NewJwt("", time.Hour)
 	t.Cleanup(func() { global.Jwt = precJwt })
@@ -118,5 +122,60 @@ func TestAgenteClient(t *testing.T) {
 		if rec.Code != tc.codice || (tc.want != "" && rec.Body.String() != tc.want) {
 			t.Errorf("GET /api/agente col token %q: %d %s, attesi %d %s", tc.token, rec.Code, rec.Body, tc.codice, tc.want)
 		}
+	}
+}
+
+// stati restituisce lo stato di ogni utente, per id.
+func stati(t *testing.T) map[uint]model.StatusCode {
+	t.Helper()
+	var uu []model.User
+	if err := service.DB.Raw("SELECT id, status FROM users ORDER BY id").Scan(&uu).Error; err != nil {
+		t.Fatal(err)
+	}
+	res := map[uint]model.StatusCode{}
+	for _, u := range uu {
+		res[u.Id] = u.Status
+	}
+	return res
+}
+
+// TestAgenteSegueTecnico prova sul router vero che un agente AI segue il
+// suo tecnico: disattivare il tecnico dal pannello disattiva i suoi agenti
+// e non quelli degli altri; un tecnico con agenti non si cancella finche'
+// ha agenti; un agente del tecnico disattivato non si riattiva, ma si
+// modifica restando disattivato.
+func TestAgenteSegueTecnico(t *testing.T) {
+	const attivo, spento = model.COMMON_STATUS_ENABLE, model.COMMON_STATUS_DISABLED
+	g := agentiDiProva(t)
+
+	if rec := alPannello(g, "/api/admin/user/update", `{"id":2,"username":"mario","group_id":1,"status":2}`); !strings.Contains(rec.Body.String(), `"code":0`) {
+		t.Fatalf("disattivazione di mario: %s", rec.Body)
+	}
+	if want, got := map[uint]model.StatusCode{1: attivo, 2: spento, 3: attivo, 4: spento, 5: attivo}, stati(t); !maps.Equal(got, want) {
+		t.Errorf("stati dopo la disattivazione di mario: %v, attesi %v", got, want)
+	}
+
+	rec := alPannello(g, "/api/admin/user/delete", `{"id":3}`)
+	if body := rec.Body.String(); !strings.Contains(body, `"code":101`) || !strings.Contains(body, "cancellali o assegnali") {
+		t.Errorf("cancellazione di luigi, che ha un agente: %s", body)
+	}
+	if n := righe(t, "users"); n != 5 {
+		t.Errorf("utenti dopo la cancellazione rifiutata: %d, attesi 5", n)
+	}
+	for _, corpo := range []string{`{"id":5}`, `{"id":3}`} {
+		if rec := alPannello(g, "/api/admin/user/delete", corpo); !strings.Contains(rec.Body.String(), `"code":0`) {
+			t.Errorf("cancellazione %s: %s", corpo, rec.Body)
+		}
+	}
+
+	rec = alPannello(g, "/api/admin/user/update", `{"id":4,"username":"agente-mario","group_id":1,"status":1}`)
+	if body := rec.Body.String(); !strings.Contains(body, `"code":101`) || !strings.Contains(body, "è disattivato") {
+		t.Errorf("riattivazione dell'agente di mario, disattivato: %s", body)
+	}
+	if rec := alPannello(g, "/api/admin/user/update", `{"id":4,"username":"agente-mario","nickname":"Agente","group_id":1,"status":2}`); !strings.Contains(rec.Body.String(), `"code":0`) {
+		t.Errorf("modifica dell'agente di mario, restando disattivato: %s", rec.Body)
+	}
+	if want, got := map[uint]model.StatusCode{1: attivo, 2: spento, 4: spento}, stati(t); !maps.Equal(got, want) {
+		t.Errorf("stati alla fine: %v, attesi %v", got, want)
 	}
 }

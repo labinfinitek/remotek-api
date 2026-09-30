@@ -306,8 +306,11 @@ if the username already exists or is not 2 to 32 characters long (as in the
 panel), or if the technician does not exist or is not a person. The same rules apply from the panel (`/api/admin/user/create`
 and `update`, field `agente_di`): the technician is another existing user
 and a person, an agent is not an administrator, and a user responsible for
-agents does not become an agent. An update without `agente_di`, like those
-of today's panel, leaves it as it is. The command-line client asks, with the
+agents does not become an agent. An agent follows its technician: disabling
+the technician disables their agents; an agent whose technician is disabled
+cannot be enabled; a technician with agents cannot be deleted until their
+agents are deleted or assigned to another technician. An update without
+`agente_di`, like those of today's panel, leaves it as it is. The command-line client asks, with the
 login token, `GET /api/agente`, which answers
 `{"agente":true,"tecnico":"<name>"}` (the technician's nickname, or the
 username if the nickname is empty) or `{"agente":false,"tecnico":""}`;

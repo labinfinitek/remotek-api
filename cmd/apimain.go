@@ -100,8 +100,8 @@ var agenteAiCmd = &cobra.Command{
 // creaAgente crea l'account dell'agente AI nome, del tecnico di username
 // tecnico e nel suo gruppo, mai amministratore, e stampa su stdout, una
 // volta sola, la sua password casuale di 24 caratteri; nel log non va.
-// Rifiuta con codice 1 se il tecnico non c'e' o non e' una persona, o se
-// nome c'e' gia'.
+// Rifiuta con codice 1 se il tecnico non c'e', non e' una persona o e'
+// disattivato, o se nome c'e' gia'.
 func creaAgente(nome, tecnico string) {
 	us := service.AllService.UserService
 	if n := utf8.RuneCountInString(nome); n < 2 || n > 32 {
@@ -116,6 +116,9 @@ func creaAgente(nome, tecnico string) {
 	}
 	if t.AgenteDi != 0 {
 		global.Logger.Fatalf("%q e' un agente AI, non una persona", tecnico)
+	}
+	if t.Status != model.COMMON_STATUS_ENABLE {
+		global.Logger.Fatalf("il tecnico %q e' disattivato", tecnico)
 	}
 	pwd := utils.RandomString(24)
 	if pwd == "" {

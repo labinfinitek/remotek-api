@@ -313,8 +313,11 @@ tecnico non c'e' o se non e' una persona. Dal
 pannello (`/api/admin/user/create` e `update`, campo `agente_di`) valgono le
 stesse regole: il tecnico e' un altro utente che esiste ed e' una persona,
 un agente non e' amministratore, e chi risponde di agenti non diventa un
-agente. Una modifica senza `agente_di`, come quelle del pannello di oggi,
-lo lascia com'e'. Il client a riga di comando chiede con il token del login
+agente. Un agente segue il suo tecnico: disattivare il tecnico disattiva i
+suoi agenti; un agente il cui tecnico e' disattivato non si riattiva; un
+tecnico che ha agenti non si cancella, prima si cancellano o si assegnano a
+un altro tecnico i suoi agenti. Una modifica senza `agente_di`, come quelle
+del pannello di oggi, lo lascia com'e'. Il client a riga di comando chiede con il token del login
 `GET /api/agente`, che risponde `{"agente":true,"tecnico":"<nome>"}` (il
 nickname del tecnico, o lo username se il nickname e' vuoto) o
 `{"agente":false,"tecnico":""}`; `/api/login` e `/api/currentUser` non

@@ -358,3 +358,13 @@ other = "An AI agent cannot be an administrator."
 description = "A user responsible for AI agents cannot become an agent."
 one = "A user responsible for AI agents cannot become an agent."
 other = "A user responsible for AI agents cannot become an agent."
+
+[UserHasAgents]
+description = "This user is responsible for AI agents: delete them or assign them to another technician first."
+one = "This user is responsible for AI agents: delete them or assign them to another technician first."
+other = "This user is responsible for AI agents: delete them or assign them to another technician first."
+
+[AgentOwnerDisabled]
+description = "The technician of this AI agent is disabled: the agent cannot be enabled."
+one = "The technician of this AI agent is disabled: the agent cannot be enabled."
+other = "The technician of this AI agent is disabled: the agent cannot be enabled."
