@@ -309,7 +309,7 @@ persona). `agente-ai <username> <username del tecnico>` lo crea nel gruppo
 del tecnico, mai amministratore, e stampa su stdout, una volta sola, la sua
 password casuale di 24 caratteri (nel log no); esce con codice 1 se lo
 username c'e' gia' o non ha da 2 a 32 caratteri (come nel pannello), se il
-tecnico non c'e' o se non e' una persona. Dal
+tecnico non c'e', non e' una persona o e' disattivato. Dal
 pannello (`/api/admin/user/create` e `update`, campo `agente_di`) valgono le
 stesse regole: il tecnico e' un altro utente che esiste ed e' una persona,
 un agente non e' amministratore, e chi risponde di agenti non diventa un
