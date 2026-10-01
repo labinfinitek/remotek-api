@@ -80,8 +80,11 @@ transcript, from `seq` 1, and the old one stays as it was.
 The API checks, in this order: `id` and `uuid` belong to the registered PC;
 that row exists and is type 4 (send the block after the audit that
 authenticates the connection); `dir`; `data` is base64 and within 64 KiB;
-`seq` equals the last saved one for that row plus one; `hash`; no block
-after the one with `fine`; at most 20 MiB of data per session. A block that fails is not saved and the
+`data` is not empty unless `fine` is `true` (an empty block closes the
+session with no trailing data); `seq` is at most 100000, at most 100000
+blocks per session; `seq` equals the last saved one for that row plus one;
+`hash`; no block after the one with `fine`; at most 20 MiB of data per
+session. A block that fails is not saved and the
 log gets a warn with route, PC ID and reason, without uuid or content. The
 response is always the one of the other audit routes,
 `{"code":0,"message":"success","data":""}` (400 only for a body that is not

@@ -27,7 +27,7 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/utils"
 )
 
-const DatabaseVersion = 268
+const DatabaseVersion = 269
 
 // fileAdminPassword e' il file in cui il primo avvio scrive la password
 // iniziale di admin, nella cartella di rustdeskapi.db (nel container

@@ -30,6 +30,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   267, tabella `audit_terminals`.
 
 ### Corretto
+- Trascrizione delle sessioni terminale: il controllo dei 20 MiB legge il
+  totale salvato nell'ultimo blocco invece di risommare tutta la sessione
+  a ogni blocco; un blocco vuoto si accetta solo con `fine` e una sessione
+  ha al massimo 100000 blocchi. Migrazione del database: versione 269,
+  colonna `audit_terminals.totale`.
 - Registro delle connessioni: chiusura, autenticazione e tipo di una
   connessione vanno sulla riga piu' recente del PC con quel `conn_id`.
   Il client fa ripartire `conn_id` a ogni avvio del servizio, e prima

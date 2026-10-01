@@ -207,13 +207,9 @@ func (as *AuditService) ConnTerminale(peerId string, connId int64) (*model.Audit
 
 // UltimoBlocco restituisce l'ultimo blocco salvato della trascrizione della
 // connessione auditConnId e i byte di tutta la trascrizione; nil e 0 se
-// non ce n'e'.
+// non ce n'e'. I byte sono il totale salvato nell'ultimo blocco; solo se
+// manca, in una riga di prima della versione 269, si sommano i blocchi.
 func (as *AuditService) UltimoBlocco(auditConnId uint) (*model.AuditTerminal, int64, error) {
-	var totale int64
-	tx := DB.Model(&model.AuditTerminal{}).Where("audit_conn_id = ?", auditConnId)
-	if err := tx.Select("coalesce(sum(length(data)), 0)").Scan(&totale).Error; err != nil {
-		return nil, 0, fmt.Errorf("byte della trascrizione della connessione %d: %w", auditConnId, err)
-	}
 	var blocchi []*model.AuditTerminal
 	err := DB.Where("audit_conn_id = ?", auditConnId).Order("seq desc").Limit(1).Find(&blocchi).Error
 	if err != nil {
@@ -221,6 +217,14 @@ func (as *AuditService) UltimoBlocco(auditConnId uint) (*model.AuditTerminal, in
 	}
 	if len(blocchi) == 0 {
 		return nil, 0, nil
+	}
+	if blocchi[0].Totale != nil {
+		return blocchi[0], *blocchi[0].Totale, nil
+	}
+	var totale int64
+	tx := DB.Model(&model.AuditTerminal{}).Where("audit_conn_id = ?", auditConnId)
+	if err := tx.Select("coalesce(sum(length(data)), 0)").Scan(&totale).Error; err != nil {
+		return nil, 0, fmt.Errorf("byte della trascrizione della connessione %d: %w", auditConnId, err)
 	}
 	return blocchi[0], totale, nil
 }

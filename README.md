@@ -82,8 +82,11 @@ riga e la sua trascrizione, da `seq` 1, e quella vecchia resta com'era.
 L'API controlla, nell'ordine: che `id` e `uuid` siano del PC registrato;
 che quella riga ci sia e sia di type 4 (il blocco va mandato dopo l'audit
 che autentica la connessione); `dir`; `data` in base64 ed entro 64 KiB;
-`seq` uguale all'ultimo salvato per quella riga piu' uno; `hash`; nessun
-blocco dopo quello con `fine`; al massimo 20 MiB di dati per sessione. Un blocco
+`data` non vuoto, se `fine` non e' `true` (un blocco vuoto chiude la
+sessione senza dati in coda); `seq` non oltre 100000, al massimo 100000
+blocchi per sessione; `seq` uguale all'ultimo salvato per quella riga piu'
+uno; `hash`; nessun blocco dopo quello con `fine`; al massimo 20 MiB di
+dati per sessione. Un blocco
 che non passa non si salva e nel log resta un warn con rotta, ID del PC e
 motivo, senza uuid ne' contenuto. La risposta e' sempre quella delle altre
 rotte dell'audit, `{"code":0,"message":"success","data":""}` (400 solo per
