@@ -87,10 +87,10 @@ sessione senza dati in coda); `seq` non oltre 100000, al massimo 100000
 blocchi per sessione; `seq` uguale all'ultimo salvato per quella riga piu'
 uno; `hash`; nessun blocco dopo quello con `fine`; al massimo 20 MiB di
 dati per sessione. Un blocco che non passa non si salva e nel log resta un
-warn con rotta, ID del PC e motivo, senza uuid ne' contenuto. La risposta e' sempre quella delle altre
-rotte dell'audit, `{"code":0,"message":"success","data":""}` (400 solo per
-un corpo che non e' JSON): il client non la guarda, e un blocco scartato
-non si rimanda.
+warn con rotta, ID del PC e motivo, senza uuid ne' contenuto. La risposta
+e' sempre quella delle altre rotte dell'audit,
+`{"code":0,"message":"success","data":""}` (400 solo per un corpo che non
+e' JSON): il client non la guarda, e un blocco scartato non si rimanda.
 
 Dal pannello, solo per gli amministratori, con `audit_conn_id` nella query
 (l'id della riga nel registro delle connessioni): `GET /api/admin/audit_conn/terminal/list` elenca i blocchi in

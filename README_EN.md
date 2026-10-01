@@ -85,8 +85,8 @@ session with no trailing data); `seq` is at most 100000, at most 100000
 blocks per session; `seq` equals the last saved one for that row plus one;
 `hash`; no block after the one with `fine`; at most 20 MiB of data per
 session. A block that fails is not saved and the log gets a warn with
-route, PC ID and reason, without uuid or content. The
-response is always the one of the other audit routes,
+route, PC ID and reason, without uuid or content. The response is always
+the one of the other audit routes,
 `{"code":0,"message":"success","data":""}` (400 only for a body that is not
 JSON): the client ignores it, and a rejected block is not resent.
 
