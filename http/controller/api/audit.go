@@ -306,6 +306,16 @@ func salvaBlocco(c *gin.Context, f *request.AuditTerminalForm) {
 		scarta("blocco oltre 64 KiB")
 		return
 	}
+	if len(data) == 0 && !f.Fine {
+		scarta("blocco vuoto senza fine")
+		return
+	}
+	// Con seq consecutivo da 1, seq e' il numero dei blocchi: il tetto si
+	// controlla senza leggere il database.
+	if f.Seq > model.BlocchiTerminaleMax {
+		scarta("trascrizione oltre 100000 blocchi")
+		return
+	}
 	ultimo, totale, err := as.UltimoBlocco(conn.Id)
 	if err != nil {
 		auditNonSalvato(c, err)
@@ -330,7 +340,8 @@ func salvaBlocco(c *gin.Context, f *request.AuditTerminalForm) {
 	case totale+int64(len(data)) > model.TrascrizioneTerminale:
 		scarta("trascrizione oltre 20 MiB")
 	default:
-		b := &model.AuditTerminal{AuditConnId: conn.Id, PeerId: f.Id, ConnId: f.ConnId, Seq: f.Seq, Dir: f.Dir, Data: data, Hash: f.Hash, Fine: f.Fine}
+		totale += int64(len(data))
+		b := &model.AuditTerminal{AuditConnId: conn.Id, PeerId: f.Id, ConnId: f.ConnId, Seq: f.Seq, Dir: f.Dir, Data: data, Hash: f.Hash, Fine: f.Fine, Totale: &totale}
 		if err := as.CreateBlocco(b); err != nil {
 			auditNonSalvato(c, err)
 		}

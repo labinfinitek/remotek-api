@@ -58,17 +58,20 @@ type AuditFileList struct {
 const AuditConnTerminale = 4
 
 // Limiti della trascrizione del terminale: byte di un blocco e di una
-// sessione.
+// sessione, blocchi di una sessione.
 const (
 	BloccoTerminaleMax    = 64 << 10
 	TrascrizioneTerminale = 20 << 20
+	BlocchiTerminaleMax   = 100000
 )
 
 // AuditTerminal e' un blocco della trascrizione di una sessione terminale,
 // mandato dal PC controllato (POST /api/audit/terminal). AuditConnId e' la
 // riga di audit_conns della sessione: conn_id si ripete dopo un riavvio del
 // servizio sul PC e da solo non la identifica. Hash e' l'hash esadecimale
-// del blocco, concatenato a quello del blocco prima.
+// del blocco, concatenato a quello del blocco prima. Totale sono i byte
+// della trascrizione fino a questo blocco, incluso; nil nelle righe salvate
+// prima della versione 269 del database.
 type AuditTerminal struct {
 	IdModel
 	AuditConnId uint                  `json:"audit_conn_id" gorm:"not null;uniqueIndex:idx_audit_terminal_blocco,priority:1"`
@@ -79,6 +82,7 @@ type AuditTerminal struct {
 	Data        []byte                `json:"data" gorm:"not null" swaggertype:"string" format:"base64"`
 	Hash        string                `json:"hash" gorm:"size:64;not null"`
 	Fine        bool                  `json:"fine" gorm:"not null;default:false"`
+	Totale      *int64                `json:"-"`
 	CreatedAt   custom_types.AutoTime `json:"created_at" gorm:"type:timestamp;"`
 }
 

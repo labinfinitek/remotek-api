@@ -61,9 +61,9 @@ the format the client follows. JSON body:
 | `id` | string | ID of the controlled PC |
 | `uuid` | string | uuid of the PC, as in `/api/sysinfo` and `/api/audit/conn` |
 | `conn_id` | int64 | the same `conn_id` as the session's `new` audit |
-| `seq` | integer | 1 for the first block, +1 for each block |
+| `seq` | integer | 1 for the first block, +1 for each block, at most 100000 |
 | `dir` | string | `in` (from the controlling side) or `out` (from the shell) |
-| `data` | string | standard base64 (with `=`) of the bytes, at most 64 KiB decoded |
+| `data` | string | standard base64 (with `=`) of the bytes, at most 64 KiB decoded; empty only with `fine` |
 | `hash` | string | lowercase hex of SHA-256( H(seq-1) ‖ d ‖ data ) |
 | `fine` | bool | `true` on the last block of the session |
 
@@ -80,9 +80,12 @@ transcript, from `seq` 1, and the old one stays as it was.
 The API checks, in this order: `id` and `uuid` belong to the registered PC;
 that row exists and is type 4 (send the block after the audit that
 authenticates the connection); `dir`; `data` is base64 and within 64 KiB;
-`seq` equals the last saved one for that row plus one; `hash`; no block
-after the one with `fine`; at most 20 MiB of data per session. A block that fails is not saved and the
-log gets a warn with route, PC ID and reason, without uuid or content. The
+`data` is not empty unless `fine` is `true` (an empty block closes the
+session with no trailing data); `seq` is at most 100000, at most 100000
+blocks per session; `seq` equals the last saved one for that row plus one;
+`hash`; no block after the one with `fine`; at most 20 MiB of data per
+session. A block that fails is not saved and the log gets a warn with
+route, PC ID and reason, without uuid or content. The
 response is always the one of the other audit routes,
 `{"code":0,"message":"success","data":""}` (400 only for a body that is not
 JSON): the client ignores it, and a rejected block is not resent.

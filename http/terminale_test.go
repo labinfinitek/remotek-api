@@ -175,6 +175,8 @@ func TestTrascrizioneRifiutata(t *testing.T) {
 		{"conn_id senza connessione", "nessuna connessione terminale con questo conn_id", model.AuditConnTerminale, 0, false, func(b *blocco) { b.ConnId = 8 }},
 		{"connessione non terminale", "nessuna connessione terminale con questo conn_id", 0, 0, false, func(*blocco) {}},
 		{"dir sbagliato", "dir sconosciuto", model.AuditConnTerminale, 0, true, func(b *blocco) { b.Dir = "err" }},
+		{"blocco vuoto senza fine", "blocco vuoto senza fine", model.AuditConnTerminale, 0, true, func(b *blocco) { b.Data = "" }},
+		{"seq oltre 100000", "trascrizione oltre 100000 blocchi", model.AuditConnTerminale, 1, false, func(b *blocco) { b.Seq = model.BlocchiTerminaleMax + 1 }},
 		{"base64 rotto", "data non e' base64", model.AuditConnTerminale, 0, false, func(b *blocco) { b.Data = "!!" + b.Data }},
 		{"blocco oltre 64 KiB", "blocco oltre 64 KiB", model.AuditConnTerminale, 0, true, func(b *blocco) { b.Data = grande }},
 		{"blocco oltre 64 KiB, stringa lunga", "blocco oltre 64 KiB", model.AuditConnTerminale, 0, true, func(b *blocco) { b.Data = grande + "AAAA" }},
@@ -219,21 +221,80 @@ func TestTrascrizioneRifiutata(t *testing.T) {
 }
 
 // TestTrascrizioneOltreIlLimite prova sul router vero che una sessione non
-// passa i 20 MiB: il blocco che li supererebbe non si salva e va nel log.
+// passa i 20 MiB: il blocco che arriva esattamente al limite si salva col
+// totale giusto, quello dopo non si salva e va nel log. Il conto vale anche
+// se le righe prima non hanno il totale, come quelle salvate prima della
+// colonna.
 func TestTrascrizioneOltreIlLimite(t *testing.T) {
-	g, registro := terminaleDiProva(t, false, model.AuditConnTerminale)
-	pieno := strings.Repeat("x", model.BloccoTerminaleMax)
-	dati := make([]string, model.TrascrizioneTerminale/model.BloccoTerminaleMax+1)
-	for i := range dati {
-		dati[i] = pieno
+	for _, senzaTotale := range []bool{false, true} {
+		t.Run(fmt.Sprint("senza totale ", senzaTotale), func(t *testing.T) {
+			g, registro := terminaleDiProva(t, false, model.AuditConnTerminale)
+			pieno := strings.Repeat("x", model.BloccoTerminaleMax)
+			dati := make([]string, model.TrascrizioneTerminale/model.BloccoTerminaleMax+1)
+			for i := range dati {
+				dati[i] = pieno
+			}
+			dati[len(dati)-1] = "x"
+			bb := catena(dati...)
+			for i := range bb {
+				bb[i].Fine = false
+			}
+			n := len(bb)
+			manda(t, g, bb[:n-2]...)
+			if senzaTotale {
+				if err := service.DB.Exec("UPDATE audit_terminals SET totale = NULL").Error; err != nil {
+					t.Fatal(err)
+				}
+			}
+			manda(t, g, bb[n-2:]...)
+			if got := len(salvati(t)); got != n-1 {
+				t.Errorf("salvati %d blocchi, attesi %d", got, n-1)
+			}
+			var totale int64
+			if err := service.DB.Raw("SELECT totale FROM audit_terminals WHERE seq = ?", n-1).Scan(&totale).Error; err != nil {
+				t.Fatal(err)
+			}
+			if totale != model.TrascrizioneTerminale {
+				t.Errorf("totale del blocco %d: %d, attesi %d", n-1, totale, model.TrascrizioneTerminale)
+			}
+			if nelLog := registro.String(); logger.Conta(nelLog, "WARN", "POST /api/audit/terminal: ", "999000111", "oltre 20 MiB") != 1 {
+				t.Errorf("nel log manca il warn sul limite:\n%s", nelLog)
+			}
+		})
 	}
-	bb := catena(dati...)
-	for i := range bb {
-		bb[i].Fine = false
-	}
+}
+
+// TestTrascrizioneFineVuota prova sul router vero che un blocco vuoto con
+// fine chiude la sessione: si salva e la verifica la trova integra e finita.
+func TestTrascrizioneFineVuota(t *testing.T) {
+	g, registro := terminaleDiProva(t, true, model.AuditConnTerminale)
+	bb := catena(contenuto, "")
 	manda(t, g, bb...)
-	if n := len(salvati(t)); n != len(bb)-1 {
-		t.Errorf("salvati %d blocchi, attesi %d", n, len(bb)-1)
+	if want, got := []int64{1, 2}, salvati(t); !reflect.DeepEqual(want, got) {
+		t.Errorf("seq salvati: %+v, attesi %+v", got, want)
+	}
+	if want, got := (model.AuditTerminalVerifica{Integra: true, Blocchi: 2, Fine: true, Hash: bb[1].Hash}), verifica(t, g, 1); !reflect.DeepEqual(want, got) {
+		t.Errorf("verifica: %+v, attesi %+v", got, want)
+	}
+	if nelLog := registro.String(); nelLog != "" {
+		t.Errorf("blocchi validi, nel log:\n%s", nelLog)
+	}
+}
+
+// TestTrascrizioneTotaleSalvato prova sul router vero che il controllo dei
+// 20 MiB legge il totale salvato nell'ultimo blocco e non risomma i dati:
+// con un totale salvato al limite, il blocco dopo si scarta anche se i dati
+// sono pochi byte.
+func TestTrascrizioneTotaleSalvato(t *testing.T) {
+	g, registro := terminaleDiProva(t, false, model.AuditConnTerminale)
+	bb := catena("uno", "due", "x")
+	manda(t, g, bb[:2]...)
+	if err := service.DB.Exec("UPDATE audit_terminals SET totale = ? WHERE seq = 2", model.TrascrizioneTerminale).Error; err != nil {
+		t.Fatal(err)
+	}
+	manda(t, g, bb[2])
+	if want, got := []int64{1, 2}, salvati(t); !reflect.DeepEqual(want, got) {
+		t.Errorf("seq salvati: %+v, attesi %+v", got, want)
 	}
 	if nelLog := registro.String(); logger.Conta(nelLog, "WARN", "POST /api/audit/terminal: ", "999000111", "oltre 20 MiB") != 1 {
 		t.Errorf("nel log manca il warn sul limite:\n%s", nelLog)
