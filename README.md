@@ -386,7 +386,8 @@ rotte `/api/admin/rustdesk/*`, il module path Go.
 - **Log** 0600: contiene nomi utente e indirizzi IP.
 - **Corpo delle richieste**: al massimo 1 MiB, su ogni rotta, anche quelle
   senza login. Con `Content-Length` oltre il limite l'API risponde 413
-  `{"error": ...}` senza leggere il corpo; senza `Content-Length` legge al
+  `{"error": ...}` (sotto `/api/admin/` `{"code":101,"message":...}`, come
+  il resto del pannello) senza leggere il corpo; senza `Content-Length` legge al
   massimo 1 MiB e oltre risponde come a un corpo sbagliato. Nel log un warn
   con metodo, rotta e `request_id`, senza il corpo. Il corpo vero piu'
   grande, un blocco della trascrizione del terminale, e' circa 88 KB.

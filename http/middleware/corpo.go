@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -18,7 +19,8 @@ import (
 const CorpoMax = 1 << 20
 
 // LimiteCorpo limita il corpo di ogni richiesta a limite byte. Con
-// Content-Length oltre limite risponde 413 senza leggere il corpo; senza
+// Content-Length oltre limite risponde 413 senza leggere il corpo, con
+// {"error": ...} e sotto /api/admin/ nella forma del pannello; senza
 // Content-Length il corpo si legge al massimo fino a limite, e oltre la
 // lettura fallisce, quindi il bind della rotta risponde come a un corpo
 // sbagliato. In tutti e due i casi un warn con metodo, rotta e request_id,
@@ -27,8 +29,13 @@ func LimiteCorpo(limite int64) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.Request.ContentLength > limite {
 			corpoOltre(c, limite)
-			c.AbortWithStatusJSON(http.StatusRequestEntityTooLarge,
-				response.ErrorResponse{Error: response.TranslateMsg(c, "BodyTooLarge")})
+			msg := response.TranslateMsg(c, "BodyTooLarge")
+			// Il pannello legge {code, message, data}, il client {error}.
+			var corpo any = response.ErrorResponse{Error: msg}
+			if strings.HasPrefix(c.Request.URL.Path, "/api/admin/") {
+				corpo = response.Response{Code: 101, Message: msg}
+			}
+			c.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, corpo)
 			return
 		}
 		if c.Request.Body != nil && c.Request.Body != http.NoBody {

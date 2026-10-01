@@ -381,7 +381,8 @@ Not renamed: the `RUSTDESK_API_` prefix, the `rustdesk:` section, the
 - **Log** 0600: it contains usernames and IP addresses.
 - **Request body**: at most 1 MiB, on every route, including those without
   login. With a `Content-Length` over the limit the API answers 413
-  `{"error": ...}` without reading the body; without `Content-Length` it
+  `{"error": ...}` (under `/api/admin/` `{"code":101,"message":...}`, like
+  the rest of the panel) without reading the body; without `Content-Length` it
   reads at most 1 MiB and beyond that answers as for a malformed body. The
   log gets a warn with method, route and `request_id`, without the body.
   The largest real body, a terminal transcript block, is about 88 KB.
