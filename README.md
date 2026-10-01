@@ -117,10 +117,9 @@ I blocchi si leggono a pagine di 16, ognuno una volta, e vanno nel file
 man mano; la verifica si calcola sugli stessi blocchi, quindi con una
 sessione ancora in corso file e verifica restano coerenti tra loro. Mentre
 il file arriva a chi scarica il database resta libero per le altre
-richieste. Un id
-che non c'e' o che non e' di type 4 risponde l'errore del pannello, senza
-file; nel log resta una riga info con l'id dell'amministratore e
-`audit_conn_id`, senza contenuto. Per ricalcolare la catena dal file, fuori
+richieste. Un id che non c'e' o che non e' di type 4 risponde l'errore del
+pannello, senza file; nel log resta una riga info con l'id
+dell'amministratore e `audit_conn_id`, senza contenuto. Per ricalcolare la catena dal file, fuori
 dall'API: si parte da H(0), 32 byte a zero, e per ogni blocco in ordine si
 calcola SHA-256( H(seq-1) ‖ d ‖ data ) con `data` decodificato dal base64
 e d il byte `i` o `o`, come sopra; ogni hash deve essere uguale al campo
