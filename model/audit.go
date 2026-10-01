@@ -101,3 +101,24 @@ type AuditTerminalVerifica struct {
 	Hash        string `json:"hash"`
 	PrimoErrato int64  `json:"primo_errato"`
 }
+
+// AuditTerminalEsportazione e' il file della trascrizione di una sessione
+// terminale (GET /api/admin/audit_conn/terminal/export), con i campi in
+// quest'ordine. L'API lo scrive a pezzi, blocco per blocco: il tipo serve
+// allo swagger e a chi rilegge il file. Verifica e' calcolata sugli stessi
+// blocchi del file.
+type AuditTerminalEsportazione struct {
+	Connessione *AuditConn                `json:"connessione"`
+	Blocchi     []*AuditTerminalEsportato `json:"blocchi"`
+	Verifica    *AuditTerminalVerifica    `json:"verifica"`
+}
+
+// AuditTerminalEsportato e' un blocco nel file della trascrizione.
+type AuditTerminalEsportato struct {
+	Seq       int64                 `json:"seq"`
+	Dir       string                `json:"dir"`
+	Data      []byte                `json:"data" swaggertype:"string" format:"base64"`
+	Hash      string                `json:"hash"`
+	Fine      bool                  `json:"fine"`
+	CreatedAt custom_types.AutoTime `json:"created_at"`
+}

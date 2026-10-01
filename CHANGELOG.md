@@ -7,6 +7,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 ## [Non rilasciato]
 
 ### Aggiunto
+- Esportazione della trascrizione di una sessione terminale, solo per gli
+  amministratori: `GET /api/admin/audit_conn/terminal/export` con
+  `audit_conn_id` scarica `trascrizione-<id>.json` con la riga della
+  connessione, i blocchi in ordine e la verifica calcolata sugli stessi
+  blocchi, letti a pagine senza tenere il database durante il download.
+  Formato e ricalcolo della catena nel README.
 - Account degli agenti AI: campo `agente_di` dell'utente (il tecnico che ne
   risponde), comando `agente-ai <username> <tecnico>` che crea l'agente e
   stampa una volta la sua password, regole nel pannello (il tecnico e' una

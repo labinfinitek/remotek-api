@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"math"
 
 	"gorm.io/gorm"
 
@@ -268,36 +269,57 @@ func (as *AuditService) BlocchiTerminale(auditConnId uint, page, pageSize uint) 
 // dir sconosciuto, un hash che non torna o un blocco dopo quello con fine
 // rendono la catena non integra dal loro seq.
 func (as *AuditService) VerificaTerminale(auditConnId uint) (*model.AuditTerminalVerifica, error) {
-	rows, err := DB.Model(&model.AuditTerminal{}).Where("audit_conn_id = ?", auditConnId).Order("seq").Rows()
-	if err != nil {
-		return nil, fmt.Errorf("trascrizione della connessione %d: %w", auditConnId, err)
-	}
-	defer rows.Close()
+	return as.ScorriTerminale(auditConnId, nil)
+}
+
+// PaginaTerminale e' quanti blocchi ScorriTerminale legge per query: con
+// blocchi di al massimo 64 KiB, 1 MiB di dati.
+const PaginaTerminale = 16
+
+// ScorriTerminale legge in ordine di seq i blocchi della trascrizione della
+// connessione auditConnId, una pagina alla volta (seq oltre l'ultimo letto),
+// passa ognuno a f (se non e' nil) e restituisce la verifica della catena
+// calcolata sugli stessi blocchi, come VerificaTerminale. La query di ogni
+// pagina si chiude prima di chiamare f: f puo' scrivere in rete senza tenere
+// la connessione al database, che con SQLite e' una sola. I blocchi si
+// aggiungono solo in coda, quindi blocchi e verifica restano coerenti anche
+// con la sessione in corso. Un errore di f ferma la lettura e torna cosi'
+// com'e'.
+func (as *AuditService) ScorriTerminale(auditConnId uint, f func(*model.AuditTerminal) error) (*model.AuditTerminalVerifica, error) {
 	res := &model.AuditTerminalVerifica{Integra: true}
 	prec := make([]byte, sha256.Size)
-	for rows.Next() {
-		b := &model.AuditTerminal{}
-		if err := DB.ScanRows(rows, b); err != nil {
-			return nil, fmt.Errorf("blocco della trascrizione della connessione %d: %w", auditConnId, err)
+	dopo := int64(math.MinInt64)
+	for {
+		var pagina []*model.AuditTerminal
+		err := DB.Where("audit_conn_id = ? AND seq > ?", auditConnId, dopo).Order("seq").Limit(PaginaTerminale).Find(&pagina).Error
+		if err != nil {
+			return nil, fmt.Errorf("trascrizione della connessione %d dopo il blocco %d: %w", auditConnId, dopo, err)
 		}
-		res.Blocchi++
-		if res.Integra {
-			valido := b.Dir == "in" || b.Dir == "out"
-			if valido {
-				prec = HashBlocco(prec, b.Dir, b.Data)
+		for _, b := range pagina {
+			res.Blocchi++
+			if res.Integra {
+				valido := b.Dir == "in" || b.Dir == "out"
+				if valido {
+					prec = HashBlocco(prec, b.Dir, b.Data)
+				}
+				if !valido || b.Seq != res.Blocchi || res.Fine || hex.EncodeToString(prec) != b.Hash {
+					res.Integra = false
+					res.PrimoErrato = b.Seq
+				}
 			}
-			if !valido || b.Seq != res.Blocchi || res.Fine || hex.EncodeToString(prec) != b.Hash {
-				res.Integra = false
-				res.PrimoErrato = b.Seq
+			res.Fine = res.Fine || b.Fine
+			res.Hash = b.Hash
+			if f != nil {
+				if err := f(b); err != nil {
+					return nil, err
+				}
 			}
 		}
-		res.Fine = res.Fine || b.Fine
-		res.Hash = b.Hash
+		if len(pagina) < PaginaTerminale {
+			return res, nil
+		}
+		dopo = pagina[len(pagina)-1].Seq
 	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("trascrizione della connessione %d: %w", auditConnId, err)
-	}
-	return res, nil
 }
 
 func (as *AuditService) BatchDeleteAuditFile(ids []uint) error {

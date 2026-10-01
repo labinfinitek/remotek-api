@@ -103,6 +103,30 @@ PC) e `primo_errato`, il primo `seq` che non torna (0 se integra).
 Cancellare dal pannello una connessione terminale cancella anche la sua
 trascrizione.
 
+`GET /api/admin/audit_conn/terminal/export`, con lo stesso `audit_conn_id`
+e solo per gli amministratori, risponde un file JSON da scaricare,
+`trascrizione-<audit_conn_id>.json`, con in quest'ordine:
+
+| Campo | Contenuto |
+|---|---|
+| `connessione` | la riga del registro delle connessioni, con i campi dell'elenco del pannello |
+| `blocchi` | i blocchi in ordine di `seq`: `seq`, `dir`, `data` (base64), `hash`, `fine`, `created_at` |
+| `verifica` | `integra`, `blocchi`, `fine`, `hash`, `primo_errato`, come `verify`, sugli stessi blocchi del file |
+
+I blocchi si leggono a pagine di 16, ognuno una volta, e vanno nel file
+man mano; la verifica si calcola sugli stessi blocchi, quindi con una
+sessione ancora in corso file e verifica restano coerenti tra loro. Mentre
+il file arriva a chi scarica il database resta libero per le altre
+richieste. Un id
+che non c'e' o che non e' di type 4 risponde l'errore del pannello, senza
+file; nel log resta una riga info con l'id dell'amministratore e
+`audit_conn_id`, senza contenuto. Per ricalcolare la catena dal file, fuori
+dall'API: si parte da H(0), 32 byte a zero, e per ogni blocco in ordine si
+calcola SHA-256( H(seq-1) ‖ d ‖ data ) con `data` decodificato dal base64
+e d il byte `i` o `o`, come sopra; ogni hash deve essere uguale al campo
+`hash` del blocco, i `seq` consecutivi da 1, e nessun blocco dopo quello
+con `fine`. L'ultimo hash si confronta con la copia sul PC.
+
 ## Installazione
 
 Ogni rilascio (tag `api-vX.Y.Z`) pubblica l'immagine costruita dal
