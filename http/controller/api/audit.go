@@ -313,7 +313,7 @@ func salvaBlocco(c *gin.Context, f *request.AuditTerminalForm) {
 	// Con seq consecutivo da 1, seq e' il numero dei blocchi: il tetto si
 	// controlla senza leggere il database.
 	if f.Seq > model.BlocchiTerminaleMax {
-		scarta("trascrizione oltre 100000 blocchi")
+		scarta(fmt.Sprintf("trascrizione oltre %d blocchi", model.BlocchiTerminaleMax))
 		return
 	}
 	ultimo, totale, err := as.UltimoBlocco(conn.Id)

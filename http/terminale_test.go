@@ -177,6 +177,7 @@ func TestTrascrizioneRifiutata(t *testing.T) {
 		{"dir sbagliato", "dir sconosciuto", model.AuditConnTerminale, 0, true, func(b *blocco) { b.Dir = "err" }},
 		{"blocco vuoto senza fine", "blocco vuoto senza fine", model.AuditConnTerminale, 0, true, func(b *blocco) { b.Data = "" }},
 		{"seq oltre 100000", "trascrizione oltre 100000 blocchi", model.AuditConnTerminale, 1, false, func(b *blocco) { b.Seq = model.BlocchiTerminaleMax + 1 }},
+		{"seq 100000, sotto il tetto", "seq 100000 invece di 2", model.AuditConnTerminale, 1, false, func(b *blocco) { b.Seq = model.BlocchiTerminaleMax }},
 		{"base64 rotto", "data non e' base64", model.AuditConnTerminale, 0, false, func(b *blocco) { b.Data = "!!" + b.Data }},
 		{"blocco oltre 64 KiB", "blocco oltre 64 KiB", model.AuditConnTerminale, 0, true, func(b *blocco) { b.Data = grande }},
 		{"blocco oltre 64 KiB, stringa lunga", "blocco oltre 64 KiB", model.AuditConnTerminale, 0, true, func(b *blocco) { b.Data = grande + "AAAA" }},

@@ -24,7 +24,7 @@ func NewEngine() *gin.Engine {
 	g.NoRoute(func(c *gin.Context) {
 		c.String(http.StatusNotFound, "404 not found")
 	})
-	g.Use(middleware.RequestId(), middleware.Limiter(), recupera())
+	g.Use(middleware.RequestId(), middleware.LimiteCorpo(middleware.CorpoMax), middleware.Limiter(), recupera())
 	router.WebInit(g)
 	router.Init(g)
 	router.ApiInit(g)

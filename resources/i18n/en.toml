@@ -368,3 +368,8 @@ other = "This user is responsible for AI agents: delete them or assign them to a
 description = "The technician of this AI agent is disabled: the agent cannot be enabled."
 one = "The technician of this AI agent is disabled: the agent cannot be enabled."
 other = "The technician of this AI agent is disabled: the agent cannot be enabled."
+
+[BodyTooLarge]
+description = "Request body over the size limit."
+one = "Request body too large."
+other = "Request body too large."
