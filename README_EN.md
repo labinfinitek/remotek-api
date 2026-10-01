@@ -87,8 +87,9 @@ blocks per session; `seq` equals the last saved one for that row plus one;
 session. A block that fails is not saved and the log gets a warn with
 route, PC ID and reason, without uuid or content. The response is always
 the one of the other audit routes,
-`{"code":0,"message":"success","data":""}` (400 only for a body that is not
-JSON): the client ignores it, and a rejected block is not resent.
+`{"code":0,"message":"success","data":""}` (400 for a body that is not
+JSON, 413 for a body over 1 MiB, see Security): the client ignores it, and
+a rejected block is not resent.
 
 From the admin panel, administrators only, with `audit_conn_id` in the
 query (the id of the row in the connection log): `GET /api/admin/audit_conn/terminal/list` lists the blocks by
@@ -354,6 +355,12 @@ Not renamed: the `RUSTDESK_API_` prefix, the `rustdesk:` section, the
 - **Credentials**: initial password only in the 0600 file, never in the log;
   new passwords of 15-32 characters; without `jwt.key`, random session tokens.
 - **Log** 0600: it contains usernames and IP addresses.
+- **Request body**: at most 1 MiB, on every route, including those without
+  login. With a `Content-Length` over the limit the API answers 413
+  `{"error": ...}` without reading the body; without `Content-Length` it
+  reads at most 1 MiB and beyond that answers as for a malformed body. The
+  log gets a warn with method, route and `request_id`, without the body.
+  The largest real body, a terminal transcript block, is about 88 KB.
 - **No external resources** in the pages the API generates (OAuth/OIDC login
   result). Files under `/brand/` are served with a `Content-Security-Policy`
   that runs no scripts and with `X-Content-Type-Options: nosniff`.

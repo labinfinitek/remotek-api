@@ -41,6 +41,13 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   finivano sulla riga piu' vecchia con lo stesso numero, lasciando aperta
   quella nuova.
 
+### Sicurezza
+- Corpo delle richieste al massimo 1 MiB su ogni rotta, anche quelle senza
+  login (prima nessun limite: un corpo grande si leggeva tutto in memoria).
+  Con `Content-Length` oltre il limite risposta 413 senza leggere il
+  corpo; senza, la lettura si ferma a 1 MiB e il bind fallisce come per un
+  corpo sbagliato. Un warn nel log con metodo, rotta e `request_id`.
+
 ## [0.4.0] - 2026-09-29
 Immagine `ghcr.io/labinfinitek/remotek-api:0.4.0`. Un cambio incompatibile,
 sotto Modificato: il log esce solo in JSON su stdout, `logger.path` e'

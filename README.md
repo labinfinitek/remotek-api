@@ -89,8 +89,9 @@ uno; `hash`; nessun blocco dopo quello con `fine`; al massimo 20 MiB di
 dati per sessione. Un blocco che non passa non si salva e nel log resta un
 warn con rotta, ID del PC e motivo, senza uuid ne' contenuto. La risposta
 e' sempre quella delle altre rotte dell'audit,
-`{"code":0,"message":"success","data":""}` (400 solo per un corpo che non
-e' JSON): il client non la guarda, e un blocco scartato non si rimanda.
+`{"code":0,"message":"success","data":""}` (400 per un corpo che non e'
+JSON, 413 per un corpo oltre 1 MiB, vedi Sicurezza): il client non la
+guarda, e un blocco scartato non si rimanda.
 
 Dal pannello, solo per gli amministratori, con `audit_conn_id` nella query
 (l'id della riga nel registro delle connessioni): `GET /api/admin/audit_conn/terminal/list` elenca i blocchi in
@@ -359,6 +360,12 @@ rotte `/api/admin/rustdesk/*`, il module path Go.
 - **Credenziali**: password iniziale solo nel file 0600, mai nel log; password
   nuove di 15-32 caratteri; senza `jwt.key` token di sessione casuali.
 - **Log** 0600: contiene nomi utente e indirizzi IP.
+- **Corpo delle richieste**: al massimo 1 MiB, su ogni rotta, anche quelle
+  senza login. Con `Content-Length` oltre il limite l'API risponde 413
+  `{"error": ...}` senza leggere il corpo; senza `Content-Length` legge al
+  massimo 1 MiB e oltre risponde come a un corpo sbagliato. Nel log un warn
+  con metodo, rotta e `request_id`, senza il corpo. Il corpo vero piu'
+  grande, un blocco della trascrizione del terminale, e' circa 88 KB.
 - **Nessuna risorsa esterna** nelle pagine che l'API genera (esito del login
   OAuth/OIDC). I file di `/brand/` escono con una `Content-Security-Policy`
   che non esegue script e con `X-Content-Type-Options: nosniff`.

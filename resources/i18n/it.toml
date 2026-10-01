@@ -377,3 +377,8 @@ other = "Questo utente risponde di agenti AI: cancellali o assegnali a un altro 
 description = "The technician of this AI agent is disabled: the agent cannot be enabled."
 one = "Il tecnico di questo agente AI è disattivato: l'agente non si attiva."
 other = "Il tecnico di questo agente AI è disattivato: l'agente non si attiva."
+
+[BodyTooLarge]
+description = "Request body over the size limit."
+one = "Corpo della richiesta troppo grande."
+other = "Corpo della richiesta troppo grande."
