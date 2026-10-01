@@ -100,6 +100,30 @@ the chain from the database and returns `integra`, `blocchi`, `fine`,
 and `primo_errato`, the first `seq` that does not match (0 if intact).
 Deleting a terminal connection from the panel also deletes its transcript.
 
+`GET /api/admin/audit_conn/terminal/export`, with the same `audit_conn_id`
+and administrators only, returns a JSON file to download,
+`trascrizione-<audit_conn_id>.json`, with in this order:
+
+| Field | Content |
+|---|---|
+| `connessione` | the row of the connection log, with the fields of the panel's list |
+| `blocchi` | the blocks by `seq`: `seq`, `dir`, `data` (base64), `hash`, `fine`, `created_at` |
+| `verifica` | `integra`, `blocchi`, `fine`, `hash`, `primo_errato`, as `verify`, on the same blocks as the file |
+
+The blocks are read in pages of 16, each once, and written to the file as
+they are read; the check is computed on the same blocks, so with a session
+still running file and check stay consistent with each other. While the
+file reaches the downloader the database stays free for other requests. An
+id that does not exist or is not type 4 returns the panel's error, with no
+file; the log keeps an info line with the administrator's id and
+`audit_conn_id`, without content. To recompute the chain from the file,
+outside the API: start from H(0), 32 zero bytes, and for each block in
+order compute SHA-256( H(seq-1) ‖ d ‖ data ) with `data` decoded from
+base64 and d the byte `i` or `o`, as above; each hash must equal the
+block's `hash` field, the `seq` values must run from 1 without gaps, and no
+block may follow the one with `fine`. Compare the last hash with the copy
+on the PC.
+
 ## Installation
 
 Each release (tag `api-vX.Y.Z`) publishes the image built from the
@@ -357,7 +381,8 @@ Not renamed: the `RUSTDESK_API_` prefix, the `rustdesk:` section, the
 - **Log** 0600: it contains usernames and IP addresses.
 - **Request body**: at most 1 MiB, on every route, including those without
   login. With a `Content-Length` over the limit the API answers 413
-  `{"error": ...}` without reading the body; without `Content-Length` it
+  `{"error": ...}` (under `/api/admin/` `{"code":101,"message":...}`, like
+  the rest of the panel) without reading the body; without `Content-Length` it
   reads at most 1 MiB and beyond that answers as for a malformed body. The
   log gets a warn with method, route and `request_id`, without the body.
   The largest real body, a terminal transcript block, is about 88 KB.

@@ -7,6 +7,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 ## [Non rilasciato]
 
 ### Aggiunto
+- Esportazione della trascrizione di una sessione terminale, solo per gli
+  amministratori: `GET /api/admin/audit_conn/terminal/export` con
+  `audit_conn_id` scarica `trascrizione-<id>.json` con la riga della
+  connessione, i blocchi in ordine e la verifica calcolata sugli stessi
+  blocchi, letti a pagine: il database non resta occupato durante il
+  download. Formato e ricalcolo della catena nel README.
 - Account degli agenti AI: campo `agente_di` dell'utente (il tecnico che ne
   risponde), comando `agente-ai <username> <tecnico>` che crea l'agente e
   stampa una volta la sua password, regole nel pannello (il tecnico e' una
@@ -45,7 +51,7 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 - Corpo delle richieste al massimo 1 MiB su ogni rotta, anche quelle senza
   login (prima nessun limite: un corpo grande si leggeva tutto in memoria).
   Con `Content-Length` oltre il limite risposta 413 senza leggere il
-  corpo; senza, la lettura si ferma a 1 MiB e il bind fallisce come per un
+  corpo (nel pannello nella forma delle sue risposte); senza, la lettura si ferma a 1 MiB e il bind fallisce come per un
   corpo sbagliato. Un warn nel log con metodo, rotta e `request_id`.
 
 ## [0.4.0] - 2026-09-29

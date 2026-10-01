@@ -512,6 +512,33 @@ definitions:
       seq:
         type: integer
     type: object
+  model.AuditTerminalEsportato:
+    properties:
+      created_at:
+        type: string
+      data:
+        format: base64
+        type: string
+      dir:
+        type: string
+      fine:
+        type: boolean
+      hash:
+        type: string
+      seq:
+        type: integer
+    type: object
+  model.AuditTerminalEsportazione:
+    properties:
+      blocchi:
+        items:
+          $ref: '#/definitions/model.AuditTerminalEsportato'
+        type: array
+      connessione:
+        $ref: '#/definitions/model.AuditConn'
+      verifica:
+        $ref: '#/definitions/model.AuditTerminalVerifica'
+    type: object
   model.AuditTerminalList:
     properties:
       list:
@@ -1480,6 +1507,30 @@ paths:
       security:
       - token: []
       summary: 链接日志列表
+      tags:
+      - 链接日志
+  /admin/audit_conn/terminal/export:
+    get:
+      parameters:
+      - description: id della connessione nel registro
+        in: query
+        name: audit_conn_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.AuditTerminalEsportazione'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - token: []
+      summary: esportazione della trascrizione del terminale
       tags:
       - 链接日志
   /admin/audit_conn/terminal/list:

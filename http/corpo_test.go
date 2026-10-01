@@ -73,8 +73,14 @@ func TestCorpoOltreIlLimite(t *testing.T) {
 					t.Errorf("user_tokens ha %d righe, attesa 1 (quella del pannello)", n)
 				}
 				nelLog := registro.String()
-				if logger.Conta(nelLog, "WARN", "POST "+rotta+": corpo della richiesta oltre 1048576 byte") != 1 {
-					t.Errorf("atteso un warn sul corpo:\n%s", nelLog)
+				var righe []logger.Riga
+				for _, r := range logger.Righe(nelLog) {
+					if r.Level == "WARN" && strings.Contains(r.Msg, "POST "+rotta+": corpo della richiesta oltre 1048576 byte") {
+						righe = append(righe, r)
+					}
+				}
+				if id := rec.Header().Get("X-Request-Id"); len(righe) != 1 || id == "" || righe[0].RequestId != id {
+					t.Errorf("atteso un warn sul corpo con request_id %q:\n%s", id, nelLog)
 				}
 				if strings.Contains(nelLog, "xxxx") || strings.Contains(nelLog, base64.StdEncoding.EncodeToString([]byte("xxx"))) {
 					t.Errorf("nel log c'e' il corpo:\n%s", nelLog)
@@ -94,5 +100,19 @@ func TestCorpoBloccoPieno(t *testing.T) {
 	}
 	if nelLog := registro.String(); nelLog != "" {
 		t.Errorf("blocco valido, nel log:\n%s", nelLog)
+	}
+}
+
+// TestCorpoOltreIlLimitePannello prova sul router vero che il 413 sotto
+// /api/admin/ abbia la forma delle altre risposte del pannello.
+func TestCorpoOltreIlLimitePannello(t *testing.T) {
+	g, _ := terminaleDiProva(t, false, model.AuditConnTerminale)
+	rec, letti := grosso(g, "/api/admin/login", true)
+	var r struct {
+		Code    int
+		Message string
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &r); err != nil || rec.Code != 413 || r.Code != 101 || r.Message == "" || letti != 0 {
+		t.Errorf("POST /api/admin/login oltre il limite: %d %s, letti %d byte; attesi 413, code 101 e un messaggio, 0 byte", rec.Code, rec.Body, letti)
 	}
 }

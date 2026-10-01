@@ -1036,6 +1036,45 @@
                 }
             }
         },
+        "/admin/audit_conn/terminal/export": {
+            "get": {
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "链接日志"
+                ],
+                "summary": "esportazione della trascrizione del terminale",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id della connessione nel registro",
+                        "name": "audit_conn_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.AuditTerminalEsportazione"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/audit_conn/terminal/list": {
             "get": {
                 "security": [
@@ -5774,6 +5813,47 @@
                 },
                 "seq": {
                     "type": "integer"
+                }
+            }
+        },
+        "model.AuditTerminalEsportato": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "data": {
+                    "type": "string",
+                    "format": "base64"
+                },
+                "dir": {
+                    "type": "string"
+                },
+                "fine": {
+                    "type": "boolean"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "seq": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.AuditTerminalEsportazione": {
+            "type": "object",
+            "properties": {
+                "blocchi": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.AuditTerminalEsportato"
+                    }
+                },
+                "connessione": {
+                    "$ref": "#/definitions/model.AuditConn"
+                },
+                "verifica": {
+                    "$ref": "#/definitions/model.AuditTerminalVerifica"
                 }
             }
         },
