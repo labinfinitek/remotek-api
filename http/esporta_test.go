@@ -1,9 +1,12 @@
 package http
 
 import (
+	"bufio"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -88,11 +91,14 @@ func TestTrascrizioneEsportata(t *testing.T) {
 			t.Errorf("blocco %d senza created_at", b.Seq)
 		}
 	}
-	for _, b := range bb {
-		attese = append(attese, riga{b.Seq, b.Dir, b.Data, b.Hash, b.Fine})
+	rec = conToken(g, "GET", "/api/admin/audit_conn/terminal/list?audit_conn_id=1&page_size=100", tokenDelPannello)
+	var elenco struct{ Data struct{ List []riga } }
+	if err := json.Unmarshal(rec.Body.Bytes(), &elenco); err != nil {
+		t.Fatalf("elenco dei blocchi: %v %s", err, rec.Body)
 	}
-	if !reflect.DeepEqual(attese, nelFile) {
-		t.Errorf("blocchi nel file: %+v, attesi %+v", nelFile, attese)
+	attese = elenco.Data.List
+	if !reflect.DeepEqual(attese, nelFile) || len(attese) != len(bb) {
+		t.Errorf("blocchi nel file: %+v, attesi quelli dell'elenco %+v", nelFile, attese)
 	}
 	if want := verifica(t, g, 1); f.Verifica == nil || !reflect.DeepEqual(want, *f.Verifica) {
 		t.Errorf("verifica nel file: %+v, attesa quella di verify %+v", f.Verifica, want)
@@ -222,5 +228,82 @@ func TestTrascrizioneEsportataLenta(t *testing.T) {
 	}
 	if want := (model.AuditTerminalVerifica{Integra: true, Blocchi: 40, Fine: true, Hash: bb[39].Hash}); f.Verifica == nil || !reflect.DeepEqual(want, *f.Verifica) {
 		t.Errorf("verifica nel file: %+v, attesa %+v", f.Verifica, want)
+	}
+}
+
+// scrittoreDirottabile e' scrittoreFermo con Hijack: registra la chiamata e,
+// se errHijack non e' nil, la rifiuta come gin dalla v1.11.0 dopo che il
+// corpo e' partito.
+type scrittoreDirottabile struct {
+	*scrittoreFermo
+	dirottato bool
+	errHijack error
+}
+
+func (s *scrittoreDirottabile) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	s.dirottato = true
+	if s.errHijack != nil {
+		return nil, nil, s.errHijack
+	}
+	a, b := net.Pipe()
+	_ = b.Close()
+	return a, nil, nil
+}
+
+// TestTrascrizioneEsportataInterrotta prova sul router vero un errore del
+// database a meta' file, tra la prima e la seconda pagina: la connessione
+// si chiude (Hijack) invece di finire il file, nel log resta una riga error
+// e il file non ha la verifica ne' la riga info dell'esportazione. Se la
+// connessione non si chiude, una riga error dice che il file e' uscito
+// troncato con 200.
+func TestTrascrizioneEsportataInterrotta(t *testing.T) {
+	for _, tc := range []struct {
+		nome      string
+		errHijack error
+	}{
+		{"connessione chiusa", nil},
+		{"Hijack rifiutato", errors.New("hijack rifiutato")},
+	} {
+		t.Run(tc.nome, func(t *testing.T) {
+			g, registro := terminaleDiProva(t, true, model.AuditConnTerminale)
+			dati := make([]string, 20)
+			for i := range dati {
+				dati[i] = fmt.Sprint("riga ", i)
+			}
+			manda(t, g, catena(dati...)...)
+
+			s := &scrittoreDirottabile{scrittoreFermo: &scrittoreFermo{intestazione: http.Header{}, fermo: make(chan struct{}), via: make(chan struct{})}, errHijack: tc.errHijack}
+			req := httptest.NewRequest("GET", "/api/admin/audit_conn/terminal/export?audit_conn_id=1", nil)
+			req.Header.Set("api-token", tokenDelPannello)
+			finito := make(chan struct{})
+			go func() {
+				defer close(finito)
+				g.ServeHTTP(s, req)
+			}()
+			<-s.fermo
+			if err := service.DB.Exec("DROP TABLE audit_terminals").Error; err != nil {
+				t.Fatal(err)
+			}
+			close(s.via)
+			<-finito
+
+			nelLog := registro.String()
+			if !s.dirottato {
+				t.Error("connessione non chiusa con Hijack dopo l'errore a meta' file")
+			}
+			if logger.Conta(nelLog, "ERROR", "GET /api/admin/audit_conn/terminal/export: trascrizione della connessione 1 interrotta") != 1 {
+				t.Errorf("manca la riga error dell'interruzione:\n%s", nelLog)
+			}
+			troncato := logger.Conta(nelLog, "ERROR", "trascrizione della connessione 1 uscita troncata con 200")
+			if want := map[bool]int{true: 1, false: 0}[tc.errHijack != nil]; troncato != want {
+				t.Errorf("righe sul file uscito troncato: %d, attese %d\n%s", troncato, want, nelLog)
+			}
+			if corpo := s.corpo.String(); !strings.HasPrefix(corpo, `{"connessione":`) || strings.Contains(corpo, `"verifica"`) {
+				t.Errorf("file interrotto: %.200s, atteso l'inizio senza la verifica", corpo)
+			}
+			if strings.Contains(nelLog, "ha esportato") {
+				t.Errorf("riga info dell'esportazione per un file interrotto:\n%s", nelLog)
+			}
+		})
 	}
 }

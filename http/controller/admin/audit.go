@@ -313,28 +313,40 @@ func (a *Audit) TerminalExport(c *gin.Context) {
 	}
 	// L'intestazione e la riga si scrivono col primo blocco o a fine
 	// lettura: un errore della query arriva al pannello come gli altri.
+	// errRete e' l'errore di scrittura a chi scarica (download annullato),
+	// che non e' un guasto dell'API.
+	var errRete error
+	// I pezzi si scrivono uno dopo l'altro, senza comporre JSON in stringhe.
+	scrivi := func(pezzi ...[]byte) error {
+		for _, p := range pezzi {
+			if _, err := c.Writer.Write(p); err != nil {
+				errRete = err
+				return err
+			}
+		}
+		return nil
+	}
 	iniziato := false
 	inizia := func() error {
 		iniziato = true
 		c.Header("Content-Type", "application/json; charset=utf-8")
 		c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="trascrizione-%d.json"`, conn.Id))
 		c.Status(http.StatusOK)
-		_, err := fmt.Fprintf(c.Writer, `{"connessione":%s,"blocchi":[`, riga)
-		return err
+		return scrivi([]byte(`{"connessione":`), riga, []byte(`,"blocchi":[`))
 	}
 	verifica, err := as.ScorriTerminale(conn.Id, func(b *model.AuditTerminal) error {
 		var err error
 		if !iniziato {
 			err = inizia()
 		} else {
-			_, err = c.Writer.WriteString(",")
+			err = scrivi([]byte(","))
 		}
 		if err != nil {
 			return err
 		}
 		pezzo, err := json.Marshal(&model.AuditTerminalEsportato{Seq: b.Seq, Dir: b.Dir, Data: b.Data, Hash: b.Hash, Fine: b.Fine, CreatedAt: b.CreatedAt})
 		if err == nil {
-			_, err = c.Writer.Write(pezzo)
+			err = scrivi(pezzo)
 		}
 		return err
 	})
@@ -346,15 +358,22 @@ func (a *Audit) TerminalExport(c *gin.Context) {
 		fine, err = json.Marshal(verifica)
 	}
 	if err == nil {
-		_, err = fmt.Fprintf(c.Writer, `],"verifica":%s}`, fine)
+		err = scrivi([]byte(`],"verifica":`), fine, []byte(`}`))
 	}
 	if err != nil {
 		if !iniziato {
 			response.FailErr(c, 101, "SystemError", err)
 			return
 		}
-		global.Logger.Per(c.Request.Context()).Errorf("%s %s: trascrizione della connessione %d interrotta: %v", c.Request.Method, c.FullPath(), conn.Id, err)
-		interrompi(c)
+		l := global.Logger.Per(c.Request.Context())
+		if errRete != nil {
+			l.Warnf("%s %s: trascrizione della connessione %d interrotta da chi scarica: %v", c.Request.Method, c.FullPath(), conn.Id, err)
+		} else {
+			l.Errorf("%s %s: trascrizione della connessione %d interrotta: %v", c.Request.Method, c.FullPath(), conn.Id, err)
+		}
+		if err := interrompi(c); err != nil {
+			l.Errorf("%s %s: trascrizione della connessione %d uscita troncata con 200, connessione non chiusa: %v", c.Request.Method, c.FullPath(), conn.Id, err)
+		}
 		return
 	}
 	var amministratore uint
@@ -366,8 +385,14 @@ func (a *Audit) TerminalExport(c *gin.Context) {
 
 // interrompi chiude la connessione di una risposta gia' cominciata, cosi'
 // che chi scarica veda un errore e non un file troncato che sembra intero.
-func interrompi(c *gin.Context) {
-	if conn, _, err := c.Writer.Hijack(); err == nil {
-		_ = conn.Close()
+// Restituisce l'errore se non ci riesce: allora il file e' uscito troncato
+// con 200. gin dalla v1.11.0 rifiuta Hijack dopo che il corpo e' partito
+// (errHijackAlreadyWritten): all'aggiornamento di gin questo ramo va
+// rifatto, e il test dell'interruzione se ne accorge.
+func interrompi(c *gin.Context) error {
+	conn, _, err := c.Writer.Hijack()
+	if err != nil {
+		return err
 	}
+	return conn.Close()
 }
