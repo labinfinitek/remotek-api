@@ -281,6 +281,26 @@ func TestTrascrizioneFineVuota(t *testing.T) {
 	}
 }
 
+// TestTrascrizioneTotaleSalvato prova sul router vero che il controllo dei
+// 20 MiB legge il totale salvato nell'ultimo blocco e non risomma i dati:
+// con un totale salvato al limite, il blocco dopo si scarta anche se i dati
+// sono pochi byte.
+func TestTrascrizioneTotaleSalvato(t *testing.T) {
+	g, registro := terminaleDiProva(t, false, model.AuditConnTerminale)
+	bb := catena("uno", "due", "x")
+	manda(t, g, bb[:2]...)
+	if err := service.DB.Exec("UPDATE audit_terminals SET totale = ? WHERE seq = 2", model.TrascrizioneTerminale).Error; err != nil {
+		t.Fatal(err)
+	}
+	manda(t, g, bb[2])
+	if want, got := []int64{1, 2}, salvati(t); !reflect.DeepEqual(want, got) {
+		t.Errorf("seq salvati: %+v, attesi %+v", got, want)
+	}
+	if nelLog := registro.String(); logger.Conta(nelLog, "WARN", "POST /api/audit/terminal: ", "999000111", "oltre 20 MiB") != 1 {
+		t.Errorf("nel log manca il warn sul limite:\n%s", nelLog)
+	}
+}
+
 // TestTrascrizioneSoloAdmin prova sul router vero che elenco e verifica
 // della trascrizione rispondono NoAccess a chi non e' amministratore.
 func TestTrascrizioneSoloAdmin(t *testing.T) {
