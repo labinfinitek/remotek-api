@@ -63,9 +63,9 @@ il formato che il client segue. Corpo JSON:
 | `id` | stringa | ID del PC controllato |
 | `uuid` | stringa | uuid del PC, come in `/api/sysinfo` e `/api/audit/conn` |
 | `conn_id` | int64 | lo stesso `conn_id` dell'audit `new` della sessione |
-| `seq` | intero | 1 per il primo blocco, +1 a ogni blocco |
+| `seq` | intero | 1 per il primo blocco, +1 a ogni blocco, al massimo 100000 |
 | `dir` | stringa | `in` (arrivato da chi controlla) o `out` (uscito dalla shell) |
-| `data` | stringa | base64 standard (con `=`) dei byte, al massimo 64 KiB decodificati |
+| `data` | stringa | base64 standard (con `=`) dei byte, al massimo 64 KiB decodificati; vuoto solo con `fine` |
 | `hash` | stringa | esadecimale minuscolo di SHA-256( H(seq-1) ‖ d ‖ data ) |
 | `fine` | bool | `true` sull'ultimo blocco della sessione |
 
@@ -86,9 +86,8 @@ che autentica la connessione); `dir`; `data` in base64 ed entro 64 KiB;
 sessione senza dati in coda); `seq` non oltre 100000, al massimo 100000
 blocchi per sessione; `seq` uguale all'ultimo salvato per quella riga piu'
 uno; `hash`; nessun blocco dopo quello con `fine`; al massimo 20 MiB di
-dati per sessione. Un blocco
-che non passa non si salva e nel log resta un warn con rotta, ID del PC e
-motivo, senza uuid ne' contenuto. La risposta e' sempre quella delle altre
+dati per sessione. Un blocco che non passa non si salva e nel log resta un
+warn con rotta, ID del PC e motivo, senza uuid ne' contenuto. La risposta e' sempre quella delle altre
 rotte dell'audit, `{"code":0,"message":"success","data":""}` (400 solo per
 un corpo che non e' JSON): il client non la guarda, e un blocco scartato
 non si rimanda.
