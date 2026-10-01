@@ -25,7 +25,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   colonna Type mostra "Terminal" per le sessioni terminale, e il pulsante
   "Transcript" apre in sola lettura i blocchi in ordine con l'esito della
   verifica (integra o no, hash finale); "No transcript" se non ci sono
-  blocchi.
+  blocchi. Il pulsante "Export" della finestra scarica il file della
+  trascrizione (`trascrizione-<id>.json`); un errore resta scritto nella
+  finestra. Un carattere UTF-8 troncato in coda all'ultimo blocco di un
+  verso si vede come U+FFFD invece di sparire.
 - Trascrizione delle sessioni terminale: `POST /api/audit/terminal` salva i
   blocchi mandati dal PC controllato, concatenati da SHA-256, e solo per
   gli amministratori `GET /api/admin/audit_conn/terminal/list` li elenca e
