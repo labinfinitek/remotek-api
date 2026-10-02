@@ -25,7 +25,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   colonna Type mostra "Terminal" per le sessioni terminale, e il pulsante
   "Transcript" apre in sola lettura i blocchi in ordine con l'esito della
   verifica (integra o no, hash finale); "No transcript" se non ci sono
-  blocchi.
+  blocchi. Il pulsante "Export" della finestra scarica il file della
+  trascrizione (`trascrizione-<id>.json`); un errore resta scritto nella
+  finestra. Un carattere UTF-8 troncato in coda all'ultimo blocco di un
+  verso si vede come U+FFFD invece di sparire.
 - Trascrizione delle sessioni terminale: `POST /api/audit/terminal` salva i
   blocchi mandati dal PC controllato, concatenati da SHA-256, e solo per
   gli amministratori `GET /api/admin/audit_conn/terminal/list` li elenca e
@@ -51,8 +54,9 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 - Corpo delle richieste al massimo 1 MiB su ogni rotta, anche quelle senza
   login (prima nessun limite: un corpo grande si leggeva tutto in memoria).
   Con `Content-Length` oltre il limite risposta 413 senza leggere il
-  corpo (nel pannello nella forma delle sue risposte); senza, la lettura si ferma a 1 MiB e il bind fallisce come per un
-  corpo sbagliato. Un warn nel log con metodo, rotta e `request_id`.
+  corpo (nel pannello nella forma delle sue risposte); senza, la lettura
+  si ferma a 1 MiB e il bind fallisce come per un corpo sbagliato. Un
+  warn nel log con metodo, rotta e `request_id`.
 
 ## [0.4.0] - 2026-09-29
 Immagine `ghcr.io/labinfinitek/remotek-api:0.4.0`. Un cambio incompatibile,

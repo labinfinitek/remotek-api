@@ -15,17 +15,26 @@ Solo l'ultima apertura scrive nella finestra (una precedente ancora in
 corso esce dopo ogni attesa); se l'elenco da' meno blocchi di quelli
 contati dalla verifica la finestra dice "Incomplete transcript" invece di
 "Intact" e dell'hash finale, e non mostra piu' blocchi di quelli contati;
-se la verifica non riesce lo dice nella finestra.
+se la verifica non riesce lo dice nella finestra. A fine lettura ogni
+TextDecoder si svuota (decode() senza argomenti) e cio' che resta, U+FFFD
+compreso, va in coda all'ultimo pezzo del suo verso: un carattere UTF-8
+troncato alla fine della sessione non sparisce.
+Il pulsante "Export" della finestra scarica, col token del pannello come
+le altre chiamate, il file di /api/admin/audit_conn/terminal/export
+(trascrizione-<id>.json: connessione, blocchi e verifica); un errore resta
+scritto nella finestra, oltre al toast. Il file non ha "code": la sua
+chiamata lo avvolge in {code: 0, data: testo} perche' passi l'intercettore
+di src/utils/request.js, e non ha timeout.
 Funzioni nuove in src/api/audit.js; chiavi nuove solo in en.json (T()
 mostra la chiave se manca la traduzione).
 Licenza: MIT, come rustdesk-api-web (Copyright (c) 2016-2021
 vue-manage-system); questa patch e' opera derivata con la stessa licenza.
 ---
 diff --git a/src/api/audit.js b/src/api/audit.js
-index bb7835d..a167fe1 100644
+index bb7835d..d68423f 100644
 --- a/src/api/audit.js
 +++ b/src/api/audit.js
-@@ -45,3 +45,17 @@ export function fileBatchDelete (data) {
+@@ -45,3 +45,32 @@ export function fileBatchDelete (data) {
      data,
    })
  }
@@ -43,11 +52,26 @@ index bb7835d..a167fe1 100644
 +    params,
 +  })
 +}
++
++// Il file della trascrizione e' JSON ma non ha code: lo si avvolge in
++// {code: 0, data: testo} perche' passi l'intercettore come le altre
++// risposte; un errore dell'API ({code, message}) resta com'e'. Il file
++// comincia sempre con {"connessione":. Niente timeout: il file arriva a
++// pezzi e puo' metterci.
++export function terminalExport (params) {
++  return request({
++    url: '/audit_conn/terminal/export',
++    params,
++    timeout: 0,
++    responseType: 'text',
++    transformResponse: [text => text.startsWith('{"connessione":') ? { code: 0, data: text } : JSON.parse(text)],
++  })
++}
 diff --git a/src/utils/i18n/en.json b/src/utils/i18n/en.json
-index 386bb16..274e3c7 100644
+index 386bb16..b1448f8 100644
 --- a/src/utils/i18n/en.json
 +++ b/src/utils/i18n/en.json
-@@ -531,5 +531,44 @@
+@@ -531,5 +531,47 @@
    },
    "Remark": {
      "One": "Remark"
@@ -90,6 +114,9 @@ index 386bb16..274e3c7 100644
 +  },
 +  "VerifyFailed": {
 +    "One": "The transcript could not be verified: reopen it."
++  },
++  "ExportFailed": {
++    "One": "The transcript could not be exported:"
    }
  }
 diff --git a/src/views/audit/connList.vue b/src/views/audit/connList.vue
@@ -141,14 +168,15 @@ index 09ec791..03daca5 100644
      multipleSelection.value = val
 diff --git a/src/views/audit/terminal.vue b/src/views/audit/terminal.vue
 new file mode 100644
-index 0000000..2e8b610
+index 0000000..cb8a967
 --- /dev/null
 +++ b/src/views/audit/terminal.vue
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,131 @@
 +<template>
 +  <el-dialog v-model="visible" :title="T('Transcript') + ' #' + (conn && conn.id)" width="900" destroy-on-close>
 +    <div v-loading="loading">
 +      <el-alert v-if="failed" type="error" :title="T('VerifyFailed')" :closable="false"/>
++      <el-alert v-if="exportError" type="error" :title="T('ExportFailed') + ' ' + exportError" :closable="false"/>
 +      <template v-if="verify">
 +        <el-empty v-if="!verify.blocchi" :description="T('NoTranscript')"/>
 +        <template v-else>
@@ -168,12 +196,15 @@ index 0000000..2e8b610
 +        </template>
 +      </template>
 +    </div>
++    <template #footer>
++      <el-button :loading="exporting" :disabled="!conn" @click="download">{{ T('Export') }}</el-button>
++    </template>
 +  </el-dialog>
 +</template>
 +
 +<script setup>
 +  import { ref } from 'vue'
-+  import { terminalList, terminalVerify } from '@/api/audit'
++  import { terminalExport, terminalList, terminalVerify } from '@/api/audit'
 +  import { T } from '@/utils/i18n'
 +
 +  const visible = ref(false)
@@ -183,6 +214,8 @@ index 0000000..2e8b610
 +  const verify = ref(null)
 +  const parts = ref([])
 +  const read = ref(0)
++  const exporting = ref(false)
++  const exportError = ref('')
 +  let last = 0
 +
 +  // Blocchi in ordine di seq: l'output com'e' (sequenze di controllo
@@ -199,6 +232,8 @@ index 0000000..2e8b610
 +    parts.value = []
 +    read.value = 0
 +    failed.value = false
++    exportError.value = ''
++    exporting.value = false
 +    visible.value = true
 +    loading.value = true
 +    const decoders = { in: new TextDecoder(), out: new TextDecoder() }
@@ -208,6 +243,7 @@ index 0000000..2e8b610
 +      return
 +    }
 +    const got = []
++    const lastOf = {}
 +    while (v && got.length < v.data.blocchi) {
 +      const res = await terminalList(query).catch(_ => false)
 +      if (mine !== last) {
@@ -218,16 +254,46 @@ index 0000000..2e8b610
 +      }
 +      for (const b of res.data.list.slice(0, v.data.blocchi - got.length)) {
 +        const bytes = Uint8Array.from(atob(b.data), c => c.charCodeAt(0))
-+        const d = decoders[b.dir] || decoders.out
-+        got.push({ seq: b.seq, dir: b.dir, text: d.decode(bytes, { stream: true }) })
++        const k = decoders[b.dir] ? b.dir : 'out'
++        lastOf[k] = got.length
++        got.push({ seq: b.seq, dir: b.dir, text: decoders[k].decode(bytes, { stream: true }) })
 +      }
 +      query.page++
++    }
++    // A fine lettura si svuota ogni decoder: un carattere troncato in coda
++    // all'ultimo blocco di un verso esce come U+FFFD invece di sparire.
++    for (const k in lastOf) {
++      got[lastOf[k]].text += decoders[k].decode()
 +    }
 +    failed.value = !v
 +    parts.value = got
 +    read.value = got.length
 +    verify.value = v ? v.data : null
 +    loading.value = false
++  }
++  // Scarica il file della trascrizione (GET .../terminal/export) col token
++  // del pannello; un errore resta scritto nella finestra, se e' ancora
++  // quella della stessa apertura.
++  const download = async () => {
++    const mine = last
++    const id = conn.value.id
++    exporting.value = true
++    exportError.value = ''
++    const res = await terminalExport({ audit_conn_id: id }).catch(e => ({ error: (e && e.message) || 'error' }))
++    if (mine !== last) {
++      return
++    }
++    exporting.value = false
++    if (res.error) {
++      exportError.value = res.error
++      return
++    }
++    const url = URL.createObjectURL(new Blob([res.data], { type: 'application/json' }))
++    const a = document.createElement('a')
++    a.href = url
++    a.download = 'trascrizione-' + id + '.json'
++    a.click()
++    setTimeout(() => URL.revokeObjectURL(url), 1000)
 +  }
 +  defineExpose({ open })
 +</script>

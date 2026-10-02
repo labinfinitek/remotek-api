@@ -307,3 +307,45 @@ func TestTrascrizioneEsportataInterrotta(t *testing.T) {
 		})
 	}
 }
+
+// scrittoreAnnullato e' chi annulla il download: la prima scrittura passa,
+// le altre falliscono come una connessione chiusa dall'altra parte.
+type scrittoreAnnullato struct {
+	intestazione http.Header
+	scritture    int
+}
+
+func (s *scrittoreAnnullato) Header() http.Header { return s.intestazione }
+func (s *scrittoreAnnullato) WriteHeader(int)     {}
+func (s *scrittoreAnnullato) Write(p []byte) (int, error) {
+	s.scritture++
+	if s.scritture > 1 {
+		return 0, errors.New("connessione chiusa da chi scarica")
+	}
+	return len(p), nil
+}
+
+func (s *scrittoreAnnullato) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	a, b := net.Pipe()
+	_ = b.Close()
+	return a, nil, nil
+}
+
+// TestTrascrizioneEsportataAnnullata prova sul router vero che un download
+// annullato da chi scarica vada nel log a warn, non a error: non e' un
+// guasto dell'API.
+func TestTrascrizioneEsportataAnnullata(t *testing.T) {
+	g, registro := terminaleDiProva(t, true, model.AuditConnTerminale)
+	manda(t, g, catena("uno", "due", "tre")...)
+	req := httptest.NewRequest("GET", "/api/admin/audit_conn/terminal/export?audit_conn_id=1", nil)
+	req.Header.Set("api-token", tokenDelPannello)
+	g.ServeHTTP(&scrittoreAnnullato{intestazione: http.Header{}}, req)
+
+	nelLog := registro.String()
+	if logger.Conta(nelLog, "WARN", "GET /api/admin/audit_conn/terminal/export: trascrizione della connessione 1 interrotta da chi scarica") != 1 {
+		t.Errorf("manca il warn del download annullato:\n%s", nelLog)
+	}
+	if n := logger.Conta(nelLog, "ERROR", "trascrizione della connessione 1"); n != 0 || strings.Contains(nelLog, "ha esportato") {
+		t.Errorf("download annullato: %d righe error o una riga info dell'esportazione:\n%s", n, nelLog)
+	}
+}
