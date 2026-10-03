@@ -188,15 +188,20 @@ func connessioneAudit(c *gin.Context, peerId string, connId int64) (*model.Audit
 }
 
 // dalDispositivo dice se l'audit arriva dal PC salvato con l'ID id e
-// l'uuid uuid, l'unico che puo' scriverne il registro (REM-2026-002).
+// l'uuid uuid, l'unico che puo' scriverne il registro (REM-2026-002), con
+// la firma se il PC ha una chiave (RiconosciFirmato).
 // Altrimenti scrive nel log perche' l'audit e' scartato: warn con rotta e
 // ID, niente uuid, o l'errore del database con auditNonSalvato. Al client
 // va successo lo stesso: ignora la risposta.
 func dalDispositivo(c *gin.Context, id, uuid string) bool {
-	peer, esito, err := service.AllService.PeerService.Riconosci(id, uuid)
+	ric, err := service.AllService.PeerService.RiconosciFirmato(id, uuid, richiestaFirmata(c, ""))
+	peer, esito := ric.Peer, ric.Esito
 	switch {
 	case err != nil:
 		auditNonSalvato(c, err)
+		return false
+	case ric.Rifiuto != "":
+		dispositivoDiverso(c, id, ric.Rifiuto)
 		return false
 	case esito == service.PcSconosciuto:
 		dispositivoDiverso(c, id, "nessun PC salvato con questo ID")

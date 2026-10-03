@@ -16,6 +16,9 @@ type Peer struct {
 	LastOnlineIp   string `json:"last_online_ip"  gorm:"default:'';not null;"`
 	GroupId        uint   `json:"group_id"  gorm:"default:0;not null;index"`
 	Alias          string `json:"alias" gorm:"default:'';not null;index"`
+	// ChiavePubblica e' la chiave Ed25519 del PC, in base64, registrata dal
+	// primo sysinfo firmato (ADR-0023); fuori dal JSON.
+	ChiavePubblica string `json:"-" gorm:"default:'';not null;"`
 	TimeModel
 }
 

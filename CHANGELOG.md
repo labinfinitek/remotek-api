@@ -7,6 +7,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 ## [Non rilasciato]
 
 ### Aggiunto
+- Opzione `app.firma-obbligatoria` (`RUSTDESK_API_APP_FIRMA_OBBLIGATORIA`,
+  default `false`): se vera, anche un PC senza chiave registrata deve
+  firmare le richieste senza login, e il suo sysinfo firmato con `pk` e
+  uuid giusto registra la chiave. Si accende quando tutti i PC hanno un
+  client che firma. README, Firma del dispositivo.
 - Esportazione della trascrizione di una sessione terminale, solo per gli
   amministratori: `GET /api/admin/audit_conn/terminal/export` con
   `audit_conn_id` scarica `trascrizione-<id>.json` con la riga della
@@ -57,6 +62,17 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   corpo (nel pannello nella forma delle sue risposte); senza, la lettura
   si ferma a 1 MiB e il bind fallisce come per un corpo sbagliato. Un
   warn nel log con metodo, rotta e `request_id`.
+- Firma del dispositivo (ADR-0023): sysinfo, heartbeat e audit di un PC
+  si riconoscevano solo da ID e uuid, che il client manda anche a `hbbs` in
+  chiaro. Ora il PC puo' firmarli con la sua chiave Ed25519 (intestazione
+  `X-Remotek-Firma`, campo `pk` nel sysinfo): il primo sysinfo firmato
+  registra la chiave, e da li' per quel PC valgono solo richieste firmate
+  con quella chiave, recenti (300 secondi) e non ripetute. I client che non
+  firmano, come il 1.4.9, restano con le regole dell'uuid. Una chiave non
+  la cambia nessun sysinfo: si riapre cancellando il PC dal pannello. Una
+  firma con una chiave diversa e l'uuid giusto scrive un error nel log.
+  Formato e regole nel README. Migrazione del database: versione 270,
+  colonna `peers.chiave_pubblica`.
 
 ## [0.4.0] - 2026-09-29
 Immagine `ghcr.io/labinfinitek/remotek-api:0.4.0`. Un cambio incompatibile,

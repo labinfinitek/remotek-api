@@ -254,6 +254,7 @@ stesso default se la chiave manca dal file.
 | `app.token-expire` | `RUSTDESK_API_APP_TOKEN_EXPIRE` | `168h` | durata di una sessione (durata Go: `72h`, `30m`) |
 | `app.web-sso` \* | `RUSTDESK_API_APP_WEB_SSO` | `false` | accende il login del client confermato dal pannello (`webauth`); spento, `/api/oidc/auth` lo rifiuta come un provider che non esiste |
 | `app.disable-pwd-login` | `RUSTDESK_API_APP_DISABLE_PWD_LOGIN` | `false` | `true` toglie il login con utente e password, anche quello LDAP, che passa di li'; resta OIDC |
+| `app.firma-obbligatoria` \* | `RUSTDESK_API_APP_FIRMA_OBBLIGATORIA` | `false` | `true`: anche i PC senza chiave devono firmare le richieste senza login (Firma del dispositivo) |
 | `admin.title` \* | `RUSTDESK_API_ADMIN_TITLE` | vuoto | titolo del pannello; vuoto = `brand.name` |
 | `admin.hello` | `RUSTDESK_API_ADMIN_HELLO` | vuoto | messaggio di benvenuto del pannello (HTML); se non e' vuoto, `admin.hello-file` non si legge |
 | `admin.hello-file` | `RUSTDESK_API_ADMIN_HELLO_FILE` | `./conf/admin/hello.html` | file del benvenuto; `{{username}}` e `{{brand}}` si sostituiscono |
@@ -417,9 +418,100 @@ rotte `/api/admin/rustdesk/*`, il module path Go.
   esempio per errore) va riavviato subito (il servizio Remotek o il PC): il
   client rimanda il sysinfo solo all'avvio del servizio o quando cambiano
   l'utente di Windows, l'ID o l'indirizzo dell'API, e fino al riavvio l'ID
-  resta libero senza limite di tempo.
+  resta libero senza limite di tempo. Il client che firma aggiunge la
+  chiave del PC: vedi Firma del dispositivo.
 - Le vulnerabilita' si segnalano come dice [SECURITY.md](SECURITY.md), non
   con issue pubbliche.
+
+## Firma del dispositivo
+
+L'uuid che lega l'ID al PC (Sicurezza, Dispositivi) il client lo manda anche a
+`hbbs` in chiaro, su UDP: chi osserva la rete lo legge e puo' scrivere a nome
+del PC. Per questo il PC firma le sue richieste senza login (sysinfo,
+heartbeat, audit/conn, audit/file, audit/terminal) con la sua chiave Ed25519,
+e l'API, registrata la chiave, accetta per quel PC solo richieste firmate. Il
+client 1.4.9 non firma e resta con le regole dell'uuid finche' non si
+aggiorna.
+
+**Formato** (e' il contratto col client). Intestazione:
+
+```
+X-Remotek-Firma: <ts>.<firma>
+```
+
+- `ts`: secondi UNIX in decimale (solo cifre), l'ora del PC quando firma;
+- `firma`: base64 standard, con `=`, dei 64 byte della firma Ed25519
+  "detached" del messaggio.
+
+Il messaggio sono cinque righe unite da `\n`, senza `\n` finale:
+
+```
+remotek-api-v1
+<metodo in maiuscolo, per esempio POST>
+<percorso della richiesta, senza query, per esempio /api/heartbeat>
+<ts, lo stesso dell'intestazione, carattere per carattere>
+<SHA-256 dei byte del corpo, esadecimale minuscolo>
+```
+
+Il corpo e' quello che il client manda, byte per byte: la firma si verifica
+sui byte arrivati, prima del JSON. Il percorso e' quello che arriva all'API
+(dietro un reverse proxy che toglie un prefisso, quello senza prefisso). Il
+sysinfo porta in piu' il campo `pk`: base64 standard dei 32 byte della chiave
+pubblica Ed25519 del PC.
+
+**Vettore di prova** (in `http/firma_test.go`, `TestFirmaVettore`): con la
+chiave dal seed di 32 byte `00 01 02 ... 1f` e la richiesta
+
+- metodo `POST`, percorso `/api/heartbeat`, ts `1791000000`,
+- corpo `{"id":"999000111","uuid":"dXVpZA=="}`
+
+si hanno SHA-256 del corpo
+`8ce852e69dbc62f20c29f8fcfb77e1a1922d73c7a185de173bb31139f4089d10`, `pk`
+`A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=` e intestazione
+
+```
+X-Remotek-Firma: 1791000000.otUjpW4BdAQnl0TuN1E/GmD3LAx38zzpYTczckv70y3hYSIVtkA7urCTqftTR9BXPMoDc//+nyxItL73nbrHCw==
+```
+
+**Regole**:
+
+1. Un PC con la chiave registrata: la richiesta deve avere l'intestazione,
+   una firma valida con quella chiave, un `ts` entro 300 secondi dall'ora del
+   server, e la stessa firma non deve essere gia' stata accettata nei 300
+   secondi prima. L'uuid deve restare quello salvato, come prima. La memoria
+   delle firme accettate e' nel processo: dopo un riavvio dell'API la
+   finestra riparte, e una firma accettata appena prima del riavvio si puo'
+   ripetere finche' il suo `ts` resta nei 300 secondi.
+2. Un PC senza chiave: come prima (uuid), con o senza firma.
+3. Registrazione: un sysinfo con `pk` e firma valida per quella `pk` salva la
+   chiave solo se il PC e' nuovo (lo crea, come prima) o ha gia' quell'uuid,
+   e solo se il PC non ha ancora una chiave. Un PC creato dal pannello senza
+   uuid prende l'uuid col primo sysinfo e la chiave col successivo. Una
+   chiave salvata non la cambia ne' la cancella nessun sysinfo; si riapre
+   solo cancellando il PC dal pannello, come per l'uuid.
+4. Un sysinfo con l'uuid giusto ma firmato con una `pk` diversa da quella
+   salvata non cambia niente, risponde come a un altro dispositivo e scrive
+   nel log un **error** con rotta e ID del PC. Vuol dire un PC reinstallato
+   (chiave nuova), oppure qualcuno che conosceva l'uuid e ha registrato la
+   sua chiave prima del PC vero. Rimedio: cancellare il PC dal pannello e
+   guardare chi si registra (nome, utente e IP della scheda nuova); se non
+   e' il PC vero, cancellarlo di nuovo e riavviare il servizio Remotek sul
+   PC vero.
+5. Una richiesta rifiutata ha la risposta di prima per quella rotta (sysinfo:
+   "Il dispositivo non corrisponde a quello registrato."; heartbeat: `{}`;
+   audit: successo senza salvare) e nel log un warn con rotta, ID del PC e
+   motivo (`firma assente`, `firma non valida`, `firma fuori tempo`, `firma
+   ripetuta`, `firma di un PC senza chiave registrata`), mai firma, chiave
+   ne' uuid. Un sysinfo accettato di un PC senza chiave, con una `pk` che non
+   si registra, lo dice con un warn `chiave non registrata: <motivo>`.
+
+**Opzione** `app.firma-obbligatoria` (`RUSTDESK_API_APP_FIRMA_OBBLIGATORIA`,
+default `false`): se vera, anche un PC senza chiave deve firmare. Il suo
+sysinfo firmato con `pk` e uuid giusto registra la chiave (un PC nuovo lo
+crea); ogni altra sua richiesta e' rifiutata, senza firma (`firma assente`)
+o con una firma che non c'e' chiave per verificare (`firma di un PC senza
+chiave registrata`), finche' la chiave non e' registrata. Va accesa quando
+tutti i PC hanno un client che firma: un client 1.4.9 smette di scrivere.
 
 ## Origine e licenza
 

@@ -1834,6 +1834,10 @@ const docTemplateapi = `{
                 "os": {
                     "type": "string"
                 },
+                "pk": {
+                    "description": "Pk e' la chiave pubblica Ed25519 del PC, base64 di 32 byte: la\nregistra il primo sysinfo firmato (README, Firma del dispositivo).",
+                    "type": "string"
+                },
                 "username": {
                     "type": "string"
                 },

@@ -11,6 +11,7 @@ app:
   token-expire: 168h
   web-sso: false #web auth sso
   disable-pwd-login: false #禁用密码登录
+  firma-obbligatoria: false # true: anche i PC senza chiave devono firmare (README, Firma del dispositivo)
 
 admin:
   title: "" # vuoto: brand.name
