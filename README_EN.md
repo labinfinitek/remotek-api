@@ -250,6 +250,7 @@ default when the key is missing from the file.
 | `app.token-expire` | `RUSTDESK_API_APP_TOKEN_EXPIRE` | `168h` | session lifetime (Go duration: `72h`, `30m`) |
 | `app.web-sso` \* | `RUSTDESK_API_APP_WEB_SSO` | `false` | turns on the client login confirmed from the panel (`webauth`); off, `/api/oidc/auth` rejects it like a provider that does not exist |
 | `app.disable-pwd-login` | `RUSTDESK_API_APP_DISABLE_PWD_LOGIN` | `false` | `true` removes username and password login, LDAP included, since it goes through it; OIDC remains |
+| `app.firma-obbligatoria` \* | `RUSTDESK_API_APP_FIRMA_OBBLIGATORIA` | `false` | `true`: PCs without a key must sign their no-login requests too (Device signature) |
 | `admin.title` \* | `RUSTDESK_API_ADMIN_TITLE` | empty | panel title; empty = `brand.name` |
 | `admin.hello` | `RUSTDESK_API_ADMIN_HELLO` | empty | panel welcome message (HTML); when not empty, `admin.hello-file` is not read |
 | `admin.hello-file` | `RUSTDESK_API_ADMIN_HELLO_FILE` | `./conf/admin/hello.html` | welcome file; `{{username}}` and `{{brand}}` are replaced |
@@ -414,9 +415,100 @@ Not renamed: the `RUSTDESK_API_` prefix, the `rustdesk:` section, the
   current uuid (by mistake, for example) must be restarted right away (the
   Remotek service or the PC): the client sends sysinfo again only when the
   service starts or the Windows user, the ID or the API address changes,
-  and until the restart the ID stays free with no time limit.
+  and until the restart the ID stays free with no time limit. A signing
+  client adds the PC key: see Device signature.
 - Report vulnerabilities as described in [SECURITY.md](SECURITY.md), not with
   public issues.
+
+## Device signature
+
+The uuid that binds the ID to the PC (Security, Devices) is also sent by the
+client to `hbbs` in clear text, over UDP: anyone watching the network can read
+it and write on behalf of the PC. So the PC signs its requests that need no
+login (sysinfo, heartbeat, audit/conn, audit/file, audit/terminal) with its
+Ed25519 key, and once the key is registered the API accepts only signed
+requests for that PC. Client 1.4.9 does not sign and keeps the uuid rules
+until it is updated.
+
+**Format** (this is the contract with the client). Header:
+
+```
+X-Remotek-Firma: <ts>.<firma>
+```
+
+- `ts`: UNIX seconds in decimal (digits only), the PC's time when signing;
+- `firma`: standard base64, with `=`, of the 64 bytes of the "detached"
+  Ed25519 signature of the message.
+
+The message is five lines joined by `\n`, with no trailing `\n`:
+
+```
+remotek-api-v1
+<method in upper case, for example POST>
+<request path, without query, for example /api/heartbeat>
+<ts, the same as in the header, character for character>
+<SHA-256 of the body bytes, lower-case hex>
+```
+
+The body is what the client sends, byte for byte: the signature is checked on
+the bytes received, before the JSON. The path is the one that reaches the API
+(behind a reverse proxy that strips a prefix, the one without the prefix).
+sysinfo also carries the `pk` field: standard base64 of the 32 bytes of the
+PC's Ed25519 public key.
+
+**Test vector** (in `http/firma_test.go`, `TestFirmaVettore`): with the key
+from the 32-byte seed `00 01 02 ... 1f` and the request
+
+- method `POST`, path `/api/heartbeat`, ts `1791000000`,
+- body `{"id":"999000111","uuid":"dXVpZA=="}`
+
+the body SHA-256 is
+`8ce852e69dbc62f20c29f8fcfb77e1a1922d73c7a185de173bb31139f4089d10`, `pk` is
+`A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=` and the header is
+
+```
+X-Remotek-Firma: 1791000000.otUjpW4BdAQnl0TuN1E/GmD3LAx38zzpYTczckv70y3hYSIVtkA7urCTqftTR9BXPMoDc//+nyxItL73nbrHCw==
+```
+
+**Rules**:
+
+1. A PC with a registered key: the request must carry the header, a valid
+   signature with that key, a `ts` within 300 seconds of the server's time,
+   and the same signature must not have been accepted in the previous 300
+   seconds. The uuid must still be the saved one, as before. The memory of
+   accepted signatures lives in the process: after an API restart the window
+   starts again, and a signature accepted just before the restart can be
+   replayed while its `ts` is within the 300 seconds.
+2. A PC without a key: as before (uuid), with or without a signature.
+3. Registration: a sysinfo with `pk` and a valid signature for that `pk`
+   saves the key only if the PC is new (it creates it, as before) or already
+   has that uuid, and only if the PC has no key yet. A PC created from the
+   panel without a uuid takes the uuid with the first sysinfo and the key
+   with the next one. No sysinfo changes or deletes a saved key; it is
+   reopened only by deleting the PC from the panel, as for the uuid.
+4. A sysinfo with the right uuid but signed with a `pk` different from the
+   saved one changes nothing, gets the answer for another device and writes
+   an **error** to the log with route and PC ID. It means a reinstalled PC
+   (new key), or someone who knew the uuid and registered their key before
+   the real PC. Remedy: delete the PC from the panel and check who registers
+   (name, user and IP of the new record); if it is not the real PC, delete it
+   again and restart the Remotek service on the real PC.
+5. A rejected request gets the same answer as before for that route
+   (sysinfo: "The device does not match the registered one."; heartbeat:
+   `{}`; audit: success without saving) and a warn in the log with route, PC
+   ID and reason (`firma assente`, `firma non valida`, `firma fuori tempo`,
+   `firma ripetuta`, `firma di un PC senza chiave registrata`), never the
+   signature, key or uuid. An accepted sysinfo of a PC without a key, with a
+   `pk` that is not registered, says so with a warn `chiave non registrata:
+   <reason>`.
+
+**Option** `app.firma-obbligatoria` (`RUSTDESK_API_APP_FIRMA_OBBLIGATORIA`,
+default `false`): when true, a PC without a key must sign too. Its sysinfo
+signed with `pk` and the right uuid registers the key (a new PC is created);
+any other request from it is rejected, unsigned (`firma assente`) or with a
+signature there is no key to check (`firma di un PC senza chiave
+registrata`), until the key is registered. Turn it on when every PC has a
+signing client: a 1.4.9 client stops writing.
 
 ## Origin and licence
 

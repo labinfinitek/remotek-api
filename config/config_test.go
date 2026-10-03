@@ -12,15 +12,16 @@ import (
 
 // sicuri raccoglie le opzioni che ADR-0008 vuole sicure senza configurazione.
 type sicuri struct {
-	WebSso           bool
-	Register         bool
-	ShowSwagger      int
-	CaptchaThreshold int
-	BanThreshold     int
-	TrustProxy       string
-	LdapTlsVerify    bool
-	LoggerLevel      string // info: debug scrive di piu'
-	LoggerPath       string // vuoto: nessun file di log
+	WebSso            bool
+	Register          bool
+	ShowSwagger       int
+	CaptchaThreshold  int
+	BanThreshold      int
+	FirmaObbligatoria bool // false: la accende il titolare quando tutti i PC firmano
+	TrustProxy        string
+	LdapTlsVerify     bool
+	LoggerLevel       string // info: debug scrive di piu'
+	LoggerPath        string // vuoto: nessun file di log
 }
 
 // TestDefaultSicuri verifica che, senza variabili RUSTDESK_API_*, un file
@@ -61,10 +62,11 @@ func TestVariabiliBattonoDefault(t *testing.T) {
 	t.Setenv("RUSTDESK_API_APP_BAN_THRESHOLD", "0")
 	t.Setenv("RUSTDESK_API_GIN_TRUST_PROXY", "192.0.2.1")
 	t.Setenv("RUSTDESK_API_LDAP_TLS_VERIFY", "false")
+	t.Setenv("RUSTDESK_API_APP_FIRMA_OBBLIGATORIA", "true")
 	got := leggi(fileSenzaChiavi(t))
-	if got.BanThreshold != 0 || got.TrustProxy != "192.0.2.1" || got.LdapTlsVerify {
-		t.Errorf("ban-threshold %d, trust-proxy %q, ldap.tls-verify %t; want 0, %q, false",
-			got.BanThreshold, got.TrustProxy, got.LdapTlsVerify, "192.0.2.1")
+	if got.BanThreshold != 0 || got.TrustProxy != "192.0.2.1" || got.LdapTlsVerify || !got.FirmaObbligatoria {
+		t.Errorf("ban-threshold %d, trust-proxy %q, ldap.tls-verify %t, firma-obbligatoria %t; want 0, %q, false, true",
+			got.BanThreshold, got.TrustProxy, got.LdapTlsVerify, got.FirmaObbligatoria, "192.0.2.1")
 	}
 }
 
@@ -86,7 +88,7 @@ func leggi(path string) sicuri {
 	return sicuri{
 		WebSso: c.App.WebSso, Register: c.App.Register,
 		ShowSwagger: c.App.ShowSwagger, CaptchaThreshold: c.App.CaptchaThreshold,
-		BanThreshold: c.App.BanThreshold, TrustProxy: c.Gin.TrustProxy,
+		BanThreshold: c.App.BanThreshold, FirmaObbligatoria: c.App.FirmaObbligatoria, TrustProxy: c.Gin.TrustProxy,
 		LdapTlsVerify: c.Ldap.TlsVerify,
 		LoggerLevel:   c.Logger.Level, LoggerPath: c.Logger.Path,
 	}

@@ -41,7 +41,8 @@ func (p *Peer) SysInfo(c *gin.Context) {
 		return
 	}
 	fpe := f.ToPeer()
-	pe, esito, err := service.AllService.PeerService.Riconosci(f.Id, f.Uuid)
+	ric, err := service.AllService.PeerService.RiconosciFirmato(f.Id, f.Uuid, richiestaFirmata(c, f.Pk))
+	pe, esito := ric.Peer, ric.Esito
 	switch {
 	case err != nil:
 		// Un dispositivo che non si legge non e' nuovo: crearlo farebbe un
@@ -49,12 +50,22 @@ func (p *Peer) SysInfo(c *gin.Context) {
 		// riprova piu' tardi.
 		response.ErrorErr(c, "SystemError", err)
 		return
+	case ric.ChiaveDiversa:
+		// Error e non warn: PC reinstallato, o qualcuno che conosceva
+		// l'uuid ha messo la sua chiave prima del PC vero (README).
+		global.Logger.Per(c.Request.Context()).Errorf("%s %s: dispositivo %s: uuid giusto ma firma con una chiave diversa da quella registrata, niente salvato", c.Request.Method, c.FullPath(), f.Id)
+		response.Error(c, response.TranslateMsg(c, "DeviceMismatch"))
+		return
+	case ric.Rifiuto != "":
+		response.ErrorErr(c, "DeviceMismatch", fmt.Errorf("dispositivo %s: %s: %w", f.Id, ric.Rifiuto, service.ErrDispositivoDiverso))
+		return
 	case esito == service.PcSconosciuto:
-		// Il primo sysinfo di un ID crea il PC e lo lega al suo uuid. Di due
-		// sysinfo insieme di un ID nuovo, quello che crea per secondo trova
-		// l'indice unico e risponde OperationFailed: il client riprova dopo
-		// 120 s e trova il PC.
+		// Il primo sysinfo di un ID crea il PC e lo lega al suo uuid, e alla
+		// sua chiave se firmato. Di due sysinfo insieme di un ID nuovo,
+		// quello che crea per secondo trova l'indice unico e risponde
+		// OperationFailed: il client riprova dopo 120 s e trova il PC.
 		pe = f.ToPeer()
+		pe.ChiavePubblica = ric.Chiave
 		pe.UserId = ultimoUtente(c, pe.Uuid, pe.Id)
 		err = service.AllService.PeerService.Create(pe)
 		if err != nil {
@@ -80,11 +91,41 @@ func (p *Peer) SysInfo(c *gin.Context) {
 			response.ErrorErr(c, "OperationFailed", err)
 			return
 		}
+		if ric.Chiave != "" {
+			registraChiave(c, pe.RowId, f.Id, ric.Chiave)
+		}
+	}
+	if ric.NonRegistrata != "" {
+		dispositivoDiverso(c, f.Id, "chiave non registrata: "+ric.NonRegistrata)
 	}
 	// SYSINFO_UPDATED 上传成功
 	// ID_NOT_FOUND 下次心跳会上传
 	// 直接响应文本
 	c.String(http.StatusOK, "SYSINFO_UPDATED")
+}
+
+// registraChiave salva la chiave del PC rowId, se non ne ha gia' una. Il
+// sysinfo e' salvato lo stesso: una chiave che non si salva va nel log e il
+// prossimo sysinfo firmato riprova.
+func registraChiave(c *gin.Context, rowId uint, id, chiave string) {
+	registrata, err := service.AllService.PeerService.RegistraChiave(rowId, chiave)
+	switch {
+	case err != nil:
+		global.Logger.Per(c.Request.Context()).Errorf("%s %s: chiave del dispositivo non salvata: %v", c.Request.Method, c.FullPath(), err)
+	case !registrata:
+		global.Logger.Per(c.Request.Context()).Errorf("%s %s: dispositivo %s: chiave non registrata, nel frattempo ne e' stata registrata un'altra", c.Request.Method, c.FullPath(), id)
+	}
+}
+
+// richiestaFirmata raccoglie la firma del dispositivo di c per
+// RiconosciFirmato. Il corpo e' quello letto, una volta sola ed entro
+// middleware.CorpoMax, dal bind con ShouldBindBodyWith, che lo tiene nel
+// contesto: la firma si verifica sui byte arrivati.
+func richiestaFirmata(c *gin.Context, pk string) service.RichiestaFirmata {
+	corpo, _ := c.Get(gin.BodyBytesKey)
+	b, _ := corpo.([]byte)
+	return service.RichiestaFirmata{Metodo: c.Request.Method, Percorso: c.Request.URL.Path,
+		Intestazione: c.GetHeader(service.IntestazioneFirma), Corpo: b, Pk: pk}
 }
 
 // ultimoUtente restituisce l'utente dell'ultimo login del dispositivo, 0 se

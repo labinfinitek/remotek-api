@@ -21,6 +21,9 @@ type PeerForm struct {
 	Username string `json:"username"`
 	Uuid     string `json:"uuid"`
 	Version  string `json:"version"`
+	// Pk e' la chiave pubblica Ed25519 del PC, base64 di 32 byte: la
+	// registra il primo sysinfo firmato (README, Firma del dispositivo).
+	Pk string `json:"pk"`
 }
 
 func (pf *PeerForm) ToPeer() *model.Peer {

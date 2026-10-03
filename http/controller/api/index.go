@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	requestform "github.com/lejianwen/rustdesk-api/v2/http/request/api"
@@ -43,7 +44,8 @@ func (i *Index) Index(c *gin.Context) {
 // @Router /heartbeat [post]
 func (i *Index) Heartbeat(c *gin.Context) {
 	info := &requestform.PeerInfoInHeartbeat{}
-	err := c.ShouldBindJSON(info)
+	// ShouldBindBodyWith tiene il corpo per la verifica della firma.
+	err := c.ShouldBindBodyWith(info, binding.JSON)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{})
 		return
@@ -52,10 +54,16 @@ func (i *Index) Heartbeat(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{})
 		return
 	}
-	peer, esito, err := service.AllService.PeerService.Riconosci(info.Id, info.Uuid)
+	ric, err := service.AllService.PeerService.RiconosciFirmato(info.Id, info.Uuid, richiestaFirmata(c, ""))
+	peer, esito := ric.Peer, ric.Esito
 	if err != nil {
 		// Il client non legge l'errore: l'ultimo contatto resta quello di prima.
 		global.Logger.Per(c.Request.Context()).Warnf("%s %s: ultimo contatto del dispositivo non aggiornato: %v", c.Request.Method, c.FullPath(), err)
+		c.JSON(http.StatusOK, gin.H{})
+		return
+	}
+	if ric.Rifiuto != "" {
+		dispositivoDiverso(c, info.Id, ric.Rifiuto)
 		c.JSON(http.StatusOK, gin.H{})
 		return
 	}

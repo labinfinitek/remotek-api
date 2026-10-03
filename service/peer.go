@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -61,6 +62,78 @@ func (ps *PeerService) Riconosci(id, uuid string) (*model.Peer, Riconoscimento, 
 		return p, UuidDiverso, nil
 	}
 	return p, StessoDispositivo, nil
+}
+
+// Firmato e' l'esito di RiconosciFirmato.
+type Firmato struct {
+	Peer  *model.Peer
+	Esito Riconoscimento
+	// Rifiuto, se non vuoto, e' il motivo per cui la firma non basta: la
+	// richiesta si rifiuta come per un altro dispositivo.
+	Rifiuto string
+	// ChiaveDiversa: uuid giusto e firma valida, ma con una pk diversa da
+	// quella salvata (PC reinstallato o chiave registrata da altri).
+	ChiaveDiversa bool
+	// Chiave e' la pk da salvare col sysinfo, vuota se non c'e' da salvarne.
+	Chiave string
+	// NonRegistrata e' il motivo per cui una pk arrivata non si salva.
+	NonRegistrata string
+}
+
+// RiconosciFirmato applica a Riconosci le regole della firma del
+// dispositivo (ADR-0023, README "Firma del dispositivo"): un PC con la
+// chiave accetta solo richieste firmate con quella; uno senza resta con le
+// regole di ADR-0019, a meno di app.firma-obbligatoria; un sysinfo con pk e
+// firma valida registra la chiave di un PC nuovo o con lo stesso uuid che
+// non ne ha. Una chiave salvata non cambia mai da qui.
+func (ps *PeerService) RiconosciFirmato(id, uuid string, r RichiestaFirmata) (Firmato, error) {
+	p, esito, err := ps.Riconosci(id, uuid)
+	if err != nil {
+		return Firmato{}, err
+	}
+	f := Firmato{Peer: p, Esito: esito}
+	ora := time.Now()
+	if p != nil && p.ChiavePubblica != "" {
+		f.Rifiuto = r.verifica(p.ChiavePubblica, ora)
+		if f.Rifiuto != "" && r.Pk != "" && r.Pk != p.ChiavePubblica && esito == StessoDispositivo {
+			f.ChiaveDiversa, _, _ = r.firmaValida(r.Pk)
+		}
+		return f, nil
+	}
+	obbligatoria := Config != nil && Config.App.FirmaObbligatoria
+	switch {
+	case r.Pk == "" && obbligatoria:
+		f.Rifiuto = FirmaAssente
+		if r.Intestazione != "" {
+			f.Rifiuto = SenzaChiave
+		}
+	case r.Pk == "":
+	case !obbligatoria && r.Intestazione == "":
+		f.NonRegistrata = FirmaAssente
+	default:
+		motivo := r.verifica(r.Pk, ora)
+		switch {
+		case motivo != "" && obbligatoria:
+			f.Rifiuto = motivo
+		case motivo != "":
+			f.NonRegistrata = motivo
+		case esito == PcSconosciuto || esito == StessoDispositivo:
+			f.Chiave = r.Pk
+		default:
+			f.NonRegistrata = "uuid diverso da quello salvato"
+		}
+	}
+	return f, nil
+}
+
+// RegistraChiave salva la chiave pubblica del PC rowId solo se non ne ha
+// gia' una; registrata dice se l'ha salvata.
+func (ps *PeerService) RegistraChiave(rowId uint, chiave string) (registrata bool, err error) {
+	res := DB.Model(&model.Peer{}).Where("row_id = ? and chiave_pubblica = ''", rowId).Update("chiave_pubblica", chiave)
+	if res.Error != nil {
+		return false, fmt.Errorf("chiave del dispositivo %d: %w", rowId, res.Error)
+	}
+	return res.RowsAffected == 1, nil
 }
 
 // IndiceIdUnico e' l'indice unico su peers.id: un ID di PC su una riga

@@ -23,6 +23,8 @@ type App struct {
 	DisablePwdLogin  bool          `mapstructure:"disable-pwd-login"`
 	CaptchaThreshold int           `mapstructure:"captcha-threshold"`
 	BanThreshold     int           `mapstructure:"ban-threshold"`
+	// FirmaObbligatoria: anche i PC senza chiave devono firmare (ADR-0023).
+	FirmaObbligatoria bool `mapstructure:"firma-obbligatoria"`
 }
 type Admin struct {
 	Title           string `mapstructure:"title"`
@@ -73,6 +75,7 @@ func Init(rowVal *Config, path string) *viper.Viper {
 	v.SetDefault("app.show-swagger", 0)
 	v.SetDefault("app.captcha-threshold", 3)
 	v.SetDefault("app.ban-threshold", 10)
+	v.SetDefault("app.firma-obbligatoria", false)
 	v.SetDefault("gin.trust-proxy", "") // nessun proxy fidato: vedi http.setTrustedProxies
 	// Con ldaps:// i certificati del server si verificano; una CA interna
 	// si indica con ldap.tls-ca-file, false va scelto a mano.
