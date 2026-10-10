@@ -1,0 +1,63 @@
+Subject: [PATCH 0005] lista dei PC: etichetta "Possible copy"
+
+Perche': un PC copiato senza sysprep (VM clonata, immagine disco) porta con
+se' ID, uuid e chiave di Remotek; la copia si registra come il PC vero e
+l'API riceve gli heartbeat di tutte e due sulla stessa riga, senza alcun
+avviso (ADR-0024). Dalla stessa MR /api/admin/peer/list da' a ogni riga
+possibile_copia: vero se negli ultimi 10 minuti gli heartbeat del PC sono
+arrivati alternati da due indirizzi (README, "Copie dello stesso PC").
+Cosa: nella lista dei PC (src/views/peer/index.vue), accanto all'ID,
+un'etichetta rossa "Possible copy" quando possibile_copia e' vero; il
+suggerimento dice cosa vuol dire e cosa fare: sulla copia togliere Remotek
+con la sua configurazione e reinstallarlo, che da' un ID nuovo; per le
+copie future sysprep prima di clonare, o Remotek installato dopo la copia;
+una rete con due linee che bilancia le connessioni da' lo stesso segno.
+Chiavi nuove solo in en.json (T() mostra la chiave se manca la traduzione).
+Licenza: MIT, come rustdesk-api-web (Copyright (c) 2016-2021
+vue-manage-system); questa patch e' opera derivata con la stessa licenza.
+---
+diff --git a/src/utils/i18n/en.json b/src/utils/i18n/en.json
+index b1448f8..6a8dc41 100644
+--- a/src/utils/i18n/en.json
++++ b/src/utils/i18n/en.json
+@@ -573,5 +573,11 @@
+   },
+   "ExportFailed": {
+     "One": "The transcript could not be exported:"
++  },
++  "PossibleCopy": {
++    "One": "Possible copy"
++  },
++  "PossibleCopyHint": {
++    "One": "In the last 10 minutes the heartbeats of this PC came alternately from two addresses: there are probably two copies of the same PC (a cloned VM or disk image without sysprep), which share ID and key. On the copy, uninstall Remotek removing its configuration and install it again: it gets a new ID. For future copies, run sysprep before cloning or install Remotek after the copy. A network with two lines that balances every connection on a different address gives the same sign: check it."
+   }
+ }
+diff --git a/src/views/peer/index.vue b/src/views/peer/index.vue
+index fd232ac..e1fb4c4 100644
+--- a/src/views/peer/index.vue
++++ b/src/views/peer/index.vue
+@@ -72,6 +72,12 @@
+           <el-table-column v-if="c.name==='id'" prop="id" label="ID" align="center" width="150">
+             <template #default="{row}">
+               <span>{{ row.id }} <el-icon @click="handleClipboard(row.id, $event)"><CopyDocument/></el-icon></span>
++              <el-tooltip v-if="row.possibile_copia" placement="top">
++                <template #content>
++                  <div class="possibile-copia">{{ T('PossibleCopyHint') }}</div>
++                </template>
++                <el-tag type="danger" effect="dark" size="small">{{ T('PossibleCopy') }}</el-tag>
++              </el-tooltip>
+             </template>
+           </el-table-column>
+           <el-table-column v-if="c.name==='cpu'" prop="cpu" label="CPU" align="center" width="100" show-overflow-tooltip/>
+@@ -569,6 +575,11 @@
+ </script>
+ 
+ <style scoped lang="scss">
++.possibile-copia {
++  max-width: 360px;
++  line-height: 1.5;
++}
++
+ .list-query .el-select {
+   --el-select-width: 180px;
+ }

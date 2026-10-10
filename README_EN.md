@@ -510,6 +510,44 @@ signature there is no key to check (`firma di un PC senza chiave
 registrata`), until the key is registered. Turn it on when every PC has a
 signing client: a 1.4.9 client stops writing.
 
+## Copies of the same PC
+
+A PC copied without sysprep (cloned VM, disk image) carries Remotek's ID,
+uuid and key: the copy registers as the real PC and the signature does not
+tell them apart, because the key is the same. `hbbs` alternates the two
+addresses and the API receives heartbeats and audits of both on the same
+row. The API reports it; it blocks no request and the client is unchanged.
+
+**Rule.** For every recognised PC (saved ID and uuid, valid signature where
+required) the API remembers the address and time of the last heartbeat; the
+address is the same as `last_online_ip`. A *change* is a heartbeat of the
+same PC from an address different from the previous one, arriving less than
+60 seconds later: the client sends one every 15 seconds, so two running
+copies make a change at almost every heartbeat. With at least **10 changes
+in the last 10 minutes** the PC is a "possible copy":
+
+- in the panel's PC list (`GET /api/admin/peer/list`, field
+  `possibile_copia`) a red "Possible copy" label appears next to the ID,
+  and disappears after 10 minutes without changes;
+- the log gets a warn line `possibile copia del PC` with `id`, the two most
+  recent addresses (`indirizzo`, `indirizzo_precedente`) and the number of
+  `cambi`, at most once an hour per PC; never uuid or keys.
+
+A PC without heartbeats for 10 minutes leaves the memory.
+
+**What to do.** On the copy, uninstall Remotek removing its configuration
+and install it again: it gets a new ID. For future copies: sysprep before
+cloning, or install Remotek after the copy.
+
+**Limits.** It is a warning to check, not a block:
+
+- a network with two lines that balances every connection on a different
+  address gives the same sign without any copy;
+- two copies behind the same public address are not seen;
+- the memory lives in the process: after an API restart it starts empty;
+- behind a proxy without `gin.trust-proxy` (Configuration) every PC has the
+  proxy's address and the rule sees nothing.
+
 ## Origin and licence
 
 Remotek API is based on [rustdesk-api](https://github.com/lejianwen/rustdesk-api)

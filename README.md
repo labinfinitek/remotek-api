@@ -513,6 +513,44 @@ o con una firma che non c'e' chiave per verificare (`firma di un PC senza
 chiave registrata`), finche' la chiave non e' registrata. Va accesa quando
 tutti i PC hanno un client che firma: un client 1.4.9 smette di scrivere.
 
+## Copie dello stesso PC
+
+Un PC copiato senza sysprep (VM clonata, immagine disco) porta con se' ID,
+uuid e chiave di Remotek: la copia si registra come il PC vero e la firma
+non le distingue, perche' la chiave e' la stessa. `hbbs` alterna i due
+indirizzi e l'API riceve heartbeat e audit di tutte e due sulla stessa riga.
+L'API lo segnala; non blocca nessuna richiesta e il client non cambia.
+
+**Regola.** Per ogni PC riconosciuto (ID e uuid salvati, firma valida dove
+serve) l'API ricorda l'indirizzo e l'ora dell'ultimo heartbeat; l'indirizzo
+e' lo stesso di `last_online_ip`. Un *cambio* e' un heartbeat dello stesso
+PC da un indirizzo diverso dal precedente, arrivato meno di 60 secondi
+dopo: il client ne manda uno ogni 15 secondi, quindi due copie accese fanno
+un cambio quasi a ogni heartbeat. Con almeno **10 cambi negli ultimi 10
+minuti** il PC e' "possibile copia":
+
+- nella lista dei PC del pannello (`GET /api/admin/peer/list`, campo
+  `possibile_copia`) accanto all'ID compare l'etichetta rossa "Possible
+  copy", che sparisce dopo 10 minuti senza cambi;
+- nel log una riga warn `possibile copia del PC` con `id`, i due indirizzi
+  piu' recenti (`indirizzo`, `indirizzo_precedente`) e il numero di `cambi`,
+  al massimo una all'ora per PC; mai uuid ne' chiavi.
+
+Un PC senza heartbeat da 10 minuti esce dalla memoria.
+
+**Cosa fare.** Sulla copia si toglie Remotek con la sua configurazione e lo
+si reinstalla: prende un ID nuovo. Per le copie future: sysprep prima di
+clonare, oppure Remotek installato dopo la copia.
+
+**Limiti.** E' un avviso da verificare, non un blocco:
+
+- una rete con due linee che bilancia ogni connessione su un indirizzo
+  diverso da' lo stesso segno senza alcuna copia;
+- due copie dietro lo stesso indirizzo pubblico non si vedono;
+- la memoria e' nel processo: dopo un riavvio dell'API riparte vuota;
+- dietro un proxy senza `gin.trust-proxy` (Configurazione) tutti i PC hanno
+  l'indirizzo del proxy e la regola non vede niente.
+
 ## Origine e licenza
 
 Remotek API e' basato su [rustdesk-api](https://github.com/lejianwen/rustdesk-api)

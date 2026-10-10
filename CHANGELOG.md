@@ -7,6 +7,14 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 ## [Non rilasciato]
 
 ### Aggiunto
+- Segnalazione delle copie di un PC (VM clonata o immagine disco senza
+  sysprep, che porta ID, uuid e chiave): con almeno 10 cambi di indirizzo
+  negli ultimi 10 minuti fra heartbeat a meno di 60 secondi l'uno
+  dall'altro, il PC ha `possibile_copia` vero in
+  `GET /api/admin/peer/list`, il pannello mostra "Possible copy" accanto
+  all'ID con cosa fare, e il log ha un warn `possibile copia del PC` al
+  massimo una volta all'ora. Nessuna richiesta bloccata, rotte del client
+  invariate. Regola e limiti nel README, Copie dello stesso PC.
 - Opzione `app.firma-obbligatoria` (`RUSTDESK_API_APP_FIRMA_OBBLIGATORIA`,
   default `false`): se vera, anche un PC senza chiave registrata deve
   firmare le richieste senza login, e il suo sysinfo firmato con `pk` e
