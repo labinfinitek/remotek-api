@@ -13,7 +13,7 @@
 # le parti della glibc che non funzionano statiche: netgo e osusergo (DNS e
 # utenti in Go puro), sqlite_omit_load_extension (niente dlopen); timetzdata
 # mette il database dei fusi nel binario, cosi' TZ funziona senza tzdata.
-FROM docker.io/library/golang:1.26.8-trixie@sha256:bdca99a00bc16590cb1a0bb4e698f5fc5d6a64e4d5eef13d9f18a0ee08e5fa65 AS api
+FROM docker.io/library/golang:1.26.9-trixie@sha256:f06b7122f888680048afb247c4e5f49c0069eb6c4c1ccae0f3f4834527a8d22c AS api
 ENV CGO_ENABLED=1 GOFLAGS=-mod=readonly GOTOOLCHAIN=local
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 WORKDIR /src
@@ -34,7 +34,7 @@ RUN go build -trimpath -buildvcs=false \
 # sull'immagine golang perche' quella del pannello non ha git; adatta e le
 # patch non chiedono pacchetti. 3998c2a e' l'ultimo commit di master
 # (2025-08-31), quello che impacchettava rustdesk-api v2.7.
-FROM docker.io/library/golang:1.26.8-trixie@sha256:bdca99a00bc16590cb1a0bb4e698f5fc5d6a64e4d5eef13d9f18a0ee08e5fa65 AS pannello-sorgente
+FROM docker.io/library/golang:1.26.9-trixie@sha256:f06b7122f888680048afb247c4e5f49c0069eb6c4c1ccae0f3f4834527a8d22c AS pannello-sorgente
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG PANNELLO_COMMIT=3998c2a9213fcd047252776d0f0db33e6717026c
 ADD --keep-git-dir=false https://github.com/lejianwen/rustdesk-api-web.git#${PANNELLO_COMMIT} /pannello

@@ -56,6 +56,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   quella nuova.
 
 ### Sicurezza
+- Go 1.26.9 e `golang.org/x/net` v0.60.0: govulncheck trova raggiungibili
+  dal server dell'API dodici avvisi della libreria standard di Go 1.26.8
+  (`net/http` e HTTP/2, `crypto/tls`, `net/textproto`, `html/template`; da
+  GO-2026-6599 a GO-2026-6617), cinque dei quali anche in `x/net` v0.57.0.
+  Immagine di build `golang:1.26.9-trixie`.
 - Corpo delle richieste al massimo 1 MiB su ogni rotta, anche quelle senza
   login (prima nessun limite: un corpo grande si leggeva tutto in memoria).
   Con `Content-Length` oltre il limite risposta 413 senza leggere il
