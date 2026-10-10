@@ -75,7 +75,7 @@ go vet ./...
 go test -race -shuffle=on ./...
 ```
 
-`go.mod` chiede Go 1.26 (toolchain go1.26.8): l'ambiente cloud ha un Go piu'
+`go.mod` chiede Go 1.26 (toolchain go1.26.9): l'ambiente cloud ha un Go piu'
 vecchio e `GOTOOLCHAIN=auto`, quindi scarica da solo la versione giusta.
 
 gitleaks, govulncheck, golangci-lint e zizmor non si lanciano in locale: le
