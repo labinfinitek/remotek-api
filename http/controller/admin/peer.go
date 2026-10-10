@@ -10,6 +10,7 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/request/admin"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
+	adResp "github.com/lejianwen/rustdesk-api/v2/http/response/admin"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 )
 
@@ -100,7 +101,7 @@ func idUsato(c *gin.Context, f *admin.PeerForm) bool {
 // @Param id query string false "ID"
 // @Param hostname query string false "主机名"
 // @Param uuids query string false "uuids 用逗号分隔"
-// @Success 200 {object} response.Response{data=model.PeerList}
+// @Success 200 {object} response.Response{data=adResp.PeerListPannello}
 // @Failure 500 {object} response.Response
 // @Router /admin/peer/list [get]
 // @Security token
@@ -142,7 +143,14 @@ func (ct *Peer) List(c *gin.Context) {
 		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
-	response.Success(c, res)
+	// Il segno della copia sospetta viene dalla memoria degli heartbeat
+	// (ADR-0024), solo qui: le rotte del client restano come sono.
+	lista := &adResp.PeerListPannello{Peers: make([]adResp.PeerPannello, 0, len(res.Peers)), Pagination: res.Pagination}
+	ora := time.Now()
+	for _, p := range res.Peers {
+		lista.Peers = append(lista.Peers, adResp.PeerPannello{Peer: p, PossibileCopia: service.PossibileCopia(p.Id, ora)})
+	}
+	response.Success(c, lista)
 }
 
 // Update 编辑

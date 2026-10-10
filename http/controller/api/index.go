@@ -83,6 +83,9 @@ func (i *Index) Heartbeat(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{})
 		return
 	}
+	// Ogni heartbeat del PC riconosciuto entra nella rilevazione delle
+	// copie (ADR-0024), con lo stesso indirizzo di LastOnlineIp.
+	service.SegnaHeartbeat(peer.Id, c.ClientIP(), time.Now())
 	// 如果在40s以内则不更新
 	if time.Now().Unix()-peer.LastOnlineTime >= 30 {
 		upp := &model.Peer{RowId: peer.RowId, LastOnlineTime: time.Now().Unix(), LastOnlineIp: c.ClientIP()}

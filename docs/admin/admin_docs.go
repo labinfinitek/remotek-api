@@ -4035,7 +4035,7 @@ const docTemplateadmin = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/model.PeerList"
+                                            "$ref": "#/definitions/admin.PeerListPannello"
                                         }
                                     }
                                 }
@@ -5331,6 +5331,85 @@ const docTemplateadmin = `{
                     "type": "string"
                 },
                 "row_id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "admin.PeerListPannello": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/admin.PeerPannello"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "admin.PeerPannello": {
+            "type": "object",
+            "properties": {
+                "alias": {
+                    "type": "string"
+                },
+                "cpu": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "group_id": {
+                    "type": "integer"
+                },
+                "hostname": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "last_online_ip": {
+                    "type": "string"
+                },
+                "last_online_time": {
+                    "type": "integer"
+                },
+                "memory": {
+                    "type": "string"
+                },
+                "os": {
+                    "type": "string"
+                },
+                "possibile_copia": {
+                    "type": "boolean"
+                },
+                "row_id": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/model.User"
+                },
+                "user_id": {
                     "type": "integer"
                 },
                 "username": {
