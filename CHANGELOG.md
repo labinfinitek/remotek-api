@@ -12,7 +12,8 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 - Firma del dispositivo: un sysinfo firmato con un uuid diverso da quello
   salvato non fa verificare la firma ne' la mette nella memoria delle firme
   viste; per un PC creato dal pannello senza uuid il warn dice "PC senza
-  uuid, in attesa del primo sysinfo".
+  uuid, in attesa del primo sysinfo". Una chiave registrata scrive nel log
+  una riga info `chiave del PC registrata` con l'ID del PC.
 
 ## [0.5.0] - 2026-10-10
 Immagine `ghcr.io/labinfinitek/remotek-api:0.5.0`, costruita con Go 1.26.9.

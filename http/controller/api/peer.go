@@ -72,6 +72,9 @@ func (p *Peer) SysInfo(c *gin.Context) {
 			response.ErrorErr(c, "OperationFailed", err)
 			return
 		}
+		if pe.ChiavePubblica != "" {
+			chiaveRegistrata(c, f.Id)
+		}
 	case esito == service.UuidDiverso && pe.Uuid != "":
 		// Un altro dispositivo con lo stesso ID: la scheda non cambia. Il
 		// warn di ErrorErr ha rotta e ID del PC, non gli uuid. Il legame si
@@ -114,7 +117,15 @@ func registraChiave(c *gin.Context, rowId uint, id, chiave string) {
 		global.Logger.Per(c.Request.Context()).Errorf("%s %s: chiave del dispositivo non salvata: %v", c.Request.Method, c.FullPath(), err)
 	case !registrata:
 		global.Logger.Per(c.Request.Context()).Errorf("%s %s: dispositivo %s: chiave non registrata, nel frattempo ne e' stata registrata un'altra", c.Request.Method, c.FullPath(), id)
+	default:
+		chiaveRegistrata(c, id)
 	}
+}
+
+// chiaveRegistrata scrive nel log, a livello info, che il PC id da ora
+// firma le richieste (setup-lab lo cerca). Niente chiave, uuid o firma.
+func chiaveRegistrata(c *gin.Context, id string) {
+	global.Logger.Per(c.Request.Context()).Infof("%s %s: dispositivo %s: chiave del PC registrata", c.Request.Method, c.FullPath(), id)
 }
 
 // richiestaFirmata raccoglie la firma del dispositivo di c per
