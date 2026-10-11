@@ -533,7 +533,9 @@ in the last 10 minutes** the PC is a "possible copy":
   recent addresses (`indirizzo`, `indirizzo_precedente`) and the number of
   `cambi`, at most once an hour per PC; never uuid or keys.
 
-A PC without heartbeats for 10 minutes leaves the memory.
+A PC without heartbeats for 10 minutes leaves the memory; the time of its
+last warning stays there for an hour, so that a copy silent for a while
+gets no second warning before the hour.
 
 **What to do.** On the copy, uninstall Remotek removing its configuration
 and install it again: it gets a new ID. For future copies: sysprep before

@@ -536,7 +536,9 @@ minuti** il PC e' "possibile copia":
   piu' recenti (`indirizzo`, `indirizzo_precedente`) e il numero di `cambi`,
   al massimo una all'ora per PC; mai uuid ne' chiavi.
 
-Un PC senza heartbeat da 10 minuti esce dalla memoria.
+Un PC senza heartbeat da 10 minuti esce dalla memoria; l'ora del suo
+ultimo avviso ci resta per un'ora, perche' una copia zitta per un po' non
+abbia un secondo avviso prima dell'ora.
 
 **Cosa fare.** Sulla copia si toglie Remotek con la sua configurazione e lo
 si reinstalla: prende un ID nuovo. Per le copie future: sysprep prima di

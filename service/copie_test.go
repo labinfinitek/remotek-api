@@ -10,7 +10,9 @@ import (
 // copieDiProva restituisce una memoria vuota che scrive il log in registro.
 func copieDiProva() (*memoriaCopie, *strings.Builder) {
 	registro := &strings.Builder{}
-	return &memoriaCopie{pc: map[string]*pcVisto{}, log: slog.New(slog.NewJSONHandler(registro, nil))}, registro
+	m := nuovaMemoriaCopie()
+	m.log = slog.New(slog.NewJSONHandler(registro, nil))
+	return m, registro
 }
 
 // alterna manda n heartbeat di id ogni passo, alternando due indirizzi, a
@@ -32,14 +34,17 @@ var inizioCopie = time.Date(2026, 10, 10, 9, 0, 0, 0, time.UTC)
 
 // TestCopiaAlternata: due copie che mandano l'heartbeat ogni 15 secondi da
 // due indirizzi fanno 10 cambi in 150 secondi; il PC diventa sospetto
-// all'undicesimo heartbeat, con un solo WARN, senza uuid ne' chiavi.
+// all'undicesimo heartbeat, con un solo WARN, senza uuid ne' chiavi. Una
+// sequenza sola, col tempo che va solo avanti.
 func TestCopiaAlternata(t *testing.T) {
 	m, registro := copieDiProva()
 	ora := alterna(m, "999000111", inizioCopie, 15*time.Second, SogliaCopie)
-	if m.possibileCopia("999000111", ora) {
-		t.Fatalf("copia sospetta dopo %d cambi, soglia %d", SogliaCopie-1, SogliaCopie)
+	if m.possibileCopia("999000111", ora) || registro.Len() != 0 {
+		t.Fatalf("copia sospetta dopo %d cambi, soglia %d:\n%s", SogliaCopie-1, SogliaCopie, registro)
 	}
-	ora = alterna(m, "999000111", inizioCopie, 15*time.Second, 30)
+	// SogliaCopie e' pari: l'ultimo heartbeat era dal secondo indirizzo e
+	// il prossimo, dal primo, e' il decimo cambio.
+	ora = alterna(m, "999000111", ora.Add(15*time.Second), 15*time.Second, 20)
 	if !m.possibileCopia("999000111", ora) {
 		t.Fatal("30 heartbeat alternati: copia non sospettata")
 	}
@@ -105,6 +110,35 @@ func TestSecondoAvviso(t *testing.T) {
 	m.heartbeat("999000111", "198.51.100.9", primo.Add(AvvisoCopie))
 	if n := strings.Count(registro.String(), MessaggioCopia); n != 2 {
 		t.Fatalf("dopo un'ora %d WARN, attesi 2", n)
+	}
+}
+
+// TestAvvisoDopoUscita: una copia che resta zitta piu' di 10 minuti esce
+// dalla memoria ma non perde l'ora dell'avviso: se torna prima dell'ora non
+// ha un secondo WARN, dopo l'ora si'. L'ora dell'avviso esce dalla memoria
+// alla prima pulizia dopo l'ora.
+func TestAvvisoDopoUscita(t *testing.T) {
+	m, registro := copieDiProva()
+	primo := alterna(m, "999000111", inizioCopie, 15*time.Second, SogliaCopie+1)
+	m.heartbeat("999000222", "198.51.100.2", primo.Add(20*time.Minute)) // pulizia
+	if _, c := m.pc["999000111"]; c {
+		t.Fatal("PC zitto da 20 minuti ancora in memoria")
+	}
+	ora := alterna(m, "999000111", primo.Add(30*time.Minute), 15*time.Second, 2*SogliaCopie)
+	if !m.possibileCopia("999000111", ora) {
+		t.Fatal("copia tornata: non sospettata")
+	}
+	if n := strings.Count(registro.String(), MessaggioCopia); n != 1 {
+		t.Fatalf("copia tornata dopo 30 minuti: %d WARN, atteso 1:\n%s", n, registro)
+	}
+	m.heartbeat("999000222", "198.51.100.2", primo.Add(50*time.Minute)) // pulizia
+	alterna(m, "999000111", primo.Add(AvvisoCopie), 15*time.Second, SogliaCopie+1)
+	if n := strings.Count(registro.String(), MessaggioCopia); n != 2 {
+		t.Fatalf("copia tornata dopo un'ora: %d WARN, attesi 2:\n%s", n, registro)
+	}
+	m.heartbeat("999000222", "198.51.100.2", primo.Add(3*AvvisoCopie))
+	if len(m.avvisi) != 0 || len(m.pc) != 1 {
+		t.Errorf("dopo tre ore %d avvisi e %d PC in memoria, attesi 0 e 1", len(m.avvisi), len(m.pc))
 	}
 }
 
