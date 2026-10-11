@@ -20,6 +20,17 @@ const (
 	EventoConnessioneAperta = "connessione.aperta"
 	EventoConnessioneChiusa = "connessione.chiusa"
 	EventoConnessioneNota   = "connessione.nota"
+	EventoFileTrasferiti    = "file.trasferiti"
+	EventoTerminaleChiuso   = "terminale.chiuso"
+	EventoPcNuovo           = "pc.nuovo"
+	EventoPcCopia           = "pc.possibile_copia" //nolint:misspell // italiano, nome deciso dal compito (ADR-0026)
+)
+
+// Direzioni di file.trasferiti: il type del registro dei file, 0 quando il
+// PC controllato manda i file al tecnico, 1 quando li riceve.
+const (
+	DirezioneDalPc = "dal_pc"
+	DirezioneAlPc  = "al_pc"
 )
 
 // schemaEventi e' la versione del corpo degli eventi.
@@ -45,7 +56,29 @@ type SessioneEvento struct {
 	Nota    string  `json:"nota"`
 }
 
-// corpoEvento e' il corpo comune degli eventi.
+// FileEvento e' un trasferimento di file: direzione e numero, mai nomi ne'
+// percorsi, che restano nel pannello.
+type FileEvento struct {
+	Direzione string `json:"direzione"`
+	Numero    int    `json:"numero"`
+}
+
+// VerificaEvento e' l'esito della verifica della catena di una
+// trascrizione, come nel pannello: integra o no, e l'hash dell'ultimo
+// blocco. Mai blocchi ne' dati.
+type VerificaEvento struct {
+	Integra bool   `json:"integra"`
+	Hash    string `json:"hash"`
+}
+
+// CopiaEvento e' il numero di cambi di indirizzo di un PC forse copiato;
+// gli indirizzi, che sono IP, non escono.
+type CopiaEvento struct {
+	Cambi int `json:"cambi"`
+}
+
+// corpoEvento e' il corpo comune degli eventi; i campi dopo Pc ci sono solo
+// nei tipi che li usano.
 type corpoEvento struct {
 	Schema   int             `json:"schema"`
 	Id       string          `json:"id"`
@@ -53,6 +86,9 @@ type corpoEvento struct {
 	Ora      string          `json:"ora"`
 	Pc       PcEvento        `json:"pc"`
 	Sessione *SessioneEvento `json:"sessione,omitempty"`
+	File     *FileEvento     `json:"file,omitempty"`
+	Verifica *VerificaEvento `json:"verifica,omitempty"`
+	Copia    *CopiaEvento    `json:"copia,omitempty"`
 }
 
 type EventiService struct {
@@ -64,11 +100,56 @@ func (es *EventiService) AccodaSessione(tipo string, conn *model.AuditConn) erro
 	if !Config.Integrazione.Attiva() {
 		return nil
 	}
-	pc, err := pcEvento(conn.PeerId)
+	return accodaDelPc(conn.PeerId, corpoEvento{Tipo: tipo, Sessione: sessioneEvento(conn)})
+}
+
+// AccodaFile accoda file.trasferiti per il trasferimento f.
+func (es *EventiService) AccodaFile(f *model.AuditFile) error {
+	if !Config.Integrazione.Attiva() {
+		return nil
+	}
+	dir := DirezioneDalPc
+	if f.Type == 1 {
+		dir = DirezioneAlPc
+	}
+	return accodaDelPc(f.PeerId, corpoEvento{Tipo: EventoFileTrasferiti, File: &FileEvento{Direzione: dir, Numero: f.Num}})
+}
+
+// AccodaTerminale accoda terminale.chiuso per la sessione terminale conn,
+// con l'esito v della verifica della sua trascrizione.
+func (es *EventiService) AccodaTerminale(conn *model.AuditConn, v *model.AuditTerminalVerifica) error {
+	if !Config.Integrazione.Attiva() {
+		return nil
+	}
+	return accodaDelPc(conn.PeerId, corpoEvento{Tipo: EventoTerminaleChiuso, Sessione: sessioneEvento(conn),
+		Verifica: &VerificaEvento{Integra: v.Integra, Hash: v.Hash}})
+}
+
+// AccodaPcNuovo accoda pc.nuovo per il PC p, appena creato.
+func (es *EventiService) AccodaPcNuovo(p *model.Peer) error {
+	if !Config.Integrazione.Attiva() {
+		return nil
+	}
+	return accoda(corpoEvento{Tipo: EventoPcNuovo, Pc: PcEvento{Id: p.Id, Nome: p.Hostname, Alias: p.Alias}}, time.Now())
+}
+
+// AccodaCopia accoda pc.possibile_copia per il PC id con cambi cambi di
+// indirizzo.
+func (es *EventiService) AccodaCopia(id string, cambi int) error {
+	if !Config.Integrazione.Attiva() {
+		return nil
+	}
+	return accodaDelPc(id, corpoEvento{Tipo: EventoPcCopia, Copia: &CopiaEvento{Cambi: cambi}})
+}
+
+// accodaDelPc accoda c col PC id letto dal database.
+func accodaDelPc(id string, c corpoEvento) error {
+	pc, err := pcEvento(id)
 	if err != nil {
 		return err
 	}
-	return accoda(tipo, pc, sessioneEvento(conn), time.Now())
+	c.Pc = pc
+	return accoda(c, time.Now())
 }
 
 // pcEvento legge ID, hostname e alias del PC id; un PC che non c'e' ha solo
@@ -102,22 +183,22 @@ func sessioneEvento(conn *model.AuditConn) *SessioneEvento {
 // ora scrive t in RFC 3339, UTC, al secondo.
 func ora(t time.Time) string { return t.UTC().Format(time.RFC3339) }
 
-// accoda salva in coda l'evento tipo, creato all'ora adesso, con un id
-// casuale.
-func accoda(tipo string, pc PcEvento, sessione *SessioneEvento, adesso time.Time) error {
+// accoda salva in coda l'evento c, creato all'ora adesso, con schema, id
+// casuale e ora.
+func accoda(c corpoEvento, adesso time.Time) error {
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return fmt.Errorf("id dell'evento: %w", err)
 	}
-	corpo, err := json.Marshal(corpoEvento{Schema: schemaEventi, Id: id.String(), Tipo: tipo,
-		Ora: ora(adesso), Pc: pc, Sessione: sessione})
+	c.Schema, c.Id, c.Ora = schemaEventi, id.String(), ora(adesso)
+	corpo, err := json.Marshal(c)
 	if err != nil {
-		return fmt.Errorf("corpo dell'evento %s: %w", tipo, err)
+		return fmt.Errorf("corpo dell'evento %s: %w", c.Tipo, err)
 	}
-	e := &model.Evento{EventoId: id.String(), Tipo: tipo, Corpo: string(corpo),
+	e := &model.Evento{EventoId: c.Id, Tipo: c.Tipo, Corpo: string(corpo),
 		Creato: adesso.Unix(), Prossimo: adesso.Unix()}
 	if err := DB.Create(e).Error; err != nil {
-		return fmt.Errorf("evento %s in coda: %w", tipo, err)
+		return fmt.Errorf("evento %s in coda: %w", c.Tipo, err)
 	}
 	return nil
 }

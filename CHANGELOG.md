@@ -15,6 +15,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   `evento non consegnato` dopo. Senza URL non cambia niente; URL non
   `https://`, con credenziali o segreto corto fermano l'avvio. Mai IP,
   uuid, chiavi, token o trascrizioni (README, Integrazione).
+- Integrazione (eventi): anche `file.trasferiti` (direzione e numero, senza
+  nomi ne' percorsi), `terminale.chiuso` (esito della verifica e hash
+  finale, senza dati), `pc.nuovo` e `pc.possibile_copia` (numero di cambi,
+  senza indirizzi).
 
 ### Corretto
 - Copie dello stesso PC: una copia rimasta zitta piu' di 10 minuti non ha

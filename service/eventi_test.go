@@ -107,7 +107,7 @@ func passo(t *testing.T, k *Consegna, mandato bool) {
 // consegnato e non si manda piu'.
 func TestConsegnaRiuscita(t *testing.T) {
 	k, r, adesso, registro := codaDiProva(t, 204)
-	if err := accoda("prova", PcEvento{Id: "999000111"}, nil, *adesso); err != nil {
+	if err := accoda(corpoEvento{Tipo: "prova", Pc: PcEvento{Id: "999000111"}}, *adesso); err != nil {
 		t.Fatal(err)
 	}
 	passo(t, k, true)
@@ -136,7 +136,7 @@ func TestConsegnaRipetuta(t *testing.T) {
 	for _, primo := range []int{500, 302} {
 		t.Run(strconv.Itoa(primo), func(t *testing.T) {
 			k, r, adesso, registro := codaDiProva(t, primo, 200)
-			if err := accoda("prova", PcEvento{Id: "999000111"}, nil, *adesso); err != nil {
+			if err := accoda(corpoEvento{Tipo: "prova", Pc: PcEvento{Id: "999000111"}}, *adesso); err != nil {
 				t.Fatal(err)
 			}
 			passo(t, k, true)
@@ -166,7 +166,7 @@ func TestConsegnaRipetuta(t *testing.T) {
 func TestConsegnaFallita(t *testing.T) {
 	k, r, adesso, registro := codaDiProva(t, 500)
 	inizio := *adesso
-	if err := accoda(EventoConnessioneChiusa, PcEvento{Id: "999000111"}, nil, inizio); err != nil {
+	if err := accoda(corpoEvento{Tipo: EventoConnessioneChiusa, Pc: PcEvento{Id: "999000111"}}, inizio); err != nil {
 		t.Fatal(err)
 	}
 	var attese []time.Duration
@@ -203,7 +203,7 @@ func TestOrdineCoda(t *testing.T) {
 	k, r, adesso, _ := codaDiProva(t, 500, 200)
 	var ids []string
 	for range 2 {
-		if err := accoda("prova", PcEvento{Id: "999000111"}, nil, *adesso); err != nil {
+		if err := accoda(corpoEvento{Tipo: "prova", Pc: PcEvento{Id: "999000111"}}, *adesso); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -329,4 +329,64 @@ func TestSenzaUrlNienteInCoda(t *testing.T) {
 		t.Errorf("AccodaSessione senza URL: %v", err)
 	}
 	AvviaConsegna(Config.Integrazione)()
+}
+
+// TestCampiAltriEventi controlla, per file.trasferiti, terminale.chiuso,
+// pc.nuovo e pc.possibile_copia, il corpo intero e che nomi e percorsi dei
+// file, indirizzi, uuid, chiave e guid non escano.
+func TestCampiAltriEventi(t *testing.T) {
+	codaDiProva(t, 200)
+	pc := &model.Peer{Id: "999000111", Hostname: "PC-ROSSI", Alias: "Rossi", Uuid: "dXVpZC1zZWdyZXRv", ChiavePubblica: "Y2hpYXZl", LastOnlineIp: "198.51.100.1"}
+	if err := DB.Create(pc).Error; err != nil {
+		t.Fatal(err)
+	}
+	inizio := time.Date(2026, 10, 11, 9, 0, 0, 0, time.UTC)
+	conn := &model.AuditConn{ConnId: 7, PeerId: "999000111", FromName: "mario", Type: model.AuditConnTerminale, Ip: "203.0.113.7",
+		Uuid: "dXVpZC1zZWdyZXRv", SessionId: "9007199254740993", Guid: "0123456789abcdef", Note: "#83100",
+		TimeModel: model.TimeModel{CreatedAt: custom_types.AutoTime(inizio)}}
+	file := func(tipo, num int) *model.AuditFile {
+		return &model.AuditFile{PeerId: "999000111", FromPeer: "999000222", FromName: "mario", Type: tipo, Num: num, IsFile: true,
+			Path: `C:\Users\rossi\segreti.txt`, Info: `{"files":[["segreti.txt",12]],"ip":"203.0.113.7","name":"mario","num":1}`, Ip: "203.0.113.7", Uuid: "dXVpZC1zZWdyZXRv"}
+	}
+	es := AllService.EventiService
+	for _, err := range []error{
+		es.AccodaFile(file(0, 1)),
+		es.AccodaFile(file(1, 3)),
+		es.AccodaTerminale(conn, &model.AuditTerminalVerifica{Integra: true, Blocchi: 3, Fine: true, Hash: "ab12"}),
+		es.AccodaPcNuovo(pc),
+		es.AccodaCopia("999000111", 10),
+	} {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	pcJSON := map[string]any{"id": "999000111", "nome": "PC-ROSSI", "alias": "Rossi"}
+	want := []map[string]any{
+		{"tipo": EventoFileTrasferiti, "file": map[string]any{"direzione": "dal_pc", "numero": 1.0}},
+		{"tipo": EventoFileTrasferiti, "file": map[string]any{"direzione": "al_pc", "numero": 3.0}},
+		{"tipo": EventoTerminaleChiuso, "verifica": map[string]any{"integra": true, "hash": "ab12"},
+			"sessione": map[string]any{"conn_id": 7.0, "tipo": 4.0, "tecnico": "mario", "inizio": "2026-10-11T09:00:00Z", "fine": nil, "durata_s": nil, "nota": "#83100"}},
+		{"tipo": EventoPcNuovo},
+		{"tipo": EventoPcCopia, "copia": map[string]any{"cambi": 10.0}},
+	}
+	coda := eventi(t)
+	if len(coda) != len(want) {
+		t.Fatalf("%d eventi, attesi %d", len(coda), len(want))
+	}
+	for i, e := range coda {
+		var c map[string]any
+		if err := json.Unmarshal([]byte(e.Corpo), &c); err != nil {
+			t.Fatal(err)
+		}
+		w := want[i]
+		w["schema"], w["id"], w["ora"], w["pc"] = 1.0, e.EventoId, c["ora"], pcJSON
+		if !reflect.DeepEqual(c, w) || e.Tipo != w["tipo"] {
+			t.Errorf("%s:\n got  %v\n want %v", e.Tipo, c, w)
+		}
+		for _, vietato := range []string{"segreti", `Users`, "999000222", "dXVpZC1zZWdyZXRv", "Y2hpYXZl", "198.51.100.1", "203.0.113.7", "0123456789abcdef", "9007199254740993", `"blocchi"`} {
+			if strings.Contains(e.Corpo, vietato) {
+				t.Errorf("%s: nel corpo c'e' %s: %s", e.Tipo, vietato, e.Corpo)
+			}
+		}
+	}
 }

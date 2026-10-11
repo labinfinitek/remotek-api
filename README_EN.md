@@ -603,8 +603,15 @@ others, so the reliable order is `ora`.
 | `connessione.aperta` | the connection is authorised: the PC sends `POST /api/audit/conn`, without `action`, with technician (`peer`) and type, which the event carries; `inizio` is the time of the `new` sent when the socket opened. A connection never authorised has no such event; an identical repeat makes no second one |
 | `connessione.chiusa` | the PC records the close; with `fine` and `durata_s`. Also sent for connections never authorised (refused or not clicked): then `tecnico` is empty and `tipo` is 0 |
 | `connessione.nota` | the session note is written or changed (during the session or at the end); a note equal to the stored one makes no event. The text is the one in the log, truncated to 2000 characters |
+| `file.trasferiti` | the PC records a file transfer (`POST /api/audit/file`); with `file.direzione` (`dal_pc`: the controlled PC sends the files, log type 0; `al_pc`: it receives them, type 1) and `file.numero`. Names and paths stay in the panel |
+| `terminale.chiuso` | the block with `fine` of a terminal session transcript arrives; with `sessione` and `verifica` (`integra`, final `hash`), computed as the panel's verification. No blocks or data. `sessione.fine` is `null` if the PC records the close later |
+| `pc.nuovo` | a sysinfo creates a PC the API did not know |
+| `pc.possibile_copia` | the API writes the `possibile copia del PC` warn (Copies of the same PC), at most one per hour per PC; with `copia.cambi`, without the addresses |
 
-**Fields.** Every event has exactly:
+**Fields.** Every event has `schema`, `id`, `tipo`, `ora` and `pc`; the
+connection events and `terminale.chiuso` have `sessione`, the other types
+their own object (`file`, `verifica`, `copia`) and nothing else. For
+example:
 
 ```json
 {
@@ -625,6 +632,13 @@ others, so the reliable order is `ora`.
 `pc.nome` is the hostname. `sessione.tipo` is the log's type, as in the
 panel (4 = terminal), `tecnico` the technician's name (`from_name`);
 `fine` and `durata_s` are `null` while the connection is open.
+The other objects:
+
+```json
+"file": {"direzione": "dal_pc", "numero": 3}
+"verifica": {"integra": true, "hash": "9f2c...e01a"}
+"copia": {"cambi": 10}
+```
 
 **Signature.** Every request carries `X-Remotek-Evento-Id` (the `id`) and
 `X-Remotek-Evento-Firma: t=<UNIX seconds>,v1=<hex>`, with `v1` =
