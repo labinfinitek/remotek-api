@@ -509,6 +509,13 @@ X-Remotek-Firma: 1791000000.otUjpW4BdAQnl0TuN1E/GmD3LAx38zzpYTczckv70y3hYSIVtkA7
    nel log una riga **info** `chiave del PC registrata` con rotta e ID del
    PC, una volta sola; mai chiave, uuid ne' firma.
 
+**Campi sconosciuti.** Le rotte del dispositivo (sysinfo, heartbeat,
+audit/conn, audit/file, audit/terminal) ignorano i campi del corpo che non
+conoscono: un client piu' nuovo dell'API puo' mandarne in piu' senza che la
+risposta cambi. Il client dal `remotek-1.4.9-3` manda `ms` negli audit dei
+file, che l'API non salva. La firma copre il corpo intero, campi ignorati
+compresi.
+
 **Opzione** `app.firma-obbligatoria` (`RUSTDESK_API_APP_FIRMA_OBBLIGATORIA`,
 default `false`): se vera, anche un PC senza chiave deve firmare. Il suo
 sysinfo firmato con `pk` e uuid giusto registra la chiave (un PC nuovo lo

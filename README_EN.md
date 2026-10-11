@@ -506,6 +506,13 @@ X-Remotek-Firma: 1791000000.otUjpW4BdAQnl0TuN1E/GmD3LAx38zzpYTczckv70y3hYSIVtkA7
    line `chiave del PC registrata` to the log with route and PC ID, once;
    never the key, uuid or signature.
 
+**Unknown fields.** The device routes (sysinfo, heartbeat, audit/conn,
+audit/file, audit/terminal) ignore the body fields they do not know: a
+client newer than the API can send more of them and the answer does not
+change. The client from `remotek-1.4.9-3` sends `ms` in file audits, which
+the API does not save. The signature covers the whole body, ignored fields
+included.
+
 **Option** `app.firma-obbligatoria` (`RUSTDESK_API_APP_FIRMA_OBBLIGATORIA`,
 default `false`): when true, a PC without a key must sign too. Its sysinfo
 signed with `pk` and the right uuid registers the key (a new PC is created);
