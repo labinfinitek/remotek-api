@@ -67,8 +67,6 @@ func (a *Audit) AuditConn(c *gin.Context) {
 	case model.AuditActionNew:
 		if err := service.AllService.AuditService.CreateAuditConn(ac); err != nil {
 			auditNonSalvato(c, err)
-		} else {
-			evento(c, service.EventoConnessioneAperta, ac)
 		}
 	case model.AuditActionClose:
 		ex, err := connessioneAudit(c, af.Id, af.ConnId)
@@ -92,6 +90,13 @@ func (a *Audit) AuditConn(c *gin.Context) {
 			}
 			if err := service.AllService.AuditService.UpdateAuditConn(up); err != nil {
 				auditNonSalvato(c, err)
+			} else if ex.FromName != up.FromName || ex.Type != up.Type || ex.SessionId != up.SessionId {
+				// L'apertura esce qui, all'autorizzazione, la prima richiesta
+				// con tecnico e tipo: il "new" arriva all'apertura del socket
+				// senza (golden audit-conn-new). Una ripetizione uguale non
+				// fa un secondo evento.
+				ex.FromPeer, ex.FromName, ex.SessionId, ex.Type = up.FromPeer, up.FromName, up.SessionId, up.Type
+				evento(c, service.EventoConnessioneAperta, ex)
 			}
 		}
 	}

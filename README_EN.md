@@ -600,8 +600,8 @@ others, so the reliable order is `ora`.
 
 | Type | When |
 |---|---|
-| `connessione.aperta` | the PC records a new connection (`POST /api/audit/conn`, `action` `new`); also before the customer accepts, as in the log |
-| `connessione.chiusa` | the PC records the close; with `fine` and `durata_s` |
+| `connessione.aperta` | the connection is authorised: the PC sends `POST /api/audit/conn`, without `action`, with technician (`peer`) and type, which the event carries; `inizio` is the time of the `new` sent when the socket opened. A connection never authorised has no such event; an identical repeat makes no second one |
+| `connessione.chiusa` | the PC records the close; with `fine` and `durata_s`. Also sent for connections never authorised (refused or not clicked): then `tecnico` is empty and `tipo` is 0 |
 | `connessione.nota` | the session note is written or changed (during the session or at the end); a note equal to the stored one makes no event. The text is the one in the log, truncated to 2000 characters |
 
 **Fields.** Every event has exactly:
@@ -622,10 +622,9 @@ others, so the reliable order is `ora`.
 ```
 
 `id` is a random event uuid, `ora` when it was created (RFC 3339, UTC).
-`pc.nome` is the hostname. `sessione.tipo` is the log's type, as in the panel (4 =
-terminal), `tecnico` the technician's
-name (`from_name`); `fine` and `durata_s` are `null` while the connection
-is open.
+`pc.nome` is the hostname. `sessione.tipo` is the log's type, as in the
+panel (4 = terminal), `tecnico` the technician's name (`from_name`);
+`fine` and `durata_s` are `null` while the connection is open.
 
 **Signature.** Every request carries `X-Remotek-Evento-Id` (the `id`) and
 `X-Remotek-Evento-Firma: t=<UNIX seconds>,v1=<hex>`, with `v1` =

@@ -603,8 +603,8 @@ altri, quindi l'ordine sicuro e' quello di `ora`.
 
 | Tipo | Quando |
 |---|---|
-| `connessione.aperta` | il PC registra una connessione nuova (`POST /api/audit/conn`, `action` `new`); anche prima che il cliente accetti, come nel registro |
-| `connessione.chiusa` | il PC registra la chiusura; con `fine` e `durata_s` |
+| `connessione.aperta` | la connessione e' autorizzata: il PC manda a `POST /api/audit/conn`, senza `action`, tecnico (`peer`) e tipo, che l'evento porta; `inizio` e' l'ora del `new` all'apertura del socket. Una connessione mai autorizzata non ha questo evento; una ripetizione uguale non ne fa un secondo |
+| `connessione.chiusa` | il PC registra la chiusura; con `fine` e `durata_s`. Parte anche per le connessioni mai autorizzate (rifiutate o senza clic): allora `tecnico` e' vuoto e `tipo` e' 0 |
 | `connessione.nota` | la nota di sessione e' scritta o cambiata (durante la sessione o a fine connessione); una nota uguale a quella salvata non fa evento. Il testo e' quello del registro, troncato a 2000 caratteri |
 
 **Campi.** Ogni evento ha esattamente:
@@ -625,10 +625,9 @@ altri, quindi l'ordine sicuro e' quello di `ora`.
 ```
 
 `id` e' un uuid casuale dell'evento, `ora` quando e' nato (RFC 3339, UTC).
-`pc.nome` e' l'hostname. `sessione.tipo` e' il type del registro, come nel pannello (4 =
-terminale), `tecnico` il
-nome del tecnico (`from_name`); `fine` e `durata_s` sono `null` finche' la
-connessione e' aperta.
+`pc.nome` e' l'hostname. `sessione.tipo` e' il type del registro, come nel
+pannello (4 = terminale), `tecnico` il nome del tecnico (`from_name`);
+`fine` e `durata_s` sono `null` finche' la connessione e' aperta.
 
 **Firma.** Ogni richiesta ha gli header `X-Remotek-Evento-Id` (l'`id`) e
 `X-Remotek-Evento-Firma: t=<secondi UNIX>,v1=<hex>`, con `v1` =
