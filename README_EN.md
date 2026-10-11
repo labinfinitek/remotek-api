@@ -267,6 +267,8 @@ default when the key is missing from the file.
 | `rustdesk.key` | `RUSTDESK_API_RUSTDESK_KEY` | empty | public key of `hbbs`; empty = `rustdesk.key-file` is read |
 | `rustdesk.key-file` | `RUSTDESK_API_RUSTDESK_KEY_FILE` | `/data/id_ed25519.pub` | key file; if it cannot be read, the key stays empty without an error |
 | `rustdesk.personal` | `RUSTDESK_API_RUSTDESK_PERSONAL` | `1` | `1` personal address book on, `0` off |
+| `integrazione.url` \* | `RUSTDESK_API_INTEGRAZIONE_URL` | empty | `https://` URL that receives the session events (Integration); empty = off, no events. No credentials in the URL; `http://` or credentials stop the start-up. Configuration only, never from the panel |
+| `integrazione.segreto` \* | `RUSTDESK_API_INTEGRAZIONE_SEGRETO` | empty | event signing secret, at least 32 characters when `integrazione.url` is set (otherwise start-up stops): from the variable, not the file; never logged |
 | `logger.path` \* | `RUSTDESK_API_LOGGER_PATH` | empty | ignored: the log goes to stdout only; if set, a warn at startup says so |
 | `logger.level` \* | `RUSTDESK_API_LOGGER_LEVEL` | `info` | `debug`, `info`, `warn`, `error`; any other value stops startup |
 | `logger.report-caller` | `RUSTDESK_API_LOGGER_REPORT_CALLER` | `true` | `source` (function, file and line of the code) in every log line |
@@ -565,6 +567,82 @@ cloning, or install Remotek after the copy.
 - the memory lives in the process: after an API restart it starts empty;
 - behind a proxy without `gin.trust-proxy` (Configuration) every PC has the
   proxy's address and the rule sees nothing.
+
+## Integration (events)
+
+Support works in Zammad: the API sends n8n (private network) one signed
+event for each fact of a session, and n8n brings what is needed into the
+ticket; the technician writes the ticket number in the session note (for
+example `#83100`). The API knows nothing about Zammad (ADR-0026).
+
+**Configuration.** `integrazione.url` and `integrazione.segreto`
+(Configuration). Without a URL nothing is queued and the API behaves as
+before. With a URL, at start-up: it must be `https://`, without
+credentials, and the secret must have at least 32 characters, otherwise
+start-up stops.
+
+**Delivery.** Events are stored in the `eventi` table (database version
+271) within the client's request; if storing fails, a warn `evento ... non
+accodato` is logged and the client gets the usual response. A worker in
+the API process, started and stopped with it, sends them one at a time in
+creation order among those that are due: JSON `POST`, 10 second timeout,
+redirects not followed. Delivered = 2xx response. Otherwise it retries
+after 30 seconds, then 1, 2, 4... minutes up to one hour between attempts,
+for 24 hours from creation; then an ERROR line `evento non consegnato` with
+type and id, and the event stays marked `fallito`. Each failed attempt is
+a warn, without the URL. Delivered and failed events are deleted after 7
+days. The queue lives in the database: after a restart it resumes where it
+was. Delivery is *at least once*: the receiver drops duplicates by
+`X-Remotek-Evento-Id`; an event being retried does not hold back the
+others, so the reliable order is `ora`.
+
+**Types.**
+
+| Type | When |
+|---|---|
+| `connessione.aperta` | the connection is authorised: the PC sends `POST /api/audit/conn`, without `action`, with technician (`peer`) and type, which the event carries; `inizio` is the time of the `new` sent when the socket opened. A connection never authorised has no such event; an identical repeat makes no second one |
+| `connessione.chiusa` | the PC records the close; with `fine` and `durata_s`. Also sent for connections never authorised (refused or not clicked): then `tecnico` is empty and `tipo` is 0 |
+| `connessione.nota` | the session note is written or changed (during the session or at the end); a note equal to the stored one makes no event. The text is the one in the log, truncated to 2000 characters |
+
+**Fields.** Every event has exactly:
+
+```json
+{
+  "schema": 1,
+  "id": "5f0c7f0e-7d1a-4c55-9a43-0b8e8f1f2a10",
+  "tipo": "connessione.chiusa",
+  "ora": "2026-10-11T09:01:30Z",
+  "pc": {"id": "999000111", "nome": "PC-ROSSI", "alias": "Rossi"},
+  "sessione": {
+    "conn_id": 7, "tipo": 0, "tecnico": "mario",
+    "inizio": "2026-10-11T09:00:00Z", "fine": "2026-10-11T09:01:30Z",
+    "durata_s": 90, "nota": "#83100"
+  }
+}
+```
+
+`id` is a random event uuid, `ora` when it was created (RFC 3339, UTC).
+`pc.nome` is the hostname. `sessione.tipo` is the log's type, as in the
+panel (4 = terminal), `tecnico` the technician's name (`from_name`);
+`fine` and `durata_s` are `null` while the connection is open.
+
+**Signature.** Every request carries `X-Remotek-Evento-Id` (the `id`) and
+`X-Remotek-Evento-Firma: t=<UNIX seconds>,v1=<hex>`, with `v1` =
+HMAC-SHA256(secret, `"<t>."` + exact body received). The receiver
+recomputes `v1` over the body bytes, before decoding the JSON, compares it
+in constant time, and rejects a `t` too far from its own clock (for
+example over 5 minutes: a retried event has a new `t`). Test vector:
+secret `segreto-di-prova-di-almeno-32-caratteri`, `t` = `1791000000`, body
+`{"schema":1,"tipo":"prova"}` give
+`v1=47977e5349c23bd14a1a9d3200bed968a3092152ca7f73b73c6581a5f0b47013`.
+
+```sh
+printf '%s.%s' 1791000000 '{"schema":1,"tipo":"prova"}' \
+  | openssl dgst -sha256 -hmac 'segreto-di-prova-di-almeno-32-caratteri'
+```
+
+**What never leaves.** uuids, keys, signatures, tokens, guids,
+`session_id`, IP addresses, file contents and names, terminal transcripts.
 
 ## Origin and licence
 

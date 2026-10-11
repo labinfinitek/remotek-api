@@ -74,6 +74,8 @@ func (a *Audit) AuditConn(c *gin.Context) {
 			ex.CloseTime = time.Now().Unix()
 			if err := service.AllService.AuditService.UpdateAuditConn(ex); err != nil {
 				auditNonSalvato(c, err)
+			} else {
+				evento(c, service.EventoConnessioneChiusa, ex)
 			}
 		}
 	case "":
@@ -88,6 +90,13 @@ func (a *Audit) AuditConn(c *gin.Context) {
 			}
 			if err := service.AllService.AuditService.UpdateAuditConn(up); err != nil {
 				auditNonSalvato(c, err)
+			} else if ex.FromName != up.FromName || ex.Type != up.Type || ex.SessionId != up.SessionId {
+				// L'apertura esce qui, all'autorizzazione, la prima richiesta
+				// con tecnico e tipo: il "new" arriva all'apertura del socket
+				// senza (golden audit-conn-new). Una ripetizione uguale non
+				// fa un secondo evento.
+				ex.FromPeer, ex.FromName, ex.SessionId, ex.Type = up.FromPeer, up.FromName, up.SessionId, up.Type
+				evento(c, service.EventoConnessioneAperta, ex)
 			}
 		}
 	}
@@ -98,12 +107,23 @@ func (a *Audit) AuditConn(c *gin.Context) {
 // recente del dispositivo peerId con quel sessionId. Se la connessione non
 // c'e' scrive una riga di info; il testo della nota non va mai nel log.
 func notaDiSessione(c *gin.Context, peerId, sessionId, nota string) {
-	err := service.AllService.AuditService.NotaDiSessione(peerId, sessionId, tronca(c, nota))
+	conn, cambiata, err := service.AllService.AuditService.NotaDiSessione(peerId, sessionId, tronca(c, nota))
 	switch {
 	case errors.Is(err, service.ErrNotFound):
 		global.Logger.Per(c.Request.Context()).Infof("%s %s: nota di sessione senza connessione registrata del dispositivo %s, non salvata", c.Request.Method, c.FullPath(), peerId)
 	case err != nil:
 		auditNonSalvato(c, err)
+	case cambiata:
+		evento(c, service.EventoConnessioneNota, conn)
+	}
+}
+
+// evento accoda l'evento tipo della connessione conn per l'integrazione
+// (ADR-0026). Se non riesce lo scrive nel log a livello warn: la risposta
+// al client resta quella di sempre.
+func evento(c *gin.Context, tipo string, conn *model.AuditConn) {
+	if err := service.AllService.EventiService.AccodaSessione(tipo, conn); err != nil {
+		global.Logger.Per(c.Request.Context()).Warnf("%s %s: evento %s non accodato: %v", c.Request.Method, c.FullPath(), tipo, err)
 	}
 }
 
@@ -168,9 +188,13 @@ func (a *Audit) Nota(c *gin.Context) {
 		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
-	if err := service.AllService.AuditService.NotaPerGuid(f.Guid, tronca(c, f.Note)); err != nil {
+	conn, cambiata, err := service.AllService.AuditService.NotaPerGuid(f.Guid, tronca(c, f.Note))
+	if err != nil {
 		response.ErrorErr(c, "SystemError", err)
 		return
+	}
+	if cambiata {
+		evento(c, service.EventoConnessioneNota, conn)
 	}
 	response.Success(c, "")
 }

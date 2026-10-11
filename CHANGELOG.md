@@ -6,6 +6,16 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Aggiunto
+- Integrazione (eventi): con `integrazione.url` (`https://`) e
+  `integrazione.segreto` (almeno 32 caratteri) l'API manda un evento
+  firmato (HMAC-SHA256, header `X-Remotek-Evento-Firma`) per apertura,
+  chiusura e nota delle connessioni, da una coda nel database (migrazione
+  271, tabella `eventi`) con tentativi per 24 ore e una riga ERROR
+  `evento non consegnato` dopo. Senza URL non cambia niente; URL non
+  `https://`, con credenziali o segreto corto fermano l'avvio. Mai IP,
+  uuid, chiavi, token o trascrizioni (README, Integrazione).
+
 ### Corretto
 - Copie dello stesso PC: una copia rimasta zitta piu' di 10 minuti non ha
   piu' un secondo warn `possibile copia del PC` prima dell'ora dal primo.

@@ -49,6 +49,12 @@ proxy:
 jwt:
   key: ""
   expire-duration: 168h
+integrazione:
+  # Eventi delle sessioni verso n8n (README, Integrazione). Vuoto: spenta.
+  # Solo https://; il segreto (almeno 32 caratteri) dalla variabile
+  # RUSTDESK_API_INTEGRAZIONE_SEGRETO, non qui.
+  url: ""
+  segreto: ""
 ldap:
   enable: false
   url: "ldap://ldap.example.com:389"
