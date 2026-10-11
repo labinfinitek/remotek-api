@@ -193,3 +193,36 @@ func TestIntegrazioneSoloToken(t *testing.T) {
 		t.Errorf("manca il warn col nome del token revocato:\n%s", registro)
 	}
 }
+
+// TestIntegrazioneDaFuso: il filtro da confronta istanti, qualunque sia il
+// fuso con cui e' salvato created_at e quello di da. Una connessione delle
+// 01:30 a +02:00 (23:30Z del giorno prima) non esce con da a mezzanotte
+// UTC; una delle 00:30Z esce con da alle 02:00+02:00 (00:00Z), col + in
+// %2B; una pagina oltre il massimo risponde 400.
+func TestIntegrazioneDaFuso(t *testing.T) {
+	g, tok, _ := integrazioneLettura(t)
+	piu2 := time.FixedZone("+02:00", 2*60*60)
+	crea(t, &model.AuditConn{Action: model.AuditActionNew, ConnId: 21, PeerId: "999000444",
+		TimeModel: model.TimeModel{CreatedAt: custom_types.AutoTime(time.Date(2026, 10, 11, 1, 30, 0, 0, piu2))}})
+	crea(t, &model.AuditConn{Action: model.AuditActionNew, ConnId: 22, PeerId: "999000555",
+		TimeModel: model.TimeModel{CreatedAt: custom_types.AutoTime(time.Date(2026, 10, 11, 0, 30, 0, 0, time.UTC))}})
+	auth := "Bearer " + tok["n8n"]
+	for _, tc := range []struct {
+		rotta  string
+		totale int
+	}{
+		{"/api/integrazione/connessioni?pc=999000444&da=2026-10-11T00:00:00Z", 0},
+		{"/api/integrazione/connessioni?pc=999000444&da=2026-10-10T23:30:00Z", 1},
+		{"/api/integrazione/connessioni?pc=999000555&da=2026-10-11T02:00:00%2B02:00", 1},
+		{"/api/integrazione/connessioni?pc=999000555&da=2026-10-11T02:30:01%2B02:00", 0},
+	} {
+		rec := conBearer(g, "GET", tc.rotta, auth)
+		var r struct{ Totale int }
+		if err := json.Unmarshal(rec.Body.Bytes(), &r); err != nil || rec.Code != 200 || r.Totale != tc.totale {
+			t.Errorf("GET %s: %d %s, atteso totale %d", tc.rotta, rec.Code, rec.Body, tc.totale)
+		}
+	}
+	if rec := conBearer(g, "GET", "/api/integrazione/connessioni?pagina=1000001", auth); rec.Code != 400 {
+		t.Errorf("pagina oltre il massimo: %d %s, atteso 400", rec.Code, rec.Body)
+	}
+}

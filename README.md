@@ -693,8 +693,11 @@ nel log.
 | `GET /api/integrazione/connessioni` | registro delle connessioni in ordine di `id`, con i campi della `sessione` degli eventi piu' `id` (della riga) e `pc`; filtri `pc` (ID del PC) e `da` (RFC 3339, connessioni iniziate da allora) |
 | `GET /api/integrazione/connessioni/{id}/verifica` | esito della verifica della trascrizione della connessione `id` (`integra`, `blocchi`, `fine`, `hash`, `primo_errato`), come la verifica del pannello; 404 se la connessione non c'e' o non e' un terminale |
 
-Le due liste vanno a pagine: `pagina` (da 1) e `per_pagina` (da 1 a 1000,
-default 100); un valore non valido risponde 400. Non escono mai uuid,
+Le due liste vanno a pagine: `pagina` (da 1 a 1000000) e `per_pagina` (da 1
+a 1000, default 100); un valore non valido risponde 400. `da` si confronta
+come istante, qualunque sia il fuso: `2026-10-11T00:00:00Z` o
+`2026-10-11T02:00:00%2B02:00`, col `+` scritto `%2B` nella query
+(altrimenti diventa uno spazio e la risposta e' 400). Non escono mai uuid,
 chiavi, IP, guid, `session_id`, nomi o percorsi di file, trascrizioni.
 Nessuna rotta scrive niente e nessuna esporta le trascrizioni.
 

@@ -20,15 +20,20 @@ import (
 type Integrazione struct {
 }
 
-// perPaginaMax e' il numero massimo di righe di una pagina.
-const perPaginaMax = 1000
+// perPaginaMax e' il numero massimo di righe di una pagina, paginaMax il
+// numero di pagina piu' alto: oltre, (pagina-1)*per_pagina andrebbe in
+// overflow in Paginate.
+const (
+	perPaginaMax = 1000
+	paginaMax    = 1000000
+)
 
-// pagina legge pagina (da 1) e per_pagina (default 100, al massimo
-// perPaginaMax) dalla query.
+// pagina legge pagina (da 1 a paginaMax) e per_pagina (default 100, al
+// massimo perPaginaMax) dalla query.
 func pagina(c *gin.Context) (int, int, bool) {
 	p, err1 := strconv.Atoi(c.DefaultQuery("pagina", "1"))
 	n, err2 := strconv.Atoi(c.DefaultQuery("per_pagina", "100"))
-	if err1 != nil || err2 != nil || p < 1 || n < 1 || n > perPaginaMax {
+	if err1 != nil || err2 != nil || p < 1 || p > paginaMax || n < 1 || n > perPaginaMax {
 		return 0, 0, false
 	}
 	return p, n, true
@@ -104,7 +109,10 @@ func (i *Integrazione) Connessioni(c *gin.Context) {
 			tx.Where("peer_id = ?", pc)
 		}
 		if !da.IsZero() {
-			tx.Where("created_at >= ?", da)
+			// Confronto tra istanti: created_at e' salvato col fuso del
+			// processo, da arriva col fuso di chi chiama, e come testo non
+			// si confrontano.
+			tx.Where("julianday(created_at) >= julianday(?)", da.UTC().Format(time.RFC3339Nano))
 		}
 		tx.Order("id")
 	})

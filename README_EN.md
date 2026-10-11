@@ -691,8 +691,11 @@ goes to the log.
 | `GET /api/integrazione/connessioni` | connection log in `id` order, with the fields of the events' `sessione` plus `id` (of the row) and `pc`; filters `pc` (PC ID) and `da` (RFC 3339, connections started since then) |
 | `GET /api/integrazione/connessioni/{id}/verifica` | result of the transcript verification of connection `id` (`integra`, `blocchi`, `fine`, `hash`, `primo_errato`), as the panel's verification; 404 if the connection does not exist or is not a terminal |
 
-Both lists are paged: `pagina` (from 1) and `per_pagina` (1 to 1000,
-default 100); an invalid value answers 400. Never returned: uuids, keys,
+Both lists are paged: `pagina` (1 to 1000000) and `per_pagina` (1 to
+1000, default 100); an invalid value answers 400. `da` is compared as an
+instant, whatever the time zone: `2026-10-11T00:00:00Z` or
+`2026-10-11T02:00:00%2B02:00`, with the `+` written `%2B` in the query
+(otherwise it becomes a space and the answer is 400). Never returned: uuids, keys,
 IPs, guids, `session_id`, file names or paths, transcripts. No route
 writes anything and none exports transcripts.
 
