@@ -503,7 +503,8 @@ X-Remotek-Firma: 1791000000.otUjpW4BdAQnl0TuN1E/GmD3LAx38zzpYTczckv70y3hYSIVtkA7
    motivo (`firma assente`, `firma non valida`, `firma fuori tempo`, `firma
    ripetuta`, `firma di un PC senza chiave registrata`), mai firma, chiave
    ne' uuid. Un sysinfo accettato di un PC senza chiave, con una `pk` che non
-   si registra, lo dice con un warn `chiave non registrata: <motivo>`.
+   si registra, lo dice con un warn `chiave non registrata: <motivo>`; con
+   un uuid diverso da quello salvato la firma non si verifica nemmeno.
 
 **Opzione** `app.firma-obbligatoria` (`RUSTDESK_API_APP_FIRMA_OBBLIGATORIA`,
 default `false`): se vera, anche un PC senza chiave deve firmare. Il suo

@@ -9,6 +9,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 ### Corretto
 - Copie dello stesso PC: una copia rimasta zitta piu' di 10 minuti non ha
   piu' un secondo warn `possibile copia del PC` prima dell'ora dal primo.
+- Firma del dispositivo: un sysinfo firmato con un uuid diverso da quello
+  salvato non fa verificare la firma ne' la mette nella memoria delle firme
+  viste; per un PC creato dal pannello senza uuid il warn dice "PC senza
+  uuid, in attesa del primo sysinfo".
 
 ## [0.5.0] - 2026-10-10
 Immagine `ghcr.io/labinfinitek/remotek-api:0.5.0`, costruita con Go 1.26.9.

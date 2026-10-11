@@ -500,7 +500,8 @@ X-Remotek-Firma: 1791000000.otUjpW4BdAQnl0TuN1E/GmD3LAx38zzpYTczckv70y3hYSIVtkA7
    `firma ripetuta`, `firma di un PC senza chiave registrata`), never the
    signature, key or uuid. An accepted sysinfo of a PC without a key, with a
    `pk` that is not registered, says so with a warn `chiave non registrata:
-   <reason>`.
+   <reason>`; with a uuid different from the saved one the signature is not
+   even checked.
 
 **Option** `app.firma-obbligatoria` (`RUSTDESK_API_APP_FIRMA_OBBLIGATORIA`,
 default `false`): when true, a PC without a key must sign too. Its sysinfo
