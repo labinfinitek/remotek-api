@@ -6,6 +6,16 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+## [0.6.0] - 2026-10-11
+Immagine `ghcr.io/labinfinitek/remotek-api:0.6.0`. Nessun cambio
+incompatibile. Due migrazioni del database, fatte all'avvio: 271 (tabella
+`eventi`, la coda degli eventi) e 272 (tabella `token_integrazione`).
+Entra l'integrazione con n8n e Zammad (ADR-0026): eventi firmati verso un
+solo URL, spenti finche' `integrazione.url` e' vuoto, e token di
+integrazione in sola lettura. Senza configurazione l'API si comporta come
+la 0.5.0. Entrano anche i seguiti della firma e delle copie: una riga INFO
+`chiave del PC registrata` quando un PC passa alla firma.
+
 ### Aggiunto
 - Integrazione (eventi): con `integrazione.url` (`https://`) e
   `integrazione.segreto` (almeno 32 caratteri) l'API manda un evento
