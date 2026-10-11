@@ -196,6 +196,37 @@ func TestConsegnaFallita(t *testing.T) {
 	passo(t, k, false)
 }
 
+// TestOrdineCoda: due eventi pronti partono in ordine di creazione; il
+// primo riceve un 500 e il secondo si consegna al passo dopo, prima che il
+// primo si riprovi: un evento che si riprova non blocca la coda.
+func TestOrdineCoda(t *testing.T) {
+	k, r, adesso, _ := codaDiProva(t, 500, 200)
+	var ids []string
+	for range 2 {
+		if err := accoda("prova", PcEvento{Id: "999000111"}, nil, *adesso); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, e := range eventi(t) {
+		ids = append(ids, e.EventoId)
+	}
+	passo(t, k, true)
+	passo(t, k, true)
+	passo(t, k, false)
+	if len(r.arrivati) != 2 || r.arrivati[0].id != ids[0] || r.arrivati[1].id != ids[1] {
+		t.Fatalf("arrivati %+v, attesi %v in quest'ordine", r.arrivati, ids)
+	}
+	coda := eventi(t)
+	if coda[0].Esito != model.EventoInAttesa || coda[1].Esito != model.EventoConsegnato {
+		t.Errorf("esiti %q e %q, attesi in attesa e consegnato", coda[0].Esito, coda[1].Esito)
+	}
+	*adesso = adesso.Add(30 * time.Second)
+	passo(t, k, true)
+	if len(r.arrivati) != 3 || r.arrivati[2].id != ids[0] || eventi(t)[0].Esito != model.EventoConsegnato {
+		t.Errorf("il primo evento non e' stato riprovato e consegnato: %+v", r.arrivati)
+	}
+}
+
 // TestPuliziaCoda: consegnati e falliti si cancellano 7 giorni dopo la
 // fine; quelli in attesa restano.
 func TestPuliziaCoda(t *testing.T) {
@@ -223,7 +254,8 @@ func TestPuliziaCoda(t *testing.T) {
 }
 
 // TestCampiEventi controlla l'elenco dei campi di ogni tipo e che uuid,
-// IP, guid, session_id e chiave non escano.
+// IP, guid, session_id e chiave non escano. La connessione e' quella dopo
+// l'autorizzazione, che porta tecnico e type: l'apertura esce li'.
 func TestCampiEventi(t *testing.T) {
 	codaDiProva(t, 200)
 	pc := &model.Peer{Id: "999000111", Hostname: "PC-ROSSI", Alias: "Rossi", Uuid: "dXVpZC1zZWdyZXRv", ChiavePubblica: "Y2hpYXZl", LastOnlineIp: "198.51.100.1"}
