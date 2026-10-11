@@ -243,3 +243,32 @@ func TestAuditConnIdRipetuto(t *testing.T) {
 		t.Errorf("nel log:\n%s", nelLog)
 	}
 }
+
+// TestAuditFileCampoSconosciuto prova sul router vero che /api/audit/file
+// ignora i campi del corpo che non conosce: con ms, che il client manda dal
+// remotek-1.4.9-3 (remotek-client#35), risponde come senza (golden
+// audit-file) e salva la stessa riga.
+func TestAuditFileCampoSconosciuto(t *testing.T) {
+	const corpo = `{"conn_id":7,"id":"999000111","info":"{}","is_file":true,"path":"C:\\prova","peer_id":"999000222","type":1,"uuid":"` + uuidSalvato + `"`
+	var salvate []model.AuditFile
+	for _, c := range []struct{ nome, corpo string }{{"senza ms", corpo + `}`}, {"con ms", corpo + `,"ms":1234}`}} {
+		t.Run(c.nome, func(t *testing.T) {
+			g, registro := dispositiviDiProva(t, &model.Peer{Id: "999000111", Uuid: uuidSalvato})
+			rec := richiesta(g, "POST", "/api/audit/file", "", c.corpo)
+			if got, want := rec.Body.String(), `{"code":0,"message":"success","data":""}`; rec.Code != 200 || got != want {
+				t.Errorf("POST /api/audit/file: %d %s, attesi 200 e %s", rec.Code, got, want)
+			}
+			var righe []model.AuditFile
+			if err := service.DB.Raw("SELECT peer_id, from_peer, info, is_file, path, type, uuid FROM audit_files").Scan(&righe).Error; err != nil || len(righe) != 1 {
+				t.Fatalf("righe %+v %v, attesa 1", righe, err)
+			}
+			if registro.Len() != 0 {
+				t.Errorf("nel log:\n%s", registro)
+			}
+			salvate = append(salvate, righe[0])
+		})
+	}
+	if len(salvate) == 2 && !reflect.DeepEqual(salvate[0], salvate[1]) {
+		t.Errorf("riga senza ms %+v, con ms %+v", salvate[0], salvate[1])
+	}
+}

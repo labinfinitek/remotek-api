@@ -110,6 +110,10 @@ func (ps *PeerService) RiconosciFirmato(id, uuid string, r RichiestaFirmata) (Fi
 	case r.Pk == "":
 	case !obbligatoria && r.Intestazione == "":
 		f.NonRegistrata = FirmaAssente
+	case esito == UuidDiverso && !obbligatoria:
+		// Chi non puo' registrare niente non fa verificare firme, ne'
+		// riempie la memoria delle firme viste.
+		f.NonRegistrata = MotivoUuidDiverso(p)
 	default:
 		motivo := r.verifica(r.Pk, ora)
 		switch {
@@ -120,10 +124,20 @@ func (ps *PeerService) RiconosciFirmato(id, uuid string, r RichiestaFirmata) (Fi
 		case esito == PcSconosciuto || esito == StessoDispositivo:
 			f.Chiave = r.Pk
 		default:
-			f.NonRegistrata = "uuid diverso da quello salvato"
+			f.NonRegistrata = MotivoUuidDiverso(p)
 		}
 	}
 	return f, nil
+}
+
+// MotivoUuidDiverso e' il motivo, per il log, dell'esito UuidDiverso del PC
+// p: un PC creato dal pannello senza uuid si lega al primo sysinfo
+// (ADR-0019), non a un'altra richiesta.
+func MotivoUuidDiverso(p *model.Peer) string {
+	if p.Uuid == "" {
+		return "PC senza uuid, in attesa del primo sysinfo"
+	}
+	return "uuid diverso da quello salvato"
 }
 
 // RegistraChiave salva la chiave pubblica del PC rowId solo se non ne ha

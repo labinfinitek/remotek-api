@@ -503,7 +503,18 @@ X-Remotek-Firma: 1791000000.otUjpW4BdAQnl0TuN1E/GmD3LAx38zzpYTczckv70y3hYSIVtkA7
    motivo (`firma assente`, `firma non valida`, `firma fuori tempo`, `firma
    ripetuta`, `firma di un PC senza chiave registrata`), mai firma, chiave
    ne' uuid. Un sysinfo accettato di un PC senza chiave, con una `pk` che non
-   si registra, lo dice con un warn `chiave non registrata: <motivo>`.
+   si registra, lo dice con un warn `chiave non registrata: <motivo>`; con
+   un uuid diverso da quello salvato la firma non si verifica nemmeno.
+6. Una chiave registrata, di un PC nuovo o di uno che non l'aveva, scrive
+   nel log una riga **info** `chiave del PC registrata` con rotta e ID del
+   PC, una volta sola; mai chiave, uuid ne' firma.
+
+**Campi sconosciuti.** Le rotte del dispositivo (sysinfo, heartbeat,
+audit/conn, audit/file, audit/terminal) ignorano i campi del corpo che non
+conoscono: un client piu' nuovo dell'API puo' mandarne in piu' senza che la
+risposta cambi. Il client dal `remotek-1.4.9-3` manda `ms` negli audit dei
+file, che l'API non salva. La firma copre il corpo intero, campi ignorati
+compresi.
 
 **Opzione** `app.firma-obbligatoria` (`RUSTDESK_API_APP_FIRMA_OBBLIGATORIA`,
 default `false`): se vera, anche un PC senza chiave deve firmare. Il suo
@@ -536,7 +547,9 @@ minuti** il PC e' "possibile copia":
   piu' recenti (`indirizzo`, `indirizzo_precedente`) e il numero di `cambi`,
   al massimo una all'ora per PC; mai uuid ne' chiavi.
 
-Un PC senza heartbeat da 10 minuti esce dalla memoria.
+Un PC senza heartbeat da 10 minuti esce dalla memoria; l'ora del suo
+ultimo avviso ci resta per un'ora, perche' una copia zitta per un po' non
+abbia un secondo avviso prima dell'ora.
 
 **Cosa fare.** Sulla copia si toglie Remotek con la sua configurazione e lo
 si reinstalla: prende un ID nuovo. Per le copie future: sysprep prima di

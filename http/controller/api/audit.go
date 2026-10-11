@@ -209,11 +209,7 @@ func dalDispositivo(c *gin.Context, id, uuid string) bool {
 	case esito == service.UuidDiverso:
 		// Come nell'heartbeat: un PC creato dal pannello senza uuid si lega
 		// al primo sysinfo (ADR-0019), e il motivo nel log lo dice.
-		perche := "uuid diverso da quello salvato"
-		if peer.Uuid == "" {
-			perche = "PC senza uuid, in attesa del primo sysinfo"
-		}
-		dispositivoDiverso(c, id, perche)
+		dispositivoDiverso(c, id, service.MotivoUuidDiverso(peer))
 		return false
 	}
 	return true

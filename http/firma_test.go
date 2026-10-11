@@ -293,3 +293,42 @@ func TestFirmaObbligatoria(t *testing.T) {
 		t.Errorf("sysinfo firmato con pk: %d %s, chiave %q", rec.Code, rec.Body, chiaveSalvata(t))
 	}
 }
+
+// TestFirmaChiaveRegistrataNelLog prova sul router vero che la chiave
+// registrata da un sysinfo firmato, di un PC nuovo o di uno salvato senza
+// chiave, da' una riga INFO "chiave del PC registrata" con l'ID, una volta
+// sola anche se i sysinfo firmati continuano, senza chiave, uuid ne' firma.
+func TestFirmaChiaveRegistrataNelLog(t *testing.T) {
+	for _, tc := range []struct {
+		nome string
+		pcs  []*model.Peer
+	}{
+		{"PC nuovo", nil},
+		{"PC salvato senza chiave", []*model.Peer{{Id: "999000111", Uuid: uuidSalvato}}},
+	} {
+		t.Run(tc.nome, func(t *testing.T) {
+			g, registro := dispositiviDiProva(t, tc.pcs...)
+			k := nuovaChiave(t)
+			var firme []string
+			for i := range 3 {
+				corpo := sysinfoConPk(uuidSalvato, "PC-"+strconv.Itoa(i), pkDi(k))
+				firme = append(firme, firmaPc(k, "/api/sysinfo", corpo, time.Now().Unix()))
+				if rec := firmata(g, "/api/sysinfo", corpo, firme[i]); rec.Body.String() != "SYSINFO_UPDATED" {
+					t.Fatalf("sysinfo firmato %d: %d %s", i, rec.Code, rec.Body)
+				}
+			}
+			if got := chiaveSalvata(t); got != pkDi(k) {
+				t.Fatalf("chiave salvata %q, attesa la pk", got)
+			}
+			nelLog := registro.String()
+			if logger.Conta(nelLog, "INFO", "POST /api/sysinfo: ", "999000111", "chiave del PC registrata") != 1 {
+				t.Errorf("serve una riga INFO della chiave registrata:\n%s", nelLog)
+			}
+			for _, segreto := range append([]string{pkDi(k), uuidSalvato}, firme...) {
+				if _, sig, _ := strings.Cut(segreto, "."); strings.Contains(nelLog, segreto) || (sig != "" && strings.Contains(nelLog, sig)) {
+					t.Errorf("nel log c'e' chiave, uuid o firma:\n%s", nelLog)
+				}
+			}
+		})
+	}
+}

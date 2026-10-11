@@ -29,24 +29,31 @@ const (
 )
 
 // pcVisto e' cio' che la memoria sa di un PC: l'indirizzo dell'ultimo
-// heartbeat e quello prima, l'ora dell'ultimo, i cambi nella finestra e
-// l'ultimo avviso.
+// heartbeat e quello prima, l'ora dell'ultimo e i cambi nella finestra.
 type pcVisto struct {
 	indirizzo, precedente string
-	ultimo, avvisato      time.Time
+	ultimo                time.Time
 	cambi                 []time.Time
 }
 
 // memoriaCopie ricorda i PC riconosciuti con heartbeat negli ultimi
-// FinestraCopie: e' in processo, quindi dopo un riavvio riparte vuota.
+// FinestraCopie, e l'ora dell'ultimo avviso di ogni PC per AvvisoCopie,
+// anche se il PC e' uscito dalla memoria: una copia zitta per piu' di
+// FinestraCopie non ha un secondo avviso prima dell'ora. E' in processo,
+// quindi dopo un riavvio riparte vuota.
 type memoriaCopie struct {
 	mu     sync.Mutex
 	pc     map[string]*pcVisto
+	avvisi map[string]time.Time
 	pulita time.Time
 	log    *slog.Logger // nil: il Logger del servizio
 }
 
-var copieViste = &memoriaCopie{pc: map[string]*pcVisto{}}
+var copieViste = nuovaMemoriaCopie()
+
+func nuovaMemoriaCopie() *memoriaCopie {
+	return &memoriaCopie{pc: map[string]*pcVisto{}, avvisi: map[string]time.Time{}}
+}
 
 // SegnaHeartbeat registra l'heartbeat del PC id, gia' riconosciuto, arrivato
 // da indirizzo all'ora data.
@@ -69,6 +76,11 @@ func (m *memoriaCopie) heartbeat(id, indirizzo string, ora time.Time) {
 				delete(m.pc, k)
 			}
 		}
+		for k, a := range m.avvisi {
+			if ora.Sub(a) >= AvvisoCopie {
+				delete(m.avvisi, k)
+			}
+		}
 		m.pulita = ora
 	}
 	p, c := m.pc[id]
@@ -84,8 +96,8 @@ func (m *memoriaCopie) heartbeat(id, indirizzo string, ora time.Time) {
 	}
 	p.ultimo = ora
 	p.recenti(ora)
-	if len(p.cambi) >= SogliaCopie && (p.avvisato.IsZero() || ora.Sub(p.avvisato) >= AvvisoCopie) {
-		p.avvisato = ora
+	if a, c := m.avvisi[id]; len(p.cambi) >= SogliaCopie && (!c || ora.Sub(a) >= AvvisoCopie) {
+		m.avvisi[id] = ora
 		m.logger().Warn(MessaggioCopia, "id", id, "indirizzo", p.indirizzo,
 			"indirizzo_precedente", p.precedente, "cambi", len(p.cambi))
 	}

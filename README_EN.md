@@ -500,7 +500,18 @@ X-Remotek-Firma: 1791000000.otUjpW4BdAQnl0TuN1E/GmD3LAx38zzpYTczckv70y3hYSIVtkA7
    `firma ripetuta`, `firma di un PC senza chiave registrata`), never the
    signature, key or uuid. An accepted sysinfo of a PC without a key, with a
    `pk` that is not registered, says so with a warn `chiave non registrata:
-   <reason>`.
+   <reason>`; with a uuid different from the saved one the signature is not
+   even checked.
+6. A registered key, of a new PC or of one that had none, writes an **info**
+   line `chiave del PC registrata` to the log with route and PC ID, once;
+   never the key, uuid or signature.
+
+**Unknown fields.** The device routes (sysinfo, heartbeat, audit/conn,
+audit/file, audit/terminal) ignore the body fields they do not know: a
+client newer than the API can send more of them and the answer does not
+change. The client from `remotek-1.4.9-3` sends `ms` in file audits, which
+the API does not save. The signature covers the whole body, ignored fields
+included.
 
 **Option** `app.firma-obbligatoria` (`RUSTDESK_API_APP_FIRMA_OBBLIGATORIA`,
 default `false`): when true, a PC without a key must sign too. Its sysinfo
@@ -533,7 +544,9 @@ in the last 10 minutes** the PC is a "possible copy":
   recent addresses (`indirizzo`, `indirizzo_precedente`) and the number of
   `cambi`, at most once an hour per PC; never uuid or keys.
 
-A PC without heartbeats for 10 minutes leaves the memory.
+A PC without heartbeats for 10 minutes leaves the memory; the time of its
+last warning stays there for an hour, so that a copy silent for a while
+gets no second warning before the hour.
 
 **What to do.** On the copy, uninstall Remotek removing its configuration
 and install it again: it gets a new ID. For future copies: sysprep before
