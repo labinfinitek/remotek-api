@@ -348,9 +348,13 @@ login token, `GET /api/agente`, which answers
 username if the nickname is empty) or `{"agente":false,"tecnico":""}`;
 `/api/login` and `/api/currentUser` do not change.
 
-**Connecting the client.** In the RustDesk or Remotek client, under
-Settings > Network: ID server, relay server, API server (`rustdesk.api-server`)
-and key, the same values as the `RUSTDESK_API_RUSTDESK_*` variables.
+**Connecting the client.** From client `remotek-1.4.9-3`, Remotek has the
+ID server, relay server, API server and key locked in the binary (ADR-0025):
+Settings > Network does not change them. For a test server they change only
+with a `custom.txt` signed by Infinitek. A generic RustDesk client instead
+connects under Settings > Network: ID server, relay server, API server
+(`rustdesk.api-server`) and key, the same values as the
+`RUSTDESK_API_RUSTDESK_*` variables.
 
 **Changing the brand.** Name, logo and favicon change without touching the
 code:
@@ -500,8 +504,8 @@ X-Remotek-Firma: 1791000000.otUjpW4BdAQnl0TuN1E/GmD3LAx38zzpYTczckv70y3hYSIVtkA7
    `firma ripetuta`, `firma di un PC senza chiave registrata`), never the
    signature, key or uuid. An accepted sysinfo of a PC without a key, with a
    `pk` that is not registered, says so with a warn `chiave non registrata:
-   <reason>`; with a uuid different from the saved one the signature is not
-   even checked.
+   <reason>`; with a uuid different from the saved one and the signature
+   not mandatory, the signature is not even checked.
 6. A registered key, of a new PC or of one that had none, writes an **info**
    line `chiave del PC registrata` to the log with route and PC ID, once;
    never the key, uuid or signature.
@@ -539,7 +543,8 @@ in the last 10 minutes** the PC is a "possible copy":
 
 - in the panel's PC list (`GET /api/admin/peer/list`, field
   `possibile_copia`) a red "Possible copy" label appears next to the ID,
-  and disappears after 10 minutes without changes;
+  and disappears as soon as fewer than 10 changes are left in the last 10
+  minutes: at most 10 minutes after the last change, often earlier;
 - the log gets a warn line `possibile copia del PC` with `id`, the two most
   recent addresses (`indirizzo`, `indirizzo_precedente`) and the number of
   `cambi`, at most once an hour per PC; never uuid or keys.

@@ -352,9 +352,13 @@ nickname del tecnico, o lo username se il nickname e' vuoto) o
 `{"agente":false,"tecnico":""}`; `/api/login` e `/api/currentUser` non
 cambiano.
 
-**Collegare il client.** Nel client RustDesk o Remotek, in Impostazioni >
-Rete: server ID, server relay, server API (`rustdesk.api-server`) e chiave,
-gli stessi valori delle variabili `RUSTDESK_API_RUSTDESK_*`.
+**Collegare il client.** Dal client `remotek-1.4.9-3` Remotek ha server ID,
+server relay, server API e chiave bloccati nel binario (ADR-0025): da
+Impostazioni > Rete non si cambiano. Per un server di prova si cambiano solo
+con un `custom.txt` firmato da Infinitek. Un client RustDesk generico invece
+si collega in Impostazioni > Rete: server ID, server relay, server API
+(`rustdesk.api-server`) e chiave, gli stessi valori delle variabili
+`RUSTDESK_API_RUSTDESK_*`.
 
 **Cambiare il marchio.** Nome, logo e favicon si cambiano senza toccare il
 codice:
@@ -504,7 +508,8 @@ X-Remotek-Firma: 1791000000.otUjpW4BdAQnl0TuN1E/GmD3LAx38zzpYTczckv70y3hYSIVtkA7
    ripetuta`, `firma di un PC senza chiave registrata`), mai firma, chiave
    ne' uuid. Un sysinfo accettato di un PC senza chiave, con una `pk` che non
    si registra, lo dice con un warn `chiave non registrata: <motivo>`; con
-   un uuid diverso da quello salvato la firma non si verifica nemmeno.
+   un uuid diverso da quello salvato e la firma non obbligatoria la firma
+   non si verifica nemmeno.
 6. Una chiave registrata, di un PC nuovo o di uno che non l'aveva, scrive
    nel log una riga **info** `chiave del PC registrata` con rotta e ID del
    PC, una volta sola; mai chiave, uuid ne' firma.
@@ -542,7 +547,8 @@ minuti** il PC e' "possibile copia":
 
 - nella lista dei PC del pannello (`GET /api/admin/peer/list`, campo
   `possibile_copia`) accanto all'ID compare l'etichetta rossa "Possible
-  copy", che sparisce dopo 10 minuti senza cambi;
+  copy", che sparisce appena negli ultimi 10 minuti restano meno di 10
+  cambi: al piu' 10 minuti dopo l'ultimo cambio, spesso prima;
 - nel log una riga warn `possibile copia del PC` con `id`, i due indirizzi
   piu' recenti (`indirizzo`, `indirizzo_precedente`) e il numero di `cambi`,
   al massimo una all'ora per PC; mai uuid ne' chiavi.
