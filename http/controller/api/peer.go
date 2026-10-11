@@ -75,6 +75,9 @@ func (p *Peer) SysInfo(c *gin.Context) {
 		if pe.ChiavePubblica != "" {
 			chiaveRegistrata(c, f.Id)
 		}
+		if err := service.AllService.EventiService.AccodaPcNuovo(pe); err != nil {
+			eventoNonAccodato(c, service.EventoPcNuovo, err)
+		}
 	case esito == service.UuidDiverso && pe.Uuid != "":
 		// Un altro dispositivo con lo stesso ID: la scheda non cambia. Il
 		// warn di ErrorErr ha rotta e ID del PC, non gli uuid. Il legame si

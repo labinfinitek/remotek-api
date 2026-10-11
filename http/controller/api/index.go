@@ -81,7 +81,12 @@ func (i *Index) Heartbeat(c *gin.Context) {
 	}
 	// Ogni heartbeat del PC riconosciuto entra nella rilevazione delle
 	// copie (ADR-0024), con lo stesso indirizzo di LastOnlineIp.
-	service.SegnaHeartbeat(peer.Id, c.ClientIP(), time.Now())
+	// Col warn della copia esce anche l'evento, senza gli indirizzi.
+	if avviso, cambi := service.SegnaHeartbeat(peer.Id, c.ClientIP(), time.Now()); avviso {
+		if err := service.AllService.EventiService.AccodaCopia(peer.Id, cambi); err != nil {
+			eventoNonAccodato(c, service.EventoPcCopia, err)
+		}
+	}
 	// 如果在40s以内则不更新
 	if time.Now().Unix()-peer.LastOnlineTime >= 30 {
 		upp := &model.Peer{RowId: peer.RowId, LastOnlineTime: time.Now().Unix(), LastOnlineIp: c.ClientIP()}

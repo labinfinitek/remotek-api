@@ -57,8 +57,8 @@ func nuovaMemoriaCopie() *memoriaCopie {
 
 // SegnaHeartbeat registra l'heartbeat del PC id, gia' riconosciuto, arrivato
 // da indirizzo all'ora data.
-func SegnaHeartbeat(id, indirizzo string, ora time.Time) {
-	copieViste.heartbeat(id, indirizzo, ora)
+func SegnaHeartbeat(id, indirizzo string, ora time.Time) (avviso bool, cambi int) {
+	return copieViste.heartbeat(id, indirizzo, ora)
 }
 
 // PossibileCopia dice se il PC id, all'ora data, ha almeno SogliaCopie cambi
@@ -67,7 +67,8 @@ func PossibileCopia(id string, ora time.Time) bool {
 	return copieViste.possibileCopia(id, ora)
 }
 
-func (m *memoriaCopie) heartbeat(id, indirizzo string, ora time.Time) {
+// heartbeat dice se ha scritto il warn MessaggioCopia, e con quanti cambi.
+func (m *memoriaCopie) heartbeat(id, indirizzo string, ora time.Time) (avviso bool, cambi int) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if ora.Sub(m.pulita) >= time.Minute {
@@ -86,7 +87,7 @@ func (m *memoriaCopie) heartbeat(id, indirizzo string, ora time.Time) {
 	p, c := m.pc[id]
 	if !c {
 		m.pc[id] = &pcVisto{indirizzo: indirizzo, ultimo: ora}
-		return
+		return false, 0
 	}
 	if indirizzo != p.indirizzo {
 		if ora.Sub(p.ultimo) < CambioCopie {
@@ -100,7 +101,9 @@ func (m *memoriaCopie) heartbeat(id, indirizzo string, ora time.Time) {
 		m.avvisi[id] = ora
 		m.logger().Warn(MessaggioCopia, "id", id, "indirizzo", p.indirizzo,
 			"indirizzo_precedente", p.precedente, "cambi", len(p.cambi))
+		return true, len(p.cambi)
 	}
+	return false, len(p.cambi)
 }
 
 func (m *memoriaCopie) possibileCopia(id string, ora time.Time) bool {

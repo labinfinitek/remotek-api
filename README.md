@@ -606,8 +606,14 @@ altri, quindi l'ordine sicuro e' quello di `ora`.
 | `connessione.aperta` | la connessione e' autorizzata: il PC manda a `POST /api/audit/conn`, senza `action`, tecnico (`peer`) e tipo, che l'evento porta; `inizio` e' l'ora del `new` all'apertura del socket. Una connessione mai autorizzata non ha questo evento; una ripetizione uguale non ne fa un secondo |
 | `connessione.chiusa` | il PC registra la chiusura; con `fine` e `durata_s`. Parte anche per le connessioni mai autorizzate (rifiutate o senza clic): allora `tecnico` e' vuoto e `tipo` e' 0 |
 | `connessione.nota` | la nota di sessione e' scritta o cambiata (durante la sessione o a fine connessione); una nota uguale a quella salvata non fa evento. Il testo e' quello del registro, troncato a 2000 caratteri |
+| `file.trasferiti` | il PC registra un trasferimento di file (`POST /api/audit/file`); con `file.direzione` (`dal_pc`: il PC controllato manda i file, type 0 del registro; `al_pc`: li riceve, type 1) e `file.numero`. Nomi e percorsi restano nel pannello |
+| `terminale.chiuso` | arriva il blocco con `fine` della trascrizione di una sessione terminale; con `sessione` e `verifica` (`integra`, `hash` finale), calcolata come la verifica del pannello. Niente blocchi ne' dati. `sessione.fine` e' `null` se il PC registra la chiusura dopo |
+| `pc.nuovo` | un sysinfo crea un PC che l'API non conosceva |
+| `pc.possibile_copia` | l'API scrive il warn `possibile copia del PC` (Copie dello stesso PC), al massimo uno all'ora per PC; con `copia.cambi`, senza gli indirizzi |
 
-**Campi.** Ogni evento ha esattamente:
+**Campi.** Ogni evento ha `schema`, `id`, `tipo`, `ora` e `pc`; gli eventi
+delle connessioni e `terminale.chiuso` hanno `sessione`, gli altri tipi il
+loro oggetto (`file`, `verifica`, `copia`) e nient'altro. Per esempio:
 
 ```json
 {
@@ -628,6 +634,13 @@ altri, quindi l'ordine sicuro e' quello di `ora`.
 `pc.nome` e' l'hostname. `sessione.tipo` e' il type del registro, come nel
 pannello (4 = terminale), `tecnico` il nome del tecnico (`from_name`);
 `fine` e `durata_s` sono `null` finche' la connessione e' aperta.
+Gli altri oggetti:
+
+```json
+"file": {"direzione": "dal_pc", "numero": 3}
+"verifica": {"integra": true, "hash": "9f2c...e01a"}
+"copia": {"cambi": 10}
+```
 
 **Firma.** Ogni richiesta ha gli header `X-Remotek-Evento-Id` (l'`id`) e
 `X-Remotek-Evento-Firma: t=<secondi UNIX>,v1=<hex>`, con `v1` =

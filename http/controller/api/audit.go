@@ -123,8 +123,14 @@ func notaDiSessione(c *gin.Context, peerId, sessionId, nota string) {
 // al client resta quella di sempre.
 func evento(c *gin.Context, tipo string, conn *model.AuditConn) {
 	if err := service.AllService.EventiService.AccodaSessione(tipo, conn); err != nil {
-		global.Logger.Per(c.Request.Context()).Warnf("%s %s: evento %s non accodato: %v", c.Request.Method, c.FullPath(), tipo, err)
+		eventoNonAccodato(c, tipo, err)
 	}
+}
+
+// eventoNonAccodato scrive nel log, a livello warn, l'evento tipo che non
+// si e' accodato.
+func eventoNonAccodato(c *gin.Context, tipo string, err error) {
+	global.Logger.Per(c.Request.Context()).Warnf("%s %s: evento %s non accodato: %v", c.Request.Method, c.FullPath(), tipo, err)
 }
 
 // tronca riduce la nota a model.NotaMax caratteri; se la taglia lo scrive
@@ -270,6 +276,8 @@ func (a *Audit) AuditFile(c *gin.Context) {
 	af := aff.ToAuditFile()
 	if err := service.AllService.AuditService.CreateAuditFile(af); err != nil {
 		auditNonSalvato(c, err)
+	} else if err := service.AllService.EventiService.AccodaFile(af); err != nil {
+		eventoNonAccodato(c, service.EventoFileTrasferiti, err)
 	}
 	response.Success(c, "")
 }
@@ -369,6 +377,24 @@ func salvaBlocco(c *gin.Context, f *request.AuditTerminalForm) {
 		b := &model.AuditTerminal{AuditConnId: conn.Id, PeerId: f.Id, ConnId: f.ConnId, Seq: f.Seq, Dir: f.Dir, Data: data, Hash: f.Hash, Fine: f.Fine, Totale: &totale}
 		if err := as.CreateBlocco(b); err != nil {
 			auditNonSalvato(c, err)
+		} else if f.Fine {
+			terminaleChiuso(c, conn)
 		}
+	}
+}
+
+// terminaleChiuso accoda terminale.chiuso per la sessione conn, appena
+// salvato il blocco con fine, con l'esito della verifica della catena come
+// la calcola il pannello. Con l'integrazione spenta non legge niente.
+func terminaleChiuso(c *gin.Context, conn *model.AuditConn) {
+	if !global.Config.Integrazione.Attiva() {
+		return
+	}
+	v, err := service.AllService.AuditService.VerificaTerminale(conn.Id)
+	if err == nil {
+		err = service.AllService.EventiService.AccodaTerminale(conn, v)
+	}
+	if err != nil {
+		eventoNonAccodato(c, service.EventoTerminaleChiuso, err)
 	}
 }
