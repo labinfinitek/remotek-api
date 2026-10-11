@@ -35,6 +35,16 @@ func ApiInit(g *gin.Engine) {
 	})
 	g.LoadHTMLGlob("resources/templates/*")
 
+	// Rotte dell'integrazione (ADR-0026): solo GET, solo col token di
+	// integrazione, che non vale altrove; fuori da frg, quindi senza RustAuth.
+	{
+		ig := g.Group("/api/integrazione", middleware.IntegrazioneAuth())
+		in := &api.Integrazione{}
+		ig.GET("/pc", in.Pc)
+		ig.GET("/connessioni", in.Connessioni)
+		ig.GET("/connessioni/:id/verifica", in.Verifica)
+	}
+
 	frg := g.Group("/api")
 
 	{

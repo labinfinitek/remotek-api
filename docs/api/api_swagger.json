@@ -1026,6 +1026,163 @@
                 }
             }
         },
+        "/integrazione/connessioni": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Integrazione"
+                ],
+                "summary": "registro delle connessioni, per l'integrazione",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del PC",
+                        "name": "pc",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "connessioni iniziate da quest'ora, RFC 3339",
+                        "name": "da",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagina, da 1",
+                        "name": "pagina",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "righe per pagina, da 1 a 1000 (100)",
+                        "name": "per_pagina",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ElencoConnessioniIntegrazione"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/integrazione/connessioni/{id}/verifica": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Integrazione"
+                ],
+                "summary": "verifica di una trascrizione, per l'integrazione",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id della connessione nel registro",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.VerificaIntegrazione"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/integrazione/pc": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Integrazione"
+                ],
+                "summary": "PC, per l'integrazione",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "pagina, da 1",
+                        "name": "pagina",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "righe per pagina, da 1 a 1000 (100)",
+                        "name": "per_pagina",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ElencoPcIntegrazione"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/login": {
             "post": {
                 "description": "登录",
@@ -1742,6 +1899,38 @@
                 }
             }
         },
+        "api.ConnessioneIntegrazione": {
+            "type": "object",
+            "properties": {
+                "conn_id": {
+                    "type": "integer"
+                },
+                "durata_s": {
+                    "type": "integer"
+                },
+                "fine": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "inizio": {
+                    "type": "string"
+                },
+                "nota": {
+                    "type": "string"
+                },
+                "pc": {
+                    "type": "string"
+                },
+                "tecnico": {
+                    "type": "string"
+                },
+                "tipo": {
+                    "type": "integer"
+                }
+            }
+        },
         "api.DeviceInfoInLogin": {
             "type": "object",
             "properties": {
@@ -1753,6 +1942,46 @@
                 },
                 "type": {
                     "type": "string"
+                }
+            }
+        },
+        "api.ElencoConnessioniIntegrazione": {
+            "type": "object",
+            "properties": {
+                "elenco": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.ConnessioneIntegrazione"
+                    }
+                },
+                "pagina": {
+                    "type": "integer"
+                },
+                "per_pagina": {
+                    "type": "integer"
+                },
+                "totale": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.ElencoPcIntegrazione": {
+            "type": "object",
+            "properties": {
+                "elenco": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.PcIntegrazione"
+                    }
+                },
+                "pagina": {
+                    "type": "integer"
+                },
+                "per_pagina": {
+                    "type": "integer"
+                },
+                "totale": {
+                    "type": "integer"
                 }
             }
         },
@@ -1809,6 +2038,29 @@
                 }
             }
         },
+        "api.PcIntegrazione": {
+            "type": "object",
+            "properties": {
+                "alias": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nome": {
+                    "type": "string"
+                },
+                "possibile_copia": {
+                    "type": "boolean"
+                },
+                "ultimo_contatto": {
+                    "type": "string"
+                },
+                "versione": {
+                    "type": "string"
+                }
+            }
+        },
         "api.PeerForm": {
             "type": "object",
             "properties": {
@@ -1862,6 +2114,26 @@
                     "type": "string"
                 },
                 "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.VerificaIntegrazione": {
+            "type": "object",
+            "properties": {
+                "blocchi": {
+                    "type": "integer"
+                },
+                "fine": {
+                    "type": "boolean"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "integra": {
+                    "type": "boolean"
+                },
+                "primo_errato": {
                     "type": "integer"
                 }
             }

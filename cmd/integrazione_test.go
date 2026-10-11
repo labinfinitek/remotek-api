@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -48,5 +49,45 @@ func TestAvvioIntegrazione(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestComandoTokenIntegrazione prova sul binario vero token-integrazione:
+// crea stampa il token una volta sola, e nel database c'e' solo il suo
+// hash; elenco non mostra ne' token ne' hash; revoca segna la revoca; un
+// nome ripetuto o un token che non c'e' escono con 1.
+func TestComandoTokenIntegrazione(t *testing.T) {
+	dir := sandbox(t)
+	codice, out := esegui(t, dir, "token-integrazione", "crea", "n8n")
+	token := regexp.MustCompile(`(?m)^[A-Za-z0-9_-]{43}$`).FindString(out)
+	if codice != 0 || token == "" || strings.Count(out, token) != 1 {
+		t.Fatalf("crea: codice %d, token %q\n%s", codice, token, out)
+	}
+	var hash string
+	if err := apriDB(t, dir).Raw("SELECT hash FROM token_integrazione WHERE nome = 'n8n'").Scan(&hash).Error; err != nil || len(hash) != 64 {
+		t.Fatalf("hash %q (%v)", hash, err)
+	}
+	if codice, out := esegui(t, dir, "token-integrazione", "crea", "n8n"); codice != 1 || strings.Contains(out, token) {
+		t.Errorf("crea ripetuto: codice %d, atteso 1\n%s", codice, out)
+	}
+	elenco := func() string {
+		t.Helper()
+		codice, out := esegui(t, dir, "token-integrazione", "elenco")
+		if codice != 0 || !strings.Contains(out, "n8n\t") || strings.Contains(out, token) || strings.Contains(out, hash) {
+			t.Fatalf("elenco: codice %d\n%s", codice, out)
+		}
+		return out
+	}
+	if out := elenco(); !regexp.MustCompile(`n8n\t\S+Z\t\S+Z\t-\t-`).MatchString(out) {
+		t.Errorf("elenco prima della revoca:\n%s", out)
+	}
+	if codice, out := esegui(t, dir, "token-integrazione", "revoca", "n8n"); codice != 0 {
+		t.Fatalf("revoca: codice %d\n%s", codice, out)
+	}
+	if out := elenco(); !regexp.MustCompile(`n8n\t\S+Z\t\S+Z\t\S+Z\t-`).MatchString(out) {
+		t.Errorf("elenco dopo la revoca:\n%s", out)
+	}
+	if codice, out := esegui(t, dir, "token-integrazione", "revoca", "manca"); codice != 1 {
+		t.Errorf("revoca di un token che non c'e': codice %d, atteso 1\n%s", codice, out)
 	}
 }
