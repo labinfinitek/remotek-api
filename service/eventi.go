@@ -213,3 +213,7 @@ func Firma(segreto string, t int64, corpo []byte) string {
 	m.Write(corpo)
 	return "t=" + ts + ",v1=" + hex.EncodeToString(m.Sum(nil))
 }
+
+// SessioneDi restituisce i campi della connessione conn che escono verso
+// l'integrazione, gli stessi degli eventi di sessione.
+func SessioneDi(conn *model.AuditConn) *SessioneEvento { return sessioneEvento(conn) }

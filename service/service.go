@@ -27,6 +27,7 @@ type Service struct {
 	*LdapService
 	*AppService
 	*EventiService
+	*TokenIntegrazioneService
 }
 
 type Dependencies struct {

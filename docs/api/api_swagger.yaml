@@ -82,6 +82,27 @@ definitions:
       uuid:
         type: string
     type: object
+  api.ConnessioneIntegrazione:
+    properties:
+      conn_id:
+        type: integer
+      durata_s:
+        type: integer
+      fine:
+        type: string
+      id:
+        type: integer
+      inizio:
+        type: string
+      nota:
+        type: string
+      pc:
+        type: string
+      tecnico:
+        type: string
+      tipo:
+        type: integer
+    type: object
   api.DeviceInfoInLogin:
     properties:
       name:
@@ -90,6 +111,32 @@ definitions:
         type: string
       type:
         type: string
+    type: object
+  api.ElencoConnessioniIntegrazione:
+    properties:
+      elenco:
+        items:
+          $ref: '#/definitions/api.ConnessioneIntegrazione'
+        type: array
+      pagina:
+        type: integer
+      per_pagina:
+        type: integer
+      totale:
+        type: integer
+    type: object
+  api.ElencoPcIntegrazione:
+    properties:
+      elenco:
+        items:
+          $ref: '#/definitions/api.PcIntegrazione'
+        type: array
+      pagina:
+        type: integer
+      per_pagina:
+        type: integer
+      totale:
+        type: integer
     type: object
   api.LoginForm:
     properties:
@@ -126,6 +173,21 @@ definitions:
         type: string
       user:
         $ref: '#/definitions/api.UserPayload'
+    type: object
+  api.PcIntegrazione:
+    properties:
+      alias:
+        type: string
+      id:
+        type: string
+      nome:
+        type: string
+      possibile_copia:
+        type: boolean
+      ultimo_contatto:
+        type: string
+      versione:
+        type: string
     type: object
   api.PeerForm:
     properties:
@@ -165,6 +227,19 @@ definitions:
       note:
         type: string
       status:
+        type: integer
+    type: object
+  api.VerificaIntegrazione:
+    properties:
+      blocchi:
+        type: integer
+      fine:
+        type: boolean
+      hash:
+        type: string
+      integra:
+        type: boolean
+      primo_errato:
         type: integer
     type: object
   model.AddressBookCollection:
@@ -882,6 +957,104 @@ paths:
       summary: 心跳
       tags:
       - 首页
+  /integrazione/connessioni:
+    get:
+      parameters:
+      - description: ID del PC
+        in: query
+        name: pc
+        type: string
+      - description: connessioni iniziate da quest'ora, RFC 3339
+        in: query
+        name: da
+        type: string
+      - description: pagina, da 1
+        in: query
+        name: pagina
+        type: integer
+      - description: righe per pagina, da 1 a 1000 (100)
+        in: query
+        name: per_pagina
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ElencoConnessioniIntegrazione'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: registro delle connessioni, per l'integrazione
+      tags:
+      - Integrazione
+  /integrazione/connessioni/{id}/verifica:
+    get:
+      parameters:
+      - description: id della connessione nel registro
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.VerificaIntegrazione'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: verifica di una trascrizione, per l'integrazione
+      tags:
+      - Integrazione
+  /integrazione/pc:
+    get:
+      parameters:
+      - description: pagina, da 1
+        in: query
+        name: pagina
+        type: integer
+      - description: righe per pagina, da 1 a 1000 (100)
+        in: query
+        name: per_pagina
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ElencoPcIntegrazione'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: PC, per l'integrazione
+      tags:
+      - Integrazione
   /login:
     post:
       consumes:

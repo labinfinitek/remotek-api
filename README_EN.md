@@ -320,6 +320,9 @@ docker compose: `sudo cat remotek-data/admin-password.txt`. Log in on
 ./apimain reset-admin-pwd <password>        # admin password
 ./apimain reset-pwd <userId> <password>     # password of another user
 ./apimain agente-ai <username> <technician> # account of an AI agent
+./apimain token-integrazione crea <name>    # integration token (Integration)
+./apimain token-integrazione elenco
+./apimain token-integrazione revoca <name>
 ./apimain -h                                # help
 ```
 
@@ -657,6 +660,41 @@ printf '%s.%s' 1791000000 '{"schema":1,"tipo":"prova"}' \
 
 **What never leaves.** uuids, keys, signatures, tokens, guids,
 `session_id`, IP addresses, file contents and names, terminal transcripts.
+
+### Integration tokens (read-only)
+
+n8n can ask the API for details with an integration token, which can only
+read (ADR-0026).
+
+**Commands** (First start and administration):
+
+- `token-integrazione crea <name>` creates the token and prints it on
+  stdout once: 32 random bytes in base64url. The database
+  (`token_integrazione`, database version 272) keeps only its SHA-256: if it
+  is lost, create another. The name has 2 to 64 characters among letters,
+  digits, `.`, `-` and `_`, and is unique. The token expires after one year.
+- `token-integrazione elenco` prints name, creation, expiry, revocation and
+  last use (RFC 3339, `-` when absent), never tokens or hashes.
+- `token-integrazione revoca <name>` revokes it at once. An unknown name
+  exits with code 1.
+
+**Routes.** `GET` only, with `Authorization: Bearer <token>` and no other
+credential. The integration token is valid on no other route, and a login
+token is not valid on these. Without a token, or with an unknown, expired
+or revoked one, the answer is 401 `{"error": "Unauthorized"}`; an expired
+or revoked token leaves a warn with its name in the log. The token never
+goes to the log.
+
+| Route | Response |
+|---|---|
+| `GET /api/integrazione/pc` | `elenco` of PCs (`id`, `nome` = hostname, `alias`, `ultimo_contatto` RFC 3339 or `null`, `versione`, `possibile_copia`), `totale`, `pagina`, `per_pagina` |
+| `GET /api/integrazione/connessioni` | connection log in `id` order, with the fields of the events' `sessione` plus `id` (of the row) and `pc`; filters `pc` (PC ID) and `da` (RFC 3339, connections started since then) |
+| `GET /api/integrazione/connessioni/{id}/verifica` | result of the transcript verification of connection `id` (`integra`, `blocchi`, `fine`, `hash`, `primo_errato`), as the panel's verification; 404 if the connection does not exist or is not a terminal |
+
+Both lists are paged: `pagina` (from 1) and `per_pagina` (1 to 1000,
+default 100); an invalid value answers 400. Never returned: uuids, keys,
+IPs, guids, `session_id`, file names or paths, transcripts. No route
+writes anything and none exports transcripts.
 
 ## Origin and licence
 

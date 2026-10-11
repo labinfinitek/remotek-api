@@ -324,6 +324,9 @@ docker compose: `sudo cat remotek-data/admin-password.txt`. Entra su
 ./apimain reset-admin-pwd <password>        # password di admin
 ./apimain reset-pwd <idUtente> <password>   # password di un altro utente
 ./apimain agente-ai <username> <tecnico>    # account di un agente AI
+./apimain token-integrazione crea <nome>    # token di integrazione (Integrazione)
+./apimain token-integrazione elenco
+./apimain token-integrazione revoca <nome>
 ./apimain -h                                # aiuto
 ```
 
@@ -659,6 +662,41 @@ printf '%s.%s' 1791000000 '{"schema":1,"tipo":"prova"}' \
 
 **Cosa non esce, mai.** uuid, chiavi, firme, token, guid, `session_id`,
 indirizzi IP, contenuto e nomi dei file, trascrizioni del terminale.
+
+### Token di integrazione (sola lettura)
+
+n8n puo' chiedere dettagli all'API con un token di integrazione, che legge
+e basta (ADR-0026).
+
+**Comandi** (Primo avvio e amministrazione):
+
+- `token-integrazione crea <nome>` crea il token e lo stampa su stdout una
+  volta sola: 32 byte casuali in base64url. Nel database (`token_integrazione`,
+  versione del database 272) c'e' solo il suo SHA-256: se si perde, se ne crea un
+  altro. Il nome ha da 2 a 64 caratteri tra lettere, cifre, `.`, `-` e `_`,
+  e non si ripete. Il token scade dopo un anno.
+- `token-integrazione elenco` stampa nome, creazione, scadenza, revoca e
+  ultimo uso (RFC 3339, `-` se non c'e'), mai token ne' hash.
+- `token-integrazione revoca <nome>` lo revoca subito. Un nome che non c'e'
+  esce con codice 1.
+
+**Rotte.** Solo `GET`, con `Authorization: Bearer <token>` e nessun'altra
+credenziale. Il token di integrazione non vale su nessun'altra rotta, e un
+token di login non vale su queste. Senza token, o con un token sconosciuto,
+scaduto o revocato, la risposta e' 401 `{"error": "Unauthorized"}`; un token
+scaduto o revocato lascia nel log un warn col suo nome. Il token non va mai
+nel log.
+
+| Rotta | Risposta |
+|---|---|
+| `GET /api/integrazione/pc` | `elenco` dei PC (`id`, `nome` = hostname, `alias`, `ultimo_contatto` RFC 3339 o `null`, `versione`, `possibile_copia`), `totale`, `pagina`, `per_pagina` |
+| `GET /api/integrazione/connessioni` | registro delle connessioni in ordine di `id`, con i campi della `sessione` degli eventi piu' `id` (della riga) e `pc`; filtri `pc` (ID del PC) e `da` (RFC 3339, connessioni iniziate da allora) |
+| `GET /api/integrazione/connessioni/{id}/verifica` | esito della verifica della trascrizione della connessione `id` (`integra`, `blocchi`, `fine`, `hash`, `primo_errato`), come la verifica del pannello; 404 se la connessione non c'e' o non e' un terminale |
+
+Le due liste vanno a pagine: `pagina` (da 1) e `per_pagina` (da 1 a 1000,
+default 100); un valore non valido risponde 400. Non escono mai uuid,
+chiavi, IP, guid, `session_id`, nomi o percorsi di file, trascrizioni.
+Nessuna rotta scrive niente e nessuna esporta le trascrizioni.
 
 ## Origine e licenza
 

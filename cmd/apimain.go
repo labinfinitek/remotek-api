@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -27,7 +28,7 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/utils"
 )
 
-const DatabaseVersion = 271
+const DatabaseVersion = 272
 
 // fileAdminPassword e' il file in cui il primo avvio scrive la password
 // iniziale di admin, nella cartella di rustdeskapi.db (nel container
@@ -161,9 +162,82 @@ func reimpostaPassword(id uint, pwd string) {
 	global.Logger.Infof("password dell'utente %d reimpostata", id)
 }
 
+var tokenIntegrazioneCmd = &cobra.Command{
+	Use:   "token-integrazione",
+	Short: "Token di integrazione in sola lettura (n8n)",
+}
+
+var tokenIntegrazioneCreaCmd = &cobra.Command{
+	Use:     "crea [nome]",
+	Example: "token-integrazione crea n8n",
+	Short:   "Crea un token di integrazione e lo stampa una volta sola",
+	Args:    cobra.ExactArgs(1),
+	Run: func(_ *cobra.Command, args []string) {
+		token, err := service.AllService.TokenIntegrazioneService.Crea(args[0], time.Now())
+		if err != nil {
+			global.Logger.Fatalf("token di integrazione non creato: %v", err)
+		}
+		global.Logger.Infof("token di integrazione %s creato, scade tra un anno", args[0])
+		if _, err := fmt.Fprintln(os.Stdout, token); err != nil {
+			global.Logger.Fatalf("token di integrazione %s non stampato: %v", args[0], err)
+		}
+	},
+}
+
+var tokenIntegrazioneElencoCmd = &cobra.Command{
+	Use:   "elenco",
+	Short: "Elenca i token di integrazione: nome, creazione, scadenza, revoca, ultimo uso",
+	Args:  cobra.NoArgs,
+	Run: func(_ *cobra.Command, _ []string) {
+		elenco, err := service.AllService.TokenIntegrazioneService.Elenco()
+		if err != nil {
+			global.Logger.Fatalf("token di integrazione non letti: %v", err)
+		}
+		if _, err := fmt.Fprint(os.Stdout, elencoToken(elenco)); err != nil {
+			global.Logger.Fatalf("elenco dei token di integrazione non stampato: %v", err)
+		}
+	},
+}
+
+var tokenIntegrazioneRevocaCmd = &cobra.Command{
+	Use:     "revoca [nome]",
+	Example: "token-integrazione revoca n8n",
+	Short:   "Revoca un token di integrazione",
+	Args:    cobra.ExactArgs(1),
+	Run: func(_ *cobra.Command, args []string) {
+		err := service.AllService.TokenIntegrazioneService.Revoca(args[0], time.Now())
+		if errors.Is(err, service.ErrNotFound) {
+			global.Logger.Fatalf("token di integrazione %q non trovato", args[0])
+		}
+		if err != nil {
+			global.Logger.Fatalf("token di integrazione %q non revocato: %v", args[0], err)
+		}
+		global.Logger.Infof("token di integrazione %s revocato", args[0])
+	},
+}
+
+// elencoToken scrive una riga per token, separata da tabulazioni: nome,
+// creato, scade, revocato e ultimo uso in RFC 3339 UTC, "-" se manca
+// l'ora. Mai token ne' hash.
+func elencoToken(elenco []model.TokenIntegrazione) string {
+	quando := func(t int64) string {
+		if t == 0 {
+			return "-"
+		}
+		return time.Unix(t, 0).UTC().Format(time.RFC3339)
+	}
+	var b strings.Builder
+	b.WriteString("nome\tcreato\tscade\trevocato\tultimo_uso\n")
+	for _, t := range elenco {
+		fmt.Fprintf(&b, "%s\t%s\t%s\t%s\t%s\n", t.Nome, quando(t.Creato), quando(t.Scade), quando(t.Revocato), quando(t.UltimoUso))
+	}
+	return b.String()
+}
+
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&global.ConfigPath, "config", "c", "./conf/config.yaml", "choose config file")
-	rootCmd.AddCommand(resetPwdCmd, resetUserPwdCmd, agenteAiCmd)
+	tokenIntegrazioneCmd.AddCommand(tokenIntegrazioneCreaCmd, tokenIntegrazioneElencoCmd, tokenIntegrazioneRevocaCmd)
+	rootCmd.AddCommand(resetPwdCmd, resetUserPwdCmd, agenteAiCmd, tokenIntegrazioneCmd)
 }
 
 // main esce con 1 se cobra restituisce un errore. Cobra lo ha gia' scritto su
@@ -390,6 +464,7 @@ func Migrate(version uint) {
 		&model.ServerCmd{},
 		&model.DeviceGroup{},
 		&model.Evento{},
+		&model.TokenIntegrazione{},
 	)
 	// La riga di Version resta solo se il resto riesce: le tabelle e, al
 	// primo avvio (quando e' la prima riga), i gruppi predefiniti e admin,
