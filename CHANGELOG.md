@@ -6,6 +6,20 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+## [0.5.0] - 2026-10-10
+Immagine `ghcr.io/labinfinitek/remotek-api:0.5.0`, costruita con Go 1.26.9.
+Nessun cambio incompatibile. Quattro migrazioni del database, fatte
+all'avvio: 267 (tabella `audit_terminals`), 268 (`users.agente_di`), 269
+(`audit_terminals.totale`), 270 (`peers.chiave_pubblica`). Entrano la
+trascrizione delle sessioni terminale con l'esportazione, gli account degli
+agenti AI, il limite di 1 MiB al corpo delle richieste, la firma del
+dispositivo, non obbligatoria (`app.firma-obbligatoria` = `false`: i
+client che non firmano funzionano come prima), e la segnalazione delle
+copie dello stesso PC nel log e nel pannello. Serve al client
+`remotek-1.4.9-3`, che firma e manda le trascrizioni. Dopo l'aggiornamento
+vanno accesi gli allarmi sui log della firma (ADR-0023) e delle copie
+(ADR-0024).
+
 ### Aggiunto
 - Segnalazione delle copie di un PC (VM clonata o immagine disco senza
   sysprep, che porta ID, uuid e chiave): con almeno 10 cambi di indirizzo
