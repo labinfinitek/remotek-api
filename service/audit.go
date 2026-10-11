@@ -78,20 +78,30 @@ func (as *AuditService) InfoByPeerIdAndConnId(peerId string, connId int64) (*mod
 const sessioneNonAutorizzata = "0"
 
 // NotaDiSessione scrive note sulla connessione piu' recente del dispositivo
-// peerId con quel sessionId; ErrNotFound se non ce n'e' nessuna o se
-// sessionId e' "0". Non crea righe.
-func (as *AuditService) NotaDiSessione(peerId, sessionId, note string) error {
+// peerId con quel sessionId e la restituisce, con cambiata vera se la nota
+// prima era diversa; ErrNotFound se non ce n'e' nessuna o se sessionId e'
+// "0". Non crea righe.
+func (as *AuditService) NotaDiSessione(peerId, sessionId, note string) (conn *model.AuditConn, cambiata bool, err error) {
 	if sessionId == sessioneNonAutorizzata {
-		return fmt.Errorf("nota senza sessione del dispositivo %s: %w", peerId, ErrNotFound)
+		return nil, false, fmt.Errorf("nota senza sessione del dispositivo %s: %w", peerId, ErrNotFound)
 	}
 	ex := &model.AuditConn{}
 	if err := DB.Where("peer_id = ? and session_id = ?", peerId, sessionId).Order("id desc").First(ex).Error; err != nil {
-		return fmt.Errorf("connessione della sessione %s del dispositivo %s: %w", sessionId, peerId, nonTrovato(err))
+		return nil, false, fmt.Errorf("connessione della sessione %s del dispositivo %s: %w", sessionId, peerId, nonTrovato(err))
+	}
+	return scriviNota(ex, note)
+}
+
+// scriviNota scrive note sulla connessione ex, se e' diversa da quella
+// che ha.
+func scriviNota(ex *model.AuditConn, note string) (*model.AuditConn, bool, error) {
+	if ex.Note == note {
+		return ex, false, nil
 	}
 	if err := DB.Model(ex).Update("note", note).Error; err != nil {
-		return fmt.Errorf("nota della connessione %d: %w", ex.Id, err)
+		return nil, false, fmt.Errorf("nota della connessione %d: %w", ex.Id, err)
 	}
-	return nil
+	return ex, true, nil
 }
 
 // GuidConnessioneAperta restituisce il guid della connessione aperta piu'
@@ -109,20 +119,18 @@ func (as *AuditService) GuidConnessioneAperta(peerId, sessionId string, tipo int
 	return ex.Guid, nil
 }
 
-// NotaPerGuid scrive note sulla connessione col guid guid; ErrNotFound se
-// non c'e', anche per il guid vuoto delle connessioni di prima.
-func (as *AuditService) NotaPerGuid(guid, note string) error {
+// NotaPerGuid scrive note sulla connessione col guid guid e la
+// restituisce, con cambiata vera se la nota prima era diversa; ErrNotFound
+// se non c'e', anche per il guid vuoto delle connessioni di prima.
+func (as *AuditService) NotaPerGuid(guid, note string) (conn *model.AuditConn, cambiata bool, err error) {
 	if guid == "" {
-		return fmt.Errorf("connessione col guid vuoto: %w", ErrNotFound)
+		return nil, false, fmt.Errorf("connessione col guid vuoto: %w", ErrNotFound)
 	}
-	res := DB.Model(&model.AuditConn{}).Where("guid = ?", guid).Update("note", note)
-	if res.Error != nil {
-		return fmt.Errorf("nota della connessione per guid: %w", res.Error)
+	ex := &model.AuditConn{}
+	if err := DB.Where("guid = ?", guid).First(ex).Error; err != nil {
+		return nil, false, fmt.Errorf("connessione per guid: %w", nonTrovato(err))
 	}
-	if res.RowsAffected == 0 {
-		return fmt.Errorf("connessione per guid: %w", ErrNotFound)
-	}
-	return nil
+	return scriviNota(ex, note)
 }
 
 // ConnInfoById restituisce la connessione id; ErrNotFound se non c'e'.

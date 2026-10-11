@@ -271,6 +271,8 @@ stesso default se la chiave manca dal file.
 | `rustdesk.key` | `RUSTDESK_API_RUSTDESK_KEY` | vuoto | chiave pubblica di `hbbs`; vuota = si legge `rustdesk.key-file` |
 | `rustdesk.key-file` | `RUSTDESK_API_RUSTDESK_KEY_FILE` | `/data/id_ed25519.pub` | file della chiave; se non si legge, la chiave resta vuota senza errore |
 | `rustdesk.personal` | `RUSTDESK_API_RUSTDESK_PERSONAL` | `1` | `1` rubrica personale attiva, `0` spenta |
+| `integrazione.url` \* | `RUSTDESK_API_INTEGRAZIONE_URL` | vuoto | URL `https://` a cui vanno gli eventi delle sessioni (Integrazione); vuoto = spenta, nessun evento. Senza credenziali nell'URL; `http://` o credenziali fermano l'avvio. Solo dalla configurazione, mai dal pannello |
+| `integrazione.segreto` \* | `RUSTDESK_API_INTEGRAZIONE_SEGRETO` | vuoto | segreto della firma degli eventi, almeno 32 caratteri se `integrazione.url` e' impostato (altrimenti l'avvio si ferma): dalla variabile, non nel file; mai nel log |
 | `logger.path` \* | `RUSTDESK_API_LOGGER_PATH` | vuoto | ignorata: il log va solo su stdout; se impostata, all'avvio un warn lo dice |
 | `logger.level` \* | `RUSTDESK_API_LOGGER_LEVEL` | `info` | `debug`, `info`, `warn`, `error`; un altro valore ferma l'avvio |
 | `logger.report-caller` | `RUSTDESK_API_LOGGER_REPORT_CALLER` | `true` | `source` (funzione, file e riga del codice) in ogni riga di log |
@@ -569,6 +571,82 @@ clonare, oppure Remotek installato dopo la copia.
 - la memoria e' nel processo: dopo un riavvio dell'API riparte vuota;
 - dietro un proxy senza `gin.trust-proxy` (Configurazione) tutti i PC hanno
   l'indirizzo del proxy e la regola non vede niente.
+
+## Integrazione (eventi)
+
+Il supporto lavora in Zammad: l'API manda a n8n (rete privata) un evento
+firmato per ogni fatto di una sessione, e n8n porta nel ticket cio' che
+serve; il tecnico scrive il numero del ticket nella nota di sessione (per
+esempio `#83100`). L'API non conosce Zammad (ADR-0026).
+
+**Configurazione.** `integrazione.url` e `integrazione.segreto`
+(Configurazione). Senza URL non si accoda niente e l'API si comporta come
+prima. Con l'URL, all'avvio: deve essere `https://`, senza credenziali, e il
+segreto deve avere almeno 32 caratteri, altrimenti l'avvio si ferma.
+
+**Consegna.** Gli eventi si salvano nella tabella `eventi` del database
+(versione 271) nella stessa richiesta del client; se non si salvano, un
+warn `evento ... non accodato` e al client la risposta di sempre. Un worker
+nel processo dell'API, avviato e fermato con lei, li manda uno alla volta in
+ordine di creazione tra quelli pronti: `POST` JSON, timeout 10 secondi,
+nessun redirect seguito. Consegnato = risposta 2xx. Altrimenti si riprova
+dopo 30 secondi, poi 1, 2, 4... minuti fino a un'ora tra un tentativo e
+l'altro, per 24 ore dalla creazione; poi una riga ERROR `evento non
+consegnato` con tipo e id, e l'evento resta segnato `fallito`. Ogni
+tentativo fallito e' un warn, senza l'URL. Consegnati e falliti si
+cancellano 7 giorni dopo. La coda sta nel database: dopo un riavvio riparte
+da dove era. La consegna e' *almeno una volta*: chi riceve scarta i
+doppioni con `X-Remotek-Evento-Id`; un evento che si riprova non ferma gli
+altri, quindi l'ordine sicuro e' quello di `ora`.
+
+**Tipi.**
+
+| Tipo | Quando |
+|---|---|
+| `connessione.aperta` | il PC registra una connessione nuova (`POST /api/audit/conn`, `action` `new`); anche prima che il cliente accetti, come nel registro |
+| `connessione.chiusa` | il PC registra la chiusura; con `fine` e `durata_s` |
+| `connessione.nota` | la nota di sessione e' scritta o cambiata (durante la sessione o a fine connessione); una nota uguale a quella salvata non fa evento. Il testo e' quello del registro, troncato a 2000 caratteri |
+
+**Campi.** Ogni evento ha esattamente:
+
+```json
+{
+  "schema": 1,
+  "id": "5f0c7f0e-7d1a-4c55-9a43-0b8e8f1f2a10",
+  "tipo": "connessione.chiusa",
+  "ora": "2026-10-11T09:01:30Z",
+  "pc": {"id": "999000111", "nome": "PC-ROSSI", "alias": "Rossi"},
+  "sessione": {
+    "conn_id": 7, "tipo": 0, "tecnico": "mario",
+    "inizio": "2026-10-11T09:00:00Z", "fine": "2026-10-11T09:01:30Z",
+    "durata_s": 90, "nota": "#83100"
+  }
+}
+```
+
+`id` e' un uuid casuale dell'evento, `ora` quando e' nato (RFC 3339, UTC).
+`pc.nome` e' l'hostname. `sessione.tipo` e' il type del registro, come nel pannello (4 =
+terminale), `tecnico` il
+nome del tecnico (`from_name`); `fine` e `durata_s` sono `null` finche' la
+connessione e' aperta.
+
+**Firma.** Ogni richiesta ha gli header `X-Remotek-Evento-Id` (l'`id`) e
+`X-Remotek-Evento-Firma: t=<secondi UNIX>,v1=<hex>`, con `v1` =
+HMAC-SHA256(segreto, `"<t>."` + corpo esatto ricevuto). Chi riceve ricalcola
+`v1` sui byte del corpo, prima di decodificare il JSON, e lo confronta a
+tempo costante; scarta `t` troppo lontano dalla sua ora (per esempio oltre 5
+minuti: un evento ripetuto ha un `t` nuovo). Vettore di prova: segreto
+`segreto-di-prova-di-almeno-32-caratteri`, `t` = `1791000000`, corpo
+`{"schema":1,"tipo":"prova"}` danno
+`v1=47977e5349c23bd14a1a9d3200bed968a3092152ca7f73b73c6581a5f0b47013`.
+
+```sh
+printf '%s.%s' 1791000000 '{"schema":1,"tipo":"prova"}' \
+  | openssl dgst -sha256 -hmac 'segreto-di-prova-di-almeno-32-caratteri'
+```
+
+**Cosa non esce, mai.** uuid, chiavi, firme, token, guid, `session_id`,
+indirizzi IP, contenuto e nomi dei file, trascrizioni del terminale.
 
 ## Origine e licenza
 

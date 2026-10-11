@@ -45,6 +45,8 @@ type Config struct {
 	Rustdesk Rustdesk
 	Proxy    Proxy
 	Ldap     Ldap
+	// Integrazione: eventi delle sessioni verso n8n (ADR-0026).
+	Integrazione Integrazione
 }
 
 // Init completa la sezione admin: il titolo vuoto e' il nome del marchio.
@@ -92,6 +94,9 @@ func Init(rowVal *Config, path string) *viper.Viper {
 	// RUSTDESK_API_LOGGER_PATH e' ignorata.
 	v.SetDefault("logger.level", "info")
 	v.SetDefault("logger.path", "")
+	// Integrazione spenta: senza URL non si accoda niente (ADR-0026).
+	v.SetDefault("integrazione.url", "")
+	v.SetDefault("integrazione.segreto", "")
 	v.AutomaticEnv()
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	v.SetEnvPrefix("RUSTDESK_API")

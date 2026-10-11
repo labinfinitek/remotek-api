@@ -22,6 +22,7 @@ type sicuri struct {
 	LdapTlsVerify     bool
 	LoggerLevel       string // info: debug scrive di piu'
 	LoggerPath        string // vuoto: nessun file di log
+	IntegrazioneUrl   string // vuoto: nessun evento esce (ADR-0026)
 }
 
 // TestDefaultSicuri verifica che, senza variabili RUSTDESK_API_*, un file
@@ -91,6 +92,7 @@ func leggi(path string) sicuri {
 		BanThreshold: c.App.BanThreshold, FirmaObbligatoria: c.App.FirmaObbligatoria, TrustProxy: c.Gin.TrustProxy,
 		LdapTlsVerify: c.Ldap.TlsVerify,
 		LoggerLevel:   c.Logger.Level, LoggerPath: c.Logger.Path,
+		IntegrazioneUrl: c.Integrazione.Url,
 	}
 }
 

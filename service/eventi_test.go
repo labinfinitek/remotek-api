@@ -1,0 +1,300 @@
+package service
+
+import (
+	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"path/filepath"
+	"reflect"
+	"slices"
+	"strconv"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"gorm.io/gorm/logger"
+
+	"github.com/lejianwen/rustdesk-api/v2/config"
+	applog "github.com/lejianwen/rustdesk-api/v2/lib/logger"
+	"github.com/lejianwen/rustdesk-api/v2/lib/orm"
+	"github.com/lejianwen/rustdesk-api/v2/model"
+	"github.com/lejianwen/rustdesk-api/v2/model/custom_types"
+)
+
+const segretoDiProva = "segreto-di-prova-di-almeno-32-caratteri"
+
+// TestFirmaVettore fissa il vettore del README: chi riceve lo usa per
+// provare la sua verifica.
+func TestFirmaVettore(t *testing.T) {
+	got := Firma(segretoDiProva, 1791000000, []byte(`{"schema":1,"tipo":"prova"}`))
+	want := "t=1791000000,v1=47977e5349c23bd14a1a9d3200bed968a3092152ca7f73b73c6581a5f0b47013"
+	if got != want {
+		t.Errorf("Firma:\n got  %s\n want %s", got, want)
+	}
+}
+
+// ricevuto e' una richiesta arrivata al ricevitore di prova.
+type ricevuto struct {
+	id, firma, corpo string
+}
+
+// ricevitore e' l'n8n di prova: risponde con gli stati di risposte, poi
+// sempre con l'ultimo, e ricorda le richieste.
+type ricevitore struct {
+	mu       sync.Mutex
+	risposte []int
+	arrivati []ricevuto
+}
+
+func (r *ricevitore) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	corpo, _ := io.ReadAll(req.Body)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.arrivati = append(r.arrivati, ricevuto{req.Header.Get("X-Remotek-Evento-Id"), req.Header.Get("X-Remotek-Evento-Firma"), string(corpo)})
+	stato := r.risposte[min(len(r.arrivati), len(r.risposte))-1]
+	w.WriteHeader(stato)
+}
+
+// codaDiProva prepara database, log e configurazione dei servizi con
+// l'integrazione verso un ricevitore che risponde con risposte, e una
+// consegna con l'orologio fermo all'ora restituita, che il test sposta.
+func codaDiProva(t *testing.T, risposte ...int) (*Consegna, *ricevitore, *time.Time, *strings.Builder) {
+	t.Helper()
+	db, err := orm.ApriSqlite(filepath.Join(t.TempDir(), "api.db"), logger.Discard)
+	if err == nil {
+		err = db.AutoMigrate(&model.Evento{}, &model.Peer{}, &model.AuditConn{})
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := &ricevitore{risposte: risposte}
+	srv := httptest.NewServer(r)
+	t.Cleanup(srv.Close)
+	registro := &strings.Builder{}
+	precDB, precConfig, precLogger, precServizi := DB, Config, Logger, AllService
+	t.Cleanup(func() { DB, Config, Logger, AllService = precDB, precConfig, precLogger, precServizi })
+	DB, Logger, AllService = db, applog.Su(registro), new(Service)
+	Config = &config.Config{Integrazione: config.Integrazione{Url: srv.URL, Segreto: segretoDiProva}}
+	adesso := time.Date(2026, 10, 11, 9, 0, 0, 0, time.UTC)
+	k := NuovaConsegna(Config.Integrazione)
+	k.Ora = func() time.Time { return adesso }
+	return k, r, &adesso, registro
+}
+
+// eventi restituisce la coda in ordine di id.
+func eventi(t *testing.T) []model.Evento {
+	t.Helper()
+	var res []model.Evento
+	if err := DB.Order("id").Find(&res).Error; err != nil {
+		t.Fatal(err)
+	}
+	return res
+}
+
+// passo fa un Passo e controlla se ha mandato un evento.
+func passo(t *testing.T, k *Consegna, mandato bool) {
+	t.Helper()
+	got, err := k.Passo(t.Context())
+	if err != nil || got != mandato {
+		t.Fatalf("Passo: %t, %v; atteso %t, nil", got, err, mandato)
+	}
+}
+
+// TestConsegnaRiuscita: l'evento arriva al primo colpo col corpo salvato,
+// l'id negli header e la firma che chi riceve ricalcola; poi e'
+// consegnato e non si manda piu'.
+func TestConsegnaRiuscita(t *testing.T) {
+	k, r, adesso, registro := codaDiProva(t, 204)
+	if err := accoda("prova", PcEvento{Id: "999000111"}, nil, *adesso); err != nil {
+		t.Fatal(err)
+	}
+	passo(t, k, true)
+	passo(t, k, false)
+	e := eventi(t)[0]
+	if len(r.arrivati) != 1 {
+		t.Fatalf("%d richieste, attesa 1", len(r.arrivati))
+	}
+	a := r.arrivati[0]
+	ts := strconv.FormatInt(adesso.Unix(), 10)
+	if a.corpo != e.Corpo || a.id != e.EventoId || a.firma != Firma(segretoDiProva, adesso.Unix(), []byte(e.Corpo)) || !strings.HasPrefix(a.firma, "t="+ts+",v1=") {
+		t.Errorf("arrivato %+v, evento %+v", a, e)
+	}
+	if e.Esito != model.EventoConsegnato || e.Tentativi != 1 || e.Chiuso != adesso.Unix() {
+		t.Errorf("evento dopo la consegna: %+v", e)
+	}
+	if registro.Len() != 0 {
+		t.Errorf("log non vuoto:\n%s", registro)
+	}
+}
+
+// TestConsegnaRipetuta: dopo un 500 l'evento si riprova dopo 30 secondi,
+// non prima, con lo stesso id; dopo il 200 non si manda piu'. Un redirect
+// non si segue e vale come non consegnato.
+func TestConsegnaRipetuta(t *testing.T) {
+	for _, primo := range []int{500, 302} {
+		t.Run(strconv.Itoa(primo), func(t *testing.T) {
+			k, r, adesso, registro := codaDiProva(t, primo, 200)
+			if err := accoda("prova", PcEvento{Id: "999000111"}, nil, *adesso); err != nil {
+				t.Fatal(err)
+			}
+			passo(t, k, true)
+			*adesso = adesso.Add(29 * time.Second)
+			passo(t, k, false)
+			*adesso = adesso.Add(time.Second)
+			passo(t, k, true)
+			*adesso = adesso.Add(time.Hour)
+			passo(t, k, false)
+			if len(r.arrivati) != 2 || r.arrivati[0].id != r.arrivati[1].id || r.arrivati[0].corpo != r.arrivati[1].corpo {
+				t.Errorf("richieste: %+v, attese due uguali", r.arrivati)
+			}
+			if e := eventi(t)[0]; e.Esito != model.EventoConsegnato || e.Tentativi != 2 {
+				t.Errorf("evento: %+v", e)
+			}
+			if applog.Conta(registro.String(), "WARN", "stato "+strconv.Itoa(primo)) != 1 || strings.Contains(registro.String(), "127.0.0.1") {
+				t.Errorf("atteso un warn con lo stato e senza l'URL:\n%s", registro)
+			}
+		})
+	}
+}
+
+// TestConsegnaFallita: un ricevitore che risponde sempre 500 riceve
+// l'evento con attese da 30 secondi che raddoppiano fino a un'ora, per 24
+// ore; poi una sola riga ERROR "evento non consegnato" con tipo e id, e
+// l'evento resta fallito.
+func TestConsegnaFallita(t *testing.T) {
+	k, r, adesso, registro := codaDiProva(t, 500)
+	inizio := *adesso
+	if err := accoda(EventoConnessioneChiusa, PcEvento{Id: "999000111"}, nil, inizio); err != nil {
+		t.Fatal(err)
+	}
+	var attese []time.Duration
+	prec := inizio
+	for range 100 {
+		passo(t, k, true)
+		e := eventi(t)[0]
+		if e.Esito != model.EventoInAttesa {
+			break
+		}
+		prossimo := time.Unix(e.Prossimo, 0)
+		attese = append(attese, prossimo.Sub(prec))
+		prec, *adesso = prossimo, prossimo
+	}
+	e := eventi(t)[0]
+	if e.Esito != model.EventoFallito || adesso.Sub(inizio) != 24*time.Hour || e.Tentativi != len(r.arrivati) {
+		t.Fatalf("dopo %s e %d richieste: %+v", adesso.Sub(inizio), len(r.arrivati), e)
+	}
+	want := []time.Duration{30 * time.Second, time.Minute, 2 * time.Minute, 4 * time.Minute, 8 * time.Minute, 16 * time.Minute, 32 * time.Minute, time.Hour, time.Hour}
+	if !slices.Equal(attese[:len(want)], want) {
+		t.Errorf("attese %v, le prime attese %v", attese, want)
+	}
+	if n := applog.Conta(registro.String(), "ERROR", "evento non consegnato", EventoConnessioneChiusa, e.EventoId); n != 1 {
+		t.Errorf("%d righe ERROR, attesa 1:\n%s", n, registro)
+	}
+	*adesso = adesso.Add(time.Hour)
+	passo(t, k, false)
+}
+
+// TestPuliziaCoda: consegnati e falliti si cancellano 7 giorni dopo la
+// fine; quelli in attesa restano.
+func TestPuliziaCoda(t *testing.T) {
+	k, _, adesso, _ := codaDiProva(t, 200)
+	vecchio, recente := adesso.Add(-7*24*time.Hour-time.Second).Unix(), adesso.Add(-6*24*time.Hour).Unix()
+	for i, e := range []model.Evento{
+		{Esito: model.EventoConsegnato, Chiuso: vecchio},
+		{Esito: model.EventoFallito, Chiuso: vecchio},
+		{Esito: model.EventoConsegnato, Chiuso: recente},
+		{Esito: model.EventoInAttesa, Prossimo: adesso.Add(time.Hour).Unix(), Creato: vecchio},
+	} {
+		e.EventoId, e.Tipo, e.Corpo = strconv.Itoa(i), "prova", "{}"
+		if err := DB.Create(&e).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	passo(t, k, false)
+	var resto []string
+	for _, e := range eventi(t) {
+		resto = append(resto, e.EventoId)
+	}
+	if !slices.Equal(resto, []string{"2", "3"}) {
+		t.Errorf("dopo la pulizia restano %v, attesi [2 3]", resto)
+	}
+}
+
+// TestCampiEventi controlla l'elenco dei campi di ogni tipo e che uuid,
+// IP, guid, session_id e chiave non escano.
+func TestCampiEventi(t *testing.T) {
+	codaDiProva(t, 200)
+	pc := &model.Peer{Id: "999000111", Hostname: "PC-ROSSI", Alias: "Rossi", Uuid: "dXVpZC1zZWdyZXRv", ChiavePubblica: "Y2hpYXZl", LastOnlineIp: "198.51.100.1"}
+	if err := DB.Create(pc).Error; err != nil {
+		t.Fatal(err)
+	}
+	inizio := time.Date(2026, 10, 11, 9, 0, 0, 0, time.UTC)
+	conn := &model.AuditConn{ConnId: 7, PeerId: "999000111", FromName: "mario", Type: 4, Ip: "203.0.113.7", Uuid: "dXVpZC1zZWdyZXRv",
+		SessionId: "9007199254740993", Guid: "0123456789abcdef", Note: "#83100", TimeModel: model.TimeModel{CreatedAt: custom_types.AutoTime(inizio)}}
+	chiusa := *conn
+	chiusa.CloseTime = inizio.Add(90 * time.Second).Unix()
+	for _, tc := range []struct {
+		tipo string
+		conn *model.AuditConn
+	}{{EventoConnessioneAperta, conn}, {EventoConnessioneNota, conn}, {EventoConnessioneChiusa, &chiusa}} {
+		if err := AllService.EventiService.AccodaSessione(tc.tipo, tc.conn); err != nil {
+			t.Fatal(err)
+		}
+	}
+	campi := []string{"id", "ora", "pc", "schema", "sessione", "tipo"}
+	campiPc := []string{"alias", "id", "nome"}
+	campiSessione := []string{"conn_id", "durata_s", "fine", "inizio", "nota", "tecnico", "tipo"}
+	for i, e := range eventi(t) {
+		var c map[string]any
+		if err := json.Unmarshal([]byte(e.Corpo), &c); err != nil {
+			t.Fatal(err)
+		}
+		s := c["sessione"].(map[string]any)
+		if !slices.Equal(chiavi(c), campi) || !slices.Equal(chiavi(c["pc"].(map[string]any)), campiPc) || !slices.Equal(chiavi(s), campiSessione) {
+			t.Errorf("%s: campi %v, pc %v, sessione %v", e.Tipo, chiavi(c), chiavi(c["pc"].(map[string]any)), chiavi(s))
+		}
+		for _, vietato := range []string{"dXVpZC1zZWdyZXRv", "Y2hpYXZl", "198.51.100.1", "203.0.113.7", "0123456789abcdef", "9007199254740993"} {
+			if strings.Contains(e.Corpo, vietato) {
+				t.Errorf("%s: nel corpo c'e' %s: %s", e.Tipo, vietato, e.Corpo)
+			}
+		}
+		want := map[string]any{"schema": 1.0, "id": e.EventoId, "tipo": e.Tipo, "ora": c["ora"],
+			"pc":       map[string]any{"id": "999000111", "nome": "PC-ROSSI", "alias": "Rossi"},
+			"sessione": map[string]any{"conn_id": 7.0, "tipo": 4.0, "tecnico": "mario", "inizio": "2026-10-11T09:00:00Z", "fine": nil, "durata_s": nil, "nota": "#83100"}}
+		if i == 2 {
+			want["sessione"].(map[string]any)["fine"], want["sessione"].(map[string]any)["durata_s"] = "2026-10-11T09:01:30Z", 90.0
+		}
+		if !reflect.DeepEqual(c, want) {
+			t.Errorf("%s:\n got  %v\n want %v", e.Tipo, c, want)
+		}
+		if _, err := time.Parse(time.RFC3339, c["ora"].(string)); err != nil || !strings.HasSuffix(c["ora"].(string), "Z") {
+			t.Errorf("%s: ora %v non RFC 3339 UTC", e.Tipo, c["ora"])
+		}
+	}
+}
+
+// chiavi restituisce le chiavi di m in ordine.
+func chiavi(m map[string]any) []string {
+	res := make([]string, 0, len(m))
+	for k := range m {
+		res = append(res, k)
+	}
+	slices.Sort(res)
+	return res
+}
+
+// TestSenzaUrlNienteInCoda: con integrazione.url vuoto AccodaSessione non
+// scrive niente, nemmeno senza la tabella, e la consegna non parte.
+func TestSenzaUrlNienteInCoda(t *testing.T) {
+	codaDiProva(t, 200)
+	Config.Integrazione = config.Integrazione{}
+	if err := DB.Migrator().DropTable(&model.Evento{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := AllService.EventiService.AccodaSessione(EventoConnessioneAperta, &model.AuditConn{PeerId: "999000111"}); err != nil {
+		t.Errorf("AccodaSessione senza URL: %v", err)
+	}
+	AvviaConsegna(Config.Integrazione)()
+}

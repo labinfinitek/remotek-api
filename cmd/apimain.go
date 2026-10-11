@@ -27,7 +27,7 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/utils"
 )
 
-const DatabaseVersion = 270
+const DatabaseVersion = 271
 
 // fileAdminPassword e' il file in cui il primo avvio scrive la password
 // iniziale di admin, nella cartella di rustdeskapi.db (nel container
@@ -53,6 +53,9 @@ var rootCmd = &cobra.Command{
 	},
 	Run: func(_ *cobra.Command, _ []string) {
 		global.Logger.Info("API SERVER START")
+		// La consegna degli eventi parte con l'API e si ferma con lei.
+		ferma := service.AvviaConsegna(global.Config.Integrazione)
+		defer ferma()
 		if err := http.ApiInit(); err != nil {
 			global.Logger.Fatalf("server API fermato: %v", err)
 		}
@@ -200,6 +203,11 @@ func InitGlobal() {
 	}
 	for _, a := range global.Config.Rustdesk.Avvisi() {
 		global.Logger.Warn(a)
+	}
+	// Prima del database: con l'integrazione configurata male non si crea
+	// niente. Il messaggio non ha ne' l'URL ne' il segreto.
+	if err := global.Config.Integrazione.Controlla(); err != nil {
+		global.Logger.Fatalf("%v, l'API non parte", err)
 	}
 
 	// gorm: solo SQLite (A3). Un altro tipo, per esempio mysql di
@@ -381,6 +389,7 @@ func Migrate(version uint) {
 		&model.AddressBookCollectionRule{},
 		&model.ServerCmd{},
 		&model.DeviceGroup{},
+		&model.Evento{},
 	)
 	// La riga di Version resta solo se il resto riesce: le tabelle e, al
 	// primo avvio (quando e' la prima riga), i gruppi predefiniti e admin,
