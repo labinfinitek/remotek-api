@@ -531,5 +531,47 @@
   },
   "Remark": {
     "One": "Remark"
+  },
+  "Terminal": {
+    "One": "Terminal"
+  },
+  "Transcript": {
+    "One": "Transcript"
+  },
+  "NoTranscript": {
+    "One": "No transcript"
+  },
+  "Intact": {
+    "One": "Intact"
+  },
+  "Altered": {
+    "One": "Altered"
+  },
+  "FirstBadBlock": {
+    "One": "first block that does not match:"
+  },
+  "SessionEnded": {
+    "One": "Session ended"
+  },
+  "SessionNotEnded": {
+    "One": "Session not ended"
+  },
+  "Blocks": {
+    "One": "Blocks"
+  },
+  "FinalHash": {
+    "One": "Final hash"
+  },
+  "Input": {
+    "One": "Input"
+  },
+  "IncompleteTranscript": {
+    "One": "Incomplete transcript: {read} of {expected} blocks read. It is not shown as intact: reopen it."
+  },
+  "VerifyFailed": {
+    "One": "The transcript could not be verified: reopen it."
+  },
+  "ExportFailed": {
+    "One": "The transcript could not be exported:"
   }
 }

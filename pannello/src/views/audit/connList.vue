@@ -26,6 +26,7 @@
         <el-table-column pop="type" :label="T('Type')" align="center" width="120">
           <template #default="{row}">
             <el-tag v-if="row.type === 1" type="warning">{{ T('File') }}</el-tag>
+            <el-tag v-else-if="row.type === 4" type="danger">{{ T('Terminal') }}</el-tag>
             <el-tag v-else>{{ T('Common') }}</el-tag>
           </template>
         </el-table-column>
@@ -33,8 +34,9 @@
         <el-table-column prop="created_at" :label="T('CreatedAt')" align="center"/>
         <el-table-column :label="T('CloseTime')" prop="close_time" align="center"/>
         <el-table-column :label="T('Remark')" prop="note" align="center" min-width="160" show-overflow-tooltip/>
-        <el-table-column :label="T('Actions')" align="center" width="150">
+        <el-table-column :label="T('Actions')" align="center" width="220">
           <template #default="{row}">
+            <el-button v-if="row.type === 4" @click="terminal.open(row)">{{ T('Transcript') }}</el-button>
             <el-button type="danger" @click="del(row)">{{ T('Delete') }}</el-button>
           </template>
         </el-table-column>
@@ -49,6 +51,7 @@
                      :total="listRes.total">
       </el-pagination>
     </el-card>
+    <TerminalDialog ref="terminal"/>
   </div>
 </template>
 
@@ -56,6 +59,7 @@
   import { onActivated, onMounted, ref, watch } from 'vue'
   import { useRepositories } from '@/views/audit/reponsitories'
   import { T } from '@/utils/i18n'
+  import TerminalDialog from '@/views/audit/terminal.vue'
 
   const {
     listRes,
@@ -73,6 +77,7 @@
   watch(() => listQuery.page, getList)
 
   watch(() => listQuery.page_size, handlerQuery)
+  const terminal = ref(null)
   const multipleSelection = ref([])
   const handleSelectionChange = (val) => {
     multipleSelection.value = val
