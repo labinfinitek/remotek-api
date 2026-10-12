@@ -223,9 +223,11 @@
   const formVisible = ref(false)
   const toAdd = () => {
     formVisible.value = true
+    formData.id = 0
     formData.cmd = ''
     formData.alias = ''
     formData.option = ''
+    formData.target = ''
     formData.explain = ''
   }
   const toUpdate = (row) => {
