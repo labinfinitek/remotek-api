@@ -138,7 +138,7 @@ export function useRepositories (api_type = 'my') {
   const submit = async () => {
     console.log(formData)
     if (!formData.color) {
-      ElMessage.error('请选择颜色')
+      ElMessage.error(T('PleaseSelectColor'))
       return
     }
     const api = formData.id ? apis[api_type].update : apis[api_type].create

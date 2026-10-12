@@ -62,7 +62,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="path" :label="T('Path')" align="center" width="150" show-overflow-tooltip/>
-        <el-table-column prop="uuid" label="uuid" align="center" width="120" show-overflow-tooltip/>
+        <el-table-column prop="uuid" :label="T('Uuid')" align="center" width="120" show-overflow-tooltip/>
         <el-table-column prop="created_at" :label="T('CreatedAt')" align="center" min-width="120"/>
         <el-table-column :label="T('Actions')" align="center" width="150" fixed="right">
           <template #default="{row}">

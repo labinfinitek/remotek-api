@@ -7,9 +7,18 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 ## [Non rilasciato]
 
 ### Modificato
+- Pannello in italiano, con l'inglese come seconda lingua: sono le sole due,
+  come nell'API, anche per i componenti di element-plus. La lingua iniziale
+  e' l'italiano, a meno che dal menu non si sia scelto l'inglese; la lingua
+  del browser non conta piu'. I testi che erano fissi in cinese o in inglese
+  passano dalle traduzioni.
 - Pannello: si costruisce dal sorgente in `pannello/` (ADR-0027), con le
   modifiche di prima ora come commit; il pannello nell'immagine e' identico
   a prima e il build non scarica piu' niente da GitHub.
+
+### Rimosso
+- Pannello: le lingue cinese semplificato e tradizionale, coreano, russo,
+  francese e spagnolo.
 
 ### Sicurezza
 - Pannello: dipendenze npm senza avvisi HIGH e CRITICAL (`npm audit`, prima

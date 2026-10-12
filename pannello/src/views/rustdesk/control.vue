@@ -2,13 +2,13 @@
   <div>
     <h4 v-html="T('ServerCmdTips', {wiki: '<a target=\'_blank\' href=\'https://github.com/lejianwen/rustdesk-api/wiki/Rustdesk-Command\'>WIKI</a>'})"></h4>
     <h5>
-      <span>ID {{ T('Status') }}: </span>
+      <span>{{ T('IdServerStatus') }}: </span>
       <el-tag v-if="canSendIdServerCmd" type="success">{{ T('Available') }}</el-tag>
       <el-tag v-else type="danger">{{ T('NotAvailable') }}</el-tag>
       <el-button size="small" type="text" @click="refreshCanSendIdServerCmd">{{ T('Refresh') }}</el-button>
     </h5>
     <h5>
-      <span>RELAY {{ T('Status') }}: </span>
+      <span>{{ T('RelayServerStatus') }}: </span>
       <el-tag v-if="canSendRelayServerCmd" type="success">{{ T('Available') }}</el-tag>
       <el-tag v-else type="danger">{{ T('NotAvailable') }}</el-tag>
       <el-button size="small" type="text" @click="refreshCanSendRelayServerCmd">{{ T('Refresh') }}</el-button>
@@ -35,18 +35,18 @@
             <el-form-item>
               <el-button type="primary" @click="handlerQuery">{{ T('Filter') }}</el-button>
               <el-button type="danger" @click="toAdd">{{ T('Add') }}</el-button>
-              <el-button type="success" :disabled="!canSendIdServerCmd" @click="showCmd({cmd:'',option:'',target:ID_TARGET})">{{ T('Send') }} To Id</el-button>
-              <el-button type="success" :disabled="!canSendRelayServerCmd" @click="showCmd({cmd:'',option:'',target:RELAY_TARGET})">{{ T('Send') }} To Relay</el-button>
+              <el-button type="success" :disabled="!canSendIdServerCmd" @click="showCmd({cmd:'',option:'',target:ID_TARGET})">{{ T('SendToId') }}</el-button>
+              <el-button type="success" :disabled="!canSendRelayServerCmd" @click="showCmd({cmd:'',option:'',target:RELAY_TARGET})">{{ T('SendToRelay') }}</el-button>
             </el-form-item>
           </el-form>
         </el-card>
         <el-card class="list-body" shadow="hover">
           <el-table :data="listRes.list" v-loading="listRes.loading" border>
-            <el-table-column prop="cmd" label="cmd" align="center"></el-table-column>
-            <el-table-column prop="alias" label="alias" align="center"></el-table-column>
-            <el-table-column prop="option" label="option" align="center"></el-table-column>
-            <el-table-column prop="explain" label="explain" align="center"></el-table-column>
-            <el-table-column label="actions" align="center">
+            <el-table-column prop="cmd" :label="T('Command')" align="center"></el-table-column>
+            <el-table-column prop="alias" :label="T('Alias')" align="center"></el-table-column>
+            <el-table-column prop="option" :label="T('Option')" align="center"></el-table-column>
+            <el-table-column prop="explain" :label="T('Explain')" align="center"></el-table-column>
+            <el-table-column :label="T('Actions')" align="center">
               <template #default="{row}">
                 <el-button type="success" :disabled="!canSendCmd(row.target)" @click="showCmd(row)">{{ T('Send') }}</el-button>
                 <el-button v-if="row.id" type="primary" @click="toUpdate(row)">{{ T('Edit') }}</el-button>
@@ -57,22 +57,22 @@
 
           <el-dialog v-model="formVisible">
             <el-form label-width="150">
-              <el-form-item label="cmd">
+              <el-form-item :label="T('Command')">
                 <el-input v-model="formData.cmd"></el-input>
               </el-form-item>
-              <el-form-item label="alias">
+              <el-form-item :label="T('Alias')">
                 <el-input v-model="formData.alias"></el-input>
               </el-form-item>
-              <el-form-item label="option">
+              <el-form-item :label="T('Option')">
                 <el-input v-model="formData.option"></el-input>
               </el-form-item>
-              <el-form-item label="target">
+              <el-form-item :label="T('Target')">
                 <el-radio-group v-model="formData.target">
                   <el-radio label="id_server" value="21115"></el-radio>
                   <el-radio label="relay_server" value="21117"></el-radio>
                 </el-radio-group>
               </el-form-item>
-              <el-form-item label="explain">
+              <el-form-item :label="T('Explain')">
                 <el-input v-model="formData.explain"></el-input>
               </el-form-item>
               <el-form-item>
@@ -84,12 +84,12 @@
 
           <el-dialog :title="T('SendCmd')" v-model="showCmdForm">
             <el-form label-width="150" :disabled="!canSendCmd(customCmd.target)">
-              <el-form-item label="cmd">
+              <el-form-item :label="T('Command')">
                 <el-input v-model="customCmd.cmd"></el-input>
               </el-form-item>
-              <el-form-item label="option">
+              <el-form-item :label="T('Option')">
                 <el-input v-model="customCmd.option"></el-input>
-                <el-text v-if="customCmd.example.trim()" style="margin-top: 5px">Example:
+                <el-text v-if="customCmd.example.trim()" style="margin-top: 5px">{{ T('Example') }}
                   <el-text type="primary">{{ customCmd.example }}</el-text>
                 </el-text>
               </el-form-item>

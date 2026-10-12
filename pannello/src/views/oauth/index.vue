@@ -37,14 +37,14 @@
     </el-card>
     <el-dialog v-model="formVisible" :title="!formData.id?T('Create') :T('Update')" width="800">
       <el-form class="dialog-form" ref="form" :model="formData" :rules="rules" label-width="120px">
-        <el-form-item label="Type" prop="oauth_type">
+        <el-form-item :label="T('Type')" prop="oauth_type">
           <el-radio-group v-model="formData.oauth_type" :disabled="!!formData.id">
             <el-radio v-for="item in types" :key="item.value" :value="item.value" style="display: block">
               {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item v-if="formData.oauth_type === 'oidc'" label="IdP" prop="op">
+        <el-form-item v-if="formData.oauth_type === 'oidc'" :label="T('IdP')" prop="op">
           <el-input v-model="formData.op" :placeholder="T('Your IdP Name')"></el-input>
         </el-form-item>
         <el-form-item v-if="formData.oauth_type === 'oidc'" label="Issuer" prop="issuer">
@@ -71,16 +71,16 @@
             </el-icon>
           </div>
         </el-form-item>
-        <el-form-item label="PkceEnable" prop="pkce_enable">
+        <el-form-item :label="T('PkceEnable')" prop="pkce_enable">
           <el-switch v-model="formData.pkce_enable"
                      :active-value="true"
                      :inactive-value="false">
           </el-switch>
         </el-form-item>
 
-        <el-form-item v-if="formData.pkce_enable" label="PkceMethod" prop="pkce_method">
-          <el-select v-model="formData.pkce_method" placeholder="Select PKCE Method">
-            <el-option label="S256 (Recommended)" value="S256"></el-option>
+        <el-form-item v-if="formData.pkce_enable" :label="T('PkceMethod')" prop="pkce_method">
+          <el-select v-model="formData.pkce_method" :placeholder="T('SelectPkceMethod')">
+            <el-option :label="T('S256Recommended')" value="S256"></el-option>
             <el-option label="Plain" value="plain"></el-option>
           </el-select>
         </el-form-item>

@@ -109,7 +109,7 @@
         <el-table-column :label="T('Actions')" align="center" width="500" class-name="table-actions" fixed="right">
           <template #default="{row}">
             <el-button type="success" @click="connectByClient(row.id)">{{ T('Link') }}</el-button>
-            <el-button v-if="appStore.setting.appConfig.web_client" type="success" @click="toWebClientLink(row)">Web Client</el-button>
+            <el-button v-if="appStore.setting.appConfig.web_client" type="success" @click="toWebClientLink(row)">{{ T('WebClient') }}</el-button>
             <el-button type="primary" @click="toAddressBook(row)">{{ T('AddToAddressBook') }}</el-button>
             <el-button @click="toEdit(row)">{{ T('Edit') }}</el-button>
             <el-button type="danger" @click="del(row)">{{ T('Delete') }}</el-button>
@@ -211,7 +211,7 @@
       </el-form>
     </el-dialog>
 
-    <el-dialog v-model="columnSettingVisible" title="Column Setting">
+    <el-dialog v-model="columnSettingVisible" :title="T('ColumnSetting')">
       <div v-for="(row, key) in visibleColumns" :key="key" style="margin-bottom: 10px;display: flex;align-items: center">
         <div style="width: 200px">
           <el-checkbox v-model="row.visible" :label="true">{{ T(row.label) }}</el-checkbox>
@@ -453,7 +453,7 @@
     return false
   }
   const toImport = () => {
-    ElMessage.warning('暂未实现')
+    ElMessage.warning(T('NotImplemented'))
   }
 
   const ABFormVisible = ref(false)

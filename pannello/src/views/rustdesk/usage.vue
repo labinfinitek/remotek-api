@@ -2,18 +2,18 @@
   <el-card class="simple-card" shadow="hover" v-loading="form.loading">
     <template #header>
       <div class="card-header">
-        <span>USAGE</span>
+        <span>{{ T('CmdUsage') }}</span>
       </div>
     </template>
     <el-form :disabled="!canSend">
       <el-form-item>
         <el-table :data="form.list" size="small">
           <el-table-column prop="0" label="IP"></el-table-column>
-          <el-table-column prop="1" label="TIME"></el-table-column>
-          <el-table-column prop="2" label="TOTAL"></el-table-column>
-          <el-table-column prop="3" label="HIGHEST"></el-table-column>
-          <el-table-column prop="4" label="AVG"></el-table-column>
-          <el-table-column prop="5" label="SPEED"></el-table-column>
+          <el-table-column prop="1" :label="T('UsageTime')"></el-table-column>
+          <el-table-column prop="2" :label="T('UsageTotal')"></el-table-column>
+          <el-table-column prop="3" :label="T('UsageHighest')"></el-table-column>
+          <el-table-column prop="4" :label="T('UsageAvg')"></el-table-column>
+          <el-table-column prop="5" :label="T('UsageSpeed')"></el-table-column>
         </el-table>
       </el-form-item>
       <el-form-item>

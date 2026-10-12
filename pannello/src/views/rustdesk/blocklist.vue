@@ -2,7 +2,7 @@
   <el-card class="simple-card" shadow="hover" v-loading="form.loading">
     <template #header>
       <div class="card-header">
-        <span>BLOCK_LIST</span>
+        <span>{{ T('CmdBlocklist') }}</span>
       </div>
     </template>
     <el-form :disabled="!canSend">
@@ -15,12 +15,12 @@
         <el-button @click="showForm('delete')" type="danger">{{ T('Delete') }}</el-button>
       </el-form-item>
     </el-form>
-    <el-dialog v-model="form.form_visible" :title="form.form_type">
+    <el-dialog v-model="form.form_visible" :title="form.form_type === 'add' ? T('Add') : T('Delete')">
       <el-form label-width="100px">
         <el-form-item label="IP">
           <el-input v-model="form.form_input"></el-input>
-          <div>多个IP以 | 分割</div>
-          <div v-if="form.form_type==='delete'">, 全部填 <strong>all</strong></div>
+          <div>{{ T('IpSeparatorHint') }}</div>
+          <div v-if="form.form_type==='delete'">{{ T('DeleteAllHint') }} <strong>all</strong></div>
         </el-form-item>
         <el-form-item>
           <el-button @click="form.form_visible=false">{{ T('Cancel') }}</el-button>

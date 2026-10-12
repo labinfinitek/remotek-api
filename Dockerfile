@@ -65,7 +65,10 @@ RUN case "$BRAND_NAME" in \
       || { echo "$1: manca la riga del titolo: $2" >&2; return 1; }; } \
  && titolo index.html '<title>Remotek</title>' "<title>$BRAND_NAME</title>" \
  && titolo src/store/app.js "title: 'Remotek'," "title: '$BRAND_NAME',"
-RUN npm run build
+# Prima del build: it.json ed en.json allineati e nessuna chiave usata che
+# manchi.
+RUN node scripts/verifica-lingue.mjs \
+ && npm run build
 
 # --- Immagine finale ---
 FROM docker.io/library/alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6

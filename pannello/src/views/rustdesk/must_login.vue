@@ -2,7 +2,7 @@
   <el-card class="simple-card" shadow="hover" v-loading="form.loading">
     <template #header>
       <div class="card-header">
-        <span>MUST_LOGIN</span>
+        <span>{{ T('CmdMustLogin') }}</span>
       </div>
     </template>
     <el-form :disabled="!canSend">

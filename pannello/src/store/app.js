@@ -1,24 +1,20 @@
 import { defineStore, acceptHMRUpdate } from 'pinia'
 const logo = '/brand/logo.svg'
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import it from 'element-plus/es/locale/lang/it'
 import en from 'element-plus/es/locale/lang/en'
-import ko from 'element-plus/es/locale/lang/ko'
-import ru from 'element-plus/es/locale/lang/ru'
-import fr from 'element-plus/es/locale/lang/fr'
-import es from 'element-plus/es/locale/lang/es'
-import zhTw from 'element-plus/es/locale/lang/zh-tw'
 import { admin, app, server } from '@/api/config'
 
-const langs = {
-  'zh-CN': { name: '中文', value: zhCn, sideBarWidth: '210px' },
+export const langs = {
+  'it': { name: 'Italiano', value: it, sideBarWidth: '260px' },
   'en': { name: 'English', value: en, sideBarWidth: '230px' },
-  'fr': { name: 'Français', value: fr, sideBarWidth: '280px' },
-  'ko': { name: '한국어', value: ko, sideBarWidth: '230px' },
-  'ru': { name: 'Русский', value: ru, sideBarWidth: '250px' },
-  'es': { name: 'Español', value: es, sideBarWidth: '280px' },
-  'zh-TW': { name: '中文繁体', value: zhTw, sideBarWidth: '210px' },
 }
-const defaultLang = localStorage.getItem('lang') || navigator.language || 'zh-CN'
+// La lingua salvata vale solo se e' una delle due; altrimenti italiano,
+// senza guardare navigator.language.
+export const linguaIniziale = () => {
+  const salvata = localStorage.getItem('lang')
+  return Object.keys(langs).includes(salvata) ? salvata : 'it'
+}
+const defaultLang = linguaIniziale()
 export const useAppStore = defineStore({
   id: 'App',
   state: () => ({
@@ -29,7 +25,7 @@ export const useAppStore = defineStore({
       logo,
       langs: langs,
       lang: defaultLang,
-      locale: langs[defaultLang] ? langs[defaultLang] : langs['en'],
+      locale: langs[defaultLang],
       appConfig: {
         web_client: 1,
       },
