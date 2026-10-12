@@ -7,11 +7,13 @@ export function getToken () {
 }
 
 export function setToken (token) {
-  localStorage.setItem(`wc-option:local:access_token`, token)
   return localStorage.setItem(TokenKey, token)
 }
 
+// Toglie anche la copia per il web client che i login di prima lasciavano
+// nel browser: il web client non c'e' piu' e nessuno la legge.
 export function removeToken () {
+  localStorage.removeItem('wc-option:local:access_token')
   return localStorage.removeItem(TokenKey)
 }
 
