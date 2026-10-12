@@ -39,7 +39,7 @@ RUN go build -trimpath -buildvcs=false \
 # ferma se l'immagine ne ha un altro. Un avviso HIGH o CRITICAL di npm audit
 # ferma la build (REGOLE sez. 9): si aggiorna il pacchetto, non si salta
 # l'audit. Gli script di installazione non servono alla build (esbuild,
-# vue-demi, protobufjs, fsevents, @parcel/watcher) e non si eseguono.
+# vue-demi, fsevents, @parcel/watcher) e non si eseguono.
 FROM docker.io/library/node:24.21.0-trixie-slim@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe AS pannello
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 WORKDIR /pannello
