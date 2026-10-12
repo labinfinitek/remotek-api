@@ -45,14 +45,6 @@ export function batchCreate (data) {
   })
 }
 
-export function shareByWebClient (data) {
-  return request({
-    url: '/address_book/shareByWebClient',
-    method: 'post',
-    data,
-  })
-}
-
 export function batchCreateFromPeers (data) {
   return request({
     url: '/address_book/batchCreateFromPeers',

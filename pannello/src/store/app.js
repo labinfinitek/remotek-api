@@ -2,7 +2,7 @@ import { defineStore, acceptHMRUpdate } from 'pinia'
 const logo = '/brand/logo.svg'
 import it from 'element-plus/es/locale/lang/it'
 import en from 'element-plus/es/locale/lang/en'
-import { admin, app, server } from '@/api/config'
+import { admin, server } from '@/api/config'
 
 export const langs = {
   'it': { name: 'Italiano', value: it, sideBarWidth: '260px' },
@@ -26,9 +26,6 @@ export const useAppStore = defineStore({
       langs: langs,
       lang: defaultLang,
       locale: langs[defaultLang],
-      appConfig: {
-        web_client: 1,
-      },
       rustdeskConfig: {
         'id_server': '',
         'key': '',
@@ -52,15 +49,8 @@ export const useAppStore = defineStore({
       this.setLang(v)
     },
     loadConfig () {
-      this.getAppConfig()
       this.getAdminConfig()
       this.loadRustdeskConfig()
-    },
-    getAppConfig () {
-      console.log('getAppConfig')
-      return app().then(res => {
-        this.setting.appConfig = res.data
-      })
     },
     getAdminConfig () {
       console.log('getAdminConfig')
@@ -78,10 +68,6 @@ export const useAppStore = defineStore({
       const res = await server().catch(_ => false)
       if (res) {
         this.setting.rustdeskConfig = res.data
-        const prefix = 'wc-'
-        localStorage.setItem(`${prefix}custom-rendezvous-server`, res.data.id_server)
-        localStorage.setItem(`${prefix}key`, res.data.key)
-        localStorage.setItem(`${prefix}api-server`, res.data.api_server)
       }
 
     },
