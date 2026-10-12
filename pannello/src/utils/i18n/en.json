@@ -573,5 +573,11 @@
   },
   "ExportFailed": {
     "One": "The transcript could not be exported:"
+  },
+  "PossibleCopy": {
+    "One": "Possible copy"
+  },
+  "PossibleCopyHint": {
+    "One": "In the last 10 minutes the heartbeats of this PC came alternately from two addresses: there are probably two copies of the same PC (a cloned VM or disk image without sysprep), which share ID and key. On the copy, uninstall Remotek removing its configuration and install it again: it gets a new ID. For future copies, run sysprep before cloning or install Remotek after the copy. A network with two lines that balances every connection on a different address gives the same sign: check it."
   }
 }

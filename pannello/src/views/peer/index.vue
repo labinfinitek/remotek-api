@@ -72,6 +72,12 @@
           <el-table-column v-if="c.name==='id'" prop="id" label="ID" align="center" width="150">
             <template #default="{row}">
               <span>{{ row.id }} <el-icon @click="handleClipboard(row.id, $event)"><CopyDocument/></el-icon></span>
+              <el-tooltip v-if="row.possibile_copia" placement="top">
+                <template #content>
+                  <div class="possibile-copia">{{ T('PossibleCopyHint') }}</div>
+                </template>
+                <el-tag type="danger" effect="dark" size="small">{{ T('PossibleCopy') }}</el-tag>
+              </el-tooltip>
             </template>
           </el-table-column>
           <el-table-column v-if="c.name==='cpu'" prop="cpu" label="CPU" align="center" width="100" show-overflow-tooltip/>
@@ -569,6 +575,11 @@
 </script>
 
 <style scoped lang="scss">
+.possibile-copia {
+  max-width: 360px;
+  line-height: 1.5;
+}
+
 .list-query .el-select {
   --el-select-width: 180px;
 }
