@@ -28,7 +28,6 @@ export const useUserStore = defineStore({
     },
 
     saveUserData (userData) {
-      // useAppStore().getAppConfig()
       setToken(userData.token)
       //
       localStorage.setItem('user_info', JSON.stringify({ name: userData.username }))

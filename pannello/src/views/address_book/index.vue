@@ -69,8 +69,6 @@
         <el-table-column :label="T('Actions')" align="center" class-name="table-actions" width="500" fixed="right">
           <template #default="{row}">
             <el-button type="success" @click="connectByClient(row.id)">{{ T('Link') }}</el-button>
-            <el-button v-if="appStore.setting.appConfig.web_client" type="success" @click="toWebClientLink(row)">{{ T('WebClient') }}</el-button>
-            <!--            <el-button type="primary" @click="toShowShare(row)">{{ T('ShareByWebClient') }}</el-button>-->
             <el-button @click="toEdit(row)">{{ T('Edit') }}</el-button>
             <el-button type="danger" @click="del(row)">{{ T('Delete') }}</el-button>
           </template>
@@ -168,29 +166,20 @@
         </el-form-item>
       </el-form>
     </el-dialog>
-    <!--    <el-dialog v-model="shareToWebClientVisible" width="900" :close-on-click-modal="false">
-          <shareByWebClient :id="shareToWebClientForm.id"
-                            :hash="shareToWebClientForm.hash"
-                            @cancel="shareToWebClientVisible=false"
-                            @success=""/>
-        </el-dialog>-->
   </div>
 </template>
 
 <script setup>
   import { onActivated, onMounted, watch } from 'vue'
   import { useRepositories } from '@/views/address_book/index'
-  import { toWebClientLink } from '@/utils/webclient'
   import { T } from '@/utils/i18n'
   import { useRoute } from 'vue-router'
   import { connectByClient } from '@/utils/peer'
-  import { useAppStore } from '@/store/app'
   import { handleClipboard } from '@/utils/clipboard'
   import { CopyDocument } from '@element-plus/icons'
   import PlatformIcons from '@/components/icons/platform.vue'
   import { loadAllUsers } from '@/global'
 
-  const appStore = useAppStore()
   const route = useRoute()
   const { allUsers, getAllUsers } = loadAllUsers()
 

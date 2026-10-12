@@ -283,61 +283,11 @@
   "PleaseSelectData": {
     "One": "Seleziona almeno una riga"
   },
-  "PasswordType": {
-    "One": "Tipo di password"
-  },
-  "OncePassword": {
-    "One": "Password monouso"
-  },
-  "FixedPassword": {
-    "One": "Password fissa"
-  },
-  "FixedPasswordWarning": {
-    "One": "Una password fissa può finire in mani sbagliate: usala con cautela, meglio quella monouso"
-  },
   "ExpireTime": {
     "One": "Scadenza"
   },
-  "ShareByWebClient": {
-    "One": "Condividi col web client"
-  },
-  "Minutes": {
-    "One": "{param} minuto",
-    "Other": "{param} minuti"
-  },
-  "Hours": {
-    "One": "{param} ora",
-    "Other": "{param} ore"
-  },
-  "Days": {
-    "One": "{param} giorno",
-    "Other": "{param} giorni"
-  },
-  "Weeks": {
-    "One": "{param} settimana",
-    "Other": "{param} settimane"
-  },
-  "Months": {
-    "One": "{param} mese",
-    "Other": "{param} mesi"
-  },
-  "Forever": {
-    "One": "Senza scadenza"
-  },
   "Error": {
     "One": "Errore"
-  },
-  "IDNotExist": {
-    "One": "L'ID non esiste"
-  },
-  "RemoteDesktopOffline": {
-    "One": "Il PC remoto non è in linea"
-  },
-  "KeyMismatch": {
-    "One": "La chiave non corrisponde"
-  },
-  "KeyOveruse": {
-    "One": "Chiave usata troppe volte"
   },
   "Link": {
     "One": "Connetti"
@@ -347,9 +297,6 @@
   },
   "CopyFailed": {
     "One": "Copia non riuscita"
-  },
-  "Timeout": {
-    "One": "Tempo scaduto"
   },
   "AuditConnLog": {
     "One": "Registro delle connessioni"
@@ -468,12 +415,6 @@
   },
   "User": {
     "One": "Utente"
-  },
-  "ShareRecord": {
-    "One": "Condivisioni"
-  },
-  "Second": {
-    "One": "secondi"
   },
   "Captcha": {
     "One": "Codice di verifica"
@@ -660,9 +601,6 @@
   },
   "S256Recommended": {
     "One": "S256 (consigliato)"
-  },
-  "WebClient": {
-    "One": "Web client"
   },
   "Client": {
     "One": "Client"

@@ -32,22 +32,6 @@ const constantRoutes = [
   },
 ]
 export const asyncRoutes = [
-  // {
-  //   path: '/',
-  //   name: 'Index',
-  //   redirect: '/Home',
-  //   meta: { title: '首页', icon: 'house' },
-  //   component: () => import('@/layout/index.vue'),
-  //   children: [
-  //     {
-  //       path: '/Home',
-  //       name: 'Home',
-  //       meta: { title: '首页', icon: 'house' },
-  //       component: () => import('@/views/index/index.vue'),
-  //     },
-  //
-  //   ],
-  // },
   {
     path: '/my',
     name: 'My',
@@ -84,12 +68,6 @@ export const asyncRoutes = [
         name: 'MyTagList',
         meta: { title: 'Tags', icon: 'CollectionTag' /*keepAlive: true*/ },
         component: () => import('@/views/my/tag/index.vue'),
-      },
-      {
-        path: 'shareRecord',
-        name: 'MyShareRecordList',
-        meta: { title: 'ShareRecord', icon: 'Share' /*keepAlive: true*/ },
-        component: () => import('@/views/my/share_record/index.vue'),
       },
       {
         path: 'loginLog',
@@ -189,12 +167,6 @@ export const asyncRoutes = [
         name: 'AuditFile',
         meta: { title: 'AuditFileLog', icon: 'Files' /*keepAlive: true*/ },
         component: () => import('@/views/audit/fileList.vue'),
-      },
-      {
-        path: '/shareRecord',
-        name: 'ShareRecord',
-        meta: { title: 'ShareRecord', icon: 'Share' /*keepAlive: true*/ },
-        component: () => import('@/views/share_record/index.vue'),
       },
       {
         path: '/serverCmd',

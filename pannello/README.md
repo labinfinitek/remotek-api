@@ -81,11 +81,6 @@ dell'immagine `npm audit --audit-level=high` e' bloccante (REGOLE sez. 9):
 un avviso HIGH o CRITICAL nuovo ferma il build, e si chiude aggiornando il
 pacchetto. Non ci sono `overrides`.
 
-`protobufjs` e `long` sono dipendenze dirette: le importano
-`src/utils/webclient/message.ts` e `rendezvous.ts`, generati a suo tempo con
-ts-proto, che non serve piu' e non c'e'. Se quei file vanno rigenerati, si
-installa ts-proto solo per farlo.
-
 ## Un cambio di upstream
 
 Upstream e' fermo; se pubblica qualcosa che serve, lo si porta a mano: la

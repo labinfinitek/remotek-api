@@ -6,6 +6,21 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Rimosso
+- Pannello: le pagine "Condivisioni" (in "Area personale" e
+  nell'amministrazione) e i pulsanti "Web client" e "Condividi col web
+  client" della lista dei PC e della rubrica, che chiamavano rotte tolte
+  dall'API gia' nella 0.1.0 (556d6dc) e davano errore o pagine che non ci
+  sono piu'. Con loro escono dal pannello le dipendenze `protobufjs` e
+  `long` e i componenti di upstream che nessuna rotta raggiungeva.
+
+### Sicurezza
+- Pannello: il token di sessione non si copia piu' in
+  `wc-option:local:access_token` del `localStorage`, la chiave del web
+  client che nessuno legge piu', e "Esci" cancella anche le copie lasciate
+  dai login di prima: un token valido fino alla scadenza non resta piu' nel
+  browser dopo l'uscita.
+
 ## [0.7.0] - 2026-10-12
 Immagine `ghcr.io/labinfinitek/remotek-api:0.7.0`. Nessun cambio
 incompatibile per chi usa l'immagine: nessuna migrazione del database,
