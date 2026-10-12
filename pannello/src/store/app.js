@@ -15,6 +15,12 @@ export const linguaIniziale = () => {
   return Object.keys(langs).includes(salvata) ? salvata : 'it'
 }
 const defaultLang = linguaIniziale()
+// Il lang della pagina segue la lingua del pannello, all'avvio e a ogni
+// cambio: con un lang sbagliato il browser propone di tradurre la pagina.
+const linguaPagina = (lang) => {
+  document.documentElement.lang = lang
+}
+linguaPagina(defaultLang)
 export const useAppStore = defineStore({
   id: 'App',
   state: () => ({
@@ -44,6 +50,7 @@ export const useAppStore = defineStore({
       this.setting.lang = lang
       this.setting.locale = langs[lang]
       localStorage.setItem('lang', lang)
+      linguaPagina(lang)
     },
     changeLang (v) {
       this.setLang(v)

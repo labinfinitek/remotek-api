@@ -14,6 +14,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   sono piu'. Con loro escono dal pannello le dipendenze `protobufjs` e
   `long` e i componenti di upstream che nessuna rotta raggiungeva.
 
+### Corretto
+- Pannello: la pagina dichiara la lingua del pannello (`lang` di `<html>`),
+  all'avvio e a ogni cambio dal menu; prima era sempre inglese e il browser
+  poteva proporre di tradurre il pannello in italiano.
+
 ### Sicurezza
 - Pannello: il token di sessione non si copia piu' in
   `wc-option:local:access_token` del `localStorage`, la chiave del web
