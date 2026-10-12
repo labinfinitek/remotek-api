@@ -41,16 +41,37 @@ cd pannello
   && ! grep '"resolved":' package-lock.json | grep -vF '"resolved": "https://registry.npmjs.org/' \
   && npm ci --registry=https://registry.npmjs.org/ --ignore-scripts \
   && npm audit --audit-level=high --registry=https://registry.npmjs.org/ \
+  && node scripts/verifica-lingue.mjs \
   && npm run build    # produce dist/
 ```
 
 La catena si ferma, come l'immagine, se node non e' quello di `.nvmrc` (e lo
 dice), se il lockfile ha un `resolved` fuori dal registry ufficiale (lo
-stampa) o se l'audit trova un avviso HIGH o CRITICAL.
+stampa), se l'audit trova un avviso HIGH o CRITICAL o se le lingue non sono
+allineate (sotto, Lingue).
 
 `node_modules/` e `dist/` non entrano nel repo ne' nel contesto di
 `docker build`; ne' i file `*.local` (`.env.*.local`, che `vite build`
 leggerebbe) e `*.log`.
+
+## Lingue
+
+Il pannello parla italiano e inglese, come l'API: `src/utils/i18n/it.json`
+ed `en.json`, con le locale `it` ed `en` di element-plus. La lingua
+iniziale e' quella scelta dal menu e salvata nel browser (`localStorage`,
+chiave `lang`) se e' `it` o `en`, altrimenti `it`; la lingua del browser non
+conta. La lingua scelta va all'API in `Accept-Language`.
+
+Ogni testo che l'utente vede passa da `T('Chiave')`, anche etichette,
+segnaposto e messaggi. Una chiave nuova si aggiunge a tutti e due i file,
+nella stessa posizione, con la stessa struttura (`One`, e `Other` per il
+plurale) e gli stessi segnaposto `{nome}`. I nomi propri e i termini tecnici
+senza un equivalente usato (ID, IP, OIDC, token, hash) restano in inglese.
+
+`scripts/verifica-lingue.mjs`, prima di `npm run build` nel Dockerfile,
+ferma il build se i due file differiscono in chiavi, struttura o segnaposto,
+o se manca una chiave usata con un letterale (`T('...')`, `T("...")`, titoli
+delle rotte). Le chiavi composte a runtime (`T(row.label)`) non le vede.
 
 ## Dipendenze
 

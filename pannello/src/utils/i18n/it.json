@@ -1,0 +1,751 @@
+{
+  "Login": {
+    "One": "Accedi"
+  },
+  "Logout": {
+    "One": "Esci"
+  },
+  "Register": {
+    "One": "Registrati"
+  },
+  "Confirm": {
+    "One": "Conferma"
+  },
+  "Username": {
+    "One": "Nome utente"
+  },
+  "Password": {
+    "One": "Password"
+  },
+  "LoginSuccess": {
+    "One": "Accesso riuscito"
+  },
+  "ForgotPassword": {
+    "One": "Password dimenticata"
+  },
+  "ResetPassword": {
+    "One": "Reimposta la password"
+  },
+  "ChangePassword": {
+    "One": "Cambia password"
+  },
+  "Userinfo": {
+    "One": "Profilo"
+  },
+  "ParamRequired": {
+    "One": "Il campo {param} è obbligatorio"
+  },
+  "HasBind": {
+    "One": "Associato"
+  },
+  "NoBind": {
+    "One": "Non associato"
+  },
+  "UnBind": {
+    "One": "Dissocia"
+  },
+  "ToBind": {
+    "One": "Associa"
+  },
+  "Confirm?": {
+    "One": "{param}: confermi?"
+  },
+  "Cancel": {
+    "One": "Annulla"
+  },
+  "Platform": {
+    "One": "Piattaforma"
+  },
+  "Status": {
+    "One": "Stato"
+  },
+  "Actions": {
+    "One": "Azioni"
+  },
+  "Filter": {
+    "One": "Cerca"
+  },
+  "Add": {
+    "One": "Aggiungi"
+  },
+  "Hostname": {
+    "One": "Nome host"
+  },
+  "Alias": {
+    "One": "Alias"
+  },
+  "Hash": {
+    "One": "Hash"
+  },
+  "Tags": {
+    "One": "Tag"
+  },
+  "Edit": {
+    "One": "Modifica"
+  },
+  "Delete": {
+    "One": "Elimina"
+  },
+  "Create": {
+    "One": "Nuovo"
+  },
+  "Update": {
+    "One": "Modifica"
+  },
+  "LoginName": {
+    "One": "Nome di accesso"
+  },
+  "Submit": {
+    "One": "Salva"
+  },
+  "OperationSuccess": {
+    "One": "Operazione riuscita"
+  },
+  "Owner": {
+    "One": "Proprietario"
+  },
+  "Name": {
+    "One": "Nome"
+  },
+  "Color": {
+    "One": "Colore"
+  },
+  "CreatedAt": {
+    "One": "Creato il"
+  },
+  "UpdatedAt": {
+    "One": "Modificato il"
+  },
+  "Memory": {
+    "One": "Memoria"
+  },
+  "Os": {
+    "One": "Sistema operativo"
+  },
+  "Uuid": {
+    "One": "UUID"
+  },
+  "Version": {
+    "One": "Versione"
+  },
+  "Type": {
+    "One": "Tipo"
+  },
+  "Group": {
+    "One": "Gruppo"
+  },
+  "CommonGroup": {
+    "One": "Gruppo normale"
+  },
+  "CommonGroupNote": {
+    "One": "Solo gli amministratori vedono i membri del gruppo e i loro PC"
+  },
+  "SharedGroup": {
+    "One": "Gruppo condiviso"
+  },
+  "SharedGroupNote": {
+    "One": "Tutti gli utenti vedono i membri del gruppo e i loro PC"
+  },
+  "Nickname": {
+    "One": "Nome visualizzato"
+  },
+  "UserTags": {
+    "One": "Tag dell'utente"
+  },
+  "UserAddressBook": {
+    "One": "Rubrica dell'utente"
+  },
+  "IsAdmin": {
+    "One": "Amministratore"
+  },
+  "PleaseInputNewPassword": {
+    "One": "Inserisci la nuova password"
+  },
+  "AutoRegister": {
+    "One": "Registrazione automatica"
+  },
+  "AutoRegisterNote": {
+    "One": "Se attiva, chi accede con OAuth senza un account associato riceve un account nuovo"
+  },
+  "ThirdName": {
+    "One": "Nome sul provider"
+  },
+  "Close": {
+    "One": "Chiudi"
+  },
+  "OauthBinding": {
+    "One": "Stai autorizzando l'associazione"
+  },
+  "OauthLogining": {
+    "One": "Stai autorizzando l'accesso"
+  },
+  "OauthCloseNote": {
+    "One": "Se non l'hai chiesto tu, chiudi questa pagina"
+  },
+  "OperationSuccessAndCloseAfter3Seconds": {
+    "One": "Operazione riuscita, la pagina si chiude fra 3 secondi"
+  },
+  "ConfirmOauth": {
+    "One": "Conferma l'autorizzazione"
+  },
+  "Device": {
+    "One": "PC"
+  },
+  "ChangeLang": {
+    "One": "Cambia lingua"
+  },
+  "My": {
+    "One": "Area personale"
+  },
+  "Info": {
+    "One": "Informazioni"
+  },
+  "AddressBooks": {
+    "One": "Voci di rubrica"
+  },
+  "System": {
+    "One": "Amministrazione"
+  },
+  "PeerManage": {
+    "One": "PC"
+  },
+  "AddressBookManage": {
+    "One": "Voci di rubrica"
+  },
+  "GroupManage": {
+    "One": "Gruppi"
+  },
+  "UserManage": {
+    "One": "Utenti"
+  },
+  "UserAdd": {
+    "One": "Nuovo utente"
+  },
+  "UserEdit": {
+    "One": "Modifica utente"
+  },
+  "TagsManage": {
+    "One": "Tag"
+  },
+  "OauthManage": {
+    "One": "OAuth"
+  },
+  "LoginLog": {
+    "One": "Registro degli accessi"
+  },
+  "LastOnlineTime": {
+    "One": "Ultimo collegamento"
+  },
+  "JustNow": {
+    "One": "Adesso"
+  },
+  "MinutesAgo": {
+    "One": "{param} minuto fa",
+    "Other": "{param} minuti fa"
+  },
+  "HoursAgo": {
+    "One": "{param} ora fa",
+    "Other": "{param} ore fa"
+  },
+  "DaysAgo": {
+    "One": "{param} giorno fa",
+    "Other": "{param} giorni fa"
+  },
+  "MonthsAgo": {
+    "One": "{param} mese fa",
+    "Other": "{param} mesi fa"
+  },
+  "YearsAgo": {
+    "One": "{param} anno fa",
+    "Other": "{param} anni fa"
+  },
+  "MinutesLess": {
+    "One": "Meno di {param} minuto",
+    "Other": "Meno di {param} minuti"
+  },
+  "HoursLess": {
+    "One": "Meno di {param} ora",
+    "Other": "Meno di {param} ore"
+  },
+  "DaysLess": {
+    "One": "Meno di {param} giorno",
+    "Other": "Meno di {param} giorni"
+  },
+  "Export": {
+    "One": "Esporta"
+  },
+  "AddToAddressBook": {
+    "One": "Aggiungi alla rubrica"
+  },
+  "BatchDelete": {
+    "One": "Elimina selezionati"
+  },
+  "PleaseSelectData": {
+    "One": "Seleziona almeno una riga"
+  },
+  "PasswordType": {
+    "One": "Tipo di password"
+  },
+  "OncePassword": {
+    "One": "Password monouso"
+  },
+  "FixedPassword": {
+    "One": "Password fissa"
+  },
+  "FixedPasswordWarning": {
+    "One": "Una password fissa può finire in mani sbagliate: usala con cautela, meglio quella monouso"
+  },
+  "ExpireTime": {
+    "One": "Scadenza"
+  },
+  "ShareByWebClient": {
+    "One": "Condividi col web client"
+  },
+  "Minutes": {
+    "One": "{param} minuto",
+    "Other": "{param} minuti"
+  },
+  "Hours": {
+    "One": "{param} ora",
+    "Other": "{param} ore"
+  },
+  "Days": {
+    "One": "{param} giorno",
+    "Other": "{param} giorni"
+  },
+  "Weeks": {
+    "One": "{param} settimana",
+    "Other": "{param} settimane"
+  },
+  "Months": {
+    "One": "{param} mese",
+    "Other": "{param} mesi"
+  },
+  "Forever": {
+    "One": "Senza scadenza"
+  },
+  "Error": {
+    "One": "Errore"
+  },
+  "IDNotExist": {
+    "One": "L'ID non esiste"
+  },
+  "RemoteDesktopOffline": {
+    "One": "Il PC remoto non è in linea"
+  },
+  "KeyMismatch": {
+    "One": "La chiave non corrisponde"
+  },
+  "KeyOveruse": {
+    "One": "Chiave usata troppe volte"
+  },
+  "Link": {
+    "One": "Connetti"
+  },
+  "CopySuccess": {
+    "One": "Copiato"
+  },
+  "CopyFailed": {
+    "One": "Copia non riuscita"
+  },
+  "Timeout": {
+    "One": "Tempo scaduto"
+  },
+  "AuditConnLog": {
+    "One": "Registro delle connessioni"
+  },
+  "Peer": {
+    "One": "PC",
+    "Other": "PC"
+  },
+  "FromPeer": {
+    "One": "PC di origine"
+  },
+  "FromName": {
+    "One": "Nome di origine"
+  },
+  "CloseTime": {
+    "One": "Chiusura"
+  },
+  "AuditFileLog": {
+    "One": "Registro dei file"
+  },
+  "Common": {
+    "One": "Controllo remoto"
+  },
+  "File": {
+    "One": "File"
+  },
+  "Num": {
+    "One": "Numero"
+  },
+  "Ip": {
+    "One": "IP"
+  },
+  "FileName": {
+    "One": "Nome del file"
+  },
+  "FileInfo": {
+    "One": "Dettagli del file"
+  },
+  "Path": {
+    "One": "Percorso"
+  },
+  "IndexNum": {
+    "One": "N."
+  },
+  "ToRemote": {
+    "One": "Verso il PC remoto"
+  },
+  "ToLocal": {
+    "One": "Verso il PC locale"
+  },
+  "AddressBookName": {
+    "One": "Rubrica"
+  },
+  "AddRule": {
+    "One": "Aggiungi regola"
+  },
+  "ShareRules": {
+    "One": "Regole di condivisione"
+  },
+  "Rule": {
+    "One": "Regola"
+  },
+  "Read": {
+    "One": "Lettura"
+  },
+  "ReadWrite": {
+    "One": "Lettura e scrittura"
+  },
+  "FullControl": {
+    "One": "Controllo completo"
+  },
+  "ShareTo": {
+    "One": "Condividi con"
+  },
+  "MyAddressBook": {
+    "One": "La mia rubrica"
+  },
+  "AddressBook": {
+    "One": "Rubrica"
+  },
+  "AddressBookNameManage": {
+    "One": "Rubriche"
+  },
+  "MyAddressBookTips": {
+    "One": "\"La mia rubrica\" è la rubrica predefinita: non si può modificare né eliminare"
+  },
+  "LastOnlineIp": {
+    "One": "Ultimo IP"
+  },
+  "OldPassword": {
+    "One": "Vecchia password"
+  },
+  "NewPasswordEqualOldPassword": {
+    "One": "La nuova password deve essere diversa dalla vecchia"
+  },
+  "NewPassword": {
+    "One": "Nuova password"
+  },
+  "ConfirmPassword": {
+    "One": "Conferma password"
+  },
+  "PasswordNotMatchConfirmPassword": {
+    "One": "Le due password non coincidono"
+  },
+  "ToLogin": {
+    "One": "Vai all'accesso"
+  },
+  "UserToken": {
+    "One": "Token degli utenti"
+  },
+  "BatchAddToAB": {
+    "One": "Aggiungi i selezionati alla rubrica"
+  },
+  "BatchEditTags": {
+    "One": "Modifica i tag dei selezionati"
+  },
+  "User": {
+    "One": "Utente"
+  },
+  "ShareRecord": {
+    "One": "Condivisioni"
+  },
+  "Second": {
+    "One": "secondi"
+  },
+  "Captcha": {
+    "One": "Codice di verifica"
+  },
+  "ServerCmd": {
+    "One": "Comandi al server"
+  },
+  "Simple": {
+    "One": "Semplice"
+  },
+  "Advanced": {
+    "One": "Avanzato"
+  },
+  "Available": {
+    "One": "Disponibile"
+  },
+  "NotAvailable": {
+    "One": "Non disponibile"
+  },
+  "ServerCmdTips": {
+    "One": "Funzione sperimentale: l'API, hbbs e hbbr devono stare sullo stesso indirizzo di loopback. Per saperne di più vedi la {wiki}"
+  },
+  "Refresh": {
+    "One": "Aggiorna"
+  },
+  "Save": {
+    "One": "Salva"
+  },
+  "SendCustom": {
+    "One": "Invia personalizzato"
+  },
+  "Send": {
+    "One": "Invia"
+  },
+  "SendCmd": {
+    "One": "Invia comando"
+  },
+  "Result": {
+    "One": "Risultato"
+  },
+  "DeviceGroupManage": {
+    "One": "Gruppi di PC"
+  },
+  "Drop file here or click to upload": {
+    "One": "Trascina qui il file o fai clic per caricarlo"
+  },
+  "Please upload csv file": {
+    "One": "Carica un file CSV"
+  },
+  "Columns": {
+    "One": "Colonne"
+  },
+  "You can reference export file": {
+    "One": "Come modello puoi usare il file dell'esportazione"
+  },
+  "Remark": {
+    "One": "Nota"
+  },
+  "Terminal": {
+    "One": "Terminale"
+  },
+  "Transcript": {
+    "One": "Trascrizione"
+  },
+  "NoTranscript": {
+    "One": "Nessuna trascrizione"
+  },
+  "Intact": {
+    "One": "Integra"
+  },
+  "Altered": {
+    "One": "Alterata"
+  },
+  "FirstBadBlock": {
+    "One": "primo blocco che non corrisponde:"
+  },
+  "SessionEnded": {
+    "One": "Sessione chiusa"
+  },
+  "SessionNotEnded": {
+    "One": "Sessione non chiusa"
+  },
+  "Blocks": {
+    "One": "Blocchi"
+  },
+  "FinalHash": {
+    "One": "Hash finale"
+  },
+  "Input": {
+    "One": "Input"
+  },
+  "IncompleteTranscript": {
+    "One": "Trascrizione incompleta: letti {read} blocchi su {expected}. Non risulta integra: riaprila."
+  },
+  "VerifyFailed": {
+    "One": "Non è stato possibile verificare la trascrizione: riaprila."
+  },
+  "ExportFailed": {
+    "One": "Non è stato possibile esportare la trascrizione:"
+  },
+  "PossibleCopy": {
+    "One": "Possibile copia"
+  },
+  "PossibleCopyHint": {
+    "One": "Negli ultimi 10 minuti i segnali di presenza di questo PC sono arrivati alternativamente da due indirizzi: probabilmente ci sono due copie dello stesso PC (una VM clonata o un'immagine del disco senza sysprep), che condividono ID e chiave. Sulla copia disinstalla Remotek togliendo la sua configurazione e reinstallalo: riceve un ID nuovo. Per le copie future, lancia sysprep prima di clonare o installa Remotek dopo la copia. Lo stesso segnale lo dà una rete con due linee che bilancia ogni connessione su un indirizzo diverso: controllala."
+  },
+  "Bind": {
+    "One": "Associa"
+  },
+  "Email": {
+    "One": "Email"
+  },
+  "ID": {
+    "One": "ID"
+  },
+  "Id": {
+    "One": "ID"
+  },
+  "Cpu": {
+    "One": "CPU"
+  },
+  "IdP": {
+    "One": "IdP"
+  },
+  "Import": {
+    "One": "Importa"
+  },
+  "Information": {
+    "One": "Informazioni"
+  },
+  "InvalidParam": {
+    "One": "Il campo {param} non è valido"
+  },
+  "More": {
+    "One": "Altri"
+  },
+  "Op": {
+    "One": "Provider"
+  },
+  "PkceEnable": {
+    "One": "PKCE"
+  },
+  "PkceMethod": {
+    "One": "Metodo PKCE"
+  },
+  "Size": {
+    "One": "Dimensione"
+  },
+  "Success": {
+    "One": "Operazione riuscita"
+  },
+  "Token": {
+    "One": "Token"
+  },
+  "View": {
+    "One": "Dettagli"
+  },
+  "Your IdP Name": {
+    "One": "Il nome dell'IdP"
+  },
+  "Check your IdP docs, without": {
+    "One": "Vedi la documentazione dell'IdP, senza"
+  },
+  "Optional, default is": {
+    "One": "Facoltativo, predefinito"
+  },
+  "or login in with": {
+    "One": "oppure accedi con"
+  },
+  "For OIDC login without a password, enter any 4-20 letters": {
+    "One": "Per l'accesso solo con OIDC, senza password, scrivi 4-20 lettere qualsiasi"
+  },
+  "OauthLogin": {
+    "One": "Accesso OAuth"
+  },
+  "OauthBind": {
+    "One": "Associazione OAuth"
+  },
+  "MyPeer": {
+    "One": "I miei PC"
+  },
+  "SelectPkceMethod": {
+    "One": "Scegli il metodo PKCE"
+  },
+  "S256Recommended": {
+    "One": "S256 (consigliato)"
+  },
+  "WebClient": {
+    "One": "Web client"
+  },
+  "Client": {
+    "One": "Client"
+  },
+  "PlatformUA": {
+    "One": "Piattaforma/UA"
+  },
+  "CmdRelayServers": {
+    "One": "Server relay"
+  },
+  "CmdAlwaysUseRelay": {
+    "One": "Sempre via relay"
+  },
+  "CmdMustLogin": {
+    "One": "Accesso obbligatorio"
+  },
+  "CmdUsage": {
+    "One": "Uso del relay"
+  },
+  "CmdBlocklist": {
+    "One": "IP bloccati (blocklist)"
+  },
+  "CmdBlacklist": {
+    "One": "IP limitati (blacklist)"
+  },
+  "UsageTime": {
+    "One": "Durata"
+  },
+  "UsageTotal": {
+    "One": "Totale"
+  },
+  "UsageHighest": {
+    "One": "Picco"
+  },
+  "UsageAvg": {
+    "One": "Media"
+  },
+  "UsageSpeed": {
+    "One": "Velocità"
+  },
+  "IpSeparatorHint": {
+    "One": "Più IP si separano con |"
+  },
+  "DeleteAllHint": {
+    "One": "Per toglierli tutti scrivi"
+  },
+  "SendToId": {
+    "One": "Invia al server ID"
+  },
+  "SendToRelay": {
+    "One": "Invia al server relay"
+  },
+  "Command": {
+    "One": "Comando"
+  },
+  "Option": {
+    "One": "Opzione"
+  },
+  "Explain": {
+    "One": "Descrizione"
+  },
+  "Target": {
+    "One": "Destinazione"
+  },
+  "Example": {
+    "One": "Esempio:"
+  },
+  "IdServerStatus": {
+    "One": "Stato del server ID"
+  },
+  "RelayServerStatus": {
+    "One": "Stato del server relay"
+  },
+  "ColumnSetting": {
+    "One": "Colonne"
+  },
+  "NotImplemented": {
+    "One": "Non ancora disponibile"
+  },
+  "PleaseSelectColor": {
+    "One": "Scegli un colore"
+  },
+  "ConnectionTimeout": {
+    "One": "Connessione scaduta"
+  }
+}

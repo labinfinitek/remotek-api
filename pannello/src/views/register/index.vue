@@ -80,7 +80,7 @@
     }
     userStore.saveUserData(res.data)
     useAppStore().loadConfig()
-    ElMessage.success('Submit')
+    ElMessage.success(T('OperationSuccess'))
     router.push('/')
   }
   const toLogin = () => {

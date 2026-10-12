@@ -56,7 +56,7 @@
         <el-table-column :label="T('Actions')" align="center" class-name="table-actions" width="600" fixed="right">
           <template #default="{row}">
             <el-button type="success" @click="connectByClient(row.id)">{{ T('Link') }}</el-button>
-            <el-button v-if="appStore.setting.appConfig.web_client" type="success" @click="toWebClientLink(row)">Web Client</el-button>
+            <el-button v-if="appStore.setting.appConfig.web_client" type="success" @click="toWebClientLink(row)">{{ T('WebClient') }}</el-button>
             <el-button v-if="appStore.setting.appConfig.web_client" type="primary" @click="toShowShare(row)">{{ T('ShareByWebClient') }}</el-button>
             <el-button @click="toEdit(row)">{{ T('Edit') }}</el-button>
             <el-button type="danger" @click="del(row)">{{ T('Delete') }}</el-button>

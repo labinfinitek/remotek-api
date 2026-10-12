@@ -26,7 +26,7 @@ cambiato rispetto a v2.7 sta in [REMOTEK.md](REMOTEK.md), le novita' in
   dai client.
 - **Note di sessione**: il tecnico annota la connessione e la nota si salva
   nel registro delle connessioni. Si legge nel JSON di
-  `/api/admin/audit_conn/list`, nella colonna "Remark" del registro delle
+  `/api/admin/audit_conn/list`, nella colonna "Nota" del registro delle
   connessioni del pannello e nella sua esportazione CSV.
   Durante la sessione la nota si scrive dal client del tecnico; quella di
   fine connessione chiede sul PC del tecnico l'opzione del client

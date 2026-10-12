@@ -4,6 +4,7 @@ import { getToken, removeToken } from '@/utils/auth'
 import { useUserStore } from '@/store/user'
 import { pinia } from '@/store'
 import { useAppStore } from '@/store/app'
+import { T } from '@/utils/i18n'
 
 // create an axios instance
 const service = axios.create({
@@ -64,7 +65,7 @@ service.interceptors.response.use(
     // if the custom code is not 20000, it is judged as an error.
     if (res.code !== 0) {
       ElMessage({
-        message: res.message || 'error',
+        message: res.message || T('Error'),
         type: 'error',
         duration: 5 * 1000,
       })
@@ -81,7 +82,7 @@ service.interceptors.response.use(
   error => {
     if (error.code === 'ECONNABORTED'
       && error.message.indexOf('timeout') > -1) {
-      error.message = 'Connection Time Out!'
+      error.message = T('ConnectionTimeout')
     }
     ElMessage({
       message: error.message,

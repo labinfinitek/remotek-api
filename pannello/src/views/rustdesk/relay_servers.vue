@@ -2,7 +2,7 @@
   <el-card class="simple-card" shadow="hover" v-loading="form.loading">
     <template #header>
       <div class="card-header">
-        <span>RELAY_SERVERS</span>
+        <span>{{ T('CmdRelayServers') }}</span>
       </div>
     </template>
     <el-form :disabled="!canSend">
