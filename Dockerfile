@@ -1,7 +1,7 @@
-# Immagine dell'API di Remotek costruita dal sorgente, in quattro stadi:
-# binario Go, sorgente e build del pannello rustdesk-api-web, immagine
-# finale. Le immagini di base sono fissate per digest: per aggiornarne una si
-# cambiano tag e digest insieme.
+# Immagine dell'API di Remotek costruita dal sorgente, in tre stadi:
+# binario Go, build del pannello (pannello/), immagine finale. Le immagini
+# di base sono fissate per digest: per aggiornarne una si cambiano tag e
+# digest insieme.
 #
 #   docker build --build-arg VERSION=<versione> \
 #     --build-arg REVISION="$(git rev-parse HEAD)" -t remotek-api .
@@ -28,67 +28,35 @@ RUN go build -trimpath -buildvcs=false \
       echo "apimain non e' statico" >&2; exit 1; \
     fi
 
-# --- Sorgente del pannello ---
-# rustdesk-api-web di upstream a un commit fissato (sha completo, mai un
-# branch), adattato al marchio e modificato dalle patch di pannello/. Sta
-# sull'immagine golang perche' quella del pannello non ha git; adatta e le
-# patch non chiedono pacchetti. 3998c2a e' l'ultimo commit di master
-# (2025-08-31), quello che impacchettava rustdesk-api v2.7.
-FROM docker.io/library/golang:1.26.9-trixie@sha256:f06b7122f888680048afb247c4e5f49c0069eb6c4c1ccae0f3f4834527a8d22c AS pannello-sorgente
+# --- Pannello ---
+# Sorgente in pannello/: rustdesk-api-web di lejianwen al commit 3998c2a,
+# con le nostre modifiche (ADR-0027, pannello/README.md). npm ci prima di
+# copiare il resto del sorgente: cambiare un file del pannello non riscarica
+# i pacchetti. Il lockfile di upstream risolve tutto su
+# registry.npmmirror.com: si scarica dal registry ufficiale, e l'integrity
+# sha512 di ogni pacchetto nel lockfile garantisce lo stesso contenuto. Gli
+# script di installazione non servono alla build (esbuild, vue-demi,
+# protobufjs, fsevents) e non si eseguono.
+FROM docker.io/library/node:24.21.0-trixie-slim@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe AS pannello
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-ARG PANNELLO_COMMIT=3998c2a9213fcd047252776d0f0db33e6717026c
-ADD --keep-git-dir=false https://github.com/lejianwen/rustdesk-api-web.git#${PANNELLO_COMMIT} /pannello
 WORKDIR /pannello
-RUN case "$PANNELLO_COMMIT" in \
-      *[!0-9a-f]*) echo "PANNELLO_COMMIT non e' uno sha" >&2; exit 1 ;; \
-    esac \
- && [ "${#PANNELLO_COMMIT}" -eq 40 ]
-# Marchio: il pannello di upstream ha logo, favicon e titolo nel sorgente.
-# Si riscrivono le righe che li portano: logo e favicon vengono da /brand/,
-# che l'API serve da brand.dir (si cambiano sostituendo i file, senza
-# ricostruire), il titolo statico da BRAND_NAME; quello vero lo mette il
-# pannello leggendo /api/admin/config/admin. Nei .vue il logo e' un :src
-# legato, perche' Vite non lo tratti come un file da importare nella build.
-# adatta ferma la build se una riga non c'e' piu' (commit del pannello
-# cambiato): va rivista. Col fork del pannello (A3) si spostano li'.
+COPY pannello/package.json pannello/package-lock.json ./
+RUN npm ci --registry=https://registry.npmjs.org/ \
+      --replace-registry-host=always --ignore-scripts --no-audit --no-fund
+COPY pannello/ ./
+# Titolo statico del pannello: nel sorgente e' Remotek, BRAND_NAME lo
+# cambia; quello vero lo mette il pannello leggendo
+# /api/admin/config/admin. Logo e favicon vengono da /brand/, che l'API
+# serve da brand.dir, e non dipendono da BRAND_NAME. La build si ferma se
+# una delle due righe non c'e' piu'.
 ARG BRAND_NAME=Remotek
 RUN case "$BRAND_NAME" in \
       ""|*[!A-Za-z0-9._\ -]*) echo "BRAND_NAME: solo lettere, cifre, spazi, . _ -" >&2; exit 1 ;; \
     esac \
- && adatta() { grep -qF "$2" "$1" && sed -i "s|$2|$3|" "$1" && grep -qF "$3" "$1" \
-      || { echo "$1: manca la riga da adattare: $2" >&2; return 1; }; } \
- && adatta index.html '<link rel="icon" href="/favicon.ico" />' \
-      '<link rel="icon" type="image/svg+xml" href="/brand/favicon.svg" />' \
- && adatta index.html '<title>Rustdesk API Admin</title>' "<title>$BRAND_NAME</title>" \
- && adatta src/store/app.js "import logo from '@/assets/logo.png'" "const logo = '/brand/logo.svg'" \
- && adatta src/store/app.js "title: 'Rustdesk API Admin'," "title: '$BRAND_NAME'," \
- && adatta src/views/login/login.vue 'src="@/assets/logo.png"' ":src=\"'/brand/logo.svg'\"" \
- && adatta src/views/register/index.vue 'src="@/assets/logo.png"' ":src=\"'/brand/logo.svg'\"" \
- && rm public/favicon.ico src/assets/logo.png
-# Patch di pannello/ (ADR-0020), dopo adatta, in ordine di nome. git apply
-# funziona anche fuori da un repository e, se una parte della patch non
-# entra, non applica nulla e la build si ferma. Senza patch si ferma lo
-# stesso: vuol dire un contesto di build sbagliato.
-COPY pannello/ /patch/
-RUN set -- /patch/*.patch \
- && if [ ! -e "$1" ]; then echo "nessuna patch in pannello/" >&2; exit 1; fi \
- && for p in "$@"; do \
-      git apply --verbose "$p" || { echo "$p non si applica" >&2; exit 1; }; \
-    done
-
-# --- Pannello ---
-# npm ci sul package-lock.json del commit fissato, prima di copiare il resto
-# del sorgente: cambiare una patch non riscarica i pacchetti. Il lockfile di
-# upstream risolve tutto su registry.npmmirror.com: si scarica dal registry
-# ufficiale, e l'integrity sha512 di ogni pacchetto nel lockfile garantisce
-# lo stesso contenuto. Gli script di installazione non servono alla build
-# (esbuild, vue-demi, protobufjs, fsevents) e non si eseguono.
-FROM docker.io/library/node:24.21.0-trixie-slim@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe AS pannello
-WORKDIR /pannello
-COPY --from=pannello-sorgente /pannello/package.json /pannello/package-lock.json ./
-RUN npm ci --registry=https://registry.npmjs.org/ \
-      --replace-registry-host=always --ignore-scripts --no-audit --no-fund
-COPY --from=pannello-sorgente /pannello/ ./
+ && titolo() { grep -qF "$2" "$1" && sed -i "s|$2|$3|" "$1" && grep -qF "$3" "$1" \
+      || { echo "$1: manca la riga del titolo: $2" >&2; return 1; }; } \
+ && titolo index.html '<title>Remotek</title>' "<title>$BRAND_NAME</title>" \
+ && titolo src/store/app.js "title: 'Remotek'," "title: '$BRAND_NAME',"
 RUN npm run build
 
 # --- Immagine finale ---
@@ -109,7 +77,7 @@ COPY conf/ ./conf/
 COPY resources/ ./resources/
 COPY --from=pannello /pannello/dist/ ./resources/admin/
 # Il pannello e' MIT: la sua licenza va con i suoi file (pannello/README.md).
-COPY --from=pannello-sorgente /pannello/LICENSE ./resources/admin/LICENSE
+COPY pannello/LICENSE ./resources/admin/LICENSE
 # /api/version legge resources/version (service.AppService); l'a capo finale
 # e' quello dell'immagine di v2.7.
 RUN echo "$VERSION" > resources/version \

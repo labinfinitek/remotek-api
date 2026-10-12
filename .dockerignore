@@ -31,5 +31,7 @@
 resources/admin/
 resources/version
 
-# Patch del pannello (ADR-0020), applicate dal Dockerfile.
-!pannello/*.patch
+# Sorgente del pannello (ADR-0027), senza cio' che produce npm in locale.
+!pannello/
+pannello/node_modules/
+pannello/dist/
