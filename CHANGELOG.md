@@ -6,6 +6,15 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Modificato
+- Pannello: si costruisce dal sorgente in `pannello/` (ADR-0027), con le
+  modifiche di prima ora come commit; il pannello nell'immagine e' identico
+  a prima e il build non scarica piu' niente da GitHub.
+
+### Rimosso
+- Argomento di build `PANNELLO_COMMIT`: il commit di rustdesk-api-web non si
+  sceglie piu' al build, il sorgente sta in `pannello/`.
+
 ## [0.6.0] - 2026-10-11
 Immagine `ghcr.io/labinfinitek/remotek-api:0.6.0`. Nessun cambio
 incompatibile. Due migrazioni del database, fatte all'avvio: 271 (tabella

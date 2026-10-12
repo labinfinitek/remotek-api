@@ -36,9 +36,9 @@ changed since v2.7 is in [REMOTEK.md](REMOTEK.md), news in
   read and verify them (format below).
 - **Login log**: every login, from the client and from the panel.
 - **Admin panel** on `/_admin/`: [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)
-  built into the image at a pinned commit, with the Remotek brand and the
-  changes of the patches in [`pannello/`](pannello/README.md). Users,
-  devices, address books, tags, groups, OAuth, logs.
+  built into the image from the source in [`pannello/`](pannello/README.md),
+  modified, with the Remotek brand. Users, devices, address books, tags,
+  groups, OAuth, logs.
 - **Login**: with a password; with a generic **OIDC** provider, configured
   from the panel; with **LDAP** (upstream reports it tested with OpenLDAP and Active Directory;
   not yet tested in Remotek),
@@ -189,16 +189,14 @@ docker build \
   -t remotek-api .
 ```
 
-Four stages: static Go binary (CGO for SQLite), rustdesk-api-web source at
-the pinned commit with the brand and the patches of `pannello/` applied in
-name order (a patch that does not apply stops the build), panel build, final
-Alpine image. Base images are pinned by digest. Arguments:
+Three stages: static Go binary (CGO for SQLite), panel build from the
+source in `pannello/`, final Alpine image. The build downloads no source
+from GitHub; base images are pinned by digest. Arguments:
 
 | Argument | Default | Use |
 |---|---|---|
 | `VERSION` | `dev` | written to `resources/version`, returned by `/api/version` |
 | `REVISION` | `unknown` | OCI label `org.opencontainers.image.revision` |
-| `PANNELLO_COMMIT` | `3998c2a9213fcd047252776d0f0db33e6717026c` | full sha of the rustdesk-api-web commit |
 | `BRAND_NAME` | `Remotek` | static title of the panel; letters, digits, spaces and `. _ -` |
 
 The `HEALTHCHECK` calls `http://127.0.0.1:21114/api/version`: if you change
@@ -705,8 +703,8 @@ Remotek API is based on [rustdesk-api](https://github.com/lejianwen/rustdesk-api
 by lejianwen, version v2.7, released under the MIT licence. This fork is MIT
 too: [LICENSE](LICENSE) is unchanged, with the attribution to lejianwen. The
 panel is [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web), by
-the same author, also MIT, built from source and **modified** by the patches
-in [`pannello/`](pannello/README.md), a derivative work under the same
-licence; its `LICENSE` is in the image at `resources/admin/LICENSE`. The
-changes since v2.7, panel patches included, are listed in
+the same author, also MIT, built from the source in
+[`pannello/`](pannello/README.md), **modified**: a derivative work under the
+same licence; its `LICENSE` is in the image at `resources/admin/LICENSE`.
+The changes since v2.7, panel included, are listed in
 [REMOTEK.md](REMOTEK.md).

@@ -228,6 +228,25 @@ jobs:
         run: '"${RUNNER_TEMP}/hadolint" Dockerfile'
       - name: docker build senza push
         run: docker build --build-arg VERSION=ci --build-arg REVISION="${GITHUB_SHA}" -t remotek-api:ci .
+      # Impronta del pannello (ADR-0027): sha256 di ogni file di
+      # resources/admin dell'immagine, in ordine di percorso, e in fondo lo
+      # sha256 dell'elenco. Due build con lo stesso hash finale hanno lo
+      # stesso pannello.
+      - name: Impronta del pannello
+        run: |
+          set -euo pipefail
+          id="$(docker create remotek-api:ci)"
+          docker cp "${id}:/app/resources/admin" "${RUNNER_TEMP}/admin"
+          docker rm "${id}" > /dev/null
+          (cd "${RUNNER_TEMP}/admin" && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum) > "${RUNNER_TEMP}/impronta.txt"
+          echo "elenco $(sha256sum < "${RUNNER_TEMP}/impronta.txt" | cut -d' ' -f1)" >> "${RUNNER_TEMP}/impronta.txt"
+          cat "${RUNNER_TEMP}/impronta.txt"
+          {
+            echo '### Impronta del pannello'
+            echo '```'
+            cat "${RUNNER_TEMP}/impronta.txt"
+            echo '```'
+          } >> "${GITHUB_STEP_SUMMARY}"
       - name: Il container parte, come 10001, e risponde
         run: |
           set -euo pipefail
