@@ -32,17 +32,21 @@ RUN go build -trimpath -buildvcs=false \
 # Sorgente in pannello/: rustdesk-api-web di lejianwen al commit 3998c2a,
 # con le nostre modifiche (ADR-0027, pannello/README.md). npm ci prima di
 # copiare il resto del sorgente: cambiare un file del pannello non riscarica
-# i pacchetti. Il lockfile di upstream risolve tutto su
-# registry.npmmirror.com: si scarica dal registry ufficiale, e l'integrity
-# sha512 di ogni pacchetto nel lockfile garantisce lo stesso contenuto. Gli
+# i pacchetti. Il lockfile risolve tutto sul registry ufficiale e l'integrity
+# sha512 di ogni pacchetto garantisce il contenuto; --registry lo dice anche
+# a npm audit. Node e' quello di pannello/.nvmrc, e la build si ferma se
+# l'immagine ne ha un altro. Un avviso HIGH o CRITICAL di npm audit ferma la
+# build (REGOLE sez. 9): si aggiorna il pacchetto, non si salta l'audit. Gli
 # script di installazione non servono alla build (esbuild, vue-demi,
 # protobufjs, fsevents) e non si eseguono.
 FROM docker.io/library/node:24.21.0-trixie-slim@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe AS pannello
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 WORKDIR /pannello
-COPY pannello/package.json pannello/package-lock.json ./
-RUN npm ci --registry=https://registry.npmjs.org/ \
-      --replace-registry-host=always --ignore-scripts --no-audit --no-fund
+COPY pannello/package.json pannello/package-lock.json pannello/.nvmrc ./
+RUN test "$(node --version)" = "v$(cat .nvmrc)" \
+      || { echo "node $(node --version), .nvmrc chiede v$(cat .nvmrc)" >&2; exit 1; } \
+ && npm ci --registry=https://registry.npmjs.org/ --ignore-scripts --no-fund \
+ && npm audit --audit-level=high --registry=https://registry.npmjs.org/
 COPY pannello/ ./
 # Titolo statico del pannello: nel sorgente e' Remotek, BRAND_NAME lo
 # cambia; quello vero lo mette il pannello leggendo

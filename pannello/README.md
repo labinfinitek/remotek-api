@@ -32,16 +32,33 @@ git diff "$import" -- pannello/
 
 ## Build in locale
 
-Con node 24, come nell'immagine:
+Con la versione di node di [.nvmrc](.nvmrc), quella dell'immagine, e gli
+stessi comandi dello stadio `pannello` del Dockerfile:
 
 ```bash
 cd pannello
-npm ci --ignore-scripts
+test "$(node --version)" = "v$(cat .nvmrc)" || echo "serve node $(cat .nvmrc)"
+npm ci --registry=https://registry.npmjs.org/ --ignore-scripts
+npm audit --audit-level=high --registry=https://registry.npmjs.org/
 npm run build    # produce dist/
 ```
 
 `node_modules/` e `dist/` non entrano nel repo ne' nel contesto di
-`docker build`.
+`docker build`; ne' i file `*.local` (`.env.*.local`, che `vite build`
+leggerebbe) e `*.log`.
+
+## Dipendenze
+
+Il lockfile risolve tutto sul registry ufficiale
+(`https://registry.npmjs.org/`) e si cambia solo con npm. Nel build
+dell'immagine `npm audit --audit-level=high` e' bloccante (REGOLE sez. 9):
+un avviso HIGH o CRITICAL nuovo ferma il build, e si chiude aggiornando il
+pacchetto. Non ci sono `overrides`.
+
+`protobufjs` e `long` sono dipendenze dirette: le importano
+`src/utils/webclient/message.ts` e `rendezvous.ts`, generati a suo tempo con
+ts-proto, che non serve piu' e non c'e'. Se quei file vanno rigenerati, si
+installa ts-proto solo per farlo.
 
 ## Un cambio di upstream
 
