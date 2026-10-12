@@ -38,8 +38,8 @@ cambiato rispetto a v2.7 sta in [REMOTEK.md](REMOTEK.md), le novita' in
   la leggono e la verificano solo gli amministratori (formato qui sotto).
 - **Log di accesso**: ogni login, dal client e dal pannello.
 - **Pannello di amministrazione** su `/_admin/`: [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)
-  compilato nell'immagine a un commit fissato, con il marchio di Remotek e
-  le modifiche delle patch in [`pannello/`](pannello/README.md).
+  compilato nell'immagine dal sorgente in [`pannello/`](pannello/README.md),
+  modificato, con il marchio di Remotek.
   Utenti, dispositivi, rubriche, tag, gruppi, OAuth, registri.
 - **Login**: con password; con un provider **OIDC** generico, configurato dal
   pannello; con **LDAP** (upstream lo dichiara provato con OpenLDAP e Active Directory;
@@ -191,17 +191,14 @@ docker build \
   -t remotek-api .
 ```
 
-Quattro stadi: binario Go statico (CGO per SQLite), sorgente di
-rustdesk-api-web al commit fissato col marchio e le patch di `pannello/`
-applicate in ordine di nome (una patch che non si applica ferma la build),
-build del pannello, immagine finale Alpine. Le immagini di base sono fissate
-per digest. Argomenti:
+Tre stadi: binario Go statico (CGO per SQLite), build del pannello dal
+sorgente in `pannello/`, immagine finale Alpine. Il build non scarica
+sorgenti da GitHub; le immagini di base sono fissate per digest. Argomenti:
 
 | Argomento | Default | Uso |
 |---|---|---|
 | `VERSION` | `dev` | scritto in `resources/version`, lo restituisce `/api/version` |
 | `REVISION` | `unknown` | label OCI `org.opencontainers.image.revision` |
-| `PANNELLO_COMMIT` | `3998c2a9213fcd047252776d0f0db33e6717026c` | sha completo del commit di rustdesk-api-web |
 | `BRAND_NAME` | `Remotek` | titolo statico del pannello; lettere, cifre, spazi e `. _ -` |
 
 L'`HEALTHCHECK` chiama `http://127.0.0.1:21114/api/version`: se cambi
@@ -707,8 +704,8 @@ Remotek API e' basato su [rustdesk-api](https://github.com/lejianwen/rustdesk-ap
 di lejianwen, versione v2.7, rilasciato con licenza MIT. Anche questo fork e'
 MIT: [LICENSE](LICENSE) resta intatto, con l'attribuzione a lejianwen. Il
 pannello e' [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web),
-dello stesso autore, anch'esso MIT, compilato dal sorgente e **modificato**
-dalle patch in [`pannello/`](pannello/README.md), opera derivata con la
+dello stesso autore, anch'esso MIT, compilato dal sorgente in
+[`pannello/`](pannello/README.md), **modificato**: opera derivata con la
 stessa licenza; il suo `LICENSE` e' nell'immagine in
-`resources/admin/LICENSE`. Le modifiche rispetto a v2.7, patch del pannello
-incluse, sono elencate in [REMOTEK.md](REMOTEK.md).
+`resources/admin/LICENSE`. Le modifiche rispetto a v2.7, pannello
+compreso, sono elencate in [REMOTEK.md](REMOTEK.md).

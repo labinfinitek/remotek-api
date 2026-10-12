@@ -118,3 +118,8 @@ govulncheck, zizmor) e lo si riporta.
 - Commenti nuovi in italiano; quelli cinesi si sostituiscono solo nel codice
   che si riscrive. Refusi nei nomi (`ouath`, `requstform`) si correggono
   quando si tocca il file.
+- `pannello/` e' sorgente del repo (ADR-0027): si modifica come il resto,
+  con le stesse regole di MR e commit (ambito `pannello`).
+- In `pannello/` i commenti nuovi si scrivono in italiano; quelli di
+  upstream si toccano solo nel codice che si riscrive.
+- `pannello/package-lock.json` si cambia solo con npm, mai a mano.
