@@ -6,6 +6,14 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+## [0.7.1] - 2026-10-12
+Immagine `ghcr.io/labinfinitek/remotek-api:0.7.1`. Correzioni del solo
+pannello, nessun cambio incompatibile: nessuna migrazione del database,
+nessuna variabile nuova, rotte e contratto col client invariati. Escono le
+pagine e i pulsanti del web client, che non funzionavano dalla 0.1.0;
+"Esci" chiude la sessione anche sul server (REM-2026-007). Dalla 0.6.0 si
+puo' passare direttamente alla 0.7.1.
+
 ### Rimosso
 - Pannello: le pagine "Condivisioni" (in "Area personale" e
   nell'amministrazione) e i pulsanti "Web client" e "Condividi col web
