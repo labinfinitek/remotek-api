@@ -37,11 +37,16 @@ stessi comandi dello stadio `pannello` del Dockerfile:
 
 ```bash
 cd pannello
-test "$(node --version)" = "v$(cat .nvmrc)" || echo "serve node $(cat .nvmrc)"
-npm ci --registry=https://registry.npmjs.org/ --ignore-scripts
-npm audit --audit-level=high --registry=https://registry.npmjs.org/
-npm run build    # produce dist/
+{ test "$(node --version)" = "v$(cat .nvmrc)" || { echo "serve node v$(cat .nvmrc)" >&2; false; }; } \
+  && ! grep '"resolved":' package-lock.json | grep -vF '"resolved": "https://registry.npmjs.org/' \
+  && npm ci --registry=https://registry.npmjs.org/ --ignore-scripts \
+  && npm audit --audit-level=high --registry=https://registry.npmjs.org/ \
+  && npm run build    # produce dist/
 ```
+
+La catena si ferma, come l'immagine, se node non e' quello di `.nvmrc` (e lo
+dice), se il lockfile ha un `resolved` fuori dal registry ufficiale (lo
+stampa) o se l'audit trova un avviso HIGH o CRITICAL.
 
 `node_modules/` e `dist/` non entrano nel repo ne' nel contesto di
 `docker build`; ne' i file `*.local` (`.env.*.local`, che `vite build`

@@ -43,8 +43,9 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 - Pannello: `npm audit --audit-level=high` nel build dell'immagine, dopo
   `npm ci`: un avviso HIGH o CRITICAL ferma il build (REGOLE sez. 9). Il
   lockfile risolve tutto sul registry ufficiale e non piu' su
-  registry.npmmirror.com; la versione di node sta in `pannello/.nvmrc` e il
-  build si ferma se l'immagine ne ha un'altra.
+  registry.npmmirror.com, e il build si ferma se un `resolved` punta
+  altrove; la versione di node sta in `pannello/.nvmrc` e il build si ferma
+  se l'immagine ne ha un'altra.
 
 ### Rimosso
 - Argomento di build `PANNELLO_COMMIT`: il commit di rustdesk-api-web non si
