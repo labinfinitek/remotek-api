@@ -18,6 +18,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 - Pannello: la pagina dichiara la lingua del pannello (`lang` di `<html>`),
   all'avvio e a ogni cambio dal menu; prima era sempre inglese e il browser
   poteva proporre di tradurre il pannello in italiano.
+- Pannello: l'esportazione della trascrizione, quando la risposta non e'
+  JSON (per esempio la pagina HTML di un 502 del proxy), mostra "Non e'
+  stato possibile esportare la trascrizione: risposta HTTP 502 dal server"
+  invece dell'errore di JSON.parse; con un errore dell'API mostra il suo
+  messaggio, come prima.
 
 ### Sicurezza
 - Pannello: il token di sessione non si copia piu' in
