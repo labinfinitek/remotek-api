@@ -286,9 +286,6 @@
   "ExpireTime": {
     "One": "Scadenza"
   },
-  "ShareByWebClient": {
-    "One": "Condividi col web client"
-  },
   "Error": {
     "One": "Errore"
   },
