@@ -11,6 +11,41 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   modifiche di prima ora come commit; il pannello nell'immagine e' identico
   a prima e il build non scarica piu' niente da GitHub.
 
+### Sicurezza
+- Pannello: dipendenze npm senza avvisi HIGH e CRITICAL (`npm audit`, prima
+  19 HIGH e 2 CRITICAL). Aggiornati: axios 1.8.2 -> 1.20.0 (con form-data
+  4.0.6 e follow-redirects 1.16.1), vue 3.5.13 -> 3.5.43, js-cookie 3.0.5 ->
+  3.0.8, lodash e lodash-es 4.17.21 -> 4.18.1, vite 6.3.4 -> 6.4.4 (rollup
+  4.64.5, postcss 8.5.29, nanoid 3.3.20, source-map-js 1.2.2, picomatch
+  4.0.7), sass 1.78.0 -> 1.105.1 (senza piu' braces e browserslist),
+  protobufjs 7.4.0 -> 7.6.6, ora dipendenza diretta con `long`. Tolti
+  sass-loader (con webpack, ajv, fast-uri, serialize-javascript), ts-proto e
+  qs, che il build non usa. Avvisi chiusi: form-data GHSA-fjxv-7rqg-78g4,
+  GHSA-hmw2-7cc7-3qxx; protobufjs GHSA-xq3m-2v4x-88gg, GHSA-66ff-xgx4-vchm,
+  GHSA-685m-2w69-288q, GHSA-75px-5xx7-5xc7, GHSA-jvwf-75h9-cwgg,
+  GHSA-wcpc-wj8m-hjx6; axios GHSA-35jp-ww65-95wh, GHSA-3g43-6gmg-66jw,
+  GHSA-43fc-jf86-j433, GHSA-4hjh-wcwx-xvwj, GHSA-6chq-wfr3-2hj9,
+  GHSA-777c-7fjr-54vf, GHSA-hfxv-24rg-xrqf, GHSA-j5f8-grm9-p9fc,
+  GHSA-p92q-9vqr-4j8v, GHSA-pf86-5x62-jrwf, GHSA-pmwg-cvhr-8vh7,
+  GHSA-q8qp-cvcw-x6jj; vue (@vue/server-renderer) GHSA-g2v6-rqmx-r4w6;
+  js-cookie GHSA-qjx8-664m-686j; lodash e lodash-es GHSA-r5fr-rjxr-66jc;
+  vite GHSA-fx2h-pf6j-xcff, GHSA-p9ff-h696-f583; rollup GHSA-mw96-cpmx-2vgc;
+  postcss GHSA-6g55-p6wh-862q, GHSA-r28c-9q8g-f849; nanoid
+  GHSA-28wg-ghj8-5hjv, GHSA-2v37-7h3g-55p8, GHSA-xwg4-73v4-xw9w;
+  source-map-js GHSA-68fv-2mgg-jv7q; picomatch GHSA-c2c7-rcm5-vvqj;
+  immutable GHSA-v56q-mh7h-f735, GHSA-wf6x-7x77-mvgw, GHSA-xvcm-6775-5m9r;
+  braces GHSA-vfj7-8cjw-p6xm; browserslist GHSA-73wf-gq98-2v4g,
+  GHSA-c83g-rgw3-j3cx; fast-uri GHSA-4c8g-83qw-93j6, GHSA-7p8r-x3mc-p8w7,
+  GHSA-f65p-4m7j-42xc, GHSA-jqff-g426-hqxp, GHSA-q3j6-qgpj-74h6,
+  GHSA-qw65-cvwx-89v3, GHSA-v2hh-gcrm-f6hx, GHSA-v39h-62p7-jpjc;
+  serialize-javascript GHSA-5c6j-r48x-rmvq. Resta element-plus 2.8.2 con
+  GHSA-5m5x-9j46-h678 (MODERATE).
+- Pannello: `npm audit --audit-level=high` nel build dell'immagine, dopo
+  `npm ci`: un avviso HIGH o CRITICAL ferma il build (REGOLE sez. 9). Il
+  lockfile risolve tutto sul registry ufficiale e non piu' su
+  registry.npmmirror.com; la versione di node sta in `pannello/.nvmrc` e il
+  build si ferma se l'immagine ne ha un'altra.
+
 ### Rimosso
 - Argomento di build `PANNELLO_COMMIT`: il commit di rustdesk-api-web non si
   sceglie piu' al build, il sorgente sta in `pannello/`.
