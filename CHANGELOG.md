@@ -14,7 +14,24 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   sono piu'. Con loro escono dal pannello le dipendenze `protobufjs` e
   `long` e i componenti di upstream che nessuna rotta raggiungeva.
 
+### Corretto
+- Pannello: la pagina dichiara la lingua del pannello (`lang` di `<html>`),
+  all'avvio e a ogni cambio dal menu; prima era sempre inglese e il browser
+  poteva proporre di tradurre il pannello in italiano.
+- Pannello: l'esportazione della trascrizione, quando la risposta non e'
+  JSON (per esempio la pagina HTML di un 502 del proxy), mostra "Non e'
+  stato possibile esportare la trascrizione: risposta HTTP 502 dal server"
+  invece dell'errore di JSON.parse; con un errore dell'API mostra il suo
+  messaggio, come prima.
+
 ### Sicurezza
+- Pannello: "Esci" chiama `POST /api/admin/logout`, che invalida il
+  token sul server, e poi lo toglie dal browser; prima lo toglieva solo
+  dal browser e il token restava valido fino alla scadenza. Se la chiamata
+  non riesce (rete, API che non risponde entro 5 secondi, token gia'
+  scaduto) il token si toglie lo stesso e si torna al login. L'uscita dopo
+  il cambio della password non lo chiama: il cambio cancella gia' tutti i
+  token dell'utente.
 - Pannello: il token di sessione non si copia piu' in
   `wc-option:local:access_token` del `localStorage`, la chiave del web
   client che nessuno legge piu', e "Esci" cancella anche le copie lasciate

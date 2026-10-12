@@ -685,5 +685,8 @@
   },
   "ConnectionTimeout": {
     "One": "Connessione scaduta"
+  },
+  "HttpStatusResponse": {
+    "One": "risposta HTTP {status} dal server"
   }
 }

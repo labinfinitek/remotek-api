@@ -66,8 +66,8 @@
   const user = userStore
   const appStore = useAppStore()
 
-  const logout = () => {
-    userStore.logout()
+  const logout = async () => {
+    await userStore.esci()
     window.location.reload()
   }
 

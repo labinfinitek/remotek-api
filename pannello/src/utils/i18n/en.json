@@ -685,5 +685,8 @@
   },
   "ConnectionTimeout": {
     "One": "Connection timed out"
+  },
+  "HttpStatusResponse": {
+    "One": "HTTP {status} response from the server"
   }
 }
