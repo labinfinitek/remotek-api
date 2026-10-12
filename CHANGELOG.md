@@ -6,6 +6,16 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+## [0.7.0] - 2026-10-12
+Immagine `ghcr.io/labinfinitek/remotek-api:0.7.0`. Nessun cambio
+incompatibile per chi usa l'immagine: nessuna migrazione del database,
+nessuna variabile nuova, rotte e contratto col client invariati. Cambia
+solo il pannello di amministrazione: il suo sorgente sta nel repo
+(ADR-0027), le sue dipendenze npm non hanno piu' avvisi HIGH ne' CRITICAL
+e il build dell'immagine si ferma se ne compare uno, ed e' in italiano
+(l'inglese si sceglie dal menu). Chi costruisce l'immagine da se' perde
+l'argomento `PANNELLO_COMMIT`.
+
 ### Modificato
 - Pannello in italiano, con l'inglese come seconda lingua: sono le sole due,
   come nell'API, anche per i componenti di element-plus. La lingua iniziale
@@ -19,6 +29,8 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 ### Rimosso
 - Pannello: le lingue cinese semplificato e tradizionale, coreano, russo,
   francese e spagnolo.
+- Argomento di build `PANNELLO_COMMIT`: il commit di rustdesk-api-web non si
+  sceglie piu' al build, il sorgente sta in `pannello/`.
 
 ### Sicurezza
 - Pannello: dipendenze npm senza avvisi HIGH e CRITICAL (`npm audit`, prima
@@ -55,10 +67,6 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   registry.npmmirror.com, e il build si ferma se un `resolved` punta
   altrove; la versione di node sta in `pannello/.nvmrc` e il build si ferma
   se l'immagine ne ha un'altra.
-
-### Rimosso
-- Argomento di build `PANNELLO_COMMIT`: il commit di rustdesk-api-web non si
-  sceglie piu' al build, il sorgente sta in `pannello/`.
 
 ## [0.6.0] - 2026-10-11
 Immagine `ghcr.io/labinfinitek/remotek-api:0.6.0`. Nessun cambio
