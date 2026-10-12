@@ -25,6 +25,13 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   messaggio, come prima.
 
 ### Sicurezza
+- Pannello: "Esci" chiama `POST /api/admin/logout`, che invalida il
+  token sul server, e poi lo toglie dal browser; prima lo toglieva solo
+  dal browser e il token restava valido fino alla scadenza. Se la chiamata
+  non riesce (rete, API che non risponde entro 5 secondi, token gia'
+  scaduto) il token si toglie lo stesso e si torna al login. L'uscita dopo
+  il cambio della password non lo chiama: il cambio cancella gia' tutti i
+  token dell'utente.
 - Pannello: il token di sessione non si copia piu' in
   `wc-option:local:access_token` del `localStorage`, la chiave del web
   client che nessuno legge piu', e "Esci" cancella anche le copie lasciate

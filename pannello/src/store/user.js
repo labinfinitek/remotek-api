@@ -3,7 +3,7 @@ import { current, login } from '@/api/user'
 import { setToken, removeToken, setCode, removeCode } from '@/utils/auth'
 import { useRouteStore } from '@/store/router'
 import { useAppStore } from '@/store/app'
-import { oidcAuth, oidcQuery } from '@/api/login'
+import { logout as logoutDalServer, oidcAuth, oidcQuery } from '@/api/login'
 
 export const useUserStore = defineStore({
   id: 'user',
@@ -18,6 +18,13 @@ export const useUserStore = defineStore({
   }),
 
   actions: {
+    // Uscita chiesta dall'utente: prima il token si invalida sul server,
+    // poi si toglie dal browser. Se la chiamata non riesce (rete, token gia'
+    // scaduto) il token si toglie lo stesso.
+    async esci () {
+      await logoutDalServer().catch(_ => false)
+      this.logout()
+    },
     logout () {
       removeToken()
       removeCode()
