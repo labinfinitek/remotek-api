@@ -697,6 +697,56 @@ const docTemplateapi = `{
                 }
             }
         },
+        "/agente/lasciapassare": {
+            "post": {
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户"
+                ],
+                "summary": "lasciapassare dell'agente AI",
+                "parameters": [
+                    {
+                        "description": "ID del PC",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.LasciapassareForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.LasciapassarePayload"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/audit": {
             "put": {
                 "security": [
@@ -1989,6 +2039,26 @@ const docTemplateapi = `{
                 },
                 "totale": {
                     "type": "integer"
+                }
+            }
+        },
+        "api.LasciapassareForm": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "maxLength": 100
+                }
+            }
+        },
+        "api.LasciapassarePayload": {
+            "type": "object",
+            "properties": {
+                "lasciapassare": {
+                    "type": "string"
                 }
             }
         },

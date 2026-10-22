@@ -382,3 +382,23 @@ other = "Il tecnico di questo agente AI è disattivato: l'agente non si attiva."
 description = "Request body over the size limit."
 one = "Corpo della richiesta troppo grande."
 other = "Corpo della richiesta troppo grande."
+
+[PassOff]
+description = "The AI agent pass is not configured on this server."
+one = "Il lasciapassare dell'agente non è configurato su questo server."
+other = "Il lasciapassare dell'agente non è configurato su questo server."
+
+[PassNotAgent]
+description = "Only an enabled AI agent can ask for a pass."
+one = "Solo un agente AI attivo può chiedere il lasciapassare."
+other = "Solo un agente AI attivo può chiedere il lasciapassare."
+
+[PassOwnerDisabled]
+description = "The technician of this AI agent does not exist or is disabled."
+one = "Il tecnico di questo agente AI non esiste o è disattivato."
+other = "Il tecnico di questo agente AI non esiste o è disattivato."
+
+[PassUnknownPc]
+description = "No PC with this ID is known to the server."
+one = "Nessun PC con questo ID è noto al server."
+other = "Nessun PC con questo ID è noto al server."

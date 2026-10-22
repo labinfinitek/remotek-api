@@ -12,17 +12,18 @@ import (
 
 // sicuri raccoglie le opzioni che ADR-0008 vuole sicure senza configurazione.
 type sicuri struct {
-	WebSso            bool
-	Register          bool
-	ShowSwagger       int
-	CaptchaThreshold  int
-	BanThreshold      int
-	FirmaObbligatoria bool // false: la accende il titolare quando tutti i PC firmano
-	TrustProxy        string
-	LdapTlsVerify     bool
-	LoggerLevel       string // info: debug scrive di piu'
-	LoggerPath        string // vuoto: nessun file di log
-	IntegrazioneUrl   string // vuoto: nessun evento esce (ADR-0026)
+	WebSso              bool
+	Register            bool
+	ShowSwagger         int
+	CaptchaThreshold    int
+	BanThreshold        int
+	FirmaObbligatoria   bool // false: la accende il titolare quando tutti i PC firmano
+	TrustProxy          string
+	LdapTlsVerify       bool
+	LoggerLevel         string // info: debug scrive di piu'
+	LoggerPath          string // vuoto: nessun file di log
+	IntegrazioneUrl     string // vuoto: nessun evento esce (ADR-0026)
+	LasciapassareChiave string // vuoto: nessun lasciapassare per gli agenti (ADR-0028)
 }
 
 // TestDefaultSicuri verifica che, senza variabili RUSTDESK_API_*, un file
@@ -64,10 +65,14 @@ func TestVariabiliBattonoDefault(t *testing.T) {
 	t.Setenv("RUSTDESK_API_GIN_TRUST_PROXY", "192.0.2.1")
 	t.Setenv("RUSTDESK_API_LDAP_TLS_VERIFY", "false")
 	t.Setenv("RUSTDESK_API_APP_FIRMA_OBBLIGATORIA", "true")
+	t.Setenv("RUSTDESK_API_AGENTE_LASCIAPASSARE_CHIAVE", "/app/data/lasciapassare.key")
 	got := leggi(fileSenzaChiavi(t))
 	if got.BanThreshold != 0 || got.TrustProxy != "192.0.2.1" || got.LdapTlsVerify || !got.FirmaObbligatoria {
 		t.Errorf("ban-threshold %d, trust-proxy %q, ldap.tls-verify %t, firma-obbligatoria %t; want 0, %q, false, true",
 			got.BanThreshold, got.TrustProxy, got.LdapTlsVerify, got.FirmaObbligatoria, "192.0.2.1")
+	}
+	if got.LasciapassareChiave != "/app/data/lasciapassare.key" {
+		t.Errorf("agente.lasciapassare-chiave %q", got.LasciapassareChiave)
 	}
 }
 
@@ -92,7 +97,7 @@ func leggi(path string) sicuri {
 		BanThreshold: c.App.BanThreshold, FirmaObbligatoria: c.App.FirmaObbligatoria, TrustProxy: c.Gin.TrustProxy,
 		LdapTlsVerify: c.Ldap.TlsVerify,
 		LoggerLevel:   c.Logger.Level, LoggerPath: c.Logger.Path,
-		IntegrazioneUrl: c.Integrazione.Url,
+		IntegrazioneUrl: c.Integrazione.Url, LasciapassareChiave: c.Agente.LasciapassareChiave,
 	}
 }
 

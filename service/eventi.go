@@ -17,13 +17,14 @@ import (
 
 // Tipi degli eventi delle connessioni (README, Integrazione).
 const (
-	EventoConnessioneAperta = "connessione.aperta"
-	EventoConnessioneChiusa = "connessione.chiusa"
-	EventoConnessioneNota   = "connessione.nota"
-	EventoFileTrasferiti    = "file.trasferiti"
-	EventoTerminaleChiuso   = "terminale.chiuso"
-	EventoPcNuovo           = "pc.nuovo"
-	EventoPcCopia           = "pc.possibile_copia" //nolint:misspell // italiano, nome deciso dal compito (ADR-0026)
+	EventoConnessioneAperta   = "connessione.aperta"
+	EventoConnessioneChiusa   = "connessione.chiusa"
+	EventoConnessioneNota     = "connessione.nota"
+	EventoFileTrasferiti      = "file.trasferiti"
+	EventoTerminaleChiuso     = "terminale.chiuso"
+	EventoPcNuovo             = "pc.nuovo"
+	EventoPcCopia             = "pc.possibile_copia"   //nolint:misspell // italiano, nome deciso dal compito (ADR-0026)
+	EventoAgenteLasciapassare = "agente.lasciapassare" //nolint:gosec // G101: nome di un tipo di evento, non una credenziale
 )
 
 // Direzioni di file.trasferiti: il type del registro dei file, 0 quando il
@@ -77,6 +78,15 @@ type CopiaEvento struct {
 	Cambi int `json:"cambi"`
 }
 
+// AgenteEvento e' l'agente AI di un lasciapassare (ADR-0028): gli username
+// dell'agente e del suo tecnico, e se ha i permessi di amministratore. Mai
+// il lasciapassare ne' il nonce.
+type AgenteEvento struct {
+	Agente         string `json:"agente"`
+	Tecnico        string `json:"tecnico"`
+	Amministratore bool   `json:"amministratore"`
+}
+
 // corpoEvento e' il corpo comune degli eventi; i campi dopo Pc ci sono solo
 // nei tipi che li usano.
 type corpoEvento struct {
@@ -89,6 +99,7 @@ type corpoEvento struct {
 	File     *FileEvento     `json:"file,omitempty"`
 	Verifica *VerificaEvento `json:"verifica,omitempty"`
 	Copia    *CopiaEvento    `json:"copia,omitempty"`
+	Agente   *AgenteEvento   `json:"agente,omitempty"`
 }
 
 type EventiService struct {
@@ -148,6 +159,16 @@ func (es *EventiService) AccodaCopia(id string, cambi int) error {
 		return nil
 	}
 	return accodaDelPc(id, corpoEvento{Tipo: EventoPcCopia, Copia: &CopiaEvento{Cambi: cambi}})
+}
+
+// AccodaLasciapassare accoda agente.lasciapassare per il lasciapassare
+// rilasciato all'agente agente, del tecnico tecnico, per il PC pc.
+func (es *EventiService) AccodaLasciapassare(pc string, agente, tecnico *model.User) error {
+	if !Config.Integrazione.Attiva() {
+		return nil
+	}
+	return accodaDelPc(pc, corpoEvento{Tipo: EventoAgenteLasciapassare,
+		Agente: &AgenteEvento{Agente: agente.Username, Tecnico: tecnico.Username, Amministratore: true}})
 }
 
 // accodaDelPc accoda c col PC id letto dal database.

@@ -102,6 +102,8 @@ func ApiInit(g *gin.Engine) {
 		frg.POST("/currentUser", u.Info)
 		// Agente AI dell'utente, per il client CLI (ADR-0021).
 		frg.GET("/agente", u.Agente)
+		// Lasciapassare firmato dell'agente per un PC (ADR-0028).
+		frg.POST("/agente/lasciapassare", u.Lasciapassare)
 	}
 	{
 		au := &api.Audit{}
