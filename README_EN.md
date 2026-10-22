@@ -353,6 +353,17 @@ login token, `GET /api/agente`, which answers
 username if the nickname is empty) or `{"agente":false,"tecnico":""}`;
 `/api/login` and `/api/currentUser` do not change.
 
+An agent only uses the command-line client (ADR-0028). Among the login
+routes only `GET /api/user/info`, `POST /api/currentUser`,
+`POST /api/logout`, `GET /api/agente` and `POST /api/agente/lasciapassare`
+answer it; the others (address books, PCs, users, notes) answer 403
+`{"error": msg}`, with a warn. The panel login (`POST /api/admin/login`, and
+the OIDC one) refuses it without a token, and every panel login route
+answers code 403, which for the panel is a logout, even to a token issued
+before. So an
+agent cannot create address books or rules, nor write into shared ones, to
+widen the pass boundary.
+
 **Connecting the client.** From client `remotek-1.4.9-3`, Remotek has the
 ID server, relay server, API server and key locked in the binary (ADR-0025):
 Settings > Network does not change them. For a test server they change only
@@ -753,7 +764,10 @@ their address books, personal or not, or one shared with them or with
 their group by the address book rules (those the RustDesk client shows
 them). An agent only works on the PCs its technician works on; a PC
 outside the address book also leaves a `lasciapassare rifiutato` warn with
-agent, technician and PC. Otherwise 400 `{"error": msg}`, saying which
+agent, technician and PC. Address books of an AI agent, or of an owner who
+no longer exists, do not count even if shared with the technician; and an
+agent account can neither write address books nor enter the panel (AI
+agents). Otherwise 400 `{"error": msg}`, saying which
 condition is missing (in Italian or English); without a token, or with the
 agent disabled, 401 like the other login routes. Every pass goes into the
 `lasciapassare` table (database version 273): nonce, PC, agent,

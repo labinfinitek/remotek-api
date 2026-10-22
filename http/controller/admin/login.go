@@ -92,6 +92,13 @@ func (ct *Login) Login(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "UserDisabled"))
 		return
 	}
+	// Un agente AI usa solo il client CLI (ADR-0028): niente
+	// token del pannello. Non conta come password sbagliata.
+	if u.AgenteDi != 0 {
+		global.Logger.Per(c.Request.Context()).Warnf("login al pannello rifiutato all'agente AI %d", u.Id)
+		response.Fail(c, 101, response.TranslateMsg(c, "AgentCliOnly"))
+		return
+	}
 
 	ut, err := service.AllService.UserService.Login(u, &model.LoginLog{
 		UserId:   u.Id,
@@ -249,6 +256,18 @@ func (ct *Login) OidcAuthQuery(c *gin.Context) {
 	o := &api.Oauth{}
 	u, ut := o.OidcAuthQueryPre(c)
 	if ut == nil {
+		return
+	}
+	// Come nel login con password: un agente AI non riceve il token del
+	// pannello. OidcAuthQueryPre l'ha gia' creato, e varrebbe sulle rotte
+	// del CLI fino alla scadenza: si revoca prima di rispondere.
+	if u.AgenteDi != 0 {
+		if err := service.AllService.UserService.Logout(u, ut.Token); err != nil {
+			response.FailErr(c, 101, "SystemError", err)
+			return
+		}
+		global.Logger.Per(c.Request.Context()).Warnf("login OIDC al pannello rifiutato all'agente AI %d", u.Id)
+		response.Fail(c, 101, response.TranslateMsg(c, "AgentCliOnly"))
 		return
 	}
 	responseLoginSuccess(c, u, ut.Token)

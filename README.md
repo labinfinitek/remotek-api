@@ -356,6 +356,16 @@ nickname del tecnico, o lo username se il nickname e' vuoto) o
 `{"agente":false,"tecnico":""}`; `/api/login` e `/api/currentUser` non
 cambiano.
 
+Un agente usa solo il client a riga di comando (ADR-0028). Tra le rotte con
+login gli rispondono solo `GET /api/user/info`, `POST /api/currentUser`,
+`POST /api/logout`, `GET /api/agente` e `POST /api/agente/lasciapassare`;
+le altre (rubriche, PC, utenti, note) rispondono 403 `{"error": msg}`, con
+un warn. Il login del pannello (`POST /api/admin/login`, e quello OIDC) lo
+rifiuta senza dare un token, e ogni rotta del pannello con login risponde
+col code 403, che per il pannello e' un logout, anche a un token gia'
+rilasciato. Cosi' un agente non puo' crearsi rubriche o regole, ne'
+scrivere in quelle condivise, per allargarsi il confine del lasciapassare.
+
 **Collegare il client.** Dal client `remotek-1.4.9-3` Remotek ha server ID,
 server relay, server API e chiave bloccati nel binario (ADR-0025): da
 Impostazioni > Rete non si cambiano. Per un server di prova si cambiano solo
@@ -755,7 +765,9 @@ una sua rubrica, personale o no, o una rubrica condivisa con lui o con il
 suo gruppo dalle regole delle rubriche (quelle che il client RustDesk vede
 per lui). Un agente lavora solo sui PC su cui lavora il suo tecnico; un PC
 fuori dalla rubrica lascia anche un warn `lasciapassare rifiutato` con
-agente, tecnico e PC. Altrimenti 400 `{"error": msg}`,
+agente, tecnico e PC. Le rubriche di un agente AI, o di un proprietario che
+non c'e' piu', non contano anche se condivise col tecnico; e un account
+agente non puo' scrivere rubriche ne' entrare nel pannello (Agenti AI). Altrimenti 400 `{"error": msg}`,
 che dice quale condizione manca (in italiano o in inglese); senza token, o
 con l'agente disattivato, 401 come le altre rotte con login. Ogni
 lasciapassare va nella tabella `lasciapassare` (versione del database 273):

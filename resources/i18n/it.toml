@@ -407,3 +407,8 @@ other = "Nessun PC con questo ID è noto al server."
 description = "The PC is not in the address book of this AI agent's technician."
 one = "Il PC non è nella rubrica del tecnico di questo agente AI."
 other = "Il PC non è nella rubrica del tecnico di questo agente AI."
+
+[AgentCliOnly]
+description = "An AI agent account only uses the CLI client."
+one = "Un account di agente AI usa solo il client CLI."
+other = "Un account di agente AI usa solo il client CLI."

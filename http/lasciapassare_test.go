@@ -167,8 +167,9 @@ func TestLasciapassareRilasciato(t *testing.T) {
 // TestLasciapassareRubrica prova sul router vero che il lasciapassare si
 // rilascia solo per un PC nella rubrica del tecnico dell'agente (mario, id
 // 2): quella personale, una sua rubrica, una rubrica di luigi condivisa con
-// lui o con il suo gruppo. Un PC solo nella rubrica di luigi, o in nessuna,
-// e' rifiutato con un warn su agente, tecnico e PC, e senza registro.
+// lui o con il suo gruppo. Un PC solo nella rubrica di luigi, in una
+// rubrica di un agente AI o di chi non c'e' piu', o in nessuna, e'
+// rifiutato con un warn su agente, tecnico e PC, e senza registro.
 func TestLasciapassareRubrica(t *testing.T) {
 	for _, tc := range []struct {
 		caso  string
@@ -207,6 +208,17 @@ func TestLasciapassareRubrica(t *testing.T) {
 			crea(t, &model.AddressBookCollection{UserId: 3, Name: "condivisa"})
 			crea(t, &model.AddressBook{Id: "999000111", UserId: 3})
 			crea(t, &model.AddressBookCollectionRule{UserId: 3, CollectionId: 1, Rule: model.ShareAddressBookRuleRuleRead, Type: model.ShareAddressBookRuleTypePersonal, ToId: 2})
+		}, false},
+		// Una rubrica di un agente AI, anche condivisa col tecnico, non conta.
+		{"condivisa da un agente", func() {
+			crea(t, &model.AddressBookCollection{UserId: 4, Name: "dell'agente"})
+			crea(t, &model.AddressBook{Id: "999000111", UserId: 4, CollectionId: 1})
+			crea(t, &model.AddressBookCollectionRule{UserId: 4, CollectionId: 1, Rule: model.ShareAddressBookRuleRuleRead, Type: model.ShareAddressBookRuleTypePersonal, ToId: 2})
+		}, false},
+		{"condivisa da chi non c'e' piu'", func() {
+			crea(t, &model.AddressBookCollection{UserId: 99, Name: "orfana"})
+			crea(t, &model.AddressBook{Id: "999000111", UserId: 99, CollectionId: 1})
+			crea(t, &model.AddressBookCollectionRule{UserId: 99, CollectionId: 1, Rule: model.ShareAddressBookRuleRuleRead, Type: model.ShareAddressBookRuleTypeGroup, ToId: 1})
 		}, false},
 		{"nessuna rubrica", func() {}, false},
 	} {

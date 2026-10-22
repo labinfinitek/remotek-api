@@ -11,6 +11,17 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/service"
 )
 
+// rotteAgente sono le rotte con login che un agente AI puo' chiamare: quelle
+// del client CLI (README, Agenti AI e Lasciapassare
+// dell'agente).
+var rotteAgente = map[string]bool{
+	"GET /api/user/info":             true,
+	"POST /api/currentUser":          true,
+	"POST /api/logout":               true,
+	"GET /api/agente":                true,
+	"POST /api/agente/lasciapassare": true,
+}
+
 func RustAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 获取HTTP_AUTHORIZATION
@@ -67,6 +78,16 @@ func RustAuth() gin.HandlerFunc {
 			c.JSON(401, gin.H{
 				"error": "Unauthorized",
 			})
+			c.Abort()
+			return
+		}
+		// Un agente AI usa solo le rotte del client CLI
+		// (ADR-0028): niente rubriche, PC o utenti, dove potrebbe scrivere e
+		// allargarsi il confine del lasciapassare. 403, non 401: non e' un
+		// logout.
+		if user.AgenteDi != 0 && !rotteAgente[c.Request.Method+" "+c.FullPath()] {
+			global.Logger.Per(c.Request.Context()).Warnf("%s %s: rifiutato l'agente AI %d, che usa solo le rotte del client CLI", c.Request.Method, c.FullPath(), user.Id)
+			c.JSON(http.StatusForbidden, response.ErrorResponse{Error: response.TranslateMsg(c, "AgentCliOnly")})
 			c.Abort()
 			return
 		}
