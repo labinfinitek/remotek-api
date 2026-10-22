@@ -6,12 +6,28 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+## [0.8.0] - 2026-10-22
+Immagine `ghcr.io/labinfinitek/remotek-api:0.8.0`, costruita con Go 1.26.10
+su Alpine 3.24.3. Versione minore: il lasciapassare dell'agente AI
+(ADR-0028, parte dell'API), gli account agente limitati al client a riga
+di comando, il pannello con la sigla della lingua e il logo leggibile, e
+**un cambio incompatibile**: via i comandi al server (pagina e rotte
+`/api/admin/rustdesk/*`). Migrazioni del database 273-275, solo aggiunte
+(tabella `lasciapassare`, colonne nuove di `audit_conns`); la tabella
+`server_cmds` resta. Configurazione: `agente.lasciapassare-chiave` e'
+nuova e vuota per default, cioe' il lasciapassare e' spento;
+`admin.id-server-port` e `admin.relay-server-port` non servono piu' e si
+ignorano. Contratto col client RustDesk invariato. Dalla 0.6.0 o dalla
+0.7.x si passa direttamente alla 0.8.0.
+
 ### Aggiunto
 - Lasciapassare dell'agente (ADR-0028): con `agente.lasciapassare-chiave`
   (file col seme Ed25519, permessi 600) `POST /api/agente/lasciapassare`
   rilascia a un agente AI attivo, con il tecnico attivo, un lasciapassare
-  firmato per un PC noto, valido 60 secondi, che il PC verifica con la
-  chiave pubblica cablata. Registro nella tabella `lasciapassare`
+  firmato per un PC nella rubrica del tecnico (una sua rubrica o una
+  condivisa con lui o con il suo gruppo), valido 60 secondi, che il PC
+  verifica con la chiave pubblica cablata; un altro PC e' rifiutato con 400
+  e un warn con agente, tecnico e PC. Registro nella tabella `lasciapassare`
   (migrazione 273) col solo nonce, riga INFO e evento
   `agente.lasciapassare`; comando `lasciapassare chiave-nuova <file>`.
   Senza chiave la rotta lo rifiuta; un file che manca, leggibile da altri o
@@ -26,15 +42,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   etichette, indipendenti, "Agente verificato" e "Amministratore";
   `connessione.aperta` e `connessione.chiusa` portano
   `sessione.amministratore` e, se verificate, `agente`. Un nonce
-  sconosciuto, di un altro PC o gia' usato da' un warn e la riga si salva
-  come prima; senza i campi non cambia niente.
-
-### Modificato
-- Lasciapassare dell'agente: il lasciapassare si lega alla riga del
-  registro delle connessioni (`audit_conn_id`, migrazione 275) e non solo
-  al `conn_id`, che il client fa ripartire a ogni riavvio del PC. Un
-  errore del database nel legame e' un error, non piu' un warn (README,
-  Lasciapassare dell'agente).
+  sconosciuto, di un altro PC o gia' usato da' un warn, un errore del
+  database un error, e la riga si salva come prima; senza i campi non
+  cambia niente. Il lasciapassare si lega alla riga del registro delle
+  connessioni (`audit_conn_id`, migrazione 275), una volta sola, e non
+  solo al `conn_id`, che il client fa ripartire a ogni riavvio del PC
+  (README, Lasciapassare dell'agente).
 
 ### Rimosso
 - **Cambio incompatibile per chi usava le rotte `/api/admin/rustdesk/*`.**
@@ -58,20 +71,14 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   si rimpicciolisce piu' in un quadrato. Un logo quadrato resta com'era.
 
 ### Sicurezza
-- Lasciapassare dell'agente: `POST /api/agente/lasciapassare` rilascia il
-  lasciapassare solo per un PC nella rubrica del tecnico dell'agente (una
-  sua rubrica o una condivisa con lui o con il suo gruppo); un altro PC e'
-  rifiutato con 400 e un warn con agente, tecnico e PC, e non si registra.
-  Prima qualunque agente attivo lo riceveva per qualunque PC conosciuto
-  (README, Lasciapassare dell'agente).
 - Agenti AI: un account agente usa solo le rotte del client a riga di
   comando (`/api/user/info`, `/api/currentUser`, `/api/logout`,
   `/api/agente`, `/api/agente/lasciapassare`); le altre rotte con login gli
   rispondono 403, il login del pannello non gli da' un token e il pannello
   rifiuta anche un token gia' rilasciato. Le rubriche di un agente non
-  contano per il lasciapassare. Prima un agente poteva crearsi dal pannello
-  una rubrica con un PC qualunque, condividerla col tecnico e ricevere il
-  lasciapassare per quel PC (README, Agenti AI).
+  contano per il lasciapassare. Prima un account agente entrava nel
+  pannello e usava le rotte del client come un utente qualunque del
+  gruppo del suo tecnico (README, Agenti AI).
 - Immagine di base Alpine 3.24.3: zlib 1.3.2-r1 (CVE-2026-85091, MEDIUM) e
   musl 1.2.6-r3 (CVE-2026-107891), che trivy segnalava sulla 3.24.2. Il
   binario dell'API e' statico e non le usa; le usano gli strumenti di
