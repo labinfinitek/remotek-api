@@ -40,6 +40,9 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 - Pannello: il selettore della lingua mostra la sigla della lingua attiva
   ("IT", "EN") al posto del glifo "文A", con l'etichetta accessibile
   "Lingua: IT" / "Language: EN".
+- Pannello: il logo della barra e del login ha l'altezza fissa (30 e 80 px)
+  e la larghezza del suo formato, fino a 160 e 320 px; un logo largo non
+  si rimpicciolisce piu' in un quadrato. Un logo quadrato resta com'era.
 
 ### Sicurezza
 - Lasciapassare dell'agente: `POST /api/agente/lasciapassare` rilascia il

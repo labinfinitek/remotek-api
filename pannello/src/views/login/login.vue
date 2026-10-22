@@ -271,9 +271,12 @@ h1 {
   margin-right: 10px;
 }
 
+// Come .logo nella barra: altezza fissa, larghezza dal logo con un massimo.
 .login-logo {
-  width: 80px;
   height: 80px;
+  width: auto;
+  max-width: 320px;
+  object-fit: contain;
   margin: 0 auto 20px;
   display: block;
 }
