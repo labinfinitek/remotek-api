@@ -240,6 +240,33 @@ func (s *AddressBookService) CollectionReadRules(user *model.User) (res []*model
 	return res, nil
 }
 
+// NellaRubrica dice se il PC pc e' in una rubrica che l'utente u vede dal
+// client: una delle sue, personale o no (user_id = u), o una condivisa con
+// lui dalle regole di CollectionReadRules, cioe' le voci del proprietario in
+// quella rubrica.
+func (s *AddressBookService) NellaRubrica(u *model.User, pc string) (bool, error) {
+	var n int64
+	if err := DB.Model(&model.AddressBook{}).Where("id = ? and user_id = ?", pc, u.Id).Count(&n).Error; err != nil {
+		return false, fmt.Errorf("rubrica dell'utente %d: %w", u.Id, err)
+	}
+	if n > 0 {
+		return true, nil
+	}
+	rules, err := s.CollectionReadRules(u)
+	if err != nil {
+		return false, err
+	}
+	for _, r := range rules {
+		if err := DB.Model(&model.AddressBook{}).Where("id = ? and user_id = ? and collection_id = ?", pc, r.UserId, r.CollectionId).Count(&n).Error; err != nil {
+			return false, fmt.Errorf("rubrica %d condivisa con l'utente %d: %w", r.CollectionId, u.Id, err)
+		}
+		if n > 0 {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 // UserMaxRule restituisce il permesso piu' alto dell'utente user sulla
 // rubrica cid dell'utente uid. Se una regola non si legge restituisce 0 e
 // l'errore: un permesso che non si legge non si concede.

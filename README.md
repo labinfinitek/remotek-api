@@ -750,7 +750,12 @@ sovrascrive per sbaglio. Con docker compose, per esempio:
 dell'agente (`Authorization: Bearer`), corpo `{"id": "<ID del PC>"}`.
 Risponde `{"lasciapassare": "<stringa>"}` solo se la funzione e'
 configurata, l'utente del token e' un agente AI attivo, il suo tecnico
-esiste ed e' attivo e il PC e' in `peers`. Altrimenti 400 `{"error": msg}`,
+esiste ed e' attivo, il PC e' in `peers` ed e' nella rubrica del tecnico:
+una sua rubrica, personale o no, o una rubrica condivisa con lui o con il
+suo gruppo dalle regole delle rubriche (quelle che il client RustDesk vede
+per lui). Un agente lavora solo sui PC su cui lavora il suo tecnico; un PC
+fuori dalla rubrica lascia anche un warn `lasciapassare rifiutato` con
+agente, tecnico e PC. Altrimenti 400 `{"error": msg}`,
 che dice quale condizione manca (in italiano o in inglese); senza token, o
 con l'agente disattivato, 401 come le altre rotte con login. Ogni
 lasciapassare va nella tabella `lasciapassare` (versione del database 273):
