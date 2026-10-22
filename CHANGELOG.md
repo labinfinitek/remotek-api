@@ -36,6 +36,19 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   errore del database nel legame e' un error, non piu' un warn (README,
   Lasciapassare dell'agente).
 
+### Rimosso
+- **Cambio incompatibile per chi usava le rotte `/api/admin/rustdesk/*`.**
+  Via i comandi al server: la pagina "Comandi al server" del pannello e le
+  rotte `sendCmd`, `cmdList`, `cmdCreate`, `cmdDelete` e `cmdUpdate`, che
+  ora rispondono come una rotta che non esiste. Nel server di Remotek l'API
+  sta nella rete Docker e non raggiunge `hbbs` e `hbbr` sul loopback, quindi
+  la pagina diceva sempre "Non disponibile"; relay, blocchi e limiti li
+  gestisce chi installa il server. La tabella `server_cmds` di un database
+  esistente resta, e nessuno la legge piu'. Le chiavi
+  `admin.id-server-port` e `admin.relay-server-port` (e le variabili
+  `RUSTDESK_API_ADMIN_ID_SERVER_PORT` e `RUSTDESK_API_ADMIN_RELAY_SERVER_PORT`)
+  non servono piu': una configurazione che le ha parte lo stesso e le ignora.
+
 ### Corretto
 - Pannello: il selettore della lingua mostra la sigla della lingua attiva
   ("IT", "EN") al posto del glifo "文A", con l'etichetta accessibile

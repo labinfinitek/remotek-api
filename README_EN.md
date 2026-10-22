@@ -252,8 +252,6 @@ default when the key is missing from the file.
 | `admin.title` \* | `RUSTDESK_API_ADMIN_TITLE` | empty | panel title; empty = `brand.name` |
 | `admin.hello` | `RUSTDESK_API_ADMIN_HELLO` | empty | panel welcome message (HTML); when not empty, `admin.hello-file` is not read |
 | `admin.hello-file` | `RUSTDESK_API_ADMIN_HELLO_FILE` | `./conf/admin/hello.html` | welcome file; `{{username}}` and `{{brand}}` are replaced |
-| `admin.id-server-port` | `RUSTDESK_API_ADMIN_ID_SERVER_PORT` | `21116` | `hbbs` port for the panel's commands, sent to `127.0.0.1` on this port minus one |
-| `admin.relay-server-port` | `RUSTDESK_API_ADMIN_RELAY_SERVER_PORT` | `21117` | `hbbr` port for the panel's commands, on `127.0.0.1` |
 | `gin.api-addr` | `RUSTDESK_API_GIN_API_ADDR` | `0.0.0.0:21114` | listen address |
 | `gin.mode` | `RUSTDESK_API_GIN_MODE` | `release` | `release`, `debug`, `test` |
 | `gin.resources-path` | `RUSTDESK_API_GIN_RESOURCES_PATH` | `resources` | directory of panel, languages and templates; without the language files startup stops |
@@ -386,8 +384,8 @@ code:
 - the title the panel shows before it loads its configuration is set at
   build time: `docker build --build-arg BRAND_NAME=<name> ...`.
 
-Not renamed: the `RUSTDESK_API_` prefix, the `rustdesk:` section, the
-`/api/admin/rustdesk/*` routes, the Go module path.
+Not renamed: the `RUSTDESK_API_` prefix, the `rustdesk:` section, the Go
+module path.
 
 ## Security
 

@@ -27,11 +27,9 @@ type App struct {
 	FirmaObbligatoria bool `mapstructure:"firma-obbligatoria"`
 }
 type Admin struct {
-	Title           string `mapstructure:"title"`
-	Hello           string `mapstructure:"hello"`
-	HelloFile       string `mapstructure:"hello-file"`
-	IdServerPort    int    `mapstructure:"id-server-port"`
-	RelayServerPort int    `mapstructure:"relay-server-port"`
+	Title     string `mapstructure:"title"`
+	Hello     string `mapstructure:"hello"`
+	HelloFile string `mapstructure:"hello-file"`
 }
 type Config struct {
 	Lang     string `mapstructure:"lang"`
@@ -55,12 +53,6 @@ type Config struct {
 func (a *Admin) Init(brand Brand) {
 	if a.Title == "" {
 		a.Title = brand.Name
-	}
-	if a.IdServerPort == 0 {
-		a.IdServerPort = DefaultIdServerPort
-	}
-	if a.RelayServerPort == 0 {
-		a.RelayServerPort = DefaultRelayServerPort
 	}
 }
 

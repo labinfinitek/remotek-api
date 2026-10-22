@@ -255,8 +255,6 @@ stesso default se la chiave manca dal file.
 | `admin.title` \* | `RUSTDESK_API_ADMIN_TITLE` | vuoto | titolo del pannello; vuoto = `brand.name` |
 | `admin.hello` | `RUSTDESK_API_ADMIN_HELLO` | vuoto | messaggio di benvenuto del pannello (HTML); se non e' vuoto, `admin.hello-file` non si legge |
 | `admin.hello-file` | `RUSTDESK_API_ADMIN_HELLO_FILE` | `./conf/admin/hello.html` | file del benvenuto; `{{username}}` e `{{brand}}` si sostituiscono |
-| `admin.id-server-port` | `RUSTDESK_API_ADMIN_ID_SERVER_PORT` | `21116` | porta di `hbbs` per i comandi del pannello, mandati a `127.0.0.1` sulla porta meno uno |
-| `admin.relay-server-port` | `RUSTDESK_API_ADMIN_RELAY_SERVER_PORT` | `21117` | porta di `hbbr` per i comandi del pannello, su `127.0.0.1` |
 | `gin.api-addr` | `RUSTDESK_API_GIN_API_ADDR` | `0.0.0.0:21114` | indirizzo di ascolto |
 | `gin.mode` | `RUSTDESK_API_GIN_MODE` | `release` | `release`, `debug`, `test` |
 | `gin.resources-path` | `RUSTDESK_API_GIN_RESOURCES_PATH` | `resources` | cartella di pannello, lingue e modelli; senza i file di lingua l'avvio si ferma |
@@ -388,8 +386,8 @@ codice:
 - il titolo che il pannello mostra prima di caricare la configurazione si
   fissa nella build: `docker build --build-arg BRAND_NAME=<nome> ...`.
 
-Non cambiano nome: il prefisso `RUSTDESK_API_`, la sezione `rustdesk:`, le
-rotte `/api/admin/rustdesk/*`, il module path Go.
+Non cambiano nome: il prefisso `RUSTDESK_API_`, la sezione `rustdesk:`, il
+module path Go.
 
 ## Sicurezza
 

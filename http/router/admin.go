@@ -40,31 +40,13 @@ func Init(g *gin.Engine) {
 	AddressBookCollectionRuleBind(adg)
 	UserTokenBind(adg)
 
-	// deprecated by ConfigBind
-	// rs := &admin.Rustdesk{}
-	// adg.GET("/server-config", rs.ServerConfig)
-	// adg.GET("/app-config", rs.AppConfig)
-	// deprecated end
-
 	MyBind(adg)
 
-	RustdeskCmdBind(adg)
 	DeviceGroupBind(adg)
 	// 访问静态文件
 	// g.StaticFS("/upload", http.Dir(global.Config.Gin.ResourcesPath+"/upload"))
 }
 
-func RustdeskCmdBind(adg *gin.RouterGroup) {
-	cont := &admin.Rustdesk{}
-	// Solo amministratori: i comandi vanno a hbbs e hbbr (relay, blocco degli
-	// IP, limiti di banda) e valgono per tutto il server.
-	rg := adg.Group("/rustdesk").Use(middleware.AdminPrivilege())
-	rg.POST("/sendCmd", cont.SendCmd)
-	rg.GET("/cmdList", cont.CmdList)
-	rg.POST("/cmdDelete", cont.CmdDelete)
-	rg.POST("/cmdCreate", cont.CmdCreate)
-	rg.POST("/cmdUpdate", cont.CmdUpdate)
-}
 func LoginBind(rg *gin.RouterGroup) {
 	cont := &admin.Login{}
 	rg.POST("/login", cont.Login)

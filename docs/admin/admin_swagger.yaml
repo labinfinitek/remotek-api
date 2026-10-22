@@ -804,25 +804,6 @@ definitions:
       total:
         type: integer
     type: object
-  model.ServerCmd:
-    properties:
-      alias:
-        type: string
-      cmd:
-        type: string
-      created_at:
-        type: string
-      explain:
-        type: string
-      id:
-        type: integer
-      option:
-        type: string
-      target:
-        type: string
-      updated_at:
-        type: string
-    type: object
   model.StatusCode:
     enum:
     - 1
@@ -3402,34 +3383,6 @@ paths:
       summary: 设备编辑
       tags:
       - 设备
-  /admin/rustdesk/cmdUpdate:
-    post:
-      consumes:
-      - application/json
-      description: Modifica uno dei comandi del server salvati; solo amministratori.
-      parameters:
-      - description: voce dei comandi, con id
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/model.ServerCmd'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.Response'
-      security:
-      - token: []
-      summary: Modifica uno dei comandi del server
-      tags:
-      - Comandi
   /admin/tag/create:
     post:
       consumes:

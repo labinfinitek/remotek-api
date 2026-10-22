@@ -116,6 +116,28 @@ func TestLinguaPredefinita(t *testing.T) {
 	}
 }
 
+// TestPortePerIComandiIgnorate verifica che una configurazione scritta per
+// le versioni con i comandi al server parta ancora: admin.id-server-port e
+// admin.relay-server-port, nel file o nelle variabili, non servono piu' a
+// niente e si ignorano senza errori.
+func TestPortePerIComandiIgnorate(t *testing.T) {
+	t.Setenv("RUSTDESK_API_ADMIN_ID_SERVER_PORT", "21116")
+	t.Setenv("RUSTDESK_API_ADMIN_RELAY_SERVER_PORT", "21117")
+	path := filepath.Join(t.TempDir(), "config.yaml")
+	testo := "admin:\n  title: Prova\n  id-server-port: 21116\n  relay-server-port: 21117\n"
+	if err := os.WriteFile(path, []byte(testo), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := panicDiInit(path); err != nil {
+		t.Fatalf("Init(%s): %v", path, err)
+	}
+	var c Config
+	Init(&c, path)
+	if c.Admin.Title != "Prova" {
+		t.Errorf("admin.title %q, atteso \"Prova\"", c.Admin.Title)
+	}
+}
+
 // TestErroriDiInit verifica che, se la configurazione non si legge o non si
 // decodifica, il panic di Init sia un errore che nomina il file e avvolge
 // la causa con %w, senza maiuscola iniziale e senza a capo aggiunti.
