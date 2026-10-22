@@ -66,8 +66,10 @@ export function terminalVerify (params) {
 // risposte; un errore dell'API ({code, message}) resta com'e'. Il file
 // comincia sempre con {"connessione":. Un corpo che non e' JSON non viene
 // dall'API (per esempio la pagina HTML di un 502 del proxy): l'errore dice
-// lo stato HTTP invece di quello di JSON.parse. Niente timeout: il file
-// arriva a pezzi e puo' metterci.
+// lo stato HTTP invece di quello di JSON.parse: con la maiuscola
+// nell'avviso, che lo mostra da solo, e com'e' in inFrase per la finestra,
+// che lo scrive dopo i due punti. Niente timeout: il file arriva a pezzi e
+// puo' metterci.
 export function terminalExport (params) {
   return request({
     url: '/audit_conn/terminal/export',
@@ -81,7 +83,10 @@ export function terminalExport (params) {
       try {
         return JSON.parse(text)
       } catch (_) {
-        throw new Error(T('HttpStatusResponse', { status }))
+        const inFrase = T('HttpStatusResponse', { status })
+        const e = new Error(inFrase.charAt(0).toUpperCase() + inFrase.slice(1))
+        e.inFrase = inFrase
+        throw e
       }
     }],
   })

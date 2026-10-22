@@ -105,7 +105,7 @@
     const id = conn.value.id
     exporting.value = true
     exportError.value = ''
-    const res = await terminalExport({ audit_conn_id: id }).catch(e => ({ error: (e && e.message) || 'error' }))
+    const res = await terminalExport({ audit_conn_id: id }).catch(e => ({ error: (e && (e.inFrase || e.message)) || 'error' }))
     if (mine !== last) {
       return
     }

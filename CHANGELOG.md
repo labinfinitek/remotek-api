@@ -17,6 +17,9 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 - Pannello: "Esci" con il token gia' scaduto o senza rete non mostra piu'
   per un attimo l'avviso rosso ("Accedi prima di continuare.", "Network
   Error") prima della pagina di accesso; l'uscita resta la stessa.
+- Pannello: l'avviso dell'esportazione della trascrizione non riuscita
+  comincia con la maiuscola ("Risposta HTTP 502 dal server"); nella
+  finestra, dopo i due punti, resta minuscolo.
 
 ### Sicurezza
 - Go 1.26.10: corregge GO-2026-6809 (CVE-2026-111943) della libreria
