@@ -611,9 +611,16 @@ altri, quindi l'ordine sicuro e' quello di `ora`.
 | `pc.nuovo` | un sysinfo crea un PC che l'API non conosceva |
 | `pc.possibile_copia` | l'API scrive il warn `possibile copia del PC` (Copie dello stesso PC), al massimo uno all'ora per PC; con `copia.cambi`, senza gli indirizzi |
 
-**Campi.** Ogni evento ha `schema`, `id`, `tipo`, `ora` e `pc`; gli eventi
-delle connessioni e `terminale.chiuso` hanno `sessione`, gli altri tipi il
-loro oggetto (`file`, `verifica`, `copia`) e nient'altro. Per esempio:
+**Campi.** Ogni evento ha `schema`, `id`, `tipo`, `ora` e `pc`; oltre a
+questi, e nient'altro:
+
+- `connessione.aperta`, `connessione.chiusa`, `connessione.nota`: `sessione`;
+- `file.trasferiti`: `file`;
+- `terminale.chiuso`: `sessione` e `verifica`;
+- `pc.nuovo`: nessun altro campo;
+- `pc.possibile_copia`: `copia`.
+
+Per esempio:
 
 ```json
 {
