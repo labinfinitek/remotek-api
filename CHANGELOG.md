@@ -17,6 +17,17 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   Senza chiave la rotta lo rifiuta; un file che manca, leggibile da altri o
   con una chiave non valida ferma l'avvio (README, Lasciapassare
   dell'agente).
+- Lasciapassare dell'agente: `POST /api/audit/conn` accetta il campo
+  facoltativo `lasciapassare` col nonce; se e' di un lasciapassare per
+  quello stesso PC non ancora usato, lo lega alla connessione e segna la
+  riga del registro (migrazione 274) con agente e tecnico verificati. Il
+  campo facoltativo `amministratore`, che manda il PC, dice se la shell ha
+  i permessi di amministratore, con o senza agente. Nel pannello le
+  etichette, indipendenti, "Agente verificato" e "Amministratore";
+  `connessione.aperta` e `connessione.chiusa` portano
+  `sessione.amministratore` e, se verificate, `agente`. Un nonce
+  sconosciuto, di un altro PC o gia' usato da' un warn e la riga si salva
+  come prima; senza i campi non cambia niente.
 
 ### Sicurezza
 - Immagine di base Alpine 3.24.3: zlib 1.3.2-r1 (CVE-2026-85091, MEDIUM) e

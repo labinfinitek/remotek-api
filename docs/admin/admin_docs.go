@@ -5741,6 +5741,13 @@ const docTemplateadmin = `{
                 "action": {
                     "type": "string"
                 },
+                "agente_lasciapassare": {
+                    "description": "AgenteLasciapassare e TecnicoLasciapassare sono gli username\ndell'agente AI e del suo tecnico verificati col lasciapassare\n(ADR-0028, versione del database 274), vuoti per una connessione\nsenza. Amministratore dice, come l'ha detto il PC, che la shell della\nsessione ha i permessi di amministratore, con o senza agente.",
+                    "type": "string"
+                },
+                "amministratore": {
+                    "type": "boolean"
+                },
                 "close_time": {
                     "type": "integer"
                 },
@@ -5769,6 +5776,9 @@ const docTemplateadmin = `{
                     "type": "string"
                 },
                 "session_id": {
+                    "type": "string"
+                },
+                "tecnico_lasciapassare": {
                     "type": "string"
                 },
                 "type": {

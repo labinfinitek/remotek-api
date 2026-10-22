@@ -257,7 +257,8 @@ func TestPuliziaCoda(t *testing.T) {
 
 // TestCampiEventi controlla l'elenco dei campi di ogni tipo e che uuid,
 // IP, guid, session_id e chiave non escano. La connessione e' quella dopo
-// l'autorizzazione, che porta tecnico e type: l'apertura esce li'.
+// l'autorizzazione, che porta tecnico e type: l'apertura esce li'. Aperta e
+// chiusa hanno anche sessione.amministratore, la nota no.
 func TestCampiEventi(t *testing.T) {
 	codaDiProva(t, 200)
 	pc := &model.Peer{Id: "999000111", Hostname: "PC-ROSSI", Alias: "Rossi", Uuid: "dXVpZC1zZWdyZXRv", ChiavePubblica: "Y2hpYXZl", LastOnlineIp: "198.51.100.1"}
@@ -279,14 +280,19 @@ func TestCampiEventi(t *testing.T) {
 	}
 	campi := []string{"id", "ora", "pc", "schema", "sessione", "tipo"}
 	campiPc := []string{"alias", "id", "nome"}
-	campiSessione := []string{"conn_id", "durata_s", "fine", "inizio", "nota", "tecnico", "tipo"}
+	campiNota := []string{"conn_id", "durata_s", "fine", "inizio", "nota", "tecnico", "tipo"}
+	campiSessione := append([]string{"amministratore"}, campiNota...)
 	for i, e := range eventi(t) {
 		var c map[string]any
 		if err := json.Unmarshal([]byte(e.Corpo), &c); err != nil {
 			t.Fatal(err)
 		}
 		s := c["sessione"].(map[string]any)
-		if !slices.Equal(chiavi(c), campi) || !slices.Equal(chiavi(c["pc"].(map[string]any)), campiPc) || !slices.Equal(chiavi(s), campiSessione) {
+		cs := campiSessione
+		if e.Tipo == EventoConnessioneNota {
+			cs = campiNota
+		}
+		if !slices.Equal(chiavi(c), campi) || !slices.Equal(chiavi(c["pc"].(map[string]any)), campiPc) || !slices.Equal(chiavi(s), cs) {
 			t.Errorf("%s: campi %v, pc %v, sessione %v", e.Tipo, chiavi(c), chiavi(c["pc"].(map[string]any)), chiavi(s))
 		}
 		for _, vietato := range []string{"dXVpZC1zZWdyZXRv", "Y2hpYXZl", "198.51.100.1", "203.0.113.7", "0123456789abcdef", "9007199254740993"} {
@@ -300,11 +306,44 @@ func TestCampiEventi(t *testing.T) {
 		if i == 2 {
 			want["sessione"].(map[string]any)["fine"], want["sessione"].(map[string]any)["durata_s"] = "2026-10-11T09:01:30Z", 90.0
 		}
+		if i != 1 {
+			want["sessione"].(map[string]any)["amministratore"] = false
+		}
 		if !reflect.DeepEqual(c, want) {
 			t.Errorf("%s:\n got  %v\n want %v", e.Tipo, c, want)
 		}
 		if _, err := time.Parse(time.RFC3339, c["ora"].(string)); err != nil || !strings.HasSuffix(c["ora"].(string), "Z") {
 			t.Errorf("%s: ora %v non RFC 3339 UTC", e.Tipo, c["ora"])
+		}
+	}
+}
+
+// TestCampiEventiVerificati: una sessione verificata col lasciapassare
+// (ADR-0028) da' ad aperta e chiusa anche agente, con agente, tecnico e
+// amministratore, e niente altro in piu'; la nota resta senza.
+func TestCampiEventiVerificati(t *testing.T) {
+	codaDiProva(t, 200)
+	conn := &model.AuditConn{ConnId: 7, PeerId: "999000111", FromName: "agente-mario", AgenteLasciapassare: "agente-mario",
+		TecnicoLasciapassare: "mario", Amministratore: true}
+	for _, tipo := range []string{EventoConnessioneAperta, EventoConnessioneNota, EventoConnessioneChiusa} {
+		if err := AllService.EventiService.AccodaSessione(tipo, conn); err != nil {
+			t.Fatal(err)
+		}
+	}
+	segnato := map[string]any{"agente": "agente-mario", "tecnico": "mario", "amministratore": true}
+	want := map[string]map[string]any{EventoConnessioneAperta: segnato, EventoConnessioneNota: nil, EventoConnessioneChiusa: segnato}
+	for _, e := range eventi(t) {
+		var c map[string]any
+		if err := json.Unmarshal([]byte(e.Corpo), &c); err != nil {
+			t.Fatal(err)
+		}
+		campi := []string{"id", "ora", "pc", "schema", "sessione", "tipo"}
+		if want[e.Tipo] != nil {
+			campi = []string{"agente", "id", "ora", "pc", "schema", "sessione", "tipo"}
+		}
+		a, _ := c["agente"].(map[string]any)
+		if !slices.Equal(chiavi(c), campi) || (want[e.Tipo] != nil && !reflect.DeepEqual(a, want[e.Tipo])) {
+			t.Errorf("%s: campi %v, agente %v", e.Tipo, chiavi(c), c["agente"])
 		}
 	}
 }

@@ -1858,6 +1858,10 @@ const docTemplateapi = `{
                 "action": {
                     "type": "string"
                 },
+                "amministratore": {
+                    "description": "Amministratore dice se la shell della connessione gira davvero con i\npermessi di amministratore (SYSTEM); facoltativo, lo dice il PC.",
+                    "type": "boolean"
+                },
                 "conn_id": {
                     "type": "integer"
                 },
@@ -1865,6 +1869,10 @@ const docTemplateapi = `{
                     "type": "string"
                 },
                 "ip": {
+                    "type": "string"
+                },
+                "lasciapassare": {
+                    "description": "Lasciapassare e' il nonce del lasciapassare con cui l'agente AI apre\nla sessione (ADR-0028); facoltativo.",
                     "type": "string"
                 },
                 "note": {
