@@ -151,3 +151,99 @@ func TestAuditConLasciapassare(t *testing.T) {
 }
 
 func itoa(n int) string { return strconv.Itoa(n) }
+
+// TestLasciapassareRigaDellaConnessione prova sul router vero il legame del
+// lasciapassare alla riga di audit_conns (versione del database 275):
+//   - due lasciapassare usati da due connessioni dello stesso PC con lo
+//     stesso conn_id (il client riparte da capo a ogni riavvio) restano
+//     legati ciascuno alla sua riga;
+//   - amministratore vero col new e falso all'autorizzazione lascia la riga
+//     a falso;
+//   - una connessione senza conn_id non lega (warn);
+//   - un errore del database nel legame e' un error, non un warn.
+func TestLasciapassareRigaDellaConnessione(t *testing.T) {
+	g, registro := integrazioneDiProva(t, "https://n8n.example/webhook")
+	if err := service.DB.AutoMigrate(&model.Lasciapassare{}); err != nil {
+		t.Fatal(err)
+	}
+	no := false
+	crea(t, &model.User{Username: "mario", GroupId: 1, IsAdmin: &no, Status: model.COMMON_STATUS_ENABLE})
+	crea(t, &model.User{Username: "agente-mario", GroupId: 1, IsAdmin: &no, Status: model.COMMON_STATUS_ENABLE, AgenteDi: 2})
+	for _, lp := range []*model.Lasciapassare{
+		{Nonce: "nonce-prima", Pc: "999000111", AgenteId: 3, TecnicoId: 2, Emesso: 1, Scade: 61, Creato: 1},
+		{Nonce: "nonce-dopo", Pc: "999000111", AgenteId: 3, TecnicoId: 2, Emesso: 1, Scade: 61, Creato: 1},
+		{Nonce: "nonce-senza-conn", Pc: "999000111", AgenteId: 3, TecnicoId: 2, Emesso: 1, Scade: 61, Creato: 1},
+	} {
+		crea(t, lp)
+	}
+	manda := func(corpo string) {
+		t.Helper()
+		if rec := daTecnico(g, "POST", "/api/audit/conn", "", corpo); rec.Code != 200 {
+			t.Errorf("%s: %d %s", corpo, rec.Code, rec.Body)
+		}
+	}
+	conn := func(id int, nuovo, auth string) {
+		t.Helper()
+		manda(`{"action":"new","conn_id":` + itoa(id) + `,"id":"999000111","session_id":1,"uuid":"` + uuidSalvato + `"` + nuovo + `}`)
+		if id != 0 {
+			manda(`{"conn_id":` + itoa(id) + `,"id":"999000111","peer":["111222333","agente-mario"],"session_id":1,"type":0,"uuid":"` + uuidSalvato + `"` + auth + `}`)
+		}
+	}
+	conn(7, `,"lasciapassare":"nonce-prima"`, "")
+	manda(`{"action":"close","conn_id":7,"id":"999000111","session_id":1,"uuid":"` + uuidSalvato + `"}`)
+	conn(7, `,"lasciapassare":"nonce-dopo"`, "") // il PC e' ripartito: stesso conn_id
+	conn(8, `,"amministratore":true`, `,"amministratore":false`)
+	conn(0, `,"lasciapassare":"nonce-senza-conn"`, "")
+
+	var righe []model.AuditConn
+	if err := service.DB.Order("id").Find(&righe).Error; err != nil || len(righe) != 4 {
+		t.Fatalf("%d righe di audit_conns (%v), attese 4", len(righe), err)
+	}
+	var lps []model.Lasciapassare
+	if err := service.DB.Order("id").Find(&lps).Error; err != nil {
+		t.Fatal(err)
+	}
+	type legame struct {
+		ConnId      int64
+		AuditConnId uint
+	}
+	got := map[string]legame{}
+	for _, lp := range lps {
+		got[lp.Nonce] = legame{lp.ConnId, lp.AuditConnId}
+	}
+	want := map[string]legame{"nonce-prima": {7, righe[0].Id}, "nonce-dopo": {7, righe[1].Id}, "nonce-senza-conn": {}}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("legami:\n got  %v\n want %v", got, want)
+	}
+	if righe[0].AgenteLasciapassare != "agente-mario" || righe[1].AgenteLasciapassare != "agente-mario" || righe[3].AgenteLasciapassare != "" {
+		t.Errorf("agenti sulle righe: %q %q %q", righe[0].AgenteLasciapassare, righe[1].AgenteLasciapassare, righe[3].AgenteLasciapassare)
+	}
+	if righe[2].Amministratore {
+		t.Error("amministratore vero col new e falso all'autorizzazione: la riga dice ancora vero")
+	}
+	log := registro.String()
+	for motivo, n := range map[string]int{"connessione 0 del PC 999000111: connessione senza conn_id": 1} {
+		if got := logger.Conta(log, "WARN", motivo); got != n {
+			t.Errorf("%d warn %q, attesi %d", got, motivo, n)
+		}
+	}
+	if n := logger.Conta(log, "ERROR", "lasciapassare non legato"); n != 0 {
+		t.Errorf("%d error sul legame, attesi 0:\n%s", n, log)
+	}
+
+	// (d) Un errore del database nel legame e' un error, non un warn: senza
+	// la tabella lasciapassare la prima query fallisce. La riga si salva
+	// senza agente e al PC va la risposta di sempre.
+	if err := service.DB.Migrator().DropTable(&model.Lasciapassare{}); err != nil {
+		t.Fatal(err)
+	}
+	conn(11, `,"lasciapassare":"nonce-prima"`, "")
+	var ultima model.AuditConn
+	if err := service.DB.Last(&ultima).Error; err != nil || ultima.ConnId != 11 || ultima.AgenteLasciapassare != "" {
+		t.Errorf("riga della connessione 11: %+v (%v), attesa senza agente", ultima, err)
+	}
+	log = registro.String()
+	if logger.Conta(log, "ERROR", "lasciapassare non legato alla connessione 11") != 1 || logger.Conta(log, "WARN", "connessione 11 del PC") != 0 {
+		t.Errorf("errore del database: atteso un ERROR e nessun WARN sulla connessione 11:\n%s", log)
+	}
+}

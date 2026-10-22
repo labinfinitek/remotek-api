@@ -813,13 +813,20 @@ lasciapassare, manda il suo `nonce` nel campo facoltativo `lasciapassare` di
 `POST /api/audit/conn` (rotta del PC, firmata come le altre: Firma del
 dispositivo), col `new` o con l'autorizzazione. Se il nonce e' di un
 lasciapassare rilasciato per quello stesso PC e non ha ancora aperto una
-sessione, l'API scrive sul lasciapassare il `conn_id` della connessione e
-segna la riga di `audit_conns` (colonne `agente_lasciapassare` e
-`tecnico_lasciapassare`, versione del database 274) con l'agente e il
-tecnico verificati; una riga INFO lo dice. Una connessione gia' segnata non
-si rilega. Un nonce sconosciuto, di un altro PC o gia' usato lascia un warn
-con la connessione, il PC e il motivo (mai il nonce), e la riga si salva
-come senza il campo; al PC va la risposta di sempre.
+sessione, l'API lega il lasciapassare alla riga del registro: scrive sul
+lasciapassare `audit_conn_id`, l'`id` della riga di `audit_conns`
+(versione del database 275), e il `conn_id` della connessione. Il legame
+che vale e' la riga: il `conn_id` lo da' il client e riparte a ogni riavvio
+del PC, quindi PC e `conn_id` non bastano a dire quale sessione era. Poi
+segna la riga (colonne `agente_lasciapassare` e `tecnico_lasciapassare`,
+versione 274) con l'agente e il tecnico verificati; una riga INFO lo dice.
+Una connessione gia' segnata non si rilega, e una connessione senza
+`conn_id` non lega. Un nonce sconosciuto, di un altro PC o gia' usato
+lascia un warn con la connessione, il PC e il motivo (mai il nonce); un
+errore del database e' un error. La riga si salva come senza il campo, e al
+PC va la risposta di sempre. `scade` qui non conta: il PC verifica il
+lasciapassare quando apre la sessione, ma il nonce puo' arrivare all'audit
+anche minuti dopo, al clic del cliente.
 
 **Permessi di amministratore.** Non li dice il lasciapassare ma il PC: il
 campo facoltativo `amministratore` (booleano) di `POST /api/audit/conn`, col
