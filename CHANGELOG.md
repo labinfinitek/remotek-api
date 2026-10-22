@@ -6,6 +6,14 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+## [0.7.2] - 2026-10-22
+Immagine `ghcr.io/labinfinitek/remotek-api:0.7.2`, costruita con Go 1.26.10.
+Rilascio di sicurezza e di correzione: Go 1.26.10 per GO-2026-6809
+(`crypto/x509`), piu' piccole correzioni dell'integrazione e del pannello.
+Nessun cambio incompatibile: nessuna migrazione del database, nessuna
+variabile nuova, rotte e contratto col client invariati. Dalla 0.6.0 si
+puo' passare direttamente alla 0.7.2.
+
 ### Corretto
 - Integrazione: un trasferimento di file con un type diverso da 0 (dal PC) e
   1 (al PC) non accoda piu' `file.trasferiti` come `dal_pc`, ma scrive un
