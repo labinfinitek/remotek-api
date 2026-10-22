@@ -58,10 +58,13 @@
       margin-left: 10px;
     }
 
+    // Altezza fissa e larghezza dal logo: un marchio largo non si rimpicciolisce.
     .logo {
       display: block;
-      width: 30px;
       height: 30px;
+      width: auto;
+      max-width: 160px;
+      object-fit: contain;
     }
   }
 

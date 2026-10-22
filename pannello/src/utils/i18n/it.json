@@ -694,5 +694,8 @@
   },
   "Administrator": {
     "One": "Amministratore"
+  },
+  "Language": {
+    "One": "Lingua"
   }
 }
