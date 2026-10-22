@@ -36,6 +36,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   errore del database nel legame e' un error, non piu' un warn (README,
   Lasciapassare dell'agente).
 
+### Corretto
+- Pannello: il selettore della lingua mostra la sigla della lingua attiva
+  ("IT", "EN") al posto del glifo "文A", con l'etichetta accessibile
+  "Lingua: IT" / "Language: EN".
+
 ### Sicurezza
 - Lasciapassare dell'agente: `POST /api/agente/lasciapassare` rilascia il
   lasciapassare solo per un PC nella rubrica del tecnico dell'agente (una
