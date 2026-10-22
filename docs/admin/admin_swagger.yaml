@@ -458,6 +458,16 @@ definitions:
     properties:
       action:
         type: string
+      agente_lasciapassare:
+        description: |-
+          AgenteLasciapassare e TecnicoLasciapassare sono gli username
+          dell'agente AI e del suo tecnico verificati col lasciapassare
+          (ADR-0028, versione del database 274), vuoti per una connessione
+          senza. Amministratore dice, come l'ha detto il PC, che la shell della
+          sessione ha i permessi di amministratore, con o senza agente.
+        type: string
+      amministratore:
+        type: boolean
       close_time:
         type: integer
       conn_id:
@@ -477,6 +487,8 @@ definitions:
       peer_id:
         type: string
       session_id:
+        type: string
+      tecnico_lasciapassare:
         type: string
       type:
         type: integer

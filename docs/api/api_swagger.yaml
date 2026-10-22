@@ -17,11 +17,21 @@ definitions:
     properties:
       action:
         type: string
+      amministratore:
+        description: |-
+          Amministratore dice se la shell della connessione gira davvero con i
+          permessi di amministratore (SYSTEM); facoltativo, lo dice il PC.
+        type: boolean
       conn_id:
         type: integer
       id:
         type: string
       ip:
+        type: string
+      lasciapassare:
+        description: |-
+          Lasciapassare e' il nonce del lasciapassare con cui l'agente AI apre
+          la sessione (ADR-0028); facoltativo.
         type: string
       note:
         description: c'e' solo nella nota durante la sessione

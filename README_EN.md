@@ -615,7 +615,10 @@ others, so the reliable order is `ora`.
 **Fields.** Every event has `schema`, `id`, `tipo`, `ora` and `pc`; on top
 of these, and nothing else:
 
-- `connessione.aperta`, `connessione.chiusa`, `connessione.nota`: `sessione`;
+- `connessione.aperta`, `connessione.chiusa`: `sessione` (with
+  `amministratore`), and `agente` if the session is verified with the pass
+  (Agent pass);
+- `connessione.nota`: `sessione`;
 - `file.trasferiti`: `file`;
 - `terminale.chiuso`: `sessione` and `verifica`;
 - `pc.nuovo`: no other field;
@@ -634,7 +637,7 @@ For example:
   "sessione": {
     "conn_id": 7, "tipo": 0, "tecnico": "mario",
     "inizio": "2026-10-11T09:00:00Z", "fine": "2026-10-11T09:01:30Z",
-    "durata_s": 90, "nota": "#83100"
+    "durata_s": 90, "nota": "#83100", "amministratore": false
   }
 }
 ```
@@ -642,7 +645,9 @@ For example:
 `id` is a random event uuid, `ora` when it was created (RFC 3339, UTC).
 `pc.nome` is the hostname. `sessione.tipo` is the log's type, as in the
 panel (4 = terminal), `tecnico` the technician's name (`from_name`);
-`fine` and `durata_s` are `null` while the connection is open.
+`fine` and `durata_s` are `null` while the connection is open;
+`amministratore` (only in aperta and chiusa) says whether the shell has
+administrator rights, as the PC said.
 The other objects:
 
 ```json
@@ -782,6 +787,36 @@ is 1, `modo` is `amministratore`, `pc` equals its own ID,
 has never seen the `nonce` before; otherwise it refuses. The window shows
 `agente` and `tecnico` from the payload, not the name declared by the
 client.
+
+**Link to the connection.** When the PC opens the session with the pass,
+it sends its `nonce` in the optional `lasciapassare` field of
+`POST /api/audit/conn` (the PC's route, signed like the others: Device
+signature), with the `new` or with the authorization. If the nonce belongs
+to a pass issued for that same PC that has not opened a session yet, the
+API writes the connection's `conn_id` on the pass and marks the
+`audit_conns` row (columns `agente_lasciapassare` and
+`tecnico_lasciapassare`, database version 274) with the verified agent and
+technician; an INFO line says so. A connection already marked is not
+linked again. An unknown nonce, one of another PC or one already used
+leaves a warn with the connection, the PC and the reason (never the
+nonce), and the row is saved as without the field; the PC gets the usual
+answer.
+
+**Administrator rights.** The pass does not say them, the PC does: the
+optional `amministratore` field (boolean) of `POST /api/audit/conn`, with
+the `new` or with the authorization (where the customer's choice arrives,
+for example "accept as user"), says whether that connection's shell really
+runs with administrator rights (SYSTEM). The API writes it as received in
+the `amministratore` column, even without a nonce: a technician using the
+administrator terminal with Windows credentials is an administrator
+without being an agent. Without the two fields nothing changes.
+
+In the panel, in the connection log, the "Verified agent" label (with
+agent and technician) appears only with a linked nonce, and
+"Administrator" only when the PC said so: they are independent. The
+`connessione.aperta` and `connessione.chiusa` events carry
+`sessione.amministratore` and, for a verified session, `agente` with
+`amministratore` taken from the row.
 
 ## Origin and licence
 

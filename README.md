@@ -617,7 +617,10 @@ altri, quindi l'ordine sicuro e' quello di `ora`.
 **Campi.** Ogni evento ha `schema`, `id`, `tipo`, `ora` e `pc`; oltre a
 questi, e nient'altro:
 
-- `connessione.aperta`, `connessione.chiusa`, `connessione.nota`: `sessione`;
+- `connessione.aperta`, `connessione.chiusa`: `sessione` (con
+  `amministratore`), e `agente` se la sessione e' verificata col
+  lasciapassare (Lasciapassare dell'agente);
+- `connessione.nota`: `sessione`;
 - `file.trasferiti`: `file`;
 - `terminale.chiuso`: `sessione` e `verifica`;
 - `pc.nuovo`: nessun altro campo;
@@ -636,7 +639,7 @@ Per esempio:
   "sessione": {
     "conn_id": 7, "tipo": 0, "tecnico": "mario",
     "inizio": "2026-10-11T09:00:00Z", "fine": "2026-10-11T09:01:30Z",
-    "durata_s": 90, "nota": "#83100"
+    "durata_s": 90, "nota": "#83100", "amministratore": false
   }
 }
 ```
@@ -644,7 +647,9 @@ Per esempio:
 `id` e' un uuid casuale dell'evento, `ora` quando e' nato (RFC 3339, UTC).
 `pc.nome` e' l'hostname. `sessione.tipo` e' il type del registro, come nel
 pannello (4 = terminale), `tecnico` il nome del tecnico (`from_name`);
-`fine` e `durata_s` sono `null` finche' la connessione e' aperta.
+`fine` e `durata_s` sono `null` finche' la connessione e' aperta;
+`amministratore` (solo in aperta e chiusa) dice se la shell ha i permessi
+di amministratore, come l'ha detto il PC.
 Gli altri oggetti:
 
 ```json
@@ -785,6 +790,36 @@ sono arrivati, prima di decodificare il JSON. Poi accetta solo se `v` e' 1,
 orologi) e il `nonce` non l'ha mai visto prima; altrimenti rifiuta. La
 finestra mostra `agente` e `tecnico` del payload, non il nome dichiarato
 dal client.
+
+**Collegamento alla connessione.** Il PC, quando apre la sessione col
+lasciapassare, manda il suo `nonce` nel campo facoltativo `lasciapassare` di
+`POST /api/audit/conn` (rotta del PC, firmata come le altre: Firma del
+dispositivo), col `new` o con l'autorizzazione. Se il nonce e' di un
+lasciapassare rilasciato per quello stesso PC e non ha ancora aperto una
+sessione, l'API scrive sul lasciapassare il `conn_id` della connessione e
+segna la riga di `audit_conns` (colonne `agente_lasciapassare` e
+`tecnico_lasciapassare`, versione del database 274) con l'agente e il
+tecnico verificati; una riga INFO lo dice. Una connessione gia' segnata non
+si rilega. Un nonce sconosciuto, di un altro PC o gia' usato lascia un warn
+con la connessione, il PC e il motivo (mai il nonce), e la riga si salva
+come senza il campo; al PC va la risposta di sempre.
+
+**Permessi di amministratore.** Non li dice il lasciapassare ma il PC: il
+campo facoltativo `amministratore` (booleano) di `POST /api/audit/conn`, col
+`new` o con l'autorizzazione (dove arriva la scelta del cliente, per
+esempio "accetta come utente"), dice se la shell di quella connessione gira
+davvero con i permessi di amministratore (SYSTEM). L'API lo scrive com'e'
+arrivato nella colonna `amministratore`, anche senza nonce: un tecnico
+che usa il terminale da amministratore con le credenziali di Windows e'
+amministratore senza essere un agente. Senza i due campi non cambia
+niente.
+
+Nel pannello, nel registro delle connessioni, l'etichetta "Agente
+verificato" (con agente e tecnico) c'e' solo col nonce legato, e
+"Amministratore" solo quando il PC l'ha detto: sono indipendenti. Gli
+eventi `connessione.aperta` e `connessione.chiusa` portano
+`sessione.amministratore` e, per una sessione verificata, `agente` con
+`amministratore` preso dalla riga.
 
 ## Origine e licenza
 

@@ -67,6 +67,8 @@ func (a *Audit) AuditConn(c *gin.Context) {
 	case model.AuditActionNew:
 		if err := service.AllService.AuditService.CreateAuditConn(ac); err != nil {
 			auditNonSalvato(c, err)
+		} else {
+			legaLasciapassare(c, af.Lasciapassare, ac)
 		}
 	case model.AuditActionClose:
 		ex, err := connessioneAudit(c, af.Id, af.ConnId)
@@ -90,7 +92,18 @@ func (a *Audit) AuditConn(c *gin.Context) {
 			}
 			if err := service.AllService.AuditService.UpdateAuditConn(up); err != nil {
 				auditNonSalvato(c, err)
-			} else if ex.FromName != up.FromName || ex.Type != up.Type || ex.SessionId != up.SessionId {
+				break
+			}
+			if af.Amministratore != nil {
+				// La scelta del cliente ("accetta come utente") arriva qui.
+				if err := service.AllService.AuditService.SegnaAmministratore(ex.Id, *af.Amministratore); err != nil {
+					auditNonSalvato(c, err)
+				} else {
+					ex.Amministratore = *af.Amministratore
+				}
+			}
+			legaLasciapassare(c, af.Lasciapassare, ex)
+			if ex.FromName != up.FromName || ex.Type != up.Type || ex.SessionId != up.SessionId {
 				// L'apertura esce qui, all'autorizzazione, la prima richiesta
 				// con tecnico e tipo: il "new" arriva all'apertura del socket
 				// senza (golden audit-conn-new). Una ripetizione uguale non
@@ -101,6 +114,22 @@ func (a *Audit) AuditConn(c *gin.Context) {
 		}
 	}
 	response.Success(c, "")
+}
+
+// legaLasciapassare collega alla connessione conn il lasciapassare col
+// nonce nonce, se c'e' (ADR-0028). Il PC puo' mandarlo col new e con
+// l'autorizzazione: una connessione gia' verificata resta com'e'. Se non si
+// lega, un warn con la connessione, il PC e il motivo, mai il nonce: la riga
+// resta com'e' e al PC va la risposta di sempre.
+func legaLasciapassare(c *gin.Context, nonce string, conn *model.AuditConn) {
+	if nonce == "" || conn.AgenteLasciapassare != "" {
+		return
+	}
+	if err := service.AllService.LasciapassareService.Lega(nonce, conn); err != nil {
+		global.Logger.Per(c.Request.Context()).Warnf("%s %s: lasciapassare non legato alla connessione %d del PC %s: %v", c.Request.Method, c.FullPath(), conn.ConnId, conn.PeerId, err)
+		return
+	}
+	global.Logger.Per(c.Request.Context()).Infof("connessione %d del PC %s aperta col lasciapassare: agente %s, tecnico %s", conn.ConnId, conn.PeerId, conn.AgenteLasciapassare, conn.TecnicoLasciapassare)
 }
 
 // notaDiSessione scrive la nota durante la sessione sulla connessione piu'

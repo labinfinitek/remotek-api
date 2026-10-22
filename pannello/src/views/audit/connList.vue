@@ -21,7 +21,14 @@
         <el-table-column prop="id" label="ID" align="center" width="100"/>
         <el-table-column :label="T('Peer')" prop="peer_id" align="center" width="120"/>
         <el-table-column :label="T('FromPeer')" prop="from_peer" align="center" width="120"/>
-        <el-table-column :label="T('FromName')" prop="from_name" align="center" width="120"/>
+        <el-table-column :label="T('FromName')" prop="from_name" align="center" width="160">
+          <template #default="{row}">
+            <div>{{ row.from_name }}</div>
+            <!-- Agente AI verificato col lasciapassare e permessi detti dal PC (ADR-0028), indipendenti -->
+            <el-tag v-if="row.agente_lasciapassare" type="success">{{ T('VerifiedAgent', { agente: row.agente_lasciapassare, tecnico: row.tecnico_lasciapassare }) }}</el-tag>
+            <el-tag v-if="row.amministratore" type="danger">{{ T('Administrator') }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column :label="T('Ip')" prop="ip" align="center" width="120"/>
         <el-table-column pop="type" :label="T('Type')" align="center" width="120">
           <template #default="{row}">

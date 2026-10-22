@@ -55,6 +55,9 @@ type SessioneEvento struct {
 	Fine    *string `json:"fine"`
 	DurataS *int64  `json:"durata_s"`
 	Nota    string  `json:"nota"`
+	// Amministratore c'e' solo in connessione.aperta e connessione.chiusa:
+	// se la shell ha i permessi di amministratore, come l'ha detto il PC.
+	Amministratore *bool `json:"amministratore,omitempty"`
 }
 
 // FileEvento e' un trasferimento di file: direzione e numero, mai nomi ne'
@@ -106,12 +109,22 @@ type EventiService struct {
 }
 
 // AccodaSessione accoda l'evento tipo della connessione conn, col PC letto
-// dal database; con l'integrazione spenta non fa niente.
+// dal database; connessione.aperta e connessione.chiusa portano anche
+// sessione.amministratore e, per una sessione verificata col lasciapassare,
+// agente. Con l'integrazione spenta non fa niente.
 func (es *EventiService) AccodaSessione(tipo string, conn *model.AuditConn) error {
 	if !Config.Integrazione.Attiva() {
 		return nil
 	}
-	return accodaDelPc(conn.PeerId, corpoEvento{Tipo: tipo, Sessione: sessioneEvento(conn)})
+	c := corpoEvento{Tipo: tipo, Sessione: sessioneEvento(conn)}
+	if tipo == EventoConnessioneAperta || tipo == EventoConnessioneChiusa {
+		ammin := conn.Amministratore
+		c.Sessione.Amministratore = &ammin
+		if conn.AgenteLasciapassare != "" {
+			c.Agente = &AgenteEvento{Agente: conn.AgenteLasciapassare, Tecnico: conn.TecnicoLasciapassare, Amministratore: ammin}
+		}
+	}
+	return accodaDelPc(conn.PeerId, c)
 }
 
 // AccodaFile accoda file.trasferiti per il trasferimento f. Il registro

@@ -59,6 +59,15 @@ func (as *AuditService) UpdateAuditConn(u *model.AuditConn) error {
 	return DB.Model(u).Updates(u).Error
 }
 
+// SegnaAmministratore scrive sulla connessione id se la sua shell ha i
+// permessi di amministratore, come l'ha detto il PC (ADR-0028).
+func (as *AuditService) SegnaAmministratore(id uint, amministratore bool) error {
+	if err := DB.Model(&model.AuditConn{}).Where("id = ?", id).Update("amministratore", amministratore).Error; err != nil {
+		return fmt.Errorf("amministratore della connessione %d: %w", id, err)
+	}
+	return nil
+}
+
 // InfoByPeerIdAndConnId restituisce la connessione connId piu' recente del
 // dispositivo peerId; ErrNotFound se non c'e'. Il client fa ripartire
 // conn_id da un valore casuale a ogni avvio del servizio, quindi lo stesso

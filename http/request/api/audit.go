@@ -18,6 +18,12 @@ type AuditConnForm struct {
 	Type      int      `json:"type"`
 	Uuid      string   `json:"uuid"`
 	Note      *string  `json:"note"` // c'e' solo nella nota durante la sessione
+	// Lasciapassare e' il nonce del lasciapassare con cui l'agente AI apre
+	// la sessione (ADR-0028); facoltativo.
+	Lasciapassare string `json:"lasciapassare"`
+	// Amministratore dice se la shell della connessione gira davvero con i
+	// permessi di amministratore (SYSTEM); facoltativo, lo dice il PC.
+	Amministratore *bool `json:"amministratore"`
 }
 
 // AuditNotaForm e' la nota di fine connessione del tecnico (PUT /api/audit).
@@ -46,6 +52,8 @@ func (a *AuditConnForm) ToAuditConn() *model.AuditConn {
 		SessionId: ssid,
 		Type:      a.Type,
 		Uuid:      a.Uuid,
+		// Il PC puo' dire amministratore gia' col new (ADR-0028).
+		Amministratore: a.Amministratore != nil && *a.Amministratore,
 	}
 }
 

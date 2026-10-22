@@ -688,5 +688,11 @@
   },
   "HttpStatusResponse": {
     "One": "HTTP {status} response from the server"
+  },
+  "VerifiedAgent": {
+    "One": "Verified agent: {agente} (technician {tecnico})"
+  },
+  "Administrator": {
+    "One": "Administrator"
   }
 }

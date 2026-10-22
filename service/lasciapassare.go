@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/lejianwen/rustdesk-api/v2/model"
 )
 
@@ -30,6 +32,14 @@ var (
 	ErrNonAgente           = errors.New("PassNotAgent")
 	ErrTecnicoNonAttivo    = errors.New("PassOwnerDisabled")
 	ErrPcSconosciuto       = errors.New("PassUnknownPc")
+)
+
+// Errori del collegamento di un lasciapassare a una connessione: vanno solo
+// nel log, mai al PC.
+var (
+	ErrNonceSconosciuto = errors.New("nonce di nessun lasciapassare")
+	ErrNonceAltroPc     = errors.New("lasciapassare di un altro PC")
+	ErrNonceUsato       = errors.New("lasciapassare gia' usato")
 )
 
 // PayloadLasciapassare e' cio' che il lasciapassare dice al PC; i campi
@@ -105,4 +115,54 @@ func (ls *LasciapassareService) Rilascia(agente *model.User, pc string, adesso t
 		return "", nil, fmt.Errorf("registro del lasciapassare: %w", err)
 	}
 	return lp, tecnico, nil
+}
+
+// Lega collega alla connessione conn il lasciapassare col nonce nonce, se e'
+// stato rilasciato per il PC di conn e non ha ancora aperto una sessione:
+// segna sul lasciapassare il conn_id di conn e su conn, anche nel database,
+// l'agente e il tecnico verificati. I permessi di amministratore no: li dice
+// il PC (campo amministratore di /api/audit/conn). Altrimenti non cambia
+// niente e restituisce ErrNonceSconosciuto, ErrNonceAltroPc o
+// ErrNonceUsato.
+func (ls *LasciapassareService) Lega(nonce string, conn *model.AuditConn) error {
+	var agente, tecnico model.User
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		lp := &model.Lasciapassare{}
+		if err := tx.Where("nonce = ?", nonce).First(lp).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNonceSconosciuto
+		} else if err != nil {
+			return fmt.Errorf("lasciapassare: %w", err)
+		}
+		switch {
+		case lp.Pc != conn.PeerId:
+			return ErrNonceAltroPc
+		case lp.ConnId != 0:
+			return ErrNonceUsato
+		case conn.ConnId == 0:
+			return errors.New("connessione senza conn_id")
+		}
+		r := tx.Model(lp).Where("conn_id = 0").Update("conn_id", conn.ConnId)
+		if r.Error != nil {
+			return fmt.Errorf("conn_id del lasciapassare: %w", r.Error)
+		}
+		if r.RowsAffected == 0 {
+			return ErrNonceUsato
+		}
+		if err := tx.First(&agente, lp.AgenteId).Error; err != nil {
+			return fmt.Errorf("agente %d del lasciapassare: %w", lp.AgenteId, err)
+		}
+		if err := tx.First(&tecnico, lp.TecnicoId).Error; err != nil {
+			return fmt.Errorf("tecnico %d del lasciapassare: %w", lp.TecnicoId, err)
+		}
+		v := map[string]any{"agente_lasciapassare": agente.Username, "tecnico_lasciapassare": tecnico.Username}
+		if err := tx.Model(&model.AuditConn{}).Where("id = ?", conn.Id).Updates(v).Error; err != nil {
+			return fmt.Errorf("agente del lasciapassare sulla connessione: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	conn.AgenteLasciapassare, conn.TecnicoLasciapassare = agente.Username, tecnico.Username
+	return nil
 }
