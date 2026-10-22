@@ -32,6 +32,7 @@ var (
 	ErrNonAgente           = errors.New("PassNotAgent")
 	ErrTecnicoNonAttivo    = errors.New("PassOwnerDisabled")
 	ErrPcSconosciuto       = errors.New("PassUnknownPc")
+	ErrPcFuoriRubrica      = errors.New("PassPcNotInAddressBook")
 )
 
 // Errori del collegamento di un lasciapassare a una connessione: vanno solo
@@ -76,7 +77,10 @@ type LasciapassareService struct {
 // dell'agente. Rifiuta con ErrLasciapassareSpento senza chiave, con
 // ErrNonAgente se agente non e' un agente AI attivo, con
 // ErrTecnicoNonAttivo se il suo tecnico non c'e' o e' disattivato, con
-// ErrPcSconosciuto se pc non e' in peers.
+// ErrPcSconosciuto se pc non e' in peers, con ErrPcFuoriRubrica (avvolto
+// con PC, tecnico e agente, che il warn della risposta riporta) se pc non e'
+// nella rubrica del tecnico: un agente lavora solo sui PC su cui lavora il
+// suo tecnico.
 func (ls *LasciapassareService) Rilascia(agente *model.User, pc string, adesso time.Time) (string, *model.User, error) {
 	chiave := Config.Agente.Chiave()
 	if chiave == nil {
@@ -98,6 +102,13 @@ func (ls *LasciapassareService) Rilascia(agente *model.User, pc string, adesso t
 		return "", nil, ErrPcSconosciuto
 	} else if err != nil {
 		return "", nil, fmt.Errorf("PC del lasciapassare: %w", err)
+	}
+	switch ok, err := AllService.AddressBookService.NellaRubrica(tecnico, pc); {
+	case err != nil:
+		return "", nil, fmt.Errorf("rubrica del tecnico %d: %w", tecnico.Id, err)
+	case !ok:
+		return "", nil, fmt.Errorf("lasciapassare rifiutato: il PC %s non e' nella rubrica del tecnico %s (agente %s): %w",
+			pc, tecnico.Username, agente.Username, ErrPcFuoriRubrica)
 	}
 	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {

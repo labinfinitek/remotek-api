@@ -30,6 +30,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   come prima; senza i campi non cambia niente.
 
 ### Sicurezza
+- Lasciapassare dell'agente: `POST /api/agente/lasciapassare` rilascia il
+  lasciapassare solo per un PC nella rubrica del tecnico dell'agente (una
+  sua rubrica o una condivisa con lui o con il suo gruppo); un altro PC e'
+  rifiutato con 400 e un warn con agente, tecnico e PC, e non si registra.
+  Prima qualunque agente attivo lo riceveva per qualunque PC conosciuto
+  (README, Lasciapassare dell'agente).
 - Immagine di base Alpine 3.24.3: zlib 1.3.2-r1 (CVE-2026-85091, MEDIUM) e
   musl 1.2.6-r3 (CVE-2026-107891), che trivy segnalava sulla 3.24.2. Il
   binario dell'API e' statico e non le usa; le usano gli strumenti di

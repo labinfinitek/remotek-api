@@ -19,9 +19,10 @@ import (
 )
 
 // lasciapassareDiProva prepara gli agenti di agentiDiProva, il PC
-// 999000111, l'integrazione accesa (senza consegna) e, se accesa, la chiave
-// dei lasciapassare in un file 600. Restituisce il router, la chiave
-// pubblica (nil se spenta) e il registro del log.
+// 999000111 nella rubrica personale di mario, l'integrazione accesa (senza
+// consegna) e, se accesa, la chiave dei lasciapassare in un file 600.
+// Restituisce il router, la chiave pubblica (nil se spenta) e il registro
+// del log.
 func lasciapassareDiProva(t *testing.T, accesa bool) (*gin.Engine, ed25519.PublicKey, *strings.Builder) {
 	t.Helper()
 	g := agentiDiProva(t)
@@ -32,6 +33,7 @@ func lasciapassareDiProva(t *testing.T, accesa bool) (*gin.Engine, ed25519.Publi
 		t.Fatal(err)
 	}
 	crea(t, &model.Peer{Id: "999000111", Hostname: "PC-ROSSI", Uuid: "dXVpZA"})
+	crea(t, &model.AddressBook{Id: "999000111", UserId: 2})
 	prec := global.Config.Integrazione
 	t.Cleanup(func() { global.Config.Integrazione, global.Config.Agente = prec, config.Agente{} })
 	global.Config.Integrazione = config.Integrazione{Url: "https://n8n.example/webhook", Segreto: strings.Repeat("s", 32)}
@@ -159,5 +161,81 @@ func TestLasciapassareRilasciato(t *testing.T) {
 	var n int64
 	if err := service.DB.Model(&model.Lasciapassare{}).Distinct("nonce").Count(&n).Error; rec.Code != 200 || err != nil || n != 2 {
 		t.Errorf("secondo lasciapassare: %d, %d nonce distinti (%v)", rec.Code, n, err)
+	}
+}
+
+// TestLasciapassareRubrica prova sul router vero che il lasciapassare si
+// rilascia solo per un PC nella rubrica del tecnico dell'agente (mario, id
+// 2): quella personale, una sua rubrica, una rubrica di luigi condivisa con
+// lui o con il suo gruppo. Un PC solo nella rubrica di luigi, o in nessuna,
+// e' rifiutato con un warn su agente, tecnico e PC, e senza registro.
+func TestLasciapassareRubrica(t *testing.T) {
+	for _, tc := range []struct {
+		caso  string
+		prima func()
+		ok    bool
+	}{
+		{"rubrica personale", func() { crea(t, &model.AddressBook{Id: "999000111", UserId: 2}) }, true},
+		{"sua rubrica", func() {
+			crea(t, &model.AddressBookCollection{UserId: 2, Name: "clienti"})
+			crea(t, &model.AddressBook{Id: "999000111", UserId: 2, CollectionId: 1})
+		}, true},
+		{"condivisa con lui", func() {
+			crea(t, &model.AddressBookCollection{UserId: 3, Name: "di luigi"})
+			crea(t, &model.AddressBook{Id: "999000111", UserId: 3, CollectionId: 1})
+			crea(t, &model.AddressBookCollectionRule{UserId: 3, CollectionId: 1, Rule: model.ShareAddressBookRuleRuleRead, Type: model.ShareAddressBookRuleTypePersonal, ToId: 2})
+		}, true},
+		{"condivisa col suo gruppo", func() {
+			crea(t, &model.AddressBookCollection{UserId: 3, Name: "di luigi"})
+			crea(t, &model.AddressBook{Id: "999000111", UserId: 3, CollectionId: 1})
+			crea(t, &model.AddressBookCollectionRule{UserId: 3, CollectionId: 1, Rule: model.ShareAddressBookRuleRuleRead, Type: model.ShareAddressBookRuleTypeGroup, ToId: 1})
+		}, true},
+		{"rubrica di un altro tecnico", func() { crea(t, &model.AddressBook{Id: "999000111", UserId: 3}) }, false},
+		{"rubrica non condivisa", func() {
+			crea(t, &model.AddressBookCollection{UserId: 3, Name: "di luigi"})
+			crea(t, &model.AddressBook{Id: "999000111", UserId: 3, CollectionId: 1})
+		}, false},
+		// Luigi condivide con mario la sua rubrica 1, ma il PC sta altrove:
+		// la condivisione vale solo per le voci di quella rubrica.
+		{"altra rubrica di chi condivide", func() {
+			crea(t, &model.AddressBookCollection{UserId: 3, Name: "condivisa"})
+			crea(t, &model.AddressBookCollection{UserId: 3, Name: "privata"})
+			crea(t, &model.AddressBook{Id: "999000111", UserId: 3, CollectionId: 2})
+			crea(t, &model.AddressBookCollectionRule{UserId: 3, CollectionId: 1, Rule: model.ShareAddressBookRuleRuleRead, Type: model.ShareAddressBookRuleTypePersonal, ToId: 2})
+		}, false},
+		{"rubrica personale di chi condivide", func() {
+			crea(t, &model.AddressBookCollection{UserId: 3, Name: "condivisa"})
+			crea(t, &model.AddressBook{Id: "999000111", UserId: 3})
+			crea(t, &model.AddressBookCollectionRule{UserId: 3, CollectionId: 1, Rule: model.ShareAddressBookRuleRuleRead, Type: model.ShareAddressBookRuleTypePersonal, ToId: 2})
+		}, false},
+		{"nessuna rubrica", func() {}, false},
+	} {
+		t.Run(tc.caso, func(t *testing.T) {
+			g, _, registro := lasciapassareDiProva(t, true)
+			if err := service.DB.Where("1 = 1").Delete(&model.AddressBook{}).Error; err != nil {
+				t.Fatal(err)
+			}
+			tc.prima()
+			rec := daTecnico(g, "POST", "/api/agente/lasciapassare", "tok-agente-mario", `{"id":"999000111"}`)
+			var n int64
+			if err := service.DB.Model(&model.Lasciapassare{}).Count(&n).Error; err != nil {
+				t.Fatal(err)
+			}
+			// Un rifiuto e' un solo warn, quello della risposta, col contesto e
+			// l'ID del messaggio.
+			log := registro.String()
+			avvisi := applog.Conta(log, "WARN", "PassPcNotInAddressBook", "lasciapassare rifiutato", "999000111", "agente-mario")
+			id, motivo := applog.Conta(log, "WARN", "PassPcNotInAddressBook"), applog.Conta(log, "WARN", "lasciapassare rifiutato")
+			if tc.ok {
+				if rec.Code != 200 || n != 1 || id+motivo != 0 {
+					t.Errorf("%d %s, %d registrati, %d+%d warn; attesi 200, 1, 0", rec.Code, rec.Body, n, id, motivo)
+				}
+				return
+			}
+			want := `{"error":"Il PC non è nella rubrica del tecnico di questo agente AI."}`
+			if rec.Code != 400 || rec.Body.String() != want || n != 0 || avvisi != 1 || id != 1 || motivo != 1 {
+				t.Errorf("%d %s, %d registrati, warn %d (%d con l'ID, %d col motivo); attesi 400 %s, 0, 1 (1, 1)\n%s", rec.Code, rec.Body, n, avvisi, id, motivo, want, log)
+			}
+		})
 	}
 }

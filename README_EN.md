@@ -748,7 +748,12 @@ chiave-nuova /app/data/lasciapassare.key`, then
 (`Authorization: Bearer`), body `{"id": "<PC ID>"}`. It answers
 `{"lasciapassare": "<string>"}` only if the feature is configured, the
 token's user is an enabled AI agent, its technician exists and is enabled,
-and the PC is in `peers`. Otherwise 400 `{"error": msg}`, saying which
+the PC is in `peers` and it is in the technician's address book: one of
+their address books, personal or not, or one shared with them or with
+their group by the address book rules (those the RustDesk client shows
+them). An agent only works on the PCs its technician works on; a PC
+outside the address book also leaves a `lasciapassare rifiutato` warn with
+agent, technician and PC. Otherwise 400 `{"error": msg}`, saying which
 condition is missing (in Italian or English); without a token, or with the
 agent disabled, 401 like the other login routes. Every pass goes into the
 `lasciapassare` table (database version 273): nonce, PC, agent,

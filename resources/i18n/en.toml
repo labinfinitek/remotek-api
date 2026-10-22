@@ -393,3 +393,8 @@ other = "The technician of this AI agent does not exist or is disabled."
 description = "No PC with this ID is known to the server."
 one = "No PC with this ID is known to the server."
 other = "No PC with this ID is known to the server."
+
+[PassPcNotInAddressBook]
+description = "The PC is not in the address book of this AI agent's technician."
+one = "The PC is not in the address book of this AI agent's technician."
+other = "The PC is not in the address book of this AI agent's technician."
