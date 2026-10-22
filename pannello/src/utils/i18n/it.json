@@ -419,41 +419,11 @@
   "Captcha": {
     "One": "Codice di verifica"
   },
-  "ServerCmd": {
-    "One": "Comandi al server"
-  },
-  "Simple": {
-    "One": "Semplice"
-  },
-  "Advanced": {
-    "One": "Avanzato"
-  },
-  "Available": {
-    "One": "Disponibile"
-  },
-  "NotAvailable": {
-    "One": "Non disponibile"
-  },
-  "ServerCmdTips": {
-    "One": "Funzione sperimentale: l'API, hbbs e hbbr devono stare sullo stesso indirizzo di loopback. Per saperne di più vedi la {wiki}"
-  },
-  "Refresh": {
-    "One": "Aggiorna"
-  },
   "Save": {
     "One": "Salva"
   },
   "SendCustom": {
     "One": "Invia personalizzato"
-  },
-  "Send": {
-    "One": "Invia"
-  },
-  "SendCmd": {
-    "One": "Invia comando"
-  },
-  "Result": {
-    "One": "Risultato"
   },
   "DeviceGroupManage": {
     "One": "Gruppi di PC"
@@ -607,72 +577,6 @@
   },
   "PlatformUA": {
     "One": "Piattaforma/UA"
-  },
-  "CmdRelayServers": {
-    "One": "Server relay"
-  },
-  "CmdAlwaysUseRelay": {
-    "One": "Sempre via relay"
-  },
-  "CmdMustLogin": {
-    "One": "Accesso obbligatorio"
-  },
-  "CmdUsage": {
-    "One": "Uso del relay"
-  },
-  "CmdBlocklist": {
-    "One": "IP bloccati (blocklist)"
-  },
-  "CmdBlacklist": {
-    "One": "IP limitati (blacklist)"
-  },
-  "UsageTime": {
-    "One": "Durata"
-  },
-  "UsageTotal": {
-    "One": "Totale"
-  },
-  "UsageHighest": {
-    "One": "Picco"
-  },
-  "UsageAvg": {
-    "One": "Media"
-  },
-  "UsageSpeed": {
-    "One": "Velocità"
-  },
-  "IpSeparatorHint": {
-    "One": "Più IP si separano con |"
-  },
-  "DeleteAllHint": {
-    "One": "Per toglierli tutti scrivi"
-  },
-  "SendToId": {
-    "One": "Invia al server ID"
-  },
-  "SendToRelay": {
-    "One": "Invia al server relay"
-  },
-  "Command": {
-    "One": "Comando"
-  },
-  "Option": {
-    "One": "Opzione"
-  },
-  "Explain": {
-    "One": "Descrizione"
-  },
-  "Target": {
-    "One": "Destinazione"
-  },
-  "Example": {
-    "One": "Esempio:"
-  },
-  "IdServerStatus": {
-    "One": "Stato del server ID"
-  },
-  "RelayServerStatus": {
-    "One": "Stato del server relay"
   },
   "ColumnSetting": {
     "One": "Colonne"
