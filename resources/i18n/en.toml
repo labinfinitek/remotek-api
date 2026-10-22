@@ -398,3 +398,8 @@ other = "No PC with this ID is known to the server."
 description = "The PC is not in the address book of this AI agent's technician."
 one = "The PC is not in the address book of this AI agent's technician."
 other = "The PC is not in the address book of this AI agent's technician."
+
+[AgentCliOnly]
+description = "An AI agent account only uses the CLI client."
+one = "An AI agent account only uses the CLI client."
+other = "An AI agent account only uses the CLI client."

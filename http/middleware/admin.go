@@ -41,6 +41,15 @@ func BackendUserAuth() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		// Un agente AI non usa il pannello (ADR-0028): da qui potrebbe
+		// crearsi rubriche e regole e allargarsi il confine del lasciapassare.
+		// 403, che per il pannello e' un logout.
+		if user.AgenteDi != 0 {
+			global.Logger.Per(c.Request.Context()).Warnf("%s %s: rifiutato l'agente AI %d, che non usa il pannello", c.Request.Method, c.FullPath(), user.Id)
+			response.Fail(c, 403, response.TranslateMsg(c, "AgentCliOnly"))
+			c.Abort()
+			return
+		}
 
 		c.Set("curUser", user)
 		c.Set("token", token)

@@ -243,7 +243,9 @@ func (s *AddressBookService) CollectionReadRules(user *model.User) (res []*model
 // NellaRubrica dice se il PC pc e' in una rubrica che l'utente u vede dal
 // client: una delle sue, personale o no (user_id = u), o una condivisa con
 // lui dalle regole di CollectionReadRules, cioe' le voci del proprietario in
-// quella rubrica.
+// quella rubrica. Le rubriche di un agente AI, o di un proprietario che non
+// c'e' piu', non contano: un agente non si allarga il confine da solo
+// (ADR-0028).
 func (s *AddressBookService) NellaRubrica(u *model.User, pc string) (bool, error) {
 	var n int64
 	if err := DB.Model(&model.AddressBook{}).Where("id = ? and user_id = ?", pc, u.Id).Count(&n).Error; err != nil {
@@ -257,6 +259,14 @@ func (s *AddressBookService) NellaRubrica(u *model.User, pc string) (bool, error
 		return false, err
 	}
 	for _, r := range rules {
+		switch prop, err := AllService.UserService.InfoById(r.UserId); {
+		case errors.Is(err, ErrNotFound):
+			continue
+		case err != nil:
+			return false, fmt.Errorf("proprietario della rubrica %d: %w", r.CollectionId, err)
+		case prop.AgenteDi != 0:
+			continue
+		}
 		if err := DB.Model(&model.AddressBook{}).Where("id = ? and user_id = ? and collection_id = ?", pc, r.UserId, r.CollectionId).Count(&n).Error; err != nil {
 			return false, fmt.Errorf("rubrica %d condivisa con l'utente %d: %w", r.CollectionId, u.Id, err)
 		}

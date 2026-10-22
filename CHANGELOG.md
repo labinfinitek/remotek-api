@@ -36,6 +36,14 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   rifiutato con 400 e un warn con agente, tecnico e PC, e non si registra.
   Prima qualunque agente attivo lo riceveva per qualunque PC conosciuto
   (README, Lasciapassare dell'agente).
+- Agenti AI: un account agente usa solo le rotte del client a riga di
+  comando (`/api/user/info`, `/api/currentUser`, `/api/logout`,
+  `/api/agente`, `/api/agente/lasciapassare`); le altre rotte con login gli
+  rispondono 403, il login del pannello non gli da' un token e il pannello
+  rifiuta anche un token gia' rilasciato. Le rubriche di un agente non
+  contano per il lasciapassare. Prima un agente poteva crearsi dal pannello
+  una rubrica con un PC qualunque, condividerla col tecnico e ricevere il
+  lasciapassare per quel PC (README, Agenti AI).
 - Immagine di base Alpine 3.24.3: zlib 1.3.2-r1 (CVE-2026-85091, MEDIUM) e
   musl 1.2.6-r3 (CVE-2026-107891), che trivy segnalava sulla 3.24.2. Il
   binario dell'API e' statico e non le usa; le usano gli strumenti di
