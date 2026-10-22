@@ -6,6 +6,15 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Corretto
+- Integrazione: un trasferimento di file con un type diverso da 0 (dal PC) e
+  1 (al PC) non accoda piu' `file.trasferiti` come `dal_pc`, ma scrive un
+  warn con il type e l'ID del PC; la riga del registro si salva come prima.
+- Integrazione: se la coda degli eventi nel database non risponde, la riga
+  ERROR "coda degli eventi" esce una volta quando il guasto comincia (o
+  cambia messaggio) invece che ogni 5 secondi, e una riga INFO dice quando
+  la coda torna a rispondere.
+
 ### Sicurezza
 - Go 1.26.10: corregge GO-2026-6809 (CVE-2026-111943) della libreria
   standard, in `crypto/x509`: Go 1.26.9 accettava ancora certificati

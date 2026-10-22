@@ -609,10 +609,16 @@ others, so the reliable order is `ora`.
 | `pc.nuovo` | a sysinfo creates a PC the API did not know |
 | `pc.possibile_copia` | the API writes the `possibile copia del PC` warn (Copies of the same PC), at most one per hour per PC; with `copia.cambi`, without the addresses |
 
-**Fields.** Every event has `schema`, `id`, `tipo`, `ora` and `pc`; the
-connection events and `terminale.chiuso` have `sessione`, the other types
-their own object (`file`, `verifica`, `copia`) and nothing else. For
-example:
+**Fields.** Every event has `schema`, `id`, `tipo`, `ora` and `pc`; on top
+of these, and nothing else:
+
+- `connessione.aperta`, `connessione.chiusa`, `connessione.nota`: `sessione`;
+- `file.trasferiti`: `file`;
+- `terminale.chiuso`: `sessione` and `verifica`;
+- `pc.nuovo`: no other field;
+- `pc.possibile_copia`: `copia`.
+
+For example:
 
 ```json
 {

@@ -73,7 +73,7 @@ func TestEventoFileTrasferiti(t *testing.T) {
 	}
 	for i, want := range []map[string]any{{"direzione": "dal_pc", "numero": 1.0}, {"direzione": "al_pc", "numero": 3.0}} {
 		c := coda[i]
-		if c["tipo"] != service.EventoFileTrasferiti || !jsonUguale(c["file"], want) {
+		if c["tipo"] != service.EventoFileTrasferiti || !jsonUguale(t, c["file"], want) {
 			t.Errorf("evento %d: %v, atteso file %v", i, c, want)
 		}
 		for _, vietato := range []string{"prova.txt", "a.txt", "Users", "192.0.2.10", "999000222"} {
@@ -84,10 +84,18 @@ func TestEventoFileTrasferiti(t *testing.T) {
 	}
 }
 
-// jsonUguale confronta due valori decodificati da JSON.
-func jsonUguale(a, b any) bool {
-	ja, _ := json.Marshal(a)
-	jb, _ := json.Marshal(b)
+// jsonUguale confronta due valori decodificati da JSON; se uno dei due non
+// si codifica, il test fallisce.
+func jsonUguale(t *testing.T, a, b any) bool {
+	t.Helper()
+	ja, err := json.Marshal(a)
+	if err != nil {
+		t.Fatalf("json.Marshal(%v): %v", a, err)
+	}
+	jb, err := json.Marshal(b)
+	if err != nil {
+		t.Fatalf("json.Marshal(%v): %v", b, err)
+	}
 	return string(ja) == string(jb)
 }
 
@@ -110,7 +118,7 @@ func TestEventoTerminaleChiuso(t *testing.T) {
 	v := verifica(t, g, 1)
 	c := coda[0]
 	want := map[string]any{"integra": true, "hash": v.Hash}
-	if c["tipo"] != service.EventoTerminaleChiuso || !jsonUguale(c["verifica"], want) || v.Hash != bb[2].Hash {
+	if c["tipo"] != service.EventoTerminaleChiuso || !jsonUguale(t, c["verifica"], want) || v.Hash != bb[2].Hash {
 		t.Errorf("evento %v, attesa verifica %v (hash dell'ultimo blocco %s)", c, want, bb[2].Hash)
 	}
 	if s, ok := c["sessione"].(map[string]any); !ok || s["tipo"] != 4.0 || s["conn_id"] != 7.0 {
@@ -140,7 +148,7 @@ func TestEventoPcNuovo(t *testing.T) {
 	}
 	coda := corpiInCoda(t)
 	want := map[string]any{"id": "999000111", "nome": "PC-ROSSI", "alias": ""}
-	if len(coda) != 1 || coda[0]["tipo"] != service.EventoPcNuovo || !jsonUguale(coda[0]["pc"], want) {
+	if len(coda) != 1 || coda[0]["tipo"] != service.EventoPcNuovo || !jsonUguale(t, coda[0]["pc"], want) {
 		t.Fatalf("coda %v, atteso un pc.nuovo con pc %v", coda, want)
 	}
 	if strings.Contains(coda[0]["corpo"].(string), uuidSalvato) {
@@ -171,7 +179,7 @@ func TestEventoPossibileCopia(t *testing.T) {
 		heartbeatDa(t, g, "999000621", "Y29waWE=", []string{"198.51.100.1", "203.0.113.7"}[i%2])
 	}
 	coda := corpiInCoda(t)
-	if len(coda) != 1 || coda[0]["tipo"] != service.EventoPcCopia || !jsonUguale(coda[0]["copia"], map[string]any{"cambi": service.SogliaCopie}) {
+	if len(coda) != 1 || coda[0]["tipo"] != service.EventoPcCopia || !jsonUguale(t, coda[0]["copia"], map[string]any{"cambi": service.SogliaCopie}) {
 		t.Fatalf("coda %v, atteso un pc.possibile_copia con %d cambi", coda, service.SogliaCopie)
 	}
 	for _, vietato := range []string{"198.51.100.1", "203.0.113.7", "Y29waWE="} {

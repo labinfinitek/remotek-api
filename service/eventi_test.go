@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -388,5 +390,61 @@ func TestCampiAltriEventi(t *testing.T) {
 				t.Errorf("%s: nel corpo c'e' %s: %s", e.Tipo, vietato, e.Corpo)
 			}
 		}
+	}
+}
+
+// TestAccodaFileTypeSconosciuto: un type diverso da 0 e 1 non accoda
+// niente e da' un warn con il type e l'ID del PC.
+func TestAccodaFileTypeSconosciuto(t *testing.T) {
+	_, _, _, registro := codaDiProva(t, 200)
+	f := &model.AuditFile{PeerId: "999000111", Type: 2, Num: 1}
+	if err := AllService.EventiService.AccodaFile(f); err != nil {
+		t.Fatal(err)
+	}
+	if n := len(eventi(t)); n != 0 {
+		t.Errorf("%d eventi in coda, attesi 0", n)
+	}
+	if n := applog.Conta(registro.String(), "WARN", "type 2", "999000111"); n != 1 {
+		t.Errorf("%d warn col type e l'ID del PC, atteso 1:\n%s", n, registro)
+	}
+}
+
+// TestGuastoCoda: con la coda guasta (tabella che non c'e') gira scrive una
+// sola riga ERROR, per quanti giri faccia, e una INFO quando la coda torna.
+func TestGuastoCoda(t *testing.T) {
+	k, _, adesso, registro := codaDiProva(t, 200)
+	if err := DB.Migrator().DropTable(&model.Evento{}); err != nil {
+		t.Fatal(err)
+	}
+	var giri atomic.Int64
+	k.intervallo = time.Millisecond
+	k.Ora = func() time.Time { giri.Add(1); return *adesso }
+	aspetta := func(n int64) {
+		t.Helper()
+		for scade := time.Now().Add(5 * time.Second); giri.Load() < n; time.Sleep(time.Millisecond) {
+			if time.Now().After(scade) {
+				t.Fatalf("%d giri, attesi %d", giri.Load(), n)
+			}
+		}
+	}
+	ctx, cancel := context.WithCancel(t.Context())
+	fatto := make(chan struct{})
+	go func() {
+		defer close(fatto)
+		k.gira(ctx)
+	}()
+	aspetta(5)
+	if err := DB.AutoMigrate(&model.Evento{}); err != nil {
+		t.Fatal(err)
+	}
+	aspetta(giri.Load() + 5)
+	cancel()
+	<-fatto
+	testo := registro.String()
+	if n := applog.Conta(testo, "ERROR", "coda degli eventi"); n != 1 {
+		t.Errorf("%d righe ERROR, attesa 1:\n%s", n, testo)
+	}
+	if n := applog.Conta(testo, "INFO", "coda degli eventi"); n != 1 {
+		t.Errorf("%d righe INFO, attesa 1:\n%s", n, testo)
 	}
 }

@@ -103,14 +103,22 @@ func (es *EventiService) AccodaSessione(tipo string, conn *model.AuditConn) erro
 	return accodaDelPc(conn.PeerId, corpoEvento{Tipo: tipo, Sessione: sessioneEvento(conn)})
 }
 
-// AccodaFile accoda file.trasferiti per il trasferimento f.
+// AccodaFile accoda file.trasferiti per il trasferimento f. Il registro
+// conosce solo i type 0 (dal PC) e 1 (al PC): un altro type da' un warn e
+// nessun evento.
 func (es *EventiService) AccodaFile(f *model.AuditFile) error {
 	if !Config.Integrazione.Attiva() {
 		return nil
 	}
-	dir := DirezioneDalPc
-	if f.Type == 1 {
+	var dir string
+	switch f.Type {
+	case 0:
+		dir = DirezioneDalPc
+	case 1:
 		dir = DirezioneAlPc
+	default:
+		Logger.Warnf("file.trasferiti non accodato: type %d sconosciuto dal PC %s", f.Type, f.PeerId)
+		return nil
 	}
 	return accodaDelPc(f.PeerId, corpoEvento{Tipo: EventoFileTrasferiti, File: &FileEvento{Direzione: dir, Numero: f.Num}})
 }
