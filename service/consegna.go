@@ -30,18 +30,20 @@ const (
 
 // Consegna manda gli eventi della coda all'URL dell'integrazione, uno alla
 // volta, in ordine di creazione tra quelli pronti. Ora e' l'orologio, finto
-// nei test.
+// nei test; intervallo e' l'attesa di gira quando non c'e' niente da
+// mandare, piu' corta nei test.
 type Consegna struct {
 	url, segreto string
 	client       *http.Client
 	Ora          func() time.Time
 	pulita       time.Time
+	intervallo   time.Duration
 }
 
 // NuovaConsegna prepara la consegna verso c: POST con timeout di 10
 // secondi, senza seguire i redirect, che valgono come non consegnato.
 func NuovaConsegna(c config.Integrazione) *Consegna {
-	return &Consegna{url: c.Url, segreto: c.Segreto, Ora: time.Now, client: &http.Client{
+	return &Consegna{url: c.Url, segreto: c.Segreto, Ora: time.Now, intervallo: intervalloCoda, client: &http.Client{
 		Timeout:       timeoutConsegna,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}}
@@ -70,14 +72,15 @@ func AvviaConsegna(c config.Integrazione) (ferma func()) {
 }
 
 // gira manda gli eventi pronti finche' ce ne sono, poi aspetta
-// intervalloCoda, finche' ctx non e' chiuso.
+// k.intervallo, finche' ctx non e' chiuso. Un guasto della coda scrive una
+// riga ERROR quando comincia o cambia messaggio, e una INFO quando finisce,
+// non una riga a ogni giro.
 func (k *Consegna) gira(ctx context.Context) {
+	guasto := ""
 	for {
 		for ctx.Err() == nil {
 			mandato, err := k.Passo(ctx)
-			if err != nil {
-				Logger.Errorf("coda degli eventi: %v", err)
-			}
+			guasto = segnalaGuasto(guasto, err)
 			if !mandato || err != nil {
 				break
 			}
@@ -85,9 +88,27 @@ func (k *Consegna) gira(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(intervalloCoda):
+		case <-time.After(k.intervallo):
 		}
 	}
+}
+
+// segnalaGuasto scrive la riga del guasto della coda err, se diverso da
+// quello di prima, o quella del ritorno se err e' nil dopo un guasto;
+// restituisce il guasto attuale, "" se non ce n'e'.
+func segnalaGuasto(prima string, err error) string {
+	adesso := ""
+	if err != nil {
+		adesso = err.Error()
+	}
+	switch {
+	case adesso == prima:
+	case adesso != "":
+		Logger.Errorf("coda degli eventi: %s", adesso)
+	default:
+		Logger.Info("coda degli eventi: di nuovo raggiungibile")
+	}
+	return adesso
 }
 
 // Passo toglie dalla coda, una volta all'ora, gli eventi conclusi da piu' di
