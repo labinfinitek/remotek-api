@@ -15,6 +15,14 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   cambia messaggio) invece che ogni 5 secondi, e una riga INFO dice quando
   la coda torna a rispondere.
 
+### Sicurezza
+- Go 1.26.10: corregge GO-2026-6809 (CVE-2026-111943) della libreria
+  standard, in `crypto/x509`: Go 1.26.9 accettava ancora certificati
+  intermedi compromessi. govulncheck lo trova raggiungibile. Il server
+  apre connessioni TLS in uscita (provider OIDC, n8n), e la verifica dei
+  loro certificati passa da `crypto/x509`. Immagine di build
+  `golang:1.26.10-trixie`.
+
 ## [0.7.1] - 2026-10-12
 Immagine `ghcr.io/labinfinitek/remotek-api:0.7.1`. Correzioni del solo
 pannello, nessun cambio incompatibile: nessuna migrazione del database,
