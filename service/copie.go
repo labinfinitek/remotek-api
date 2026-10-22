@@ -51,6 +51,7 @@ type memoriaCopie struct {
 
 var copieViste = nuovaMemoriaCopie()
 
+// nuovaMemoriaCopie prepara una memoria vuota.
 func nuovaMemoriaCopie() *memoriaCopie {
 	return &memoriaCopie{pc: map[string]*pcVisto{}, avvisi: map[string]time.Time{}}
 }
