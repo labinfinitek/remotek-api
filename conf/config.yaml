@@ -55,6 +55,10 @@ integrazione:
   # RUSTDESK_API_INTEGRAZIONE_SEGRETO, non qui.
   url: ""
   segreto: ""
+agente:
+  # File col seme Ed25519 dei lasciapassare degli agenti AI (README,
+  # Lasciapassare dell'agente), permessi 600. Vuoto: funzione spenta.
+  lasciapassare-chiave: ""
 ldap:
   enable: false
   url: "ldap://ldap.example.com:389"

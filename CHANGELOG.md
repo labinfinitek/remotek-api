@@ -6,6 +6,18 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Aggiunto
+- Lasciapassare dell'agente (ADR-0028): con `agente.lasciapassare-chiave`
+  (file col seme Ed25519, permessi 600) `POST /api/agente/lasciapassare`
+  rilascia a un agente AI attivo, con il tecnico attivo, un lasciapassare
+  firmato per un PC noto, valido 60 secondi, che il PC verifica con la
+  chiave pubblica cablata. Registro nella tabella `lasciapassare`
+  (migrazione 273) col solo nonce, riga INFO e evento
+  `agente.lasciapassare`; comando `lasciapassare chiave-nuova <file>`.
+  Senza chiave la rotta lo rifiuta; un file che manca, leggibile da altri o
+  con una chiave non valida ferma l'avvio (README, Lasciapassare
+  dell'agente).
+
 ### Sicurezza
 - Immagine di base Alpine 3.24.3: zlib 1.3.2-r1 (CVE-2026-85091, MEDIUM) e
   musl 1.2.6-r3 (CVE-2026-107891), che trivy segnalava sulla 3.24.2. Il

@@ -28,7 +28,7 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/utils"
 )
 
-const DatabaseVersion = 272
+const DatabaseVersion = 273
 
 // fileAdminPassword e' il file in cui il primo avvio scrive la password
 // iniziale di admin, nella cartella di rustdeskapi.db (nel container
@@ -234,10 +234,37 @@ func elencoToken(elenco []model.TokenIntegrazione) string {
 	return b.String()
 }
 
+var lasciapassareCmd = &cobra.Command{
+	Use:   "lasciapassare",
+	Short: "Chiave dei lasciapassare degli agenti AI (ADR-0028)",
+}
+
+// lasciapassareChiaveNuovaCmd non passa da InitGlobal ne' dal database:
+// la chiave serve prima che l'API la trovi configurata. Un errore lo
+// scrive cobra su stderr, e main esce con 1.
+var lasciapassareChiaveNuovaCmd = &cobra.Command{
+	Use:               "chiave-nuova [file]",
+	Example:           "lasciapassare chiave-nuova /app/data/lasciapassare.key",
+	Short:             "Genera la chiave dei lasciapassare nel file (600) e stampa la chiave pubblica",
+	Args:              cobra.ExactArgs(1),
+	PersistentPreRun:  func(_ *cobra.Command, _ []string) {},
+	PersistentPostRun: func(_ *cobra.Command, _ []string) {},
+	SilenceUsage:      true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		pub, err := config.ChiaveNuova(args[0])
+		if err != nil {
+			return err
+		}
+		_, err = fmt.Fprintln(cmd.OutOrStdout(), pub)
+		return err
+	},
+}
+
 func init() {
+	lasciapassareCmd.AddCommand(lasciapassareChiaveNuovaCmd)
 	rootCmd.PersistentFlags().StringVarP(&global.ConfigPath, "config", "c", "./conf/config.yaml", "choose config file")
 	tokenIntegrazioneCmd.AddCommand(tokenIntegrazioneCreaCmd, tokenIntegrazioneElencoCmd, tokenIntegrazioneRevocaCmd)
-	rootCmd.AddCommand(resetPwdCmd, resetUserPwdCmd, agenteAiCmd, tokenIntegrazioneCmd)
+	rootCmd.AddCommand(resetPwdCmd, resetUserPwdCmd, agenteAiCmd, tokenIntegrazioneCmd, lasciapassareCmd)
 }
 
 // main esce con 1 se cobra restituisce un errore. Cobra lo ha gia' scritto su
@@ -282,6 +309,14 @@ func InitGlobal() {
 	// niente. Il messaggio non ha ne' l'URL ne' il segreto.
 	if err := global.Config.Integrazione.Controlla(); err != nil {
 		global.Logger.Fatalf("%v, l'API non parte", err)
+	}
+	// Anche la chiave dei lasciapassare (ADR-0028): nel log solo la
+	// pubblica, mai il seme.
+	if err := global.Config.Agente.Carica(); err != nil {
+		global.Logger.Fatalf("%v, l'API non parte", err)
+	}
+	if pub := global.Config.Agente.Pubblica(); pub != "" {
+		global.Logger.Infof("lasciapassare dell'agente acceso, chiave pubblica %s", pub)
 	}
 
 	// gorm: solo SQLite (A3). Un altro tipo, per esempio mysql di
@@ -465,6 +500,7 @@ func Migrate(version uint) {
 		&model.DeviceGroup{},
 		&model.Evento{},
 		&model.TokenIntegrazione{},
+		&model.Lasciapassare{},
 	)
 	// La riga di Version resta solo se il resto riesce: le tabelle e, al
 	// primo avvio (quando e' la prima riga), i gruppi predefiniti e admin,

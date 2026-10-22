@@ -68,3 +68,8 @@ type AgentePayload struct {
 	Agente  bool   `json:"agente"`
 	Tecnico string `json:"tecnico"`
 }
+
+// LasciapassarePayload e' il lasciapassare firmato per il PC (ADR-0028).
+type LasciapassarePayload struct {
+	Lasciapassare string `json:"lasciapassare"`
+}

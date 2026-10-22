@@ -138,6 +138,19 @@ definitions:
       totale:
         type: integer
     type: object
+  api.LasciapassareForm:
+    properties:
+      id:
+        maxLength: 100
+        type: string
+    required:
+    - id
+    type: object
+  api.LasciapassarePayload:
+    properties:
+      lasciapassare:
+        type: string
+    type: object
   api.LoginForm:
     properties:
       autoLogin:
@@ -741,6 +754,37 @@ paths:
       security:
       - token: []
       summary: agente AI dell'utente
+      tags:
+      - 用户
+  /agente/lasciapassare:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID del PC
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.LasciapassareForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.LasciapassarePayload'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - token: []
+      summary: lasciapassare dell'agente AI
       tags:
       - 用户
   /audit:

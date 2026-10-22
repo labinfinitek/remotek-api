@@ -47,6 +47,8 @@ type Config struct {
 	Ldap     Ldap
 	// Integrazione: eventi delle sessioni verso n8n (ADR-0026).
 	Integrazione Integrazione
+	// Agente: lasciapassare firmato degli agenti AI (ADR-0028).
+	Agente Agente
 }
 
 // Init completa la sezione admin: il titolo vuoto e' il nome del marchio.
@@ -97,6 +99,8 @@ func Init(rowVal *Config, path string) *viper.Viper {
 	// Integrazione spenta: senza URL non si accoda niente (ADR-0026).
 	v.SetDefault("integrazione.url", "")
 	v.SetDefault("integrazione.segreto", "")
+	// Lasciapassare dell'agente spento: senza chiave la rotta lo rifiuta.
+	v.SetDefault("agente.lasciapassare-chiave", "")
 	v.AutomaticEnv()
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	v.SetEnvPrefix("RUSTDESK_API")

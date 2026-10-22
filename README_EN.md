@@ -267,6 +267,7 @@ default when the key is missing from the file.
 | `rustdesk.personal` | `RUSTDESK_API_RUSTDESK_PERSONAL` | `1` | `1` personal address book on, `0` off |
 | `integrazione.url` \* | `RUSTDESK_API_INTEGRAZIONE_URL` | empty | `https://` URL that receives the session events (Integration); empty = off, no events. No credentials in the URL; `http://` or credentials stop the start-up. Configuration only, never from the panel |
 | `integrazione.segreto` \* | `RUSTDESK_API_INTEGRAZIONE_SEGRETO` | empty | event signing secret, at least 32 characters when `integrazione.url` is set (otherwise start-up stops): from the variable, not the file; never logged |
+| `agente.lasciapassare-chiave` \* | `RUSTDESK_API_AGENTE_LASCIAPASSARE_CHIAVE` | empty | file with the Ed25519 seed of the AI agents' passes (Agent pass); empty = off. When set, the file must exist, have permissions 600 or stricter and a valid key, otherwise startup stops |
 | `logger.path` \* | `RUSTDESK_API_LOGGER_PATH` | empty | ignored: the log goes to stdout only; if set, a warn at startup says so |
 | `logger.level` \* | `RUSTDESK_API_LOGGER_LEVEL` | `info` | `debug`, `info`, `warn`, `error`; any other value stops startup |
 | `logger.report-caller` | `RUSTDESK_API_LOGGER_REPORT_CALLER` | `true` | `source` (function, file and line of the code) in every log line |
@@ -321,6 +322,7 @@ docker compose: `sudo cat remotek-data/admin-password.txt`. Log in on
 ./apimain token-integrazione crea <name>    # integration token (Integration)
 ./apimain token-integrazione elenco
 ./apimain token-integrazione revoca <name>
+./apimain lasciapassare chiave-nuova <file> # key of the agent passes (Agent pass)
 ./apimain -h                                # help
 ```
 
@@ -608,6 +610,7 @@ others, so the reliable order is `ora`.
 | `terminale.chiuso` | the block with `fine` of a terminal session transcript arrives; with `sessione` and `verifica` (`integra`, final `hash`), computed as the panel's verification. No blocks or data. `sessione.fine` is `null` if the PC records the close later |
 | `pc.nuovo` | a sysinfo creates a PC the API did not know |
 | `pc.possibile_copia` | the API writes the `possibile copia del PC` warn (Copies of the same PC), at most one per hour per PC; with `copia.cambi`, without the addresses |
+| `agente.lasciapassare` | the API issues a pass to an AI agent (Agent pass); with `agente.agente` and `agente.tecnico` (the usernames) and `agente.amministratore` (`true`). Never the pass nor the nonce |
 
 **Fields.** Every event has `schema`, `id`, `tipo`, `ora` and `pc`; on top
 of these, and nothing else:
@@ -616,7 +619,8 @@ of these, and nothing else:
 - `file.trasferiti`: `file`;
 - `terminale.chiuso`: `sessione` and `verifica`;
 - `pc.nuovo`: no other field;
-- `pc.possibile_copia`: `copia`.
+- `pc.possibile_copia`: `copia`;
+- `agente.lasciapassare`: `agente`.
 
 For example:
 
@@ -645,6 +649,7 @@ The other objects:
 "file": {"direzione": "dal_pc", "numero": 3}
 "verifica": {"integra": true, "hash": "9f2c...e01a"}
 "copia": {"cambi": 10}
+"agente": {"agente": "agente-mario", "tecnico": "mario", "amministratore": true}
 ```
 
 **Signature.** Every request carries `X-Remotek-Evento-Id` (the `id`) and
@@ -702,6 +707,81 @@ instant, whatever the time zone: `2026-10-11T00:00:00Z` or
 (otherwise it becomes a space and the answer is 400). Never returned: uuids, keys,
 IPs, guids, `session_id`, file names or paths, transcripts. No route
 writes anything and none exports transcripts.
+
+## Agent pass (ADR-0028)
+
+The AI agent terminal (`remotek-cli`, with the agent's account: see AI
+agents) can ask for administrator rights on a PC: on an attended PC the
+customer accepts them in the window, on an unattended PC enabled by its
+signed `custom.txt` it gets in without a click. Nobody checks the name the
+client declares, so before connecting the CLI asks the API for a signed
+*lasciapassare* (pass) for that PC, and the PC verifies it with the API
+public key built into its binary. The pass is valid for 60 seconds to OPEN
+the session, once, for that PC only.
+
+**Configuration.** `agente.lasciapassare-chiave`
+(`RUSTDESK_API_AGENTE_LASCIAPASSARE_CHIAVE`): path of the file with the
+32-byte Ed25519 seed in base64, on one line. Empty (the default) the
+feature is off and the route says so. When set, at startup the file must
+exist, not be readable by group and others (permissions 600 or stricter; in
+the container owned by 10001) and hold a valid key, otherwise startup stops
+with a message saying what is wrong. At startup an INFO line
+`lasciapassare dell'agente acceso, chiave pubblica <base64>`: the public key
+is not a secret and is there to compare it with the client's. The seed
+never goes into the log.
+
+**Command.** `./apimain lasciapassare chiave-nuova <file>` generates the
+pair with `crypto/rand`, writes the seed to the file with permissions 600
+and prints the public key in base64 on stdout. It reads neither the
+configuration nor the database, and refuses with exit code 1 a file that
+already exists: a key is not overwritten by mistake. With docker compose,
+for example: `docker compose exec remotek-api ./apimain lasciapassare
+chiave-nuova /app/data/lasciapassare.key`, then
+`RUSTDESK_API_AGENTE_LASCIAPASSARE_CHIAVE=/app/data/lasciapassare.key`.
+
+**Route.** `POST /api/agente/lasciapassare`, with the agent's login token
+(`Authorization: Bearer`), body `{"id": "<PC ID>"}`. It answers
+`{"lasciapassare": "<string>"}` only if the feature is configured, the
+token's user is an enabled AI agent, its technician exists and is enabled,
+and the PC is in `peers`. Otherwise 400 `{"error": msg}`, saying which
+condition is missing (in Italian or English); without a token, or with the
+agent disabled, 401 like the other login routes. Every pass goes into the
+`lasciapassare` table (database version 273): nonce, PC, agent,
+technician, issued, expiry, `conn_id` (0 until it opens a session); never
+the whole pass nor the signature. In the log an INFO line `lasciapassare
+rilasciato` with agent, technician and PC, never the pass nor the nonce;
+for the integration the `agente.lasciapassare` event.
+
+**Format.**
+
+- payload = compact JSON, fields in this order:
+  `{"v":1,"pc":"<ID>","agente":"<username>","tecnico":"<technician username>","modo":"amministratore","emesso":<unix>,"scade":<emesso+60>,"nonce":"<16 random bytes, base64url without padding>"}`;
+- signature = Ed25519(seed, `"remotek-lasciapassare-v1."` + payload);
+- pass = base64url(payload) + `.` + base64url(signature), without padding.
+
+Test vector (Ed25519 is deterministic): the seed of bytes 0 to 31
+(`AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=`, public key
+`A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=`) and the payload
+
+```json
+{"v":1,"pc":"999000111","agente":"agente-mario","tecnico":"mario","modo":"amministratore","emesso":1791000000,"scade":1791000060,"nonce":"AAECAwQFBgcICQoLDA0ODw"}
+```
+
+give the pass
+
+```text
+eyJ2IjoxLCJwYyI6Ijk5OTAwMDExMSIsImFnZW50ZSI6ImFnZW50ZS1tYXJpbyIsInRlY25pY28iOiJtYXJpbyIsIm1vZG8iOiJhbW1pbmlzdHJhdG9yZSIsImVtZXNzbyI6MTc5MTAwMDAwMCwic2NhZGUiOjE3OTEwMDAwNjAsIm5vbmNlIjoiQUFFQ0F3UUZCZ2NJQ1FvTERBME9EdyJ9.BRkkm77ln4n8PxwF7Jmi3_-LiCHX7xGjLFjiXb3Knpc3kg9Rlv6DNoxForK3F28DLaUF5HWkudV4ZaWexK4YDA
+```
+
+**How the PC verifies it.** It splits the string at the dot, decodes the
+two parts (base64url without padding) and verifies the signature with the
+built-in public key over the bytes `"remotek-lasciapassare-v1."` + payload
+exactly as received, before decoding the JSON. Then it accepts only if `v`
+is 1, `modo` is `amministratore`, `pc` equals its own ID,
+`emesso - 30 <= now <= scade + 30` (30 seconds of clock tolerance) and it
+has never seen the `nonce` before; otherwise it refuses. The window shows
+`agente` and `tecnico` from the payload, not the name declared by the
+client.
 
 ## Origin and licence
 

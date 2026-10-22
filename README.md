@@ -270,6 +270,7 @@ stesso default se la chiave manca dal file.
 | `rustdesk.personal` | `RUSTDESK_API_RUSTDESK_PERSONAL` | `1` | `1` rubrica personale attiva, `0` spenta |
 | `integrazione.url` \* | `RUSTDESK_API_INTEGRAZIONE_URL` | vuoto | URL `https://` a cui vanno gli eventi delle sessioni (Integrazione); vuoto = spenta, nessun evento. Senza credenziali nell'URL; `http://` o credenziali fermano l'avvio. Solo dalla configurazione, mai dal pannello |
 | `integrazione.segreto` \* | `RUSTDESK_API_INTEGRAZIONE_SEGRETO` | vuoto | segreto della firma degli eventi, almeno 32 caratteri se `integrazione.url` e' impostato (altrimenti l'avvio si ferma): dalla variabile, non nel file; mai nel log |
+| `agente.lasciapassare-chiave` \* | `RUSTDESK_API_AGENTE_LASCIAPASSARE_CHIAVE` | vuoto | file col seme Ed25519 dei lasciapassare degli agenti AI (Lasciapassare dell'agente); vuoto = spento. Impostato, il file deve esistere, avere permessi 600 o piu' stretti e una chiave valida, altrimenti l'avvio si ferma |
 | `logger.path` \* | `RUSTDESK_API_LOGGER_PATH` | vuoto | ignorata: il log va solo su stdout; se impostata, all'avvio un warn lo dice |
 | `logger.level` \* | `RUSTDESK_API_LOGGER_LEVEL` | `info` | `debug`, `info`, `warn`, `error`; un altro valore ferma l'avvio |
 | `logger.report-caller` | `RUSTDESK_API_LOGGER_REPORT_CALLER` | `true` | `source` (funzione, file e riga del codice) in ogni riga di log |
@@ -324,6 +325,7 @@ docker compose: `sudo cat remotek-data/admin-password.txt`. Entra su
 ./apimain token-integrazione crea <nome>    # token di integrazione (Integrazione)
 ./apimain token-integrazione elenco
 ./apimain token-integrazione revoca <nome>
+./apimain lasciapassare chiave-nuova <file> # chiave dei lasciapassare (Lasciapassare dell'agente)
 ./apimain -h                                # aiuto
 ```
 
@@ -610,6 +612,7 @@ altri, quindi l'ordine sicuro e' quello di `ora`.
 | `terminale.chiuso` | arriva il blocco con `fine` della trascrizione di una sessione terminale; con `sessione` e `verifica` (`integra`, `hash` finale), calcolata come la verifica del pannello. Niente blocchi ne' dati. `sessione.fine` e' `null` se il PC registra la chiusura dopo |
 | `pc.nuovo` | un sysinfo crea un PC che l'API non conosceva |
 | `pc.possibile_copia` | l'API scrive il warn `possibile copia del PC` (Copie dello stesso PC), al massimo uno all'ora per PC; con `copia.cambi`, senza gli indirizzi |
+| `agente.lasciapassare` | l'API rilascia un lasciapassare a un agente AI (Lasciapassare dell'agente); con `agente.agente` e `agente.tecnico` (gli username) e `agente.amministratore` (`true`). Mai il lasciapassare ne' il nonce |
 
 **Campi.** Ogni evento ha `schema`, `id`, `tipo`, `ora` e `pc`; oltre a
 questi, e nient'altro:
@@ -618,7 +621,8 @@ questi, e nient'altro:
 - `file.trasferiti`: `file`;
 - `terminale.chiuso`: `sessione` e `verifica`;
 - `pc.nuovo`: nessun altro campo;
-- `pc.possibile_copia`: `copia`.
+- `pc.possibile_copia`: `copia`;
+- `agente.lasciapassare`: `agente`.
 
 Per esempio:
 
@@ -647,6 +651,7 @@ Gli altri oggetti:
 "file": {"direzione": "dal_pc", "numero": 3}
 "verifica": {"integra": true, "hash": "9f2c...e01a"}
 "copia": {"cambi": 10}
+"agente": {"agente": "agente-mario", "tecnico": "mario", "amministratore": true}
 ```
 
 **Firma.** Ogni richiesta ha gli header `X-Remotek-Evento-Id` (l'`id`) e
@@ -704,6 +709,82 @@ come istante, qualunque sia il fuso: `2026-10-11T00:00:00Z` o
 (altrimenti diventa uno spazio e la risposta e' 400). Non escono mai uuid,
 chiavi, IP, guid, `session_id`, nomi o percorsi di file, trascrizioni.
 Nessuna rotta scrive niente e nessuna esporta le trascrizioni.
+
+## Lasciapassare dell'agente (ADR-0028)
+
+Il terminale dell'agente AI (`remotek-cli`, con l'account dell'agente: vedi
+Agenti AI) puo' chiedere i permessi di amministratore su un PC: su un PC
+presidiato li accetta il cliente nella finestra, su un PC non presidiato
+abilitato dal suo `custom.txt` firmato entra senza clic. Il nome che il
+client dichiara nessuno lo verifica, quindi prima di collegarsi il CLI
+chiede all'API un *lasciapassare* firmato per quel PC, e il PC lo verifica
+con la chiave pubblica dell'API cablata nel suo binario. Il lasciapassare
+vale 60 secondi per aprire la sessione, una volta sola, per quel solo PC.
+
+**Configurazione.** `agente.lasciapassare-chiave`
+(`RUSTDESK_API_AGENTE_LASCIAPASSARE_CHIAVE`): percorso del file con il seme
+Ed25519 di 32 byte in base64, su una riga. Vuoto (il default) la funzione
+e' spenta e la rotta lo dice. Impostato, all'avvio il file deve esistere,
+non essere leggibile da gruppo e altri (permessi 600 o piu' stretti; nel
+container del proprietario 10001) e contenere una chiave valida, altrimenti
+l'avvio si ferma con un messaggio che dice cosa non va. All'avvio una riga
+INFO `lasciapassare dell'agente acceso, chiave pubblica <base64>`: la
+chiave pubblica non e' un segreto e serve a confrontarla con quella del
+client. Il seme non va mai nel log.
+
+**Comando.** `./apimain lasciapassare chiave-nuova <file>` genera la coppia
+con `crypto/rand`, scrive il seme nel file con permessi 600 e stampa su
+stdout la chiave pubblica in base64. Non legge la configurazione ne' il
+database, e rifiuta con codice 1 un file che esiste gia': una chiave non si
+sovrascrive per sbaglio. Con docker compose, per esempio:
+`docker compose exec remotek-api ./apimain lasciapassare chiave-nuova
+/app/data/lasciapassare.key`, poi
+`RUSTDESK_API_AGENTE_LASCIAPASSARE_CHIAVE=/app/data/lasciapassare.key`.
+
+**Rotta.** `POST /api/agente/lasciapassare`, col token del login
+dell'agente (`Authorization: Bearer`), corpo `{"id": "<ID del PC>"}`.
+Risponde `{"lasciapassare": "<stringa>"}` solo se la funzione e'
+configurata, l'utente del token e' un agente AI attivo, il suo tecnico
+esiste ed e' attivo e il PC e' in `peers`. Altrimenti 400 `{"error": msg}`,
+che dice quale condizione manca (in italiano o in inglese); senza token, o
+con l'agente disattivato, 401 come le altre rotte con login. Ogni
+lasciapassare va nella tabella `lasciapassare` (versione del database 273):
+nonce, PC, agente, tecnico, emesso, scade, `conn_id` (0 finche' non apre
+una sessione); mai il lasciapassare intero ne' la firma. Nel log una riga
+INFO `lasciapassare rilasciato` con agente, tecnico e PC, mai il
+lasciapassare ne' il nonce; per l'integrazione l'evento
+`agente.lasciapassare`.
+
+**Formato.**
+
+- payload = JSON compatto, campi in quest'ordine:
+  `{"v":1,"pc":"<ID>","agente":"<username>","tecnico":"<username del tecnico>","modo":"amministratore","emesso":<unix>,"scade":<emesso+60>,"nonce":"<16 byte casuali, base64url senza padding>"}`;
+- firma = Ed25519(seme, `"remotek-lasciapassare-v1."` + payload);
+- lasciapassare = base64url(payload) + `.` + base64url(firma), senza padding.
+
+Vettore di prova (Ed25519 e' deterministica): il seme dei byte da 0 a 31
+(`AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=`, chiave pubblica
+`A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=`) e il payload
+
+```json
+{"v":1,"pc":"999000111","agente":"agente-mario","tecnico":"mario","modo":"amministratore","emesso":1791000000,"scade":1791000060,"nonce":"AAECAwQFBgcICQoLDA0ODw"}
+```
+
+danno il lasciapassare
+
+```text
+eyJ2IjoxLCJwYyI6Ijk5OTAwMDExMSIsImFnZW50ZSI6ImFnZW50ZS1tYXJpbyIsInRlY25pY28iOiJtYXJpbyIsIm1vZG8iOiJhbW1pbmlzdHJhdG9yZSIsImVtZXNzbyI6MTc5MTAwMDAwMCwic2NhZGUiOjE3OTEwMDAwNjAsIm5vbmNlIjoiQUFFQ0F3UUZCZ2NJQ1FvTERBME9EdyJ9.BRkkm77ln4n8PxwF7Jmi3_-LiCHX7xGjLFjiXb3Knpc3kg9Rlv6DNoxForK3F28DLaUF5HWkudV4ZaWexK4YDA
+```
+
+**Come lo verifica il PC.** Divide la stringa al punto, decodifica le due
+parti (base64url senza padding) e verifica la firma con la chiave pubblica
+cablata sui byte `"remotek-lasciapassare-v1."` + payload esattamente come
+sono arrivati, prima di decodificare il JSON. Poi accetta solo se `v` e' 1,
+`modo` e' `amministratore`, `pc` e' uguale al proprio ID,
+`emesso - 30 <= adesso <= scade + 30` (30 secondi di tolleranza per gli
+orologi) e il `nonce` non l'ha mai visto prima; altrimenti rifiuta. La
+finestra mostra `agente` e `tecnico` del payload, non il nome dichiarato
+dal client.
 
 ## Origine e licenza
 

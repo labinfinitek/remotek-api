@@ -28,6 +28,7 @@ type Service struct {
 	*AppService
 	*EventiService
 	*TokenIntegrazioneService
+	*LasciapassareService
 }
 
 type Dependencies struct {

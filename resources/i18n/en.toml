@@ -373,3 +373,23 @@ other = "The technician of this AI agent is disabled: the agent cannot be enable
 description = "Request body over the size limit."
 one = "Request body too large."
 other = "Request body too large."
+
+[PassOff]
+description = "The AI agent pass is not configured on this server."
+one = "The AI agent pass is not configured on this server."
+other = "The AI agent pass is not configured on this server."
+
+[PassNotAgent]
+description = "Only an enabled AI agent can ask for a pass."
+one = "Only an enabled AI agent can ask for a pass."
+other = "Only an enabled AI agent can ask for a pass."
+
+[PassOwnerDisabled]
+description = "The technician of this AI agent does not exist or is disabled."
+one = "The technician of this AI agent does not exist or is disabled."
+other = "The technician of this AI agent does not exist or is disabled."
+
+[PassUnknownPc]
+description = "No PC with this ID is known to the server."
+one = "No PC with this ID is known to the server."
+other = "No PC with this ID is known to the server."

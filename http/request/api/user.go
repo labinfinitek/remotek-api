@@ -51,3 +51,9 @@ type PeerListQuery struct {
 	Status     int    `json:"status" form:"status" label:"状态"`
 	Accessible string `json:"accessible" form:"accessible"`
 }
+
+// LasciapassareForm e' il PC per cui l'agente AI chiede il lasciapassare
+// (POST /api/agente/lasciapassare, ADR-0028).
+type LasciapassareForm struct {
+	Id string `json:"id" binding:"required,max=100"`
+}
