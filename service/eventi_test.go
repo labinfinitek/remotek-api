@@ -390,3 +390,19 @@ func TestCampiAltriEventi(t *testing.T) {
 		}
 	}
 }
+
+// TestAccodaFileTypeSconosciuto: un type diverso da 0 e 1 non accoda
+// niente e da' un warn con il type e l'ID del PC.
+func TestAccodaFileTypeSconosciuto(t *testing.T) {
+	_, _, _, registro := codaDiProva(t, 200)
+	f := &model.AuditFile{PeerId: "999000111", Type: 2, Num: 1}
+	if err := AllService.EventiService.AccodaFile(f); err != nil {
+		t.Fatal(err)
+	}
+	if n := len(eventi(t)); n != 0 {
+		t.Errorf("%d eventi in coda, attesi 0", n)
+	}
+	if n := applog.Conta(registro.String(), "WARN", "type 2", "999000111"); n != 1 {
+		t.Errorf("%d warn col type e l'ID del PC, atteso 1:\n%s", n, registro)
+	}
+}
