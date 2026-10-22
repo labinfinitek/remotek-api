@@ -119,14 +119,21 @@ func (a *Audit) AuditConn(c *gin.Context) {
 // legaLasciapassare collega alla connessione conn il lasciapassare col
 // nonce nonce, se c'e' (ADR-0028). Il PC puo' mandarlo col new e con
 // l'autorizzazione: una connessione gia' verificata resta com'e'. Se non si
-// lega, un warn con la connessione, il PC e il motivo, mai il nonce: la riga
-// resta com'e' e al PC va la risposta di sempre.
+// lega, un warn con la connessione, il PC e il motivo (nonce sconosciuto, di
+// un altro PC, gia' usato, connessione senza conn_id), mai il nonce; un
+// errore del database e' un error. La riga resta com'e' e al PC va la
+// risposta di sempre.
 func legaLasciapassare(c *gin.Context, nonce string, conn *model.AuditConn) {
 	if nonce == "" || conn.AgenteLasciapassare != "" {
 		return
 	}
-	if err := service.AllService.LasciapassareService.Lega(nonce, conn); err != nil {
+	switch err := service.AllService.LasciapassareService.Lega(nonce, conn); {
+	case errors.Is(err, service.ErrNonceSconosciuto), errors.Is(err, service.ErrNonceAltroPc),
+		errors.Is(err, service.ErrNonceUsato), errors.Is(err, service.ErrConnSenzaId):
 		global.Logger.Per(c.Request.Context()).Warnf("%s %s: lasciapassare non legato alla connessione %d del PC %s: %v", c.Request.Method, c.FullPath(), conn.ConnId, conn.PeerId, err)
+		return
+	case err != nil:
+		global.Logger.Per(c.Request.Context()).Errorf("%s %s: lasciapassare non legato alla connessione %d del PC %s: %v", c.Request.Method, c.FullPath(), conn.ConnId, conn.PeerId, err)
 		return
 	}
 	global.Logger.Per(c.Request.Context()).Infof("connessione %d del PC %s aperta col lasciapassare: agente %s, tecnico %s", conn.ConnId, conn.PeerId, conn.AgenteLasciapassare, conn.TecnicoLasciapassare)

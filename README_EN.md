@@ -812,13 +812,20 @@ it sends its `nonce` in the optional `lasciapassare` field of
 `POST /api/audit/conn` (the PC's route, signed like the others: Device
 signature), with the `new` or with the authorization. If the nonce belongs
 to a pass issued for that same PC that has not opened a session yet, the
-API writes the connection's `conn_id` on the pass and marks the
-`audit_conns` row (columns `agente_lasciapassare` and
-`tecnico_lasciapassare`, database version 274) with the verified agent and
-technician; an INFO line says so. A connection already marked is not
-linked again. An unknown nonce, one of another PC or one already used
-leaves a warn with the connection, the PC and the reason (never the
-nonce), and the row is saved as without the field; the PC gets the usual
+API links the pass to the log row: it writes on the pass `audit_conn_id`,
+the `id` of the `audit_conns` row (database version 275), and the
+connection's `conn_id`. The link that counts is the row: the client gives
+`conn_id` and restarts it at every PC reboot, so PC and `conn_id` do not
+tell which session it was. Then it marks the row (columns
+`agente_lasciapassare` and `tecnico_lasciapassare`, version 274) with the
+verified agent and technician; an INFO line says so. A connection already
+marked is not linked again, and a connection without `conn_id` does not
+link. An unknown nonce, one of another PC or one already used leaves a
+warn with the connection, the PC and the reason (never the nonce); a
+database error is an error. `scade` does not count here: the PC verifies
+the pass when it opens the session, but the nonce can reach the audit
+minutes later, at the customer's click. The row is saved as without the
+field; the PC gets the usual
 answer.
 
 **Administrator rights.** The pass does not say them, the PC does: the

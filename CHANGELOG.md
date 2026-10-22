@@ -29,6 +29,13 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   sconosciuto, di un altro PC o gia' usato da' un warn e la riga si salva
   come prima; senza i campi non cambia niente.
 
+### Modificato
+- Lasciapassare dell'agente: il lasciapassare si lega alla riga del
+  registro delle connessioni (`audit_conn_id`, migrazione 275) e non solo
+  al `conn_id`, che il client fa ripartire a ogni riavvio del PC. Un
+  errore del database nel legame e' un error, non piu' un warn (README,
+  Lasciapassare dell'agente).
+
 ### Sicurezza
 - Lasciapassare dell'agente: `POST /api/agente/lasciapassare` rilascia il
   lasciapassare solo per un PC nella rubrica del tecnico dell'agente (una

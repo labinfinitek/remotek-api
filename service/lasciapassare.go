@@ -41,6 +41,7 @@ var (
 	ErrNonceSconosciuto = errors.New("nonce di nessun lasciapassare")
 	ErrNonceAltroPc     = errors.New("lasciapassare di un altro PC")
 	ErrNonceUsato       = errors.New("lasciapassare gia' usato")
+	ErrConnSenzaId      = errors.New("connessione senza conn_id")
 )
 
 // PayloadLasciapassare e' cio' che il lasciapassare dice al PC; i campi
@@ -130,11 +131,16 @@ func (ls *LasciapassareService) Rilascia(agente *model.User, pc string, adesso t
 
 // Lega collega alla connessione conn il lasciapassare col nonce nonce, se e'
 // stato rilasciato per il PC di conn e non ha ancora aperto una sessione:
-// segna sul lasciapassare il conn_id di conn e su conn, anche nel database,
-// l'agente e il tecnico verificati. I permessi di amministratore no: li dice
-// il PC (campo amministratore di /api/audit/conn). Altrimenti non cambia
-// niente e restituisce ErrNonceSconosciuto, ErrNonceAltroPc o
-// ErrNonceUsato.
+// segna sul lasciapassare la riga di conn (AuditConnId) e il suo conn_id, e
+// su conn, anche nel database, l'agente e il tecnico verificati. I permessi
+// di amministratore no: li dice il PC (campo amministratore di
+// /api/audit/conn). Altrimenti non cambia niente e restituisce
+// ErrNonceSconosciuto, ErrNonceAltroPc, ErrNonceUsato o ErrConnSenzaId.
+//
+// Scade non si guarda, ed e' voluto: il lasciapassare lo verifica il PC
+// quando apre la sessione (60 secondi), ma il PC puo' mandare il nonce
+// all'audit dopo il clic del cliente, anche minuti dopo. Il legame vale una
+// volta sola, ed e' quello che conta.
 func (ls *LasciapassareService) Lega(nonce string, conn *model.AuditConn) error {
 	var agente, tecnico model.User
 	err := DB.Transaction(func(tx *gorm.DB) error {
@@ -147,14 +153,15 @@ func (ls *LasciapassareService) Lega(nonce string, conn *model.AuditConn) error 
 		switch {
 		case lp.Pc != conn.PeerId:
 			return ErrNonceAltroPc
-		case lp.ConnId != 0:
+		case lp.AuditConnId != 0:
 			return ErrNonceUsato
 		case conn.ConnId == 0:
-			return errors.New("connessione senza conn_id")
+			return ErrConnSenzaId
 		}
-		r := tx.Model(lp).Where("conn_id = 0").Update("conn_id", conn.ConnId)
+		r := tx.Model(lp).Where("audit_conn_id = 0").
+			Updates(map[string]any{"audit_conn_id": conn.Id, "conn_id": conn.ConnId})
 		if r.Error != nil {
-			return fmt.Errorf("conn_id del lasciapassare: %w", r.Error)
+			return fmt.Errorf("legame del lasciapassare: %w", r.Error)
 		}
 		if r.RowsAffected == 0 {
 			return ErrNonceUsato
