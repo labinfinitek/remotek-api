@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 	"unicode/utf8"
 )
@@ -40,7 +41,7 @@ func (i *Integrazione) Controlla() error {
 	case u.Host == "":
 		return errors.New("integrazione.url non ha l'host")
 	case utf8.RuneCountInString(i.Segreto) < SegretoIntegrazioneMin:
-		return errors.New("integrazione.segreto deve avere almeno 32 caratteri")
+		return fmt.Errorf("integrazione.segreto deve avere almeno %d caratteri", SegretoIntegrazioneMin)
 	}
 	return nil
 }

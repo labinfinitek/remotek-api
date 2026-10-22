@@ -28,6 +28,11 @@ const (
 	intervalloPulizia = time.Hour
 )
 
+// rispostaLettaMax e' quanto della risposta si legge prima di chiuderla:
+// leggerla permette di riusare la connessione, il limite evita che un
+// ricevitore che risponde senza fine tenga ferma la coda.
+const rispostaLettaMax = 64 << 10
+
 // Consegna manda gli eventi della coda all'URL dell'integrazione, uno alla
 // volta, in ordine di creazione tra quelli pronti. Ora e' l'orologio, finto
 // nei test; intervallo e' l'attesa di gira quando non c'e' niente da
@@ -156,7 +161,7 @@ func (k *Consegna) manda(ctx context.Context, e *model.Evento, adesso time.Time)
 		}
 		return err.Error()
 	}
-	_, _ = io.Copy(io.Discard, io.LimitReader(res.Body, 64<<10))
+	_, _ = io.Copy(io.Discard, io.LimitReader(res.Body, rispostaLettaMax))
 	_ = res.Body.Close()
 	if res.StatusCode/100 == 2 {
 		return ""
