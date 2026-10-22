@@ -14,6 +14,15 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   ERROR "coda degli eventi" esce una volta quando il guasto comincia (o
   cambia messaggio) invece che ogni 5 secondi, e una riga INFO dice quando
   la coda torna a rispondere.
+- Pannello: "Esci" con il token gia' scaduto o senza rete non mostra piu'
+  per un attimo l'avviso rosso ("Accedi prima di continuare.", "Network
+  Error") prima della pagina di accesso; l'uscita resta la stessa.
+- Pannello: l'avviso dell'esportazione della trascrizione non riuscita
+  comincia con la maiuscola ("Risposta HTTP 502 dal server"); nella
+  finestra, dopo i due punti, resta minuscolo.
+- Pannello: le colonne "Azioni" della rubrica (anche in "Area
+  personale") e dei PC di "Area personale" hanno la larghezza dei
+  pulsanti rimasti, senza lo spazio vuoto dei pulsanti del web client.
 
 ### Sicurezza
 - Go 1.26.10: corregge GO-2026-6809 (CVE-2026-111943) della libreria

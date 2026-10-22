@@ -64,11 +64,13 @@ service.interceptors.response.use(
 
     // if the custom code is not 20000, it is judged as an error.
     if (res.code !== 0) {
-      ElMessage({
-        message: res.message || T('Error'),
-        type: 'error',
-        duration: 5 * 1000,
-      })
+      if (!response.config.senzaAvviso) {
+        ElMessage({
+          message: res.message || T('Error'),
+          type: 'error',
+          duration: 5 * 1000,
+        })
+      }
 
       if (res.code === 403) {
         removeToken()
@@ -84,11 +86,13 @@ service.interceptors.response.use(
       && error.message.indexOf('timeout') > -1) {
       error.message = T('ConnectionTimeout')
     }
-    ElMessage({
-      message: error.message,
-      type: 'error',
-      duration: 5 * 1000,
-    })
+    if (!error.config?.senzaAvviso) {
+      ElMessage({
+        message: error.message,
+        type: 'error',
+        duration: 5 * 1000,
+      })
+    }
     return Promise.reject(error)
   },
 )
