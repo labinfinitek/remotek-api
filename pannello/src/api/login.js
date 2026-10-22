@@ -1,12 +1,15 @@
 import request from '@/utils/request'
 
 // Chiude la sessione sul server. Timeout corto: se l'API non risponde,
-// l'uscita non deve aspettare i 50 secondi delle altre richieste.
+// l'uscita non deve aspettare i 50 secondi delle altre richieste. Senza
+// avviso: con il token gia' scaduto o senza rete l'uscita va avanti lo
+// stesso, e l'avviso rosso comparirebbe solo per un attimo prima del login.
 export function logout () {
   return request({
     url: '/logout',
     method: 'post',
     timeout: 5000,
+    senzaAvviso: true,
   })
 }
 
