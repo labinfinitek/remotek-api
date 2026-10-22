@@ -13,7 +13,7 @@
 # le parti della glibc che non funzionano statiche: netgo e osusergo (DNS e
 # utenti in Go puro), sqlite_omit_load_extension (niente dlopen); timetzdata
 # mette il database dei fusi nel binario, cosi' TZ funziona senza tzdata.
-FROM docker.io/library/golang:1.26.9-trixie@sha256:f06b7122f888680048afb247c4e5f49c0069eb6c4c1ccae0f3f4834527a8d22c AS api
+FROM docker.io/library/golang:1.26.10-trixie@sha256:909771fef53e3dcb0950255f0c9a8b4728c3b841e61509c7b29b098de7ee02d4 AS api
 ENV CGO_ENABLED=1 GOFLAGS=-mod=readonly GOTOOLCHAIN=local
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 WORKDIR /src
