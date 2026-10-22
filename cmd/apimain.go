@@ -496,7 +496,6 @@ func Migrate(version uint) {
 		&model.AuditTerminal{},
 		&model.AddressBookCollection{},
 		&model.AddressBookCollectionRule{},
-		&model.ServerCmd{},
 		&model.DeviceGroup{},
 		&model.Evento{},
 		&model.TokenIntegrazione{},

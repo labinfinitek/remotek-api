@@ -66,39 +66,6 @@ func TestPannelloSvuotaDispositivo(t *testing.T) {
 	}
 }
 
-// TestPannelloSvuotaComandoServer prova sul router vero che la modifica di
-// una voce dei comandi del server dal pannello (POST
-// /api/admin/rustdesk/cmdUpdate) salva vuoti alias, opzione e spiegazione
-// tolti, e lascia la data di creazione. Prima restavano quelli di prima e
-// il pannello rispondeva successo.
-func TestPannelloSvuotaComandoServer(t *testing.T) {
-	g, _, _ := pannello(t, true)
-	if err := service.DB.AutoMigrate(&model.ServerCmd{}); err != nil {
-		t.Fatal(err)
-	}
-	salvato := &model.ServerCmd{Cmd: "blacklist-add", Alias: "ba", Option: "<ip>", Explain: "prima", Target: model.ServerCmdTargetRelayServer}
-	crea(t, salvato)
-	prima := &model.ServerCmd{}
-	if err := service.DB.First(prima, salvato.Id).Error; err != nil {
-		t.Fatal(err)
-	}
-
-	const rotta = "/api/admin/rustdesk/cmdUpdate"
-	corpo := `{"id": ` + strconv.FormatUint(uint64(salvato.Id), 10) +
-		`, "cmd": "blacklist-add", "alias": "", "option": "", "explain": "", "target": "` + model.ServerCmdTargetRelayServer + `"}`
-	modifica(t, g, rotta, corpo)
-	dopo := &model.ServerCmd{}
-	if err := service.DB.First(dopo, salvato.Id).Error; err != nil {
-		t.Fatal(err)
-	}
-	got := fmt.Sprintf("cmd=%s alias=%q option=%q explain=%q target=%s creato=%v",
-		dopo.Cmd, dopo.Alias, dopo.Option, dopo.Explain, dopo.Target, dopo.CreatedAt)
-	want := fmt.Sprintf(`cmd=blacklist-add alias="" option="" explain="" target=%s creato=%v`, model.ServerCmdTargetRelayServer, prima.CreatedAt)
-	if got != want {
-		t.Errorf("voce dei comandi dopo POST %s:\n got  %s\n want %s", rotta, got, want)
-	}
-}
-
 // TestPannelloSvuotaProviderOauth prova sul router vero che la modifica di
 // un provider OAuth dal pannello (POST /api/admin/oauth/update) salva vuoti
 // issuer e scope tolti, e lascia la data di creazione. Prima restavano

@@ -419,41 +419,11 @@
   "Captcha": {
     "One": "Captcha"
   },
-  "ServerCmd": {
-    "One": "Server Cmd"
-  },
-  "Simple": {
-    "One": "Simple"
-  },
-  "Advanced": {
-    "One": "Advanced"
-  },
-  "Available": {
-    "One": "Available"
-  },
-  "NotAvailable": {
-    "One": "Not Available"
-  },
-  "ServerCmdTips": {
-    "One": "This feature is experimental. Please ensure that the API and hbbs and hbbr are on the same loopback address. For more information, please refer to the {wiki}"
-  },
-  "Refresh": {
-    "One": "Refresh"
-  },
   "Save": {
     "One": "Save"
   },
   "SendCustom": {
     "One": "Send Custom"
-  },
-  "Send": {
-    "One": "Send"
-  },
-  "SendCmd": {
-    "One": "Send Cmd"
-  },
-  "Result": {
-    "One": "Result"
   },
   "DeviceGroupManage": {
     "One": "Device Group Manage"
@@ -607,72 +577,6 @@
   },
   "PlatformUA": {
     "One": "Platform/UA"
-  },
-  "CmdRelayServers": {
-    "One": "Relay servers"
-  },
-  "CmdAlwaysUseRelay": {
-    "One": "Always use relay"
-  },
-  "CmdMustLogin": {
-    "One": "Must login"
-  },
-  "CmdUsage": {
-    "One": "Usage"
-  },
-  "CmdBlocklist": {
-    "One": "Blocklist"
-  },
-  "CmdBlacklist": {
-    "One": "Blacklist"
-  },
-  "UsageTime": {
-    "One": "Time"
-  },
-  "UsageTotal": {
-    "One": "Total"
-  },
-  "UsageHighest": {
-    "One": "Highest"
-  },
-  "UsageAvg": {
-    "One": "Average"
-  },
-  "UsageSpeed": {
-    "One": "Speed"
-  },
-  "IpSeparatorHint": {
-    "One": "Separate multiple IPs with |"
-  },
-  "DeleteAllHint": {
-    "One": "To remove all, enter"
-  },
-  "SendToId": {
-    "One": "Send to ID server"
-  },
-  "SendToRelay": {
-    "One": "Send to relay server"
-  },
-  "Command": {
-    "One": "Command"
-  },
-  "Option": {
-    "One": "Option"
-  },
-  "Explain": {
-    "One": "Description"
-  },
-  "Target": {
-    "One": "Target"
-  },
-  "Example": {
-    "One": "Example:"
-  },
-  "IdServerStatus": {
-    "One": "ID server status"
-  },
-  "RelayServerStatus": {
-    "One": "Relay server status"
   },
   "ColumnSetting": {
     "One": "Columns"

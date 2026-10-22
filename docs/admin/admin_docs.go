@@ -4108,51 +4108,6 @@ const docTemplateadmin = `{
                 }
             }
         },
-        "/admin/rustdesk/cmdUpdate": {
-            "post": {
-                "security": [
-                    {
-                        "token": []
-                    }
-                ],
-                "description": "Modifica uno dei comandi del server salvati; solo amministratori.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Comandi"
-                ],
-                "summary": "Modifica uno dei comandi del server",
-                "parameters": [
-                    {
-                        "description": "voce dei comandi, con id",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.ServerCmd"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/admin/tag/create": {
             "post": {
                 "security": [
@@ -6249,35 +6204,6 @@ const docTemplateadmin = `{
                 },
                 "total": {
                     "type": "integer"
-                }
-            }
-        },
-        "model.ServerCmd": {
-            "type": "object",
-            "properties": {
-                "alias": {
-                    "type": "string"
-                },
-                "cmd": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "explain": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "option": {
-                    "type": "string"
-                },
-                "target": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
                 }
             }
         },

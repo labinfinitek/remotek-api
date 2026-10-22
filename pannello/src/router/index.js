@@ -168,12 +168,6 @@ export const asyncRoutes = [
         meta: { title: 'AuditFileLog', icon: 'Files' /*keepAlive: true*/ },
         component: () => import('@/views/audit/fileList.vue'),
       },
-      {
-        path: '/serverCmd',
-        name: 'ServerCmd',
-        meta: { title: 'ServerCmd', icon: 'Tools' /*keepAlive: true*/ },
-        component: () => import('@/views/rustdesk/control.vue'),
-      },
     ],
   },
 ]

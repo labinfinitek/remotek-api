@@ -4,11 +4,6 @@ import (
 	"os"
 )
 
-const (
-	DefaultIdServerPort    = 21116
-	DefaultRelayServerPort = 21117
-)
-
 type Rustdesk struct {
 	IdServer        string `mapstructure:"id-server"`
 	IdServerPort    int    `mapstructure:"-"`
