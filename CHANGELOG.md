@@ -6,6 +6,12 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Sicurezza
+- Immagine di base Alpine 3.24.3: zlib 1.3.2-r1 (CVE-2026-85091, MEDIUM) e
+  musl 1.2.6-r3 (CVE-2026-107891), che trivy segnalava sulla 3.24.2. Il
+  binario dell'API e' statico e non le usa; le usano gli strumenti di
+  sistema dell'immagine (busybox, il `wget` dell'HEALTHCHECK).
+
 ## [0.7.2] - 2026-10-22
 Immagine `ghcr.io/labinfinitek/remotek-api:0.7.2`, costruita con Go 1.26.10.
 Rilascio di sicurezza e di correzione: Go 1.26.10 per GO-2026-6809
