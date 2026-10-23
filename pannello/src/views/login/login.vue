@@ -127,16 +127,20 @@
 
   const allowRegister = ref(false)
   const disablePwd = ref(false)
+  // Accesso di emergenza (README): con ?password=1 il modulo della password
+  // resta anche col login con password spento, senza andare all'OIDC, per
+  // gli username di app.pwd-login-eccezioni.
+  const emergenza = route.query?.password === '1'
   const loadLoginOptions = async () => {
     try {
       const res = await loginOptions().catch(_ => false)
       if (!res || !res.data) return console.error('No valid response received')
       res.data.ops.map(option => (options.push({ name: option }))) // 创建新的对象数组
-      if (res.data.auto_oidc) {
+      if (res.data.auto_oidc && !emergenza) {
         // 如果有自动OIDC登录选项，直接调用第一个
         handleOIDCLogin(res.data.ops[0])
       }
-      disablePwd.value = res.data.disable_pwd
+      disablePwd.value = res.data.disable_pwd && !emergenza
       allowRegister.value = res.data.register
       if (res.data.need_captcha) {
         loadCaptcha()
