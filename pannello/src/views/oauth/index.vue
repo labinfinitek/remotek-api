@@ -61,6 +61,7 @@
               v-model="formData.client_secret"
               :type="formData.id ? 'password' : 'text'"
               :show-password="!formData.id"
+              :placeholder="formData.id && formData.has_client_secret ? T('ClientSecretKept') : ''"
           >
           </el-input>
         </el-form-item>
@@ -176,6 +177,7 @@
     issuer: '',
     client_id: '',
     client_secret: '',
+    has_client_secret: false,
     redirect_url: '',
     scopes: '',
     auto_register: false,
@@ -184,7 +186,18 @@
   })
   const rules = {
     client_id: [{ required: true, message: T('ParamRequired', { param: 'client_id' }), trigger: 'blur' }],
-    client_secret: [{ required: true, message: T('ParamRequired', { param: 'client_secret' }), trigger: 'blur' }],
+    // Il segreto salvato non si rilegge: serve solo alla creazione, e in
+    // modifica vuoto vuol dire tenere quello salvato.
+    client_secret: [{
+      validator: (rule, value, callback) => {
+        if (!formData.id && !value) {
+          callback(new Error(T('ParamRequired', { param: 'client_secret' })))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur',
+    }],
     // redirect_url: [{ required: true, message: T('ParamRequired', { param: 'redirect_url' }), trigger: 'blur' }],
     oauth_type: [{ required: true, message: T('ParamRequired', { param: 'oauth_type' }), trigger: 'blur' }],
     issuer: [{ required: true, message: T('ParamRequired', { param: 'issuer' }), trigger: 'blur' }],
@@ -215,7 +228,8 @@
     formData.oauth_type = row.oauth_type
     formData.issuer = row.issuer
     formData.client_id = row.client_id
-    formData.client_secret = row.client_secret
+    formData.client_secret = ''
+    formData.has_client_secret = row.has_client_secret
     // formData.redirect_url = row.redirect_url || defaultRedirect()
     formData.scopes = row.scopes
     formData.auto_register = row.auto_register
@@ -230,6 +244,7 @@
     formData.issuer = ''
     formData.client_id = ''
     formData.client_secret = ''
+    formData.has_client_secret = false
     // formData.redirect_url = defaultRedirect()
     formData.scopes = ''
     formData.auto_register = false

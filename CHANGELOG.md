@@ -27,6 +27,17 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   `auto_register` l'email abbina un utente locale solo se il provider la
   dichiara verificata, e mai un agente AI o un utente disattivato: in quei
   casi il login si ferma invece di entrare come quell'utente.
+- Il segreto del client OIDC non torna piu' al pannello: lista e dettaglio
+  del provider (`/api/admin/oauth/list`, `/detail/:id`) lo sostituiscono con
+  `has_client_secret`; nell'aggiornamento un segreto vuoto tiene quello
+  salvato. Il pannello lascia vuoto il campo in modifica.
+
+### Corretto
+- Gli scope OIDC salvati con spazi o virgole in piu' (`openid, profile ,`)
+  arrivavano al provider con gli spazi e con scope vuoti: ora si puliscono.
+- Il pannello teneva il codice del login OIDC per 60 secondi: con login e
+  TOTP su Keycloak al ritorno era gia' scaduto e il login non si chiudeva.
+  Ora vale 5 minuti, quanto sul server.
 
 ## [0.8.0] - 2026-10-22
 Immagine `ghcr.io/labinfinitek/remotek-api:0.8.0`, costruita con Go 1.26.10

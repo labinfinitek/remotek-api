@@ -601,5 +601,8 @@
   },
   "Language": {
     "One": "Lingua"
+  },
+  "ClientSecretKept": {
+    "One": "Lascia vuoto per tenere il segreto salvato"
   }
 }

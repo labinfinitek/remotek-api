@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -418,18 +419,22 @@ func (os *OauthService) InfoByOp(op string) (*model.Oauth, error) {
 	return oauthInfo, nil
 }
 
-// constructScopes restituisce gli scope del provider, con openid sempre:
-// senza, il provider non manda l'id_token che il login richiede.
+// constructScopes restituisce gli scope del provider, separati da virgola
+// nel pannello, senza gli spazi intorno e senza quelli vuoti (nessuno: i
+// default), con openid sempre: senza, il provider non manda l'id_token che
+// il login richiede.
 func (os *OauthService) constructScopes(scopes string) []string {
-	scopes = strings.TrimSpace(scopes)
-	if scopes == "" {
-		scopes = model.OIDC_DEFAULT_SCOPES
-	}
-	res := strings.Split(scopes, ",")
-	for _, s := range res {
-		if strings.TrimSpace(s) == "openid" {
-			return res
+	var res []string
+	for _, s := range strings.Split(scopes, ",") {
+		if s = strings.TrimSpace(s); s != "" {
+			res = append(res, s)
 		}
+	}
+	if len(res) == 0 {
+		res = strings.Split(model.OIDC_DEFAULT_SCOPES, ",")
+	}
+	if slices.Contains(res, "openid") {
+		return res
 	}
 	return append([]string{"openid"}, res...)
 }
@@ -494,15 +499,18 @@ func (os *OauthService) Delete(oauthInfo *model.Oauth) error {
 
 // Update salva i campi del modulo del pannello (admin.OauthForm), anche
 // vuoti: issuer e scope svuotati restano vuoti. Op, PKCE e autoregistrazione
-// vuoti prendono prima i default di FormatOauthInfo, come oggi; client_id e
-// client_secret il validatore non li accetta vuoti. La data di creazione
-// resta quella di prima.
+// vuoti prendono prima i default di FormatOauthInfo, come oggi; client_id il
+// validatore non lo accetta vuoto, client_secret vuoto lascia quello salvato.
+// La data di creazione resta quella di prima.
 func (os *OauthService) Update(oauthInfo *model.Oauth) error {
 	err := oauthInfo.FormatOauthInfo()
 	if err != nil {
 		return err
 	}
-	campi := []string{"op", "oauth_type", "client_id", "client_secret", "auto_register", "scopes", "issuer", "pkce_enable", "pkce_method"}
+	campi := []string{"op", "oauth_type", "client_id", "auto_register", "scopes", "issuer", "pkce_enable", "pkce_method"}
+	if oauthInfo.ClientSecret != "" {
+		campi = append(campi, "client_secret")
+	}
 	if err := DB.Model(oauthInfo).Select(campi).Updates(oauthInfo).Error; err != nil {
 		return fmt.Errorf("provider OAuth %d: %w", oauthInfo.Id, err)
 	}

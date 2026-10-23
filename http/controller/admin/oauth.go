@@ -9,6 +9,7 @@ import (
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/request/admin"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
+	adResp "github.com/lejianwen/rustdesk-api/v2/http/response/admin"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 )
@@ -178,7 +179,7 @@ func (o *Oauth) Detail(c *gin.Context) {
 	iid, _ := strconv.Atoi(id)
 	u, err := service.AllService.OauthService.InfoById(uint(iid))
 	if err == nil {
-		response.Success(c, u)
+		response.Success(c, adResp.NuovoOauthPannello(u))
 		return
 	}
 	response.FailErr(c, 101, "SystemError", err)
@@ -202,6 +203,13 @@ func (o *Oauth) Create(c *gin.Context) {
 		return
 	}
 	errList := global.Validator.ValidStruct(c, f)
+	if len(errList) == 0 {
+		// Il segreto serve alla creazione; nell'aggiornamento vuoto vuol
+		// dire "tieni quello salvato".
+		errList = global.Validator.ValidStruct(c, &struct {
+			ClientSecret string `validate:"required"`
+		}{f.ClientSecret})
+	}
 	if len(errList) > 0 {
 		response.Fail(c, 101, errList[0])
 		return
@@ -251,7 +259,12 @@ func (o *Oauth) List(c *gin.Context) {
 		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
-	response.Success(c, res)
+	// Il segreto del client non torna al pannello (README, provider OIDC).
+	lista := adResp.OauthListPannello{Oauths: make([]adResp.OauthPannello, 0, len(res.Oauths)), Pagination: res.Pagination}
+	for _, o := range res.Oauths {
+		lista.Oauths = append(lista.Oauths, adResp.NuovoOauthPannello(o))
+	}
+	response.Success(c, lista)
 }
 
 // Update 编辑

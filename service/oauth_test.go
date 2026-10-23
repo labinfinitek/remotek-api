@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -93,5 +94,24 @@ func TestUserinfoSenzaRisposta(t *testing.T) {
 	}
 	if !strings.Contains(registro.String(), "context deadline exceeded") {
 		t.Errorf("nel log manca la scadenza della userinfo:\n%s", registro)
+	}
+}
+
+// TestConstructScopes verifica che gli scope salvati dal pannello perdano gli
+// spazi intorno e le voci vuote, con openid sempre e i default se non ne
+// resta nessuno. Prima " profile" arrivava al provider con lo spazio e una
+// virgola in piu' chiedeva uno scope vuoto.
+func TestConstructScopes(t *testing.T) {
+	for scopes, attesi := range map[string][]string{
+		"":                        {"openid", "profile", "email"},
+		" , ,":                    {"openid", "profile", "email"},
+		"openid, profile ,email":  {"openid", "profile", "email"},
+		" profile,,email, ":       {"openid", "profile", "email"},
+		"email , openid":          {"email", "openid"},
+		"offline_access,  roles ": {"openid", "offline_access", "roles"},
+	} {
+		if got := (&OauthService{}).constructScopes(scopes); !slices.Equal(got, attesi) {
+			t.Errorf("constructScopes(%q) = %q, attesi %q", scopes, got, attesi)
+		}
 	}
 }

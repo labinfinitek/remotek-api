@@ -299,7 +299,11 @@ stesso default se la chiave manca dal file.
 Il provider OIDC si configura dal pannello (OAuth, tipo `oidc`): serve
 l'`Issuer`, `Scopes` di default `openid,profile,email` (`openid` si chiede
 sempre, anche se non e' negli scope salvati), URL di callback
-`<rustdesk.api-server>/api/oidc/callback`. Serve un provider che nella
+`<rustdesk.api-server>/api/oidc/callback`. Il segreto del client si scrive
+alla creazione e non si rilegge: lista e dettaglio del provider dicono solo
+se c'e' (`has_client_secret`); in modifica, lasciato vuoto, resta quello
+salvato, e per cambiarlo si scrive quello nuovo. Gli scope si separano con
+la virgola; gli spazi intorno e le voci vuote si tolgono. Serve un provider che nella
 risposta del token manda l'`id_token` (OIDC Core): senza, o con un
 `id_token` che non si verifica, il login si ferma. L'autoregistrazione
 (`auto_register`) e' spenta se non la si accende: un account del provider
