@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -418,18 +419,22 @@ func (os *OauthService) InfoByOp(op string) (*model.Oauth, error) {
 	return oauthInfo, nil
 }
 
-// constructScopes restituisce gli scope del provider, con openid sempre:
-// senza, il provider non manda l'id_token che il login richiede.
+// constructScopes restituisce gli scope del provider, separati da virgola
+// nel pannello, senza gli spazi intorno e senza quelli vuoti (nessuno: i
+// default), con openid sempre: senza, il provider non manda l'id_token che
+// il login richiede.
 func (os *OauthService) constructScopes(scopes string) []string {
-	scopes = strings.TrimSpace(scopes)
-	if scopes == "" {
-		scopes = model.OIDC_DEFAULT_SCOPES
-	}
-	res := strings.Split(scopes, ",")
-	for _, s := range res {
-		if strings.TrimSpace(s) == "openid" {
-			return res
+	var res []string
+	for _, s := range strings.Split(scopes, ",") {
+		if s = strings.TrimSpace(s); s != "" {
+			res = append(res, s)
 		}
+	}
+	if len(res) == 0 {
+		res = strings.Split(model.OIDC_DEFAULT_SCOPES, ",")
+	}
+	if slices.Contains(res, "openid") {
+		return res
 	}
 	return append([]string{"openid"}, res...)
 }
