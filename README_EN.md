@@ -247,7 +247,8 @@ default when the key is missing from the file.
 | `app.show-swagger` \* | `RUSTDESK_API_APP_SHOW_SWAGGER` | `0` | `1` publishes `/swagger/index.html` and `/admin/swagger/index.html` |
 | `app.token-expire` | `RUSTDESK_API_APP_TOKEN_EXPIRE` | `168h` | session lifetime (Go duration: `72h`, `30m`) |
 | `app.web-sso` \* | `RUSTDESK_API_APP_WEB_SSO` | `false` | turns on the client login confirmed from the panel (`webauth`); off, `/api/oidc/auth` rejects it like a provider that does not exist |
-| `app.disable-pwd-login` | `RUSTDESK_API_APP_DISABLE_PWD_LOGIN` | `false` | `true` removes username and password login, LDAP included, since it goes through it; OIDC remains |
+| `app.disable-pwd-login` | `RUSTDESK_API_APP_DISABLE_PWD_LOGIN` | `false` | `true` removes username and password login, LDAP included, since it goes through it; OIDC remains. The exceptions remain: AI agents from the client and `app.pwd-login-eccezioni` (Password login off) |
+| `app.pwd-login-eccezioni` \* | `RUSTDESK_API_APP_PWD_LOGIN_ECCEZIONI` | empty | comma-separated usernames (spaces trimmed) that log in with the password even with `app.disable-pwd-login`, from the client and the panel; empty = nobody. Ignored while `app.disable-pwd-login` is off |
 | `app.firma-obbligatoria` \* | `RUSTDESK_API_APP_FIRMA_OBBLIGATORIA` | `false` | `true`: PCs without a key must sign their no-login requests too (Device signature) |
 | `admin.title` \* | `RUSTDESK_API_ADMIN_TITLE` | empty | panel title; empty = `brand.name` |
 | `admin.hello` | `RUSTDESK_API_ADMIN_HELLO` | empty | panel welcome message (HTML); when not empty, `admin.hello-file` is not read |
@@ -360,7 +361,24 @@ the OIDC one) refuses it without a token, and every panel login route
 answers code 403, which for the panel is a logout, even to a token issued
 before. So an
 agent cannot create address books or rules, nor write into shared ones, to
-widen the pass boundary.
+widen the pass boundary. The CLI has no browser nor TOTP: with
+`app.disable-pwd-login` on, an agent still logs in with the password on
+`POST /api/login`, never on the panel.
+
+**Password login off.** With `app.disable-pwd-login` technicians log in
+only with OIDC. Still logging in with the password are the agent accounts,
+only on `POST /api/login`, and the usernames in `app.pwd-login-eccezioni`
+(for example the acceptance-test user and an emergency administrator), on
+`/api/login` and `/api/admin/login`. Everyone else, a username that does
+not exist and an exception with the wrong password get the same answer:
+"Password login disabled.", without telling who is an exception; every
+refusal counts for captcha and ban. A successful login by exception writes
+an INFO line `login con password per eccezione` with username and reason
+(`agente` or `elenco`), a warn if the user is an administrator.
+**Emergency access:** if the OIDC provider does not answer, the panel shows
+the password form at `/_admin/#/login?password=1`, even with a single
+provider (which without the parameter opens OIDC at once); only a username
+in the list gets in.
 
 **Connecting the client.** From client `remotek-1.4.9-3`, Remotek has the
 ID server, relay server, API server and key locked in the binary (ADR-0025):

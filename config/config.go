@@ -25,6 +25,9 @@ type App struct {
 	BanThreshold     int           `mapstructure:"ban-threshold"`
 	// FirmaObbligatoria: anche i PC senza chiave devono firmare (ADR-0023).
 	FirmaObbligatoria bool `mapstructure:"firma-obbligatoria"`
+	// PwdLoginEccezioni: username separati da virgola che entrano con la
+	// password anche con DisablePwdLogin (ADR-0029); vuoto: nessuno.
+	PwdLoginEccezioni string `mapstructure:"pwd-login-eccezioni"`
 }
 type Admin struct {
 	Title     string `mapstructure:"title"`
@@ -47,6 +50,17 @@ type Config struct {
 	Integrazione Integrazione
 	// Agente: lasciapassare firmato degli agenti AI (ADR-0028).
 	Agente Agente
+}
+
+// EccezionePwdLogin dice se username e' in app.pwd-login-eccezioni: un
+// elenco di nomi divisi da virgole, con gli spazi intorno ai nomi tolti.
+func (a *App) EccezionePwdLogin(username string) bool {
+	for _, n := range strings.Split(a.PwdLoginEccezioni, ",") {
+		if n = strings.TrimSpace(n); n != "" && n == username {
+			return true
+		}
+	}
+	return false
 }
 
 // Init completa la sezione admin: il titolo vuoto e' il nome del marchio.
@@ -72,6 +86,8 @@ func Init(rowVal *Config, path string) *viper.Viper {
 	v.SetDefault("app.captcha-threshold", 3)
 	v.SetDefault("app.ban-threshold", 10)
 	v.SetDefault("app.firma-obbligatoria", false)
+	// Nessuna eccezione al login con password spento (app.disable-pwd-login).
+	v.SetDefault("app.pwd-login-eccezioni", "")
 	v.SetDefault("gin.trust-proxy", "") // nessun proxy fidato: vedi http.setTrustedProxies
 	// Con ldaps:// i certificati del server si verificano; una CA interna
 	// si indica con ldap.tls-ca-file, false va scelto a mano.

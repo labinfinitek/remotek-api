@@ -31,11 +31,6 @@ type Login struct {
 // @Router /admin/login [post]
 // @Security token
 func (ct *Login) Login(c *gin.Context) {
-	if global.Config.App.DisablePwdLogin {
-		response.Fail(c, 101, response.TranslateMsg(c, "PwdLoginDisabled"))
-		return
-	}
-
 	// 检查登录限制
 	loginLimiter := global.LoginLimiter
 	clientIp := c.ClientIP()
@@ -66,15 +61,31 @@ func (ct *Login) Login(c *gin.Context) {
 		}
 	}
 
-	u, err := service.AllService.UserService.InfoByUsernamePassword(f.Username, f.Password)
+	// Con il login con password spento entrano solo i nomi dell'elenco,
+	// non gli agenti; gli altri come in /api/login.
+	errore, motivo := "UsernameOrPasswordError", ""
+	if global.Config.App.DisablePwdLogin {
+		errore = "PwdLoginDisabled"
+		motivo, err = service.AllService.UserService.EccezionePwdLogin(f.Username, f.Password, false)
+		if err != nil {
+			response.FailErr(c, 101, "SystemError", err)
+			return
+		}
+	}
+	var u *model.User
+	if !global.Config.App.DisablePwdLogin || motivo != "" {
+		u, err = service.AllService.UserService.InfoByUsernamePassword(f.Username, f.Password)
+	} else {
+		err = service.ErrNotFound
+	}
 
 	if errors.Is(err, service.ErrNotFound) {
-		global.Logger.Warn(fmt.Sprintf("Login Fail: %s %s %s", "UsernameOrPasswordError", c.RemoteIP(), clientIp))
+		global.Logger.Warn(fmt.Sprintf("Login Fail: %s %s %s", errore, c.RemoteIP(), clientIp))
 		loginLimiter.RecordFailedAttempt(clientIp)
 		if _, needCaptcha = loginLimiter.CheckSecurityStatus(clientIp); needCaptcha {
-			response.Fail(c, 110, response.TranslateMsg(c, "UsernameOrPasswordError"))
+			response.Fail(c, 110, response.TranslateMsg(c, errore))
 		} else {
-			response.Fail(c, 101, response.TranslateMsg(c, "UsernameOrPasswordError"))
+			response.Fail(c, 101, response.TranslateMsg(c, errore))
 		}
 		return
 	}
@@ -112,6 +123,7 @@ func (ct *Login) Login(c *gin.Context) {
 		response.FailErr(c, 101, "OperationFailed", err)
 		return
 	}
+	api.TracciaEccezione(c, u, motivo)
 
 	// 登录成功，清除登录限制
 	loginLimiter.RemoveAttempts(clientIp)
