@@ -65,8 +65,8 @@ other = "Oauth failed."
 
 [OauthHasBindOtherUser]
 description = "Oauth has bind other user."
-one = "Oauth has bind other user."
-other = "Oauth has bind other user."
+one = "This OIDC account is already bound to another user."
+other = "This OIDC account is already bound to another user."
 
 [ParamIsEmpty]
 description = "Param is empty."
@@ -403,3 +403,13 @@ other = "The PC is not in the address book of this AI agent's technician."
 description = "An AI agent account only uses the CLI client."
 one = "An AI agent account only uses the CLI client."
 other = "An AI agent account only uses the CLI client."
+
+[OauthUserHasBind]
+description = "This user already has an account of this OIDC provider."
+one = "This user already has an account bound to this OIDC provider."
+other = "This user already has an account bound to this OIDC provider."
+
+[OauthEmailNotMatchable]
+description = "The OIDC email belongs to a local account that cannot be matched."
+one = "This OIDC account cannot be matched to the user with the same email: ask the administrator."
+other = "This OIDC account cannot be matched to the user with the same email: ask the administrator."

@@ -375,6 +375,7 @@ func InitGlobal() {
 	}
 	DatabaseAutoUpdate()
 	indiceUnicoDispositivi()
+	indiceUnicoAssociazioni()
 	avvisaProviderNonSupportati()
 }
 
@@ -451,6 +452,24 @@ func indiceUnicoDispositivi() {
 			"in piu' (anche quelle con ID vuoto); al prossimo avvio l'indice si crea", doppi, service.IndiceIdUnico)
 	case creato:
 		global.Logger.Infof("creato l'indice unico %s: un ID di PC compare una volta sola in peers", service.IndiceIdUnico)
+	}
+}
+
+// indiceUnicoAssociazioni crea all'avvio l'indice unico su
+// user_thirds(open_id, op), come indiceUnicoDispositivi: con doppioni (un
+// account del provider legato a piu' utenti) un error col loro numero,
+// senza sub ne' utenti, e l'avvio continua senza indice; il passo si ripete a
+// ogni avvio finche' l'indice non c'e'. Nessuna riga si cancella.
+func indiceUnicoAssociazioni() {
+	creato, doppi, err := service.AllService.OauthService.CreaIndiceOpenIdUnico()
+	switch {
+	case err != nil:
+		global.Logger.Errorf("indice unico %s non creato, l'avvio continua: %v", service.IndiceOpenIdUnico, err)
+	case doppi > 0:
+		global.Logger.Errorf("user_thirds ha %d account OIDC associati a piu' utenti: l'indice unico %s non si crea. "+
+			"Ogni utente in piu' toglie la sua dal suo profilo nel pannello (o si cancella l'utente); al prossimo avvio l'indice si crea", doppi, service.IndiceOpenIdUnico)
+	case creato:
+		global.Logger.Infof("creato l'indice unico %s: un account OIDC e' legato a un utente solo", service.IndiceOpenIdUnico)
 	}
 }
 

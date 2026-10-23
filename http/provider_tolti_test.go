@@ -37,6 +37,8 @@ type idTokenFinto struct {
 	sub     string // sub al posto di sub-1
 	// senzaSub toglie il sub dall'id_token e dalla userinfo
 	senzaSub bool
+	// emailNonVerificata manda email_verified false nella userinfo
+	emailNonVerificata bool
 }
 
 // providerOidcCon e' providerOidc con l'id_token deciso da it.
@@ -102,7 +104,7 @@ func providerOidcCon(t *testing.T, it idTokenFinto) string {
 		if it.senzaSub {
 			sub = ""
 		}
-		scrivi(w, `{`+sub+`"name":"Utente OIDC","email":"utente@esempio.it","email_verified":true,"preferred_username":"utente-oidc"}`)
+		scrivi(w, fmt.Sprintf(`{`+sub+`"name":"Utente OIDC","email":"utente@esempio.it","email_verified":%t,"preferred_username":"utente-oidc"}`, !it.emailNonVerificata))
 	})
 	return srv.URL
 }

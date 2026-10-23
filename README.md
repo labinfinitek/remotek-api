@@ -306,6 +306,21 @@ risposta del token manda l'`id_token` (OIDC Core): senza, o con un
 senza utente viene rimandato ad associarsi dal pannello; accesa, l'utente
 nasce al primo login.
 
+Il login OIDC trova l'utente dall'*associazione* (`user_thirds`: provider e
+`sub` dell'account), non dall'email. Un `sub` e' associato a un utente solo
+(indice unico su `open_id` e `op`, creato all'avvio; con doppioni un error
+col loro numero, l'avvio continua senza indice e riprova al prossimo), e un
+utente ha al massimo un account per provider: l'associazione dal pannello
+rifiuta un account gia' di qualcuno ("Questo account OAuth è già associato a
+un altro utente.") e un utente che ne ha gia' uno ("Questo utente ha già un
+account associato a questo provider OIDC."). Con `auto_register` acceso, un
+account senza associazione si abbina all'utente con la stessa email solo se
+il provider manda `email_verified` vero e l'utente non e' un agente AI ne'
+disattivato; se l'email e' di un utente che non si abbina il login si ferma
+("Questo account OIDC non si può abbinare all'utente con la stessa email"),
+se non e' di nessuno nasce un utente nuovo. Un utente disattivato non entra
+neanche con OIDC: il login risponde "Utente disattivato." senza token.
+
 ## Primo avvio e amministrazione
 
 **Password iniziale.** Al primo avvio l'API crea l'utente `admin` con una

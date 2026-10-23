@@ -412,3 +412,13 @@ other = "Il PC non è nella rubrica del tecnico di questo agente AI."
 description = "An AI agent account only uses the CLI client."
 one = "Un account di agente AI usa solo il client CLI."
 other = "Un account di agente AI usa solo il client CLI."
+
+[OauthUserHasBind]
+description = "This user already has an account of this OIDC provider."
+one = "Questo utente ha già un account associato a questo provider OIDC."
+other = "Questo utente ha già un account associato a questo provider OIDC."
+
+[OauthEmailNotMatchable]
+description = "The OIDC email belongs to a local account that cannot be matched."
+one = "Questo account OIDC non si può abbinare all'utente con la stessa email: chiedi all'amministratore."
+other = "Questo account OIDC non si può abbinare all'utente con la stessa email: chiedi all'amministratore."

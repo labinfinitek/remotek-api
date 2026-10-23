@@ -17,6 +17,16 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   eccezione scrive una riga INFO, un warn se l'utente e' amministratore. Il
   pannello mostra il modulo della password su `/_admin/#/login?password=1`
   (accesso di emergenza se l'OIDC non risponde).
+- Legame OIDC sicuro (ADR-0029): indice unico su `user_thirds(open_id, op)`,
+  creato all'avvio (con doppioni un error col loro numero e l'avvio continua
+  senza indice; nessuna riga si cancella). L'associazione dal pannello e dal
+  callback rifiuta, nella stessa transazione della scrittura, un `sub` gia'
+  associato a qualcuno e un utente che ha gia' un account di quel provider.
+  `/api/oidc/auth-query` e `/api/admin/oidc/auth-query` rifiutano un utente
+  disattivato ("Utente disattivato.") prima di creare il token. Con
+  `auto_register` l'email abbina un utente locale solo se il provider la
+  dichiara verificata, e mai un agente AI o un utente disattivato: in quei
+  casi il login si ferma invece di entrare come quell'utente.
 
 ## [0.8.0] - 2026-10-22
 Immagine `ghcr.io/labinfinitek/remotek-api:0.8.0`, costruita con Go 1.26.10

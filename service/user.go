@@ -450,9 +450,16 @@ func (us *UserService) InfoByOauthId(op string, openId string) (*model.User, err
 	return us.InfoById(ut.UserId)
 }
 
+// ErrEmailNonAbbinabile dice che l'email del provider e' di un utente che
+// non si abbina (email non verificata, agente, disattivato); il testo e'
+// l'ID del messaggio.
+var ErrEmailNonAbbinabile = errors.New("OauthEmailNotMatchable")
+
 // RegisterByOauth restituisce l'utente locale di oauthUser, l'utente del
 // provider op: quello della sua associazione al provider; se non c'e',
-// quello con la stessa email, a cui aggiunge l'associazione; altrimenti uno
+// quello con la stessa email, se il provider l'ha verificata e non e' un
+// agente ne' disattivato, a cui aggiunge l'associazione (associa); se l'email
+// e' di un utente che non si abbina, ErrEmailNonAbbinabile; altrimenti uno
 // nuovo, creato con l'associazione in una transazione. Un errore del
 // database ferma tutto: una lettura che fallisce non vale "non trovato", che
 // farebbe un utente doppio.
@@ -498,9 +505,15 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (*
 			}
 		}
 		if user != nil {
+			// L'email abbina solo se il provider l'ha verificata, e mai un
+			// agente o un disattivato; senza abbinamento un utente nuovo con
+			// un'email gia' usata non si crea.
+			if !oauthUser.VerifiedEmail || user.AgenteDi != 0 || !us.CheckUserEnable(user) {
+				return nil, fmt.Errorf("utente %d con l'email del provider (email verificata: %t): %w", user.Id, oauthUser.VerifiedEmail, ErrEmailNonAbbinabile)
+			}
 			ut.FromOauthUser(user.Id, oauthUser, oauthType, op)
-			if err := DB.Create(ut).Error; err != nil {
-				return nil, errors.Join(errors.New("OauthRegisterFailed"), fmt.Errorf("associazione al provider dell'utente %d con la stessa email: %w", user.Id, err))
+			if err := DB.Transaction(func(tx *gorm.DB) error { return associa(tx, ut) }); err != nil {
+				return nil, errors.Join(fmt.Errorf("associazione al provider dell'utente %d con la stessa email: %w", user.Id, err), errors.New("OauthRegisterFailed"))
 			}
 			return user, nil
 		}
