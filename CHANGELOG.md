@@ -6,6 +6,18 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Sicurezza
+- Eccezioni al login con password spento (ADR-0029): con
+  `app.disable-pwd-login` acceso `POST /api/login` accetta ancora la
+  password degli account agente AI e, come `POST /api/admin/login`, degli
+  username in `app.pwd-login-eccezioni` (nuova, vuota per default; gli
+  agenti restano fuori dal pannello). Agli altri, a un utente inesistente e a
+  un'eccezione con la password sbagliata la risposta di prima, senza dire chi
+  e' un'eccezione; ogni rifiuto ora conta per captcha e ban. Un login per
+  eccezione scrive una riga INFO, un warn se l'utente e' amministratore. Il
+  pannello mostra il modulo della password su `/_admin/#/login?password=1`
+  (accesso di emergenza se l'OIDC non risponde).
+
 ## [0.8.0] - 2026-10-22
 Immagine `ghcr.io/labinfinitek/remotek-api:0.8.0`, costruita con Go 1.26.10
 su Alpine 3.24.3. Versione minore: il lasciapassare dell'agente AI

@@ -24,6 +24,7 @@ type sicuri struct {
 	LoggerPath          string // vuoto: nessun file di log
 	IntegrazioneUrl     string // vuoto: nessun evento esce (ADR-0026)
 	LasciapassareChiave string // vuoto: nessun lasciapassare per gli agenti (ADR-0028)
+	PwdLoginEccezioni   string // vuoto: col login con password spento non entra nessuno
 }
 
 // TestDefaultSicuri verifica che, senza variabili RUSTDESK_API_*, un file
@@ -76,6 +77,23 @@ func TestVariabiliBattonoDefault(t *testing.T) {
 	}
 }
 
+// TestEccezioniPwdLogin verifica che RUSTDESK_API_APP_PWD_LOGIN_ECCEZIONI
+// valga col conf/config.yaml del repo e che l'elenco tolga gli spazi e salti
+// le voci vuote, senza confronti parziali.
+func TestEccezioniPwdLogin(t *testing.T) {
+	t.Setenv("RUSTDESK_API_APP_PWD_LOGIN_ECCEZIONI", " collaudo , ,emergenza")
+	var c Config
+	Init(&c, filepath.Join("..", "conf", "config.yaml"))
+	for _, tc := range []struct {
+		nome   string
+		atteso bool
+	}{{"collaudo", true}, {"emergenza", true}, {"", false}, {" collaudo", false}, {"collaud", false}, {"Collaudo", false}} {
+		if got := c.App.EccezionePwdLogin(tc.nome); got != tc.atteso {
+			t.Errorf("EccezionePwdLogin(%q) = %t, atteso %t", tc.nome, got, tc.atteso)
+		}
+	}
+}
+
 // fileSenzaChiavi scrive un config.yaml con le sezioni app e gin ma senza le
 // chiavi di ADR-0008, come quello di chi configura solo cio' che gli serve.
 func fileSenzaChiavi(t *testing.T) string {
@@ -98,6 +116,7 @@ func leggi(path string) sicuri {
 		LdapTlsVerify: c.Ldap.TlsVerify,
 		LoggerLevel:   c.Logger.Level, LoggerPath: c.Logger.Path,
 		IntegrazioneUrl: c.Integrazione.Url, LasciapassareChiave: c.Agente.LasciapassareChiave,
+		PwdLoginEccezioni: c.App.PwdLoginEccezioni,
 	}
 }
 

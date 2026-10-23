@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -61,6 +62,45 @@ func (us *UserService) InfoByUsernamePassword(username, password string) (*model
 	}
 	return u, nil
 }
+
+// Motivi per cui un utente entra con la password anche con
+// app.disable-pwd-login acceso (ADR-0029).
+const (
+	EccezioneAgente = "agente" // account agente, solo sul login del client
+	EccezioneElenco = "elenco" // username in app.pwd-login-eccezioni
+)
+
+// EccezionePwdLogin dice perche' username entra con la password con
+// app.disable-pwd-login acceso: EccezioneElenco se e' nell'elenco,
+// EccezioneAgente se e' un account agente e agenti e' vero (il login del
+// client); vuoto se non entra, anche se l'utente non c'e'. Per un nome che
+// non e' un'eccezione confronta password con un hash buttato, perche' i tempi
+// della risposta non dicano quali nomi lo sono. Un errore del database non e'
+// un rifiuto.
+func (us *UserService) EccezionePwdLogin(username, password string, agenti bool) (string, error) {
+	if Config.App.EccezionePwdLogin(username) {
+		return EccezioneElenco, nil
+	}
+	if agenti {
+		u, err := us.InfoByUsername(username)
+		if err == nil && u.AgenteDi != 0 {
+			return EccezioneAgente, nil
+		}
+		if err != nil && !errors.Is(err, ErrNotFound) {
+			return "", fmt.Errorf("eccezione al login con password: %w", err)
+		}
+	}
+	if h, err := hashFinto(); err == nil {
+		_, _ = utils.VerifyPassword(h, password)
+	}
+	return "", nil
+}
+
+// hashFinto e' l'hash bcrypt, fatto una volta, di un valore casuale che
+// nessuno conosce.
+var hashFinto = sync.OnceValues(func() (string, error) {
+	return utils.EncryptPassword(crand.Text())
+})
 
 // InfoByAccessToken restituisce l'utente del token di sessione token e il
 // token; ErrNotFound se il token non c'e' o e' scaduto, o se il suo utente

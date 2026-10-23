@@ -30,11 +30,6 @@ type Login struct {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /login [post]
 func (l *Login) Login(c *gin.Context) {
-	if global.Config.App.DisablePwdLogin {
-		response.Error(c, response.TranslateMsg(c, "PwdLoginDisabled"))
-		return
-	}
-
 	// 检查登录限制
 	loginLimiter := global.LoginLimiter
 	clientIp := c.ClientIP()
@@ -56,12 +51,29 @@ func (l *Login) Login(c *gin.Context) {
 		return
 	}
 
-	u, err := service.AllService.UserService.InfoByUsernamePassword(f.Username, f.Password)
+	// Con il login con password spento entrano solo le eccezioni; agli
+	// altri, e a un'eccezione con la password sbagliata, la stessa risposta
+	// di prima, che non dice chi e' un'eccezione o se esiste.
+	errore, motivo := "UsernameOrPasswordError", ""
+	if global.Config.App.DisablePwdLogin {
+		errore = "PwdLoginDisabled"
+		motivo, err = service.AllService.UserService.EccezionePwdLogin(f.Username, f.Password, true)
+		if err != nil {
+			response.ErrorErr(c, "SystemError", err)
+			return
+		}
+	}
+	var u *model.User
+	if !global.Config.App.DisablePwdLogin || motivo != "" {
+		u, err = service.AllService.UserService.InfoByUsernamePassword(f.Username, f.Password)
+	} else {
+		err = service.ErrNotFound
+	}
 
 	if errors.Is(err, service.ErrNotFound) {
 		loginLimiter.RecordFailedAttempt(clientIp)
-		global.Logger.Warn(fmt.Sprintf("Login Fail: %s %s %s", "UsernameOrPasswordError", c.RemoteIP(), c.ClientIP()))
-		response.Error(c, response.TranslateMsg(c, "UsernameOrPasswordError"))
+		global.Logger.Warn(fmt.Sprintf("Login Fail: %s %s %s", errore, c.RemoteIP(), c.ClientIP()))
+		response.Error(c, response.TranslateMsg(c, errore))
 		return
 	}
 	if err != nil {
@@ -89,12 +101,28 @@ func (l *Login) Login(c *gin.Context) {
 		response.ErrorErr(c, "OperationFailed", err)
 		return
 	}
+	TracciaEccezione(c, u, motivo)
 
 	c.JSON(http.StatusOK, apiResp.LoginRes{
 		AccessToken: ut.Token,
 		Type:        "access_token",
 		User:        *(&apiResp.UserPayload{}).FromUser(u),
 	})
+}
+
+// TracciaEccezione scrive nel log il login con password riuscito di u per
+// l'eccezione motivo (service.EccezionePwdLogin); niente se motivo e' vuoto.
+// Per un amministratore e' un warn: e' l'accesso di emergenza al pannello.
+func TracciaEccezione(c *gin.Context, u *model.User, motivo string) {
+	if motivo == "" {
+		return
+	}
+	l := global.Logger.Per(c.Request.Context())
+	if service.AllService.UserService.IsAdmin(u) {
+		l.Warnf("login con password per eccezione: utente %s (amministratore), motivo %s", u.Username, motivo)
+		return
+	}
+	l.Infof("login con password per eccezione: utente %s, motivo %s", u.Username, motivo)
 }
 
 // LoginOptions restituisce i modi di login che il client offre: i provider

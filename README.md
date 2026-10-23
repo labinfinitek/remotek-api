@@ -250,7 +250,8 @@ stesso default se la chiave manca dal file.
 | `app.show-swagger` \* | `RUSTDESK_API_APP_SHOW_SWAGGER` | `0` | `1` pubblica `/swagger/index.html` e `/admin/swagger/index.html` |
 | `app.token-expire` | `RUSTDESK_API_APP_TOKEN_EXPIRE` | `168h` | durata di una sessione (durata Go: `72h`, `30m`) |
 | `app.web-sso` \* | `RUSTDESK_API_APP_WEB_SSO` | `false` | accende il login del client confermato dal pannello (`webauth`); spento, `/api/oidc/auth` lo rifiuta come un provider che non esiste |
-| `app.disable-pwd-login` | `RUSTDESK_API_APP_DISABLE_PWD_LOGIN` | `false` | `true` toglie il login con utente e password, anche quello LDAP, che passa di li'; resta OIDC |
+| `app.disable-pwd-login` | `RUSTDESK_API_APP_DISABLE_PWD_LOGIN` | `false` | `true` toglie il login con utente e password, anche quello LDAP, che passa di li'; resta OIDC. Restano le eccezioni: gli agenti AI dal client e `app.pwd-login-eccezioni` (Login con password spento) |
+| `app.pwd-login-eccezioni` \* | `RUSTDESK_API_APP_PWD_LOGIN_ECCEZIONI` | vuoto | username separati da virgola (spazi tolti) che entrano con la password anche con `app.disable-pwd-login`, dal client e dal pannello; vuoto = nessuno. Con `app.disable-pwd-login` spento non conta |
 | `app.firma-obbligatoria` \* | `RUSTDESK_API_APP_FIRMA_OBBLIGATORIA` | `false` | `true`: anche i PC senza chiave devono firmare le richieste senza login (Firma del dispositivo) |
 | `admin.title` \* | `RUSTDESK_API_ADMIN_TITLE` | vuoto | titolo del pannello; vuoto = `brand.name` |
 | `admin.hello` | `RUSTDESK_API_ADMIN_HELLO` | vuoto | messaggio di benvenuto del pannello (HTML); se non e' vuoto, `admin.hello-file` non si legge |
@@ -363,6 +364,24 @@ rifiuta senza dare un token, e ogni rotta del pannello con login risponde
 col code 403, che per il pannello e' un logout, anche a un token gia'
 rilasciato. Cosi' un agente non puo' crearsi rubriche o regole, ne'
 scrivere in quelle condivise, per allargarsi il confine del lasciapassare.
+Il CLI non ha browser ne' TOTP: con `app.disable-pwd-login` acceso un
+agente entra lo stesso con la password da `POST /api/login`, mai dal
+pannello.
+
+**Login con password spento.** Con `app.disable-pwd-login` i tecnici entrano
+solo con OIDC. Con la password entrano ancora gli account agente, solo da
+`POST /api/login`, e gli username di `app.pwd-login-eccezioni` (per esempio
+l'utente di collaudo e un amministratore di emergenza), da `/api/login` e da
+`/api/admin/login`. A tutti gli altri, a uno username che non esiste e a
+un'eccezione con la password sbagliata la risposta e' la stessa:
+"L'accesso con password è disattivato.", senza dire chi e' un'eccezione;
+ogni rifiuto conta per captcha e ban. Un login per eccezione riuscito
+scrive una riga INFO `login con password per eccezione` con username e
+motivo (`agente` o `elenco`), un warn se l'utente e' amministratore.
+**Accesso di emergenza:** se il provider OIDC non risponde, il pannello
+mostra il modulo della password su `/_admin/#/login?password=1`, anche
+con un solo provider (che senza il parametro apre subito l'OIDC); entra
+solo uno username dell'elenco.
 
 **Collegare il client.** Dal client `remotek-1.4.9-3` Remotek ha server ID,
 server relay, server API e chiave bloccati nel binario (ADR-0025): da
