@@ -106,7 +106,9 @@ func (o *Oauth) Confirm(c *gin.Context) {
 // /_admin/#/oauth/bind/<code>), e lega il login a questo utente. Senza
 // OpenId il provider non ha risposto: un codice appena creato da
 // /api/oidc/auth, o un login gia' legato, riceve la risposta del codice
-// scaduto. bind.vue legge solo device_type.
+// scaduto. Un account del provider gia' legato a qualcuno, o un utente che
+// ha gia' un account dello stesso provider, ricevono il loro messaggio.
+// bind.vue legge solo device_type.
 func (o *Oauth) BindConfirm(c *gin.Context) {
 	j := &admin.OauthConfirmForm{}
 	err := c.ShouldBindJSON(j)
@@ -127,9 +129,11 @@ func (o *Oauth) BindConfirm(c *gin.Context) {
 	}
 	oauthUser := oauthCache.ToOauthUser()
 	user := service.AllService.UserService.CurUser(c)
+	// Rifiuta un account gia' di qualcuno e un utente che ha gia' un account
+	// del provider, col loro messaggio.
 	err = oauthService.BindOauthUser(user.Id, oauthUser, oauthCache.Op)
 	if err != nil {
-		response.Fail(c, 101, response.TranslateMsg(c, "BindFail"))
+		response.Fail(c, 101, response.TranslateMsg(c, response.IDErr(c, "BindFail", err)))
 		return
 	}
 

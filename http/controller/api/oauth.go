@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -103,6 +104,19 @@ func (o *Oauth) OidcAuthQueryPre(c *gin.Context) (*model.User, *model.UserToken)
 	// 删除 OAuth 缓存
 	service.AllService.OauthService.DeleteOauthCache(q.Code)
 
+	// Un utente disattivato non entra neanche con OIDC, sul client e sul
+	// pannello: il rifiuto viene prima di Login, quindi niente token,
+	// registro degli accessi o dispositivo legato.
+	if !service.AllService.UserService.CheckUserEnable(u) {
+		global.Logger.Per(c.Request.Context()).Warnf("login OIDC rifiutato all'utente disattivato %d", u.Id)
+		if strings.HasPrefix(c.Request.URL.Path, "/api/admin/") {
+			response.Fail(c, 101, response.TranslateMsg(c, "UserDisabled"))
+		} else {
+			response.Error(c, response.TranslateMsg(c, "UserDisabled"))
+		}
+		return nil, nil
+	}
+
 	// 创建登录日志并生成用户令牌
 	ut, err = service.AllService.UserService.Login(u, &model.LoginLog{
 		UserId:   u.Id,
@@ -198,32 +212,20 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 	openid := oauthUser.OpenId
 	switch action {
 	case service.OauthActionTypeBind:
-		// 检查此openid是否已经绑定过
-		utr, err := oauthService.UserThirdInfo(op, openid)
-		if err != nil && !errors.Is(err, service.ErrNotFound) {
-			c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
-				"message": response.IDErr(c, "OauthFailed", err),
-			})
-			return
-		}
-		if err == nil && utr.UserId > 0 {
-			c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
-				"message": "OauthHasBindOtherUser",
-			})
-			return
-		}
-		// 绑定: ItemNotFound se l'utente non c'e', OauthFailed se non si legge
+		// ItemNotFound se l'utente non c'e', OauthFailed se non si legge
 		if _, err := service.AllService.UserService.InfoById(userId); err != nil {
 			c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
 				"message": response.IDErr(c, "OauthFailed", err),
 			})
 			return
 		}
-		// 绑定
-		err = oauthService.BindOauthUser(userId, oauthUser, op)
-		if err != nil {
+		// Un account gia' di qualcuno (OauthHasBindOtherUser) o un utente che
+		// ha gia' un account del provider (OauthUserHasBind) si rifiutano
+		// nella transazione della scrittura; un errore del database e'
+		// OauthFailed, come le letture del callback.
+		if err := oauthService.BindOauthUser(userId, oauthUser, op); err != nil {
 			c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
-				"message": "BindFail",
+				"message": response.IDErr(c, "OauthFailed", err),
 			})
 			return
 		}

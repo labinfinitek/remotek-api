@@ -303,6 +303,22 @@ requested, even when it is not in the saved scopes), callback URL
 user is sent to link itself from the panel; when on, the user is created at
 the first login.
 
+The OIDC login finds the user through the *binding* (`user_thirds`: provider
+and the account's `sub`), not through the email. A `sub` is bound to one
+user only (unique index on `open_id` and `op`, created at startup; with
+duplicates an error with their number, startup goes on without the index
+and retries at the next one), and a user has at most one account per
+provider: binding from the panel refuses an account that already belongs to
+someone ("This OIDC account is already bound to another user.") and a user
+who already has one ("This user already has an account bound to this OIDC
+provider."). With `auto_register` on, an account without a binding is
+matched to the user with the same email only if the provider sends
+`email_verified` true and the user is neither an AI agent nor disabled; if
+the email belongs to a user that cannot be matched the login stops ("This
+OIDC account cannot be matched to the user with the same email"), if it
+belongs to nobody a new user is created. A disabled user cannot log in with
+OIDC either: the login answers "User disabled." without a token.
+
 ## First start and administration
 
 **Initial password.** On first start the API creates the `admin` user with a

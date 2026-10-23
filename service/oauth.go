@@ -316,7 +316,16 @@ func (os *OauthService) UserThirdInfo(op string, openId string) (*model.UserThir
 	return ut, nil
 }
 
-// BindOauthUser binds a third party account.
+// Rifiuti di un'associazione al provider; il testo e' l'ID del messaggio.
+var (
+	// ErrSubAssociato dice che l'account del provider e' gia' di un utente.
+	ErrSubAssociato = errors.New("OauthHasBindOtherUser")
+	// ErrUtenteAssociato dice che l'utente ha gia' un account di quel provider.
+	ErrUtenteAssociato = errors.New("OauthUserHasBind")
+)
+
+// BindOauthUser associa all'utente userId l'account oauthUser del provider
+// op (associa).
 func (os *OauthService) BindOauthUser(userId uint, oauthUser *model.OauthUser, op string) error {
 	utr := &model.UserThird{}
 	oauthType, err := os.GetTypeByOp(op)
@@ -324,7 +333,56 @@ func (os *OauthService) BindOauthUser(userId uint, oauthUser *model.OauthUser, o
 		return err
 	}
 	utr.FromOauthUser(userId, oauthUser, oauthType, op)
-	return DB.Create(utr).Error
+	return DB.Transaction(func(tx *gorm.DB) error { return associa(tx, utr) })
+}
+
+// associa scrive in tx l'associazione ut se il suo account del provider
+// non e' gia' di qualcuno (ErrSubAssociato) e il suo utente non ha gia' un
+// account dello stesso provider (ErrUtenteAssociato). Il controllo sta nella
+// transazione della scrittura; l'indice IndiceOpenIdUnico e' la seconda
+// guardia.
+func associa(tx *gorm.DB, ut *model.UserThird) error {
+	var n int64
+	if err := tx.Model(&model.UserThird{}).Where("open_id = ? and op = ?", ut.OpenId, ut.Op).Count(&n).Error; err != nil {
+		return fmt.Errorf("associazione al provider %q: %w", ut.Op, err)
+	}
+	if n > 0 {
+		return fmt.Errorf("associazione al provider %q per l'utente %d: %w", ut.Op, ut.UserId, ErrSubAssociato)
+	}
+	if err := tx.Model(&model.UserThird{}).Where("user_id = ? and op = ?", ut.UserId, ut.Op).Count(&n).Error; err != nil {
+		return fmt.Errorf("associazioni dell'utente %d al provider %q: %w", ut.UserId, ut.Op, err)
+	}
+	if n > 0 {
+		return fmt.Errorf("associazione al provider %q per l'utente %d: %w", ut.Op, ut.UserId, ErrUtenteAssociato)
+	}
+	if err := tx.Create(ut).Error; err != nil {
+		return fmt.Errorf("associazione al provider %q per l'utente %d: %w", ut.Op, ut.UserId, err)
+	}
+	return nil
+}
+
+// IndiceOpenIdUnico e' l'indice unico su user_thirds(open_id, op): un
+// account del provider e' di un utente solo.
+const IndiceOpenIdUnico = "idx_user_thirds_open_id_op"
+
+// CreaIndiceOpenIdUnico crea l'indice IndiceOpenIdUnico se non c'e' e
+// user_thirds non ha doppioni; creato dice se l'ha creato ora. Con doppioni
+// non lo crea e restituisce quanti sono; non cancella righe.
+func (os *OauthService) CreaIndiceOpenIdUnico() (creato bool, doppi int64, err error) {
+	if DB.Migrator().HasIndex(&model.UserThird{}, IndiceOpenIdUnico) {
+		return false, 0, nil
+	}
+	err = DB.Raw("SELECT count(*) FROM (SELECT open_id FROM user_thirds GROUP BY open_id, op HAVING count(*) > 1)").Scan(&doppi).Error
+	if err != nil {
+		return false, 0, fmt.Errorf("conteggio dei doppioni in user_thirds: %w", err)
+	}
+	if doppi > 0 {
+		return false, doppi, nil
+	}
+	if err := DB.Exec("CREATE UNIQUE INDEX " + IndiceOpenIdUnico + " ON user_thirds(open_id, op)").Error; err != nil {
+		return false, 0, fmt.Errorf("indice %s: %w", IndiceOpenIdUnico, err)
+	}
+	return true, 0, nil
 }
 
 // UnBindOauthUser unbinds a third party account.

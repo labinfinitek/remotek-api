@@ -86,3 +86,65 @@ func TestIndiceUnicoDispositivi(t *testing.T) {
 		t.Errorf("avvio senza piu' doppioni: manca l'indice unico %s", service.IndiceIdUnico)
 	}
 }
+
+// TestIndiceUnicoAssociazioni prova sul binario vero che dopo l'avvio
+// user_thirds ha l'indice unico su (open_id, op). Con un account del
+// provider legato a due utenti l'avvio riesce senza indice, nessuna riga
+// si cancella e il log ha una riga error col numero dei doppioni, senza sub;
+// tolta la riga in piu', l'avvio dopo crea l'indice. Prima l'indice non
+// c'era mai.
+func TestIndiceUnicoAssociazioni(t *testing.T) {
+	dir := sandbox(t)
+	if codice, out := esegui(t, dir); codice != 0 {
+		t.Fatalf("primo avvio: codice %d\n%s", codice, out)
+	}
+	db := apriDB(t, dir)
+	unico := func() bool {
+		var n int64
+		err := db.Raw(`SELECT count(*) FROM pragma_index_list('user_thirds') WHERE name = ? AND "unique" = 1`, service.IndiceOpenIdUnico).Scan(&n).Error
+		if err != nil {
+			t.Fatal(err)
+		}
+		return n == 1
+	}
+	if !unico() {
+		t.Fatalf("dopo il primo avvio manca l'indice unico %s", service.IndiceOpenIdUnico)
+	}
+
+	if err := db.Exec("DROP INDEX " + service.IndiceOpenIdUnico).Error; err != nil {
+		t.Fatal(err)
+	}
+	doppi := []*model.UserThird{
+		{UserId: 1, Op: "aziendale", OauthType: model.OauthTypeOidc, OauthUser: model.OauthUser{OpenId: "sub-doppio-1"}},
+		{UserId: 2, Op: "aziendale", OauthType: model.OauthTypeOidc, OauthUser: model.OauthUser{OpenId: "sub-doppio-1"}},
+		{UserId: 2, Op: "altro", OauthType: model.OauthTypeOidc, OauthUser: model.OauthUser{OpenId: "sub-doppio-1"}},
+	}
+	if err := db.Create(&doppi).Error; err != nil {
+		t.Fatal(err)
+	}
+	codice, out := esegui(t, dir)
+	if codice != 0 {
+		t.Fatalf("avvio con un doppione: codice %d, atteso 0\n%s", codice, out)
+	}
+	if unico() {
+		t.Errorf("avvio con un doppione: l'indice %s c'e'", service.IndiceOpenIdUnico)
+	}
+	riga := "user_thirds ha 1 account OIDC associati a piu' utenti: l'indice unico " + service.IndiceOpenIdUnico + " non si crea"
+	if n := logger.Conta(out, "ERROR", riga); n != 1 || strings.Contains(out, "sub-doppio") {
+		t.Errorf("%d righe ERROR %q, attesa 1, senza sub\n%s", n, riga, out)
+	}
+	var righe int64
+	if err := db.Model(&model.UserThird{}).Count(&righe).Error; err != nil || righe != 3 {
+		t.Errorf("righe di user_thirds dopo l'avvio: %d (%v), attese 3", righe, err)
+	}
+
+	if err := db.Delete(doppi[1]).Error; err != nil {
+		t.Fatal(err)
+	}
+	if codice, out := esegui(t, dir); codice != 0 || logger.Conta(out, "ERROR") != 0 {
+		t.Fatalf("avvio senza piu' doppioni: codice %d\n%s", codice, out)
+	}
+	if !unico() {
+		t.Errorf("avvio senza piu' doppioni: manca l'indice unico %s", service.IndiceOpenIdUnico)
+	}
+}
