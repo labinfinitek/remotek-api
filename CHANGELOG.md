@@ -6,6 +6,13 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Aggiunto
+- Pannello: marchio di chi installa da `brand.json`, facoltativo, in
+  `brand.dir` (servito su `/brand/brand.json`): ragione sociale, link
+  all'informativa, nome e icona del pulsante OIDC del login, logo per il
+  tema scuro. Senza il file, valori neutri. Formato nel README ("Marchio del
+  pannello").
+
 ### Modificato
 - Pannello: caratteri Inter (testo) e Space Grotesk (titoli e nome del
   prodotto), ospitati nel pannello dai pacchetti `@fontsource` (licenza OFL
