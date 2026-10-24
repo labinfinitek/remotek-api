@@ -65,15 +65,14 @@
 .oauth {
   width: 100vw;
   height: 100vh;
-  background-color: #2d3a4b;
+  background-color: var(--el-bg-color-page);
   padding-top: 25vh;
   box-sizing: border-box;
 
   .card {
     max-width: 500px;
-    background-color: #283342;
-    color: #fff;
-    border: none;
+    background-color: var(--el-bg-color);
+    color: var(--el-text-color-primary);
     margin: 0 auto;
     text-align: center;
 
@@ -83,7 +82,7 @@
       margin-bottom: 50px;
 
       ::v-deep(.el-form-item__label) {
-        color: #fff;
+        color: var(--el-text-color-secondary);
       }
     }
 

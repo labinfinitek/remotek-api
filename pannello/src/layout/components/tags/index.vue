@@ -5,8 +5,9 @@
           :closable="t.closeable"
           @close="close(t)"
           @click="toTag(t)"
-          :type="t.active?'primary':'info'"
-          :effect="t.active?'dark':'plain'">
+          :class="{ attiva: t.active }"
+          type="info"
+          effect="plain">
     {{ T(t.title) }}
   </el-tag>
 </template>
@@ -73,11 +74,20 @@
 
 <style lang="scss" scoped>
 
+// Schede piatte; quella attiva ha una riga blu sotto, non il fondo pieno.
 .tag {
+  --el-tag-bg-color: transparent;
+  --el-tag-border-color: transparent;
+  --el-tag-text-color: var(--el-text-color-secondary);
+  height: 36px;
+  padding: 0 12px;
   border-radius: 0;
   cursor: pointer;
 
-  &.active {
+  &.attiva {
+    --el-tag-text-color: var(--rk-accento-testo);
+    font-weight: 600;
+    box-shadow: inset 0 -2px 0 var(--el-color-primary);
   }
 }
 </style>

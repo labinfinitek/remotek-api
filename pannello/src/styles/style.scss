@@ -1,18 +1,129 @@
-$basicBlack: #000000;
-$basicWhite: #ffffff;
-
-$primaryColor: #409eff;
-
+// Colori del pannello in un posto solo, come variabili di Element Plus. I
+// valori sono quelli di client/brand/brand.toml del client Remotek (Blu
+// Infinitek, fondo chiaro; navy del sito per barra laterale e tema scuro).
+// --rk-accento-testo e' il blu per testo e icone: nel chiaro un filo piu'
+// scuro del primario, perche' su #EEF3FB #1F6BFF non arriva a 4.5:1.
 :root {
-  --basicBlack: #000000;
-  --basicWhite: #ffffff;
-  --primaryColor: #409eff;
-  --tag-bg-color: #efefef;
+  --rk-navy: #0A1120;
+  --rk-accento-testo: #1A5FE6;
+  --rk-barra-alto: #FFFFFF;
+  --rk-barra-alto-testo: #0E1A2E;
+  // Barra laterale, navy in tutti e due i temi.
+  --rk-laterale-voce: #D7E0EE;
+  --rk-laterale-icona: #6FA8FF;
+  --rk-laterale-intestazione: #94A6C4;
+  --rk-laterale-attiva-testo: #FFFFFF;
+  --rk-laterale-attiva-fondo: rgba(31, 107, 255, 0.18);
+  --rk-laterale-sopra-fondo: rgba(31, 107, 255, 0.10);
+  // Fondo dell'icona del pulsante OIDC: quelle dei provider sono pensate per il chiaro.
+  --rk-fondo-icona: #FFFFFF;
+  // Primario sotto il mouse: piu' scuro, non piu' chiaro (bianco su #6297FF fa 2.84:1).
+  --rk-primario-sopra: #1956CC;
+  --rk-interruttore: var(--rk-navy);
+  --rk-font-testo: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --rk-font-titoli: "Space Grotesk", "Inter", system-ui, sans-serif;
+
+  --el-color-primary: #1F6BFF;
+  --el-color-primary-light-3: #6297FF;
+  --el-color-primary-light-5: #8FB5FF;
+  --el-color-primary-light-7: #BCD3FF;
+  --el-color-primary-light-8: #D2E1FF;
+  --el-color-primary-light-9: #E9F0FF;
+  --el-color-primary-dark-2: #1956CC;
+
+  --el-bg-color-page: #EEF3FB;
+  --el-bg-color: #FFFFFF;
+  --el-bg-color-overlay: #FFFFFF;
+  --el-text-color-primary: #0E1A2E;
+  --el-text-color-regular: #2A3A55;
+  --el-text-color-secondary: #52617A;
+  --el-text-color-placeholder: #66748C;
+  --el-border-color: #D3DDEC;
+  --el-border-color-light: #DFE6F1;
+  --el-border-color-lighter: #E8EEF7;
+  --el-border-color-extra-light: #EEF3FB;
+  --el-fill-color: #EEF3FB;
+  --el-fill-color-light: #F3F6FC;
+  --el-fill-color-lighter: #F6F9FD;
+  --el-fill-color-extra-light: #FAFCFF;
+  --el-fill-color-dark: #E3EAF5;
+  --el-fill-color-blank: #FFFFFF;
+
+  --tag-bg-color: var(--el-fill-color);
+  --basicBlack: var(--el-text-color-primary);
+  --basicWhite: #FFFFFF;
+}
+
+html.dark {
+  --rk-accento-testo: #6FA8FF;
+  --rk-barra-alto: var(--rk-navy);
+  --rk-barra-alto-testo: #EEF3FB;
+  --rk-primario-sopra: #1B53C0;
+  --rk-interruttore: var(--el-color-primary);
+
+  --el-color-primary: #1F6BFF;
+  --el-color-primary-light-3: #1B53C0;
+  --el-color-primary-light-5: #184397;
+  --el-color-primary-light-7: #15326D;
+  --el-color-primary-light-8: #132A58;
+  --el-color-primary-light-9: #122243;
+  --el-color-primary-dark-2: #4C89FF;
+
+  --el-bg-color-page: #060A14;
+  --el-bg-color: #101A2E;
+  --el-bg-color-overlay: #16223A;
+  --el-text-color-primary: #EEF3FB;
+  --el-text-color-regular: #D7E0EE;
+  --el-text-color-secondary: #94A6C4;
+  --el-text-color-placeholder: #7F91AF;
+  --el-border-color: #2A3A57;
+  --el-border-color-light: #22324F;
+  --el-border-color-lighter: #1B2A44;
+  --el-border-color-extra-light: #16223A;
+  --el-fill-color: #16223A;
+  --el-fill-color-light: #131E33;
+  --el-fill-color-lighter: #111B2F;
+  --el-fill-color-extra-light: #101A2E;
+  --el-fill-color-dark: #1E2C47;
+  --el-fill-color-blank: #101A2E;
+  --el-mask-color: rgba(6, 10, 20, 0.8);
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  font-family: var(--rk-font-testo);
+  background-color: var(--el-bg-color-page);
+  color: var(--el-text-color-primary);
+}
+
+h1, h2, h3, .el-dialog__title, .el-card__header {
+  font-family: var(--rk-font-titoli);
+}
+
+// Testo e icone blu: #1F6BFF resta sui pulsanti pieni, il resto usa il blu
+// per il testo (nel tema scuro #6FA8FF, che sul fondo si legge).
+.el-link.el-link--primary,
+.el-button--primary.is-link,
+.el-button--primary.is-text {
+  --el-link-text-color: var(--rk-accento-testo);
+  --el-button-text-color: var(--rk-accento-testo);
+}
+
+.el-tag--primary {
+  --el-tag-text-color: var(--rk-accento-testo);
+}
+
+.el-button--primary {
+  --el-button-hover-bg-color: var(--rk-primario-sopra);
+  --el-button-hover-border-color: var(--rk-primario-sopra);
+}
+
+.el-button--primary.is-plain {
+  --el-button-text-color: var(--rk-accento-testo);
+}
+
+.el-select-dropdown__item.is-selected,
+.el-radio__input.is-checked + .el-radio__label {
+  color: var(--rk-accento-testo);
 }
 
 .list-body {
@@ -41,11 +152,4 @@ body {
     margin-left: 5px;
     margin-right: 5px;
   }
-}
-
-html.dark {
-  /* 自定义深色背景颜色 */
-  //--el-bg-color: #626aef;
-  --tag-bg-color: #24252b;
-  --basicBlack: #fff;
 }

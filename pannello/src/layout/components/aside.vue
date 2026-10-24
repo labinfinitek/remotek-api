@@ -15,6 +15,6 @@
 
 <style scoped lang="scss">
 .scroll-sidebar {
-  background-color: #2d3a4b;
+  background-color: var(--rk-navy);
 }
 </style>

@@ -548,9 +548,6 @@
   "Optional, default is": {
     "One": "Optional, default is"
   },
-  "or login in with": {
-    "One": "or log in with"
-  },
   "For OIDC login without a password, enter any 4-20 letters": {
     "One": "For OIDC login without a password, enter any 4-20 letters"
   },
@@ -601,5 +598,17 @@
   },
   "ClientSecretKept": {
     "One": "Leave empty to keep the saved secret"
+  },
+  "Console": {
+    "One": "Console"
+  },
+  "LoginWith": {
+    "One": "Sign in with {name}"
+  },
+  "OrWithPassword": {
+    "One": "or with your password"
+  },
+  "PrivacyNotice": {
+    "One": "Privacy notice"
   }
 }

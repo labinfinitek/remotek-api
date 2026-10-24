@@ -548,9 +548,6 @@
   "Optional, default is": {
     "One": "Facoltativo, predefinito"
   },
-  "or login in with": {
-    "One": "oppure accedi con"
-  },
   "For OIDC login without a password, enter any 4-20 letters": {
     "One": "Per l'accesso solo con OIDC, senza password, scrivi 4-20 lettere qualsiasi"
   },
@@ -601,5 +598,17 @@
   },
   "ClientSecretKept": {
     "One": "Lascia vuoto per tenere il segreto salvato"
+  },
+  "Console": {
+    "One": "Console"
+  },
+  "LoginWith": {
+    "One": "Accedi con {name}"
+  },
+  "OrWithPassword": {
+    "One": "oppure con la password"
+  },
+  "PrivacyNotice": {
+    "One": "Informativa sulla privacy"
   }
 }

@@ -1,7 +1,21 @@
 <template>
   <div class="login-container">
     <div class="login-card">
-      <img :src="'/brand/logo.svg'" alt="logo" class="login-logo"/>
+      <img :src="logo" alt="logo" class="login-logo"/>
+      <h1 class="login-titolo">{{ appStore.setting.title }} · {{ T('Console') }}</h1>
+
+      <!-- L'accesso principale e' l'OIDC; la password sta sotto, secondaria. -->
+      <div class="oidc-options">
+        <el-button v-for="(option, index) in options" :key="index" type="primary" size="large"
+                   @click="handleOIDCLogin(option.name)" class="oidc-btn">
+          <img :src="iconaAccesso(option.name)" alt="" class="oidc-icon"/>
+          <span>{{ T('LoginWith', { name: nomeAccesso(option.name) }) }}</span>
+        </el-button>
+      </div>
+
+      <div class="divider" v-if="options.length > 0 && !disablePwd">
+        <span>{{ T('OrWithPassword') }}</span>
+      </div>
 
       <el-form v-if="!disablePwd" label-position="top" class="login-form">
         <el-form-item :label="T('Username')">
@@ -20,35 +34,35 @@
           </el-input>
         </el-form-item>
         <el-form-item>
-          <el-button @click="login" type="primary" class="login-button">{{ T('Login') }}</el-button>
+          <el-button @click="login" :type="options.length ? 'default' : 'primary'" class="login-button">{{ T('Login') }}</el-button>
           <el-button v-if="allowRegister" @click="register" class="login-button">{{ T('Register') }}</el-button>
         </el-form-item>
       </el-form>
 
-      <div class="divider" v-if="options.length > 0 && !disablePwd">
-        <span>{{ T('or login in with') }}</span>
-      </div>
-
-      <div class="oidc-options">
-        <div v-for="(option, index) in options" :key="index" class="oidc-option">
-          <el-button @click="handleOIDCLogin(option.name)" class="oidc-btn">
-            <img :src="getProviderImage(option.name)" alt="provider" class="oidc-icon"/>
-            <span>{{ T(option.name) }}</span>
-          </el-button>
-        </div>
+      <div class="login-piede" v-if="marchio.ragioneSociale || marchio.informativa">
+        <span v-if="marchio.ragioneSociale">{{ marchio.ragioneSociale }}</span>
+        <a v-if="marchio.informativa" :href="marchio.informativa" target="_blank" rel="noopener noreferrer">{{ T('PrivacyNotice') }}</a>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-  import { reactive, onMounted, ref } from 'vue'
+  import { reactive, onMounted, ref, computed } from 'vue'
   import { useUserStore } from '@/store/user'
   import { ElMessage } from 'element-plus'
   import { T } from '@/utils/i18n'
   import { useRoute, useRouter } from 'vue-router'
   import { loginOptions, captcha } from '@/api/login'
   import { getCode, removeCode } from '@/utils/auth'
+  import { useAppStore } from '@/store/app'
+  import { useDark } from '@vueuse/core'
+  import { marchio, caricaMarchio } from '@/utils/marchio'
+
+  const appStore = useAppStore()
+  const scuro = useDark()
+  caricaMarchio()
+  const logo = computed(() => scuro.value && marchio.logoScuro ? marchio.logoScuro : '/brand/logo.svg')
 
   const oauthInfo = ref({})
   const userStore = useUserStore()
@@ -124,6 +138,10 @@
   const getProviderImage = (provider) => {
     return providerImageMap[provider.toLowerCase()] || providerImageMap.default
   }
+  // Nome e icona del pulsante da brand.json solo con un provider: con piu'
+  // provider ognuno tiene il suo nome, se no i pulsanti sarebbero uguali.
+  const nomeAccesso = (provider) => options.length === 1 && marchio.nomeAccesso ? marchio.nomeAccesso : provider
+  const iconaAccesso = (provider) => options.length === 1 && marchio.iconaAccesso ? marchio.iconaAccesso : getProviderImage(provider)
 
   const allowRegister = ref(false)
   const disablePwd = ref(false)
@@ -173,33 +191,38 @@
 </script>
 
 <style scoped lang="scss">
+// Fondo chiaro e card bianca (nel tema scuro fondo e superficie navy).
 .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background-color: #2d3a4b;
+  min-height: 100vh;
+  background-color: var(--el-bg-color-page);
   padding: 20px;
   box-sizing: border-box;
 }
 
 .login-card {
-  width: 360px;
-  background-color: #283342;
+  width: 380px;
+  background-color: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
   padding: 40px;
   border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(14, 26, 46, 0.08);
   text-align: center;
 }
 
-h1 {
-  margin-bottom: 20px;
-  font-size: 24px;
-  font-weight: bold;
+.login-titolo {
+  margin: 0 0 28px;
+  font-family: var(--rk-font-titoli);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .login-form {
-  margin-bottom: 20px;
+  margin-bottom: 8px;
+  text-align: left;
 }
 
 .login-input {
@@ -220,23 +243,23 @@ h1 {
 .login-button {
   width: 100%;
   height: 40px;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   margin-left: 0;
 }
 
 .divider {
   display: flex;
   align-items: center;
-  margin: 20px 0;
-  font-size: 14px;
-  color: #888;
+  margin: 24px 0 16px;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
 
   &::before,
   &::after {
     content: '';
     flex: 1;
     height: 1px;
-    background-color: #ddd;
+    background-color: var(--el-border-color);
   }
 
   &::before {
@@ -255,50 +278,45 @@ h1 {
 }
 
 .oidc-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
   width: 100%;
-  height: 50px;
-  background-color: white;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  color: black;
-  font-size: 14px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  height: 48px;
+  margin-left: 0;
+  font-size: 15px;
+  font-weight: 600;
 }
 
+// L'icona su un tondo chiaro (--rk-fondo-icona).
 .oidc-icon {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   margin-right: 10px;
+  padding: 2px;
+  border-radius: 50%;
+  background-color: var(--rk-fondo-icona);
+  object-fit: contain;
 }
 
 // Come .logo nella barra: altezza fissa, larghezza dal logo con un massimo.
 .login-logo {
-  height: 80px;
+  height: 64px;
   width: auto;
-  max-width: 320px;
+  max-width: 300px;
   object-fit: contain;
-  margin: 0 auto 20px;
+  margin: 0 auto 16px;
   display: block;
 }
 
-.el-form-item {
-  ::v-deep(.el-form-item__label) {
-    color: #fff;
-  }
+.login-piede {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 12px;
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 
-  .el-input {
-    ::v-deep(.el-input__wrapper) {
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: transparent;
-    }
-
-    ::v-deep(input) {
-      color: #fff;
-    }
+  a {
+    color: var(--rk-accento-testo);
   }
 }
 </style>
