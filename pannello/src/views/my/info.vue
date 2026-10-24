@@ -30,25 +30,19 @@
         </el-form-item>
       </el-form>
     </el-card>
-    <el-card shadow="hover" style="margin-top: 20px">
-      <div v-html="html"></div>
-    </el-card>
     <changePwdDialog v-model:visible="changePwdVisible"></changePwdDialog>
   </div>
 </template>
 
 <script setup>
   import changePwdDialog from '@/components/changePwdDialog.vue'
-  import { computed, ref } from 'vue'
+  import { ref } from 'vue'
   import { useUserStore } from '@/store/user'
-  import { useAppStore } from '@/store/app'
   import { bind, unbind } from '@/api/oauth'
   import { myOauth } from '@/api/user'
   import { ElMessageBox } from 'element-plus'
   import { T } from '@/utils/i18n'
-  import { marked } from 'marked'
 
-  const appStore = useAppStore()
   const userStore = useUserStore()
   const changePwdVisible = ref(false)
   const showChangePwd = () => {
@@ -85,8 +79,6 @@
     }
 
   }
-
-  const html = computed(_ => marked(appStore.setting.hello||''))
 
 </script>
 

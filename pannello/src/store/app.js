@@ -26,7 +26,6 @@ export const useAppStore = defineStore({
   state: () => ({
     setting: {
       title: 'Remotek',
-      hello: '',
       sideIsCollapse: false,
       logo,
       langs: langs,
@@ -63,7 +62,6 @@ export const useAppStore = defineStore({
       console.log('getAdminConfig')
       return admin().then(res => {
         this.replaceAdminTitle(res.data.title)
-        this.setting.hello = res.data.hello
       })
     },
     replaceAdminTitle (newTitle) {

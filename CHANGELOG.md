@@ -6,6 +6,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Modificato
+- Pannello: il Profilo non mostra piu' la card di benvenuto col testo di
+  `admin.hello-file` (o `admin.hello`), e al suo posto non c'e' niente. Le
+  due chiavi restano in configurazione ma il pannello non le legge piu'.
+
 ### Corretto
 - Pannello: via il pulsante "Connetti" dalle liste di PC, I miei PC,
   Rubrica e Voci di rubrica. Apriva un link `rustdesk://<id>`, che il
