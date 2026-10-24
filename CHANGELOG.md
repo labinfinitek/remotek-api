@@ -6,6 +6,19 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+## [0.9.0] - 2026-10-23
+Immagine `ghcr.io/labinfinitek/remotek-api:0.9.0`, costruita con Go 1.26.10
+su Alpine 3.24.3. Versione minore: prepara la MFA dei tecnici via OIDC
+(ADR-0029). Eccezioni al login con password spento, accesso di emergenza
+nel pannello, legame OIDC uno a uno, segreto del client che non torna al
+pannello. Nessuna migrazione del database (`DatabaseVersion` resta 275):
+all'avvio si crea un indice unico nuovo su `user_thirds`; con doppioni,
+un error col loro numero e l'avvio continua senza indice. Configurazione:
+`app.pwd-login-eccezioni` e' nuova e vuota, e conta solo con
+`app.disable-pwd-login` acceso. Contratto col client invariato; solo
+l'auth-query OIDC del client risponde 400 a un utente disattivato, che
+prima riceveva il token. Dalla 0.8.0 si passa direttamente alla 0.9.0.
+
 ### Sicurezza
 - Eccezioni al login con password spento (ADR-0029): con
   `app.disable-pwd-login` acceso `POST /api/login` accetta ancora la
