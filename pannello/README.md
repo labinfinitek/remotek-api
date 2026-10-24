@@ -16,6 +16,12 @@ rustdesk-api-web e' MIT ("Copyright (c) 2016-2021 vue-manage-system"):
 con la stessa licenza. Il `LICENSE` va nell'immagine accanto ai file del
 pannello, in `resources/admin/LICENSE`.
 
+I caratteri Inter e Space Grotesk vengono dai pacchetti npm `@fontsource/inter`
+e `@fontsource/space-grotesk` e finiscono nel build come file del pannello:
+nessuna richiesta a Google Fonts o ad altri siti. Sono SIL Open Font License
+1.1; le due licenze vanno nell'immagine in `resources/admin/LICENSE-inter` e
+`resources/admin/LICENSE-space-grotesk`.
+
 ## Le nostre modifiche
 
 Il primo commit su questa cartella importa upstream senza toccarlo; tutto

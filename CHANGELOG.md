@@ -7,6 +7,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 ## [Non rilasciato]
 
 ### Modificato
+- Pannello: caratteri Inter (testo) e Space Grotesk (titoli e nome del
+  prodotto), ospitati nel pannello dai pacchetti `@fontsource` (licenza OFL
+  1.1, in `resources/admin/LICENSE-inter` e `LICENSE-space-grotesk`): il
+  pannello non chiama siti di terzi.
 - Pannello: il Profilo non mostra piu' la card di benvenuto col testo di
   `admin.hello-file` (o `admin.hello`), e al suo posto non c'e' niente. Le
   due chiavi restano in configurazione ma il pannello non le legge piu'.
