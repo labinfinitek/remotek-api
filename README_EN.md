@@ -251,8 +251,8 @@ default when the key is missing from the file.
 | `app.pwd-login-eccezioni` \* | `RUSTDESK_API_APP_PWD_LOGIN_ECCEZIONI` | empty | comma-separated usernames (spaces trimmed) that log in with the password even with `app.disable-pwd-login`, from the client and the panel; empty = nobody. Ignored while `app.disable-pwd-login` is off |
 | `app.firma-obbligatoria` \* | `RUSTDESK_API_APP_FIRMA_OBBLIGATORIA` | `false` | `true`: PCs without a key must sign their no-login requests too (Device signature) |
 | `admin.title` \* | `RUSTDESK_API_ADMIN_TITLE` | empty | panel title; empty = `brand.name` |
-| `admin.hello` | `RUSTDESK_API_ADMIN_HELLO` | empty | panel welcome message (HTML); when not empty, `admin.hello-file` is not read |
-| `admin.hello-file` | `RUSTDESK_API_ADMIN_HELLO_FILE` | `./conf/admin/hello.html` | welcome file; `{{username}}` and `{{brand}}` are replaced |
+| `admin.hello` | `RUSTDESK_API_ADMIN_HELLO` | empty | welcome message; the panel no longer shows it, the key stays for now. When not empty, `admin.hello-file` is not read |
+| `admin.hello-file` | `RUSTDESK_API_ADMIN_HELLO_FILE` | `./conf/admin/hello.html` | welcome file (`{{username}}` and `{{brand}}` are replaced); the panel no longer shows it, the key stays for now |
 | `gin.api-addr` | `RUSTDESK_API_GIN_API_ADDR` | `0.0.0.0:21114` | listen address |
 | `gin.mode` | `RUSTDESK_API_GIN_MODE` | `release` | `release`, `debug`, `test` |
 | `gin.resources-path` | `RUSTDESK_API_GIN_RESOURCES_PATH` | `resources` | directory of panel, languages and templates; without the language files startup stops |

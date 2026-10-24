@@ -254,8 +254,8 @@ stesso default se la chiave manca dal file.
 | `app.pwd-login-eccezioni` \* | `RUSTDESK_API_APP_PWD_LOGIN_ECCEZIONI` | vuoto | username separati da virgola (spazi tolti) che entrano con la password anche con `app.disable-pwd-login`, dal client e dal pannello; vuoto = nessuno. Con `app.disable-pwd-login` spento non conta |
 | `app.firma-obbligatoria` \* | `RUSTDESK_API_APP_FIRMA_OBBLIGATORIA` | `false` | `true`: anche i PC senza chiave devono firmare le richieste senza login (Firma del dispositivo) |
 | `admin.title` \* | `RUSTDESK_API_ADMIN_TITLE` | vuoto | titolo del pannello; vuoto = `brand.name` |
-| `admin.hello` | `RUSTDESK_API_ADMIN_HELLO` | vuoto | messaggio di benvenuto del pannello (HTML); se non e' vuoto, `admin.hello-file` non si legge |
-| `admin.hello-file` | `RUSTDESK_API_ADMIN_HELLO_FILE` | `./conf/admin/hello.html` | file del benvenuto; `{{username}}` e `{{brand}}` si sostituiscono |
+| `admin.hello` | `RUSTDESK_API_ADMIN_HELLO` | vuoto | messaggio di benvenuto; il pannello non lo mostra piu', la chiave resta per ora. Se non e' vuoto, `admin.hello-file` non si legge |
+| `admin.hello-file` | `RUSTDESK_API_ADMIN_HELLO_FILE` | `./conf/admin/hello.html` | file del benvenuto (`{{username}}` e `{{brand}}` si sostituiscono); il pannello non lo mostra piu', la chiave resta per ora |
 | `gin.api-addr` | `RUSTDESK_API_GIN_API_ADDR` | `0.0.0.0:21114` | indirizzo di ascolto |
 | `gin.mode` | `RUSTDESK_API_GIN_MODE` | `release` | `release`, `debug`, `test` |
 | `gin.resources-path` | `RUSTDESK_API_GIN_RESOURCES_PATH` | `resources` | cartella di pannello, lingue e modelli; senza i file di lingua l'avvio si ferma |

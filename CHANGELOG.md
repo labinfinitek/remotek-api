@@ -6,6 +6,17 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Modificato
+- Pannello: il Profilo non mostra piu' la card di benvenuto col testo di
+  `admin.hello-file` (o `admin.hello`), e al suo posto non c'e' niente. Le
+  due chiavi restano in configurazione ma il pannello non le legge piu'.
+
+### Corretto
+- Pannello: via il pulsante "Connetti" dalle liste di PC, I miei PC,
+  Rubrica e Voci di rubrica. Apriva un link `rustdesk://<id>`, che il
+  client Remotek non gestisce: il clic non faceva niente. La colonna
+  "Azioni" si stringe di conseguenza.
+
 ## [0.9.0] - 2026-10-23
 Immagine `ghcr.io/labinfinitek/remotek-api:0.9.0`, costruita con Go 1.26.10
 su Alpine 3.24.3. Versione minore: prepara la MFA dei tecnici via OIDC
