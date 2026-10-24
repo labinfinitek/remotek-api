@@ -54,9 +54,8 @@
         <el-table-column prop="alias" :label="T('Alias')" align="center" width="80"/>
         <el-table-column prop="created_at" :label="T('CreatedAt')" align="center" width="150"/>
         <el-table-column prop="updated_at" :label="T('UpdatedAt')" align="center" width="150"/>
-        <el-table-column :label="T('Actions')" align="center" width="400" class-name="table-actions" fixed="right">
+        <el-table-column :label="T('Actions')" align="center" width="300" class-name="table-actions" fixed="right">
           <template #default="{row}">
-            <el-button type="success" @click="connectByClient(row.id)">{{ T('Link') }}</el-button>
             <el-button type="primary" @click="toAddressBook(row)">{{ T('AddToAddressBook') }}</el-button>
             <el-button @click="toView(row)">{{ T('View') }}</el-button>
             <!--            <el-button type="danger" @click="del(row)">{{ T('Delete') }}</el-button>-->
@@ -185,7 +184,6 @@
   import { timeAgo } from '@/utils/time'
   import { jsonToCsv, downBlob } from '@/utils/file'
   import { useRepositories as useABRepositories } from '@/views/address_book/index'
-  import { connectByClient } from '@/utils/peer'
   import { CopyDocument } from '@element-plus/icons'
   import { handleClipboard } from '@/utils/clipboard'
   import { batchCreateFromPeers } from '@/api/my/address_book'
