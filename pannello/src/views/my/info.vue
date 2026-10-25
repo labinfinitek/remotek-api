@@ -6,6 +6,9 @@
         <el-form-item :label="T('User')">
           <div>{{ userStore.nickname || userStore.username }}<span v-if="userStore.nickname" class="secondario"> · {{ userStore.username }}</span></div>
         </el-form-item>
+        <el-form-item :label="T('Group')">
+          <div>{{ userStore.group_name || '—' }}</div>
+        </el-form-item>
         <el-form-item :label="T('Email')">
           <div>{{ userStore.email || '—' }}</div>
         </el-form-item>
