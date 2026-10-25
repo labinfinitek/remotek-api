@@ -304,8 +304,9 @@ comma-separated; surrounding spaces and empty entries are dropped. The provider 
 `id_token` in the token response (OIDC Core): without it, or with an
 `id_token` that does not verify, the login stops. Auto-registration
 (`auto_register`) is off unless you turn it on: a provider account without a
-user is sent to link itself from the panel; when on, the user is created at
-the first login.
+user gets a binding code (below, "Adding a technician with password login
+off") and, with password login on, is also sent to link itself from the
+panel; when on, the user is created at the first login.
 
 The OIDC login finds the user through the *binding* (`user_thirds`: provider
 and the account's `sub`), not through the email. A `sub` is bound to one
@@ -412,6 +413,32 @@ login con password per eccezione: utente <username> (amministratore), motivo <mo
 the password form at `/_admin/#/login?password=1`, even with a single
 provider (which without the parameter opens OIDC at once); only a username
 in the list gets in.
+
+**Adding a technician with password login off.** With `auto_register` off,
+a new technician's OIDC account must be bound to a user by an
+administrator:
+
+1. the administrator creates the user (System, Users), with no password to
+   hand out;
+2. the technician signs in with OIDC from the client or the panel: the
+   provider page answers "Your <provider> account is not yet bound to a
+   Remotek user. Give the administrator this code: K7Q2-M9XD. It is valid
+   for 30 minutes; then sign in again.";
+3. the administrator opens System, Pending bindings, finds the code (with
+   the name and email the provider sent, and whether the email is verified)
+   and picks "Bind to" with the user from step 1;
+4. the technician signs in again with OIDC and gets in.
+
+The code has 8 characters without 0/O and 1/I/L, in groups of 4; a new sign
+in of the same account renews it. Requests live in memory, at most 100 (the
+oldest goes beyond that), and an API restart loses them. Binding rejects
+agent accounts, disabled users, an account already bound and a user that
+already has an account of the same provider. The log gets an INFO line,
+without `sub` or email:
+
+```
+associazione OIDC dall'amministratore: utente <id>, provider <op>, amministratore <id>
+```
 
 **Connecting the client.** From client `remotek-1.4.9-3`, Remotek has the
 ID server, relay server, API server and key locked in the binary (ADR-0025):
