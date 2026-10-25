@@ -81,9 +81,11 @@ delle rotte). Le chiavi composte a runtime (`T(row.label)`) non le vede.
 
 ## Catture
 
-`scripts/catture.mjs` fotografa login, Profilo e barra in alto, nel tema
-chiaro e in quello scuro, a 1600x900 e in italiano, per le MR che cambiano
-l'aspetto del pannello. Usa il build di `dist/` e i file di
+`scripts/catture.mjs` fotografa login, Profilo e barra in alto, le
+Associazioni in attesa con la finestra "Associa a", la pagina del codice di
+associazione OIDC (da `--resources`, default `../resources`) e la lista dei
+PC anche a 1280 px, nel tema chiaro e in quello scuro, a 1600x900 e in
+italiano, per le MR che cambiano l'aspetto del pannello. Usa il build di `dist/` e i file di
 `../resources/brand`; le rotte `/api/*` le simula lo script (un
 amministratore "Mario Rossi" del gruppo "Assistenza", con un provider OIDC
 associato), e una richiesta verso un altro dominio si interrompe. Il
