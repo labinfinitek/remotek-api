@@ -619,5 +619,35 @@
   },
   "ShareToGone": {
     "One": "#{id} (excluded)"
+  },
+  "OauthPending": {
+    "One": "Pending bindings"
+  },
+  "OauthPendingNote": {
+    "One": "OIDC accounts that signed in without being bound: the technician gives you the code. Each code is valid for 30 minutes."
+  },
+  "OauthPendingEmpty": {
+    "One": "No pending bindings."
+  },
+  "OauthPendingCode": {
+    "One": "Code"
+  },
+  "OauthPendingVerified": {
+    "One": "verified"
+  },
+  "OauthPendingNotVerified": {
+    "One": "not verified"
+  },
+  "OauthPendingAge": {
+    "One": "Since"
+  },
+  "OauthPendingMinutes": {
+    "One": "{n} min"
+  },
+  "OauthPendingBindTo": {
+    "One": "Bind to"
+  },
+  "OauthPendingConfirm": {
+    "One": "Bind the account with code {codice} to user {utente}?"
   }
 }

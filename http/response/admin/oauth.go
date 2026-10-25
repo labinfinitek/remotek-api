@@ -35,3 +35,14 @@ type OauthListPannello struct {
 	Oauths []OauthPannello `json:"list"`
 	model.Pagination
 }
+
+// RichiestaPannello e' una richiesta di associazione OIDC come la vede
+// l'amministratore: senza il sub, con l'eta' in secondi.
+type RichiestaPannello struct {
+	Codice          string `json:"codice"`
+	Op              string `json:"op"`
+	Nome            string `json:"nome"`
+	Email           string `json:"email"`
+	EmailVerificata bool   `json:"email_verificata"`
+	Secondi         int64  `json:"secondi"`
+}

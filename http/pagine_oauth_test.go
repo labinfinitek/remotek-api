@@ -96,7 +96,7 @@ func TestPagineOAuthMessaggioComeTesto(t *testing.T) {
 	}
 }
 
-// TestPagineOAuthLingua rende le due pagine del login OAuth col router vero:
+// TestPagineOAuthLingua rende le pagine del login OAuth col router vero:
 // l'attributo lang e la lingua di ripiego, se il browser non dice la sua,
 // sono quella configurata, e l'inglese con lang vuoto; non piu' zh-CN.
 func TestPagineOAuthLingua(t *testing.T) {
@@ -106,7 +106,7 @@ func TestPagineOAuthLingua(t *testing.T) {
 	for conf, attesa := range map[string]string{"it": "it", "en": "en", "": "en"} {
 		global.Config.Lang = conf
 		g := NewEngine()
-		for _, pagina := range []string{"oauth_fail.html", "oauth_success.html"} {
+		for _, pagina := range []string{"oauth_fail.html", "oauth_success.html", "oauth_codice.html"} {
 			rec := httptest.NewRecorder()
 			if err := g.HTMLRender.Instance(pagina, gin.H{"message": "OauthFailed"}).Render(rec); err != nil {
 				t.Fatalf("%s: %v", pagina, err)

@@ -47,6 +47,9 @@ type OauthCacheItem struct {
 	Email      string `json:"email"`
 	Verifier   string `json:"verifier"` // used for oauth pkce
 	Nonce      string `json:"nonce"`
+	// Codice e' quello della richiesta di associazione dell'account, se
+	// il callback ne ha creata una.
+	Codice string `json:"codice"`
 }
 
 func (oci *OauthCacheItem) ToOauthUser() *model.OauthUser {

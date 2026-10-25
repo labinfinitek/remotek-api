@@ -162,7 +162,9 @@ func (o *Oauth) OidcAuthQuery(c *gin.Context) {
 // @Tags Oauth
 // @Summary OauthCallback
 // @Description Risponde una pagina HTML (oauth_success.html o oauth_fail.html
-// @Description col messaggio), o 302 verso il pannello per associare l'account.
+// @Description col messaggio, oauth_codice.html col codice dell'associazione
+// @Description se il login con password e' spento), o 302 verso il pannello
+// @Description per associare l'account.
 // @Produce  html
 // @Param state query string true "codice del login"
 // @Param code query string false "codice del provider"
@@ -257,9 +259,25 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 			}
 			// Un provider salvato senza auto_register ha NULL: vale spenta,
 			// come il default di FormatOauthInfo.
+			// Senza autoregistrazione nasce una richiesta di associazione,
+			// col codice che il tecnico comunica all'amministratore. Col
+			// login con password spento la pagina di associazione del
+			// pannello, che vuole il login, non si apre: il codice va in
+			// una pagina sua.
 			if oauthConfig.AutoRegister == nil || !*oauthConfig.AutoRegister {
-				// c.String(http.StatusInternalServerError, "还未绑定用户，请先绑定")
+				codice, err := service.RichiesteAssociazione.Nuova(op, oauthUser)
+				if err != nil {
+					c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
+						"message": response.IDErr(c, "OauthFailed", err),
+					})
+					return
+				}
+				if global.Config.App.DisablePwdLogin {
+					c.HTML(http.StatusOK, "oauth_codice.html", gin.H{"op": op, "codice": codice})
+					return
+				}
 				oauthCache.UpdateFromOauthUser(oauthUser)
+				oauthCache.Codice = codice
 				c.Redirect(http.StatusFound, "/_admin/#/oauth/bind/"+cacheKey)
 				return
 			}

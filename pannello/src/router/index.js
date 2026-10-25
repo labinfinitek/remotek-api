@@ -145,6 +145,12 @@ export const asyncRoutes = [
         component: () => import('@/views/oauth/index.vue'),
       },
       {
+        path: '/oauth/richieste',
+        name: 'OauthRichieste',
+        meta: { title: 'OauthPending', icon: 'Key' /*keepAlive: true*/ },
+        component: () => import('@/views/oauth/richieste.vue'),
+      },
+      {
         path: '/userToken',
         name: 'UserToken',
         meta: { title: 'UserToken', icon: 'Ticket' /*keepAlive: true*/ },

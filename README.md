@@ -307,7 +307,9 @@ la virgola; gli spazi intorno e le voci vuote si tolgono. Serve un provider che 
 risposta del token manda l'`id_token` (OIDC Core): senza, o con un
 `id_token` che non si verifica, il login si ferma. L'autoregistrazione
 (`auto_register`) e' spenta se non la si accende: un account del provider
-senza utente viene rimandato ad associarsi dal pannello; accesa, l'utente
+senza utente riceve un codice di associazione (sotto, "Aggiungere un
+tecnico con il login con password spento") e, con il login con password
+acceso, viene anche rimandato ad associarsi dal pannello; accesa, l'utente
 nasce al primo login.
 
 Il login OIDC trova l'utente dall'*associazione* (`user_thirds`: provider e
@@ -415,6 +417,32 @@ login con password per eccezione: utente <username> (amministratore), motivo <mo
 mostra il modulo della password su `/_admin/#/login?password=1`, anche
 con un solo provider (che senza il parametro apre subito l'OIDC); entra
 solo uno username dell'elenco.
+
+**Aggiungere un tecnico con il login con password spento.** Con
+`auto_register` spento l'account OIDC di un tecnico nuovo va associato a un
+utente da un amministratore:
+
+1. l'amministratore crea l'utente (Sistema, Utenti), senza password da
+   comunicare;
+2. il tecnico entra con OIDC dal client o dal pannello: la pagina del
+   provider risponde "Il tuo account <provider> non è ancora associato a un
+   utente Remotek. Comunica all'amministratore questo codice: K7Q2-M9XD.
+   Vale 30 minuti; poi rifai l'accesso.";
+3. l'amministratore apre Sistema, Associazioni in attesa, trova il codice
+   (con nome ed email che il provider ha mandato, e se l'email e'
+   verificata) e sceglie "Associa a" con l'utente del punto 1;
+4. il tecnico rifa' l'accesso con OIDC ed entra.
+
+Il codice ha 8 caratteri senza 0/O e 1/I/L, a gruppi di 4; un nuovo accesso
+dello stesso account lo rinnova. Le richieste stanno in memoria, al massimo
+100 (oltre esce la piu' vecchia), e un riavvio dell'API le perde.
+L'associazione rifiuta gli account agente, gli utenti disattivati, un
+account gia' associato e un utente che ha gia' un account dello stesso
+provider. Nel log una riga INFO, senza `sub` ne' email:
+
+```
+associazione OIDC dall'amministratore: utente <id>, provider <op>, amministratore <id>
+```
 
 **Collegare il client.** Dal client `remotek-1.4.9-3` Remotek ha server ID,
 server relay, server API e chiave bloccati nel binario (ADR-0025): da

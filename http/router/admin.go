@@ -164,7 +164,8 @@ func OauthBind(rg *gin.RouterGroup) {
 		arp.POST("/create", cont.Create)
 		arp.POST("/update", cont.Update)
 		arp.POST("/delete", cont.Delete)
-
+		arp.GET("/richieste", cont.Richieste)
+		arp.POST("/associa", cont.Associa)
 	}
 
 }

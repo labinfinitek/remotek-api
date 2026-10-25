@@ -45,6 +45,16 @@ definitions:
     required:
     - id
     type: object
+  admin.AssociaRichiestaForm:
+    properties:
+      codice:
+        type: string
+      user_id:
+        type: integer
+    required:
+    - codice
+    - user_id
+    type: object
   admin.AuditConnLogIds:
     properties:
       ids:
@@ -314,6 +324,21 @@ definitions:
         type: string
       version:
         type: string
+    type: object
+  admin.RichiestaPannello:
+    properties:
+      codice:
+        type: string
+      email:
+        type: string
+      email_verificata:
+        type: boolean
+      nome:
+        type: string
+      op:
+        type: string
+      secondi:
+        type: integer
     type: object
   admin.TagForm:
     properties:
@@ -3011,6 +3036,30 @@ paths:
       summary: 标签编辑
       tags:
       - 我的标签
+  /admin/oauth/associa:
+    post:
+      consumes:
+      - application/json
+      description: Associa all'utente user_id l'account OIDC della richiesta col codice.
+      parameters:
+      - description: codice e utente
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/admin.AssociaRichiestaForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - token: []
+      summary: Associa una richiesta a un utente
+      tags:
+      - Oauth
   /admin/oauth/create:
     post:
       consumes:
@@ -3132,6 +3181,29 @@ paths:
       security:
       - token: []
       summary: Oauth列表
+      tags:
+      - Oauth
+  /admin/oauth/richieste:
+    get:
+      description: Gli account OIDC che hanno fatto l'accesso senza essere associati,
+        con l'autoregistrazione spenta, col codice che il tecnico comunica.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/admin.RichiestaPannello'
+                  type: array
+              type: object
+      security:
+      - token: []
+      summary: Richieste di associazione in attesa
       tags:
       - Oauth
   /admin/oauth/update:

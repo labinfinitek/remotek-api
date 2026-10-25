@@ -6,6 +6,17 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Aggiunto
+- OIDC con il login con password spento: un account senza utente, con
+  `auto_register` spento, riceve nella pagina del callback un codice di
+  associazione ("K7Q2-M9XD", 30 minuti) da comunicare all'amministratore,
+  che nel pannello (Sistema, Associazioni in attesa) lo associa a un utente
+  esistente; prima la pagina di associazione voleva il login al pannello e
+  il tecnico nuovo non entrava. Rotte `GET /api/admin/oauth/richieste` e
+  `POST /api/admin/oauth/associa`, solo amministratori; richieste in
+  memoria, al massimo 100. Con il login con password acceso resta la pagina
+  di associazione, che mostra anche il codice.
+
 ## [0.11.0] - 2026-10-25
 Immagine `ghcr.io/labinfinitek/remotek-api:0.11.0`, costruita con Go 1.26.10
 su Alpine 3.24.3. Versione minore: la risposta del login del pannello ha il

@@ -9,6 +9,10 @@
         <el-form-item :label="T('ThirdName')">
           <div class="impt">{{ oauthInfo.third_name }}</div>
         </el-form-item>
+        <!-- il codice serve se chi associa e' un amministratore, dalla pagina delle associazioni in attesa -->
+        <el-form-item v-if="oauthInfo.codice" :label="T('OauthPendingCode')">
+          <div class="impt codice">{{ oauthInfo.codice }}</div>
+        </el-form-item>
         <el-form-item label-width="0">
           <el-button style="width: 100%" v-if="!resStatus" type="primary" size="large" @click="toConfirm">{{ T('Bind') }}</el-button>
         </el-form-item>
@@ -95,6 +99,11 @@
     .impt {
       font-weight: bold;
       font-size: 20px;
+    }
+
+    .codice {
+      font-family: ui-monospace, "SF Mono", Consolas, monospace;
+      letter-spacing: 0.08em;
     }
   }
 }

@@ -1343,7 +1343,7 @@ const docTemplateapi = `{
         },
         "/oauth/callback": {
             "get": {
-                "description": "Risponde una pagina HTML (oauth_success.html o oauth_fail.html\ncol messaggio), o 302 verso il pannello per associare l'account.",
+                "description": "Risponde una pagina HTML (oauth_success.html o oauth_fail.html\ncol messaggio, oauth_codice.html col codice dell'associazione\nse il login con password e' spento), o 302 verso il pannello\nper associare l'account.",
                 "produces": [
                     "text/html"
                 ],
@@ -1384,7 +1384,7 @@ const docTemplateapi = `{
         },
         "/oauth/login": {
             "get": {
-                "description": "Risponde una pagina HTML (oauth_success.html o oauth_fail.html\ncol messaggio), o 302 verso il pannello per associare l'account.",
+                "description": "Risponde una pagina HTML (oauth_success.html o oauth_fail.html\ncol messaggio, oauth_codice.html col codice dell'associazione\nse il login con password e' spento), o 302 verso il pannello\nper associare l'account.",
                 "produces": [
                     "text/html"
                 ],
@@ -1483,7 +1483,7 @@ const docTemplateapi = `{
         },
         "/oidc/callback": {
             "get": {
-                "description": "Risponde una pagina HTML (oauth_success.html o oauth_fail.html\ncol messaggio), o 302 verso il pannello per associare l'account.",
+                "description": "Risponde una pagina HTML (oauth_success.html o oauth_fail.html\ncol messaggio, oauth_codice.html col codice dell'associazione\nse il login con password e' spento), o 302 verso il pannello\nper associare l'account.",
                 "produces": [
                     "text/html"
                 ],
@@ -1524,7 +1524,7 @@ const docTemplateapi = `{
         },
         "/oidc/login": {
             "get": {
-                "description": "Risponde una pagina HTML (oauth_success.html o oauth_fail.html\ncol messaggio), o 302 verso il pannello per associare l'account.",
+                "description": "Risponde una pagina HTML (oauth_success.html o oauth_fail.html\ncol messaggio, oauth_codice.html col codice dell'associazione\nse il login con password e' spento), o 302 verso il pannello\nper associare l'account.",
                 "produces": [
                     "text/html"
                 ],

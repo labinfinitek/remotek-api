@@ -1179,7 +1179,9 @@ paths:
     get:
       description: |-
         Risponde una pagina HTML (oauth_success.html o oauth_fail.html
-        col messaggio), o 302 verso il pannello per associare l'account.
+        col messaggio, oauth_codice.html col codice dell'associazione
+        se il login con password e' spento), o 302 verso il pannello
+        per associare l'account.
       parameters:
       - description: codice del login
         in: query
@@ -1208,7 +1210,9 @@ paths:
     get:
       description: |-
         Risponde una pagina HTML (oauth_success.html o oauth_fail.html
-        col messaggio), o 302 verso il pannello per associare l'account.
+        col messaggio, oauth_codice.html col codice dell'associazione
+        se il login con password e' spento), o 302 verso il pannello
+        per associare l'account.
       parameters:
       - description: codice del login
         in: query
@@ -1275,7 +1279,9 @@ paths:
     get:
       description: |-
         Risponde una pagina HTML (oauth_success.html o oauth_fail.html
-        col messaggio), o 302 verso il pannello per associare l'account.
+        col messaggio, oauth_codice.html col codice dell'associazione
+        se il login con password e' spento), o 302 verso il pannello
+        per associare l'account.
       parameters:
       - description: codice del login
         in: query
@@ -1304,7 +1310,9 @@ paths:
     get:
       description: |-
         Risponde una pagina HTML (oauth_success.html o oauth_fail.html
-        col messaggio), o 302 verso il pannello per associare l'account.
+        col messaggio, oauth_codice.html col codice dell'associazione
+        se il login con password e' spento), o 302 verso il pannello
+        per associare l'account.
       parameters:
       - description: codice del login
         in: query

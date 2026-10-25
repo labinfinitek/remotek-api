@@ -20,8 +20,8 @@ type Oauth struct {
 
 // Info risponde, per il codice nella query, con i soli campi della voce in
 // cache che le pagine oauth del pannello mostrano: id e device_name
-// (login.vue), op (bind.vue). Verifier PKCE, nonce e dati dell'utente del
-// provider non escono.
+// (login.vue), op e codice dell'associazione (bind.vue). Verifier PKCE,
+// nonce e dati dell'utente del provider non escono.
 func (o *Oauth) Info(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {
@@ -33,7 +33,60 @@ func (o *Oauth) Info(c *gin.Context) {
 		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
 		return
 	}
-	response.Success(c, gin.H{"id": v.Id, "device_name": v.DeviceName, "op": v.Op})
+	res := gin.H{"id": v.Id, "device_name": v.DeviceName, "op": v.Op}
+	// il codice della richiesta di associazione, se il callback l'ha creata
+	if v.Codice != "" {
+		res["codice"] = v.Codice
+	}
+	response.Success(c, res)
+}
+
+// Richieste elenca le richieste di associazione OIDC in attesa, dalla piu'
+// recente.
+// @Tags Oauth
+// @Summary Richieste di associazione in attesa
+// @Description Gli account OIDC che hanno fatto l'accesso senza essere associati, con l'autoregistrazione spenta, col codice che il tecnico comunica.
+// @Produce  json
+// @Success 200 {object} response.Response{data=[]adResp.RichiestaPannello}
+// @Router /admin/oauth/richieste [get]
+// @Security token
+func (o *Oauth) Richieste(c *gin.Context) {
+	ora := service.RichiesteAssociazione.Ora()
+	res := []adResp.RichiestaPannello{}
+	for _, r := range service.RichiesteAssociazione.Elenco() {
+		res = append(res, adResp.RichiestaPannello{Codice: r.Codice, Op: r.Op, Nome: r.Nome, Email: r.Email,
+			EmailVerificata: r.EmailVerificata, Secondi: int64(ora.Sub(r.Creata).Seconds())})
+	}
+	response.Success(c, res)
+}
+
+// Associa associa all'utente scelto l'account della richiesta col codice:
+// rifiuta un codice sconosciuto o scaduto, un account agente, un utente
+// disattivato, un account gia' di qualcuno e un utente che ha gia' un account
+// del provider. Fatta, la richiesta esce.
+// @Tags Oauth
+// @Summary Associa una richiesta a un utente
+// @Description Associa all'utente user_id l'account OIDC della richiesta col codice.
+// @Accept  json
+// @Produce  json
+// @Param body body admin.AssociaRichiestaForm true "codice e utente"
+// @Success 200 {object} response.Response
+// @Router /admin/oauth/associa [post]
+// @Security token
+func (o *Oauth) Associa(c *gin.Context) {
+	f := &admin.AssociaRichiestaForm{}
+	if err := c.ShouldBindJSON(f); err != nil {
+		response.FailErr(c, 101, "ParamsError", err)
+		return
+	}
+	r, err := service.AllService.OauthService.AssociaRichiesta(f.Codice, f.UserId)
+	if err != nil {
+		response.FailErr(c, 101, "BindFail", err)
+		return
+	}
+	amministratore := service.AllService.UserService.CurUser(c)
+	global.Logger.Per(c.Request.Context()).Infof("associazione OIDC dall'amministratore: utente %d, provider %s, amministratore %d", f.UserId, r.Op, amministratore.Id)
+	response.Success(c, nil)
 }
 
 func (o *Oauth) ToBind(c *gin.Context) {
@@ -139,6 +192,7 @@ func (o *Oauth) BindConfirm(c *gin.Context) {
 		return
 	}
 
+	service.RichiesteAssociazione.Togli(oauthCache.Op, oauthCache.OpenId)
 	oauthCache.UserId = user.Id
 	oauthService.SetOauthCache(j.Code, oauthCache, 0)
 	response.Success(c, gin.H{"device_type": oauthCache.DeviceType})

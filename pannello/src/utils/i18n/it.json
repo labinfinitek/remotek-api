@@ -619,5 +619,35 @@
   },
   "ShareToGone": {
     "One": "#{id} (escluso)"
+  },
+  "OauthPending": {
+    "One": "Associazioni in attesa"
+  },
+  "OauthPendingNote": {
+    "One": "Account OIDC che hanno fatto l'accesso senza essere associati: il tecnico ti comunica il codice. Ogni codice vale 30 minuti."
+  },
+  "OauthPendingEmpty": {
+    "One": "Nessuna associazione in attesa."
+  },
+  "OauthPendingCode": {
+    "One": "Codice"
+  },
+  "OauthPendingVerified": {
+    "One": "verificata"
+  },
+  "OauthPendingNotVerified": {
+    "One": "non verificata"
+  },
+  "OauthPendingAge": {
+    "One": "Da"
+  },
+  "OauthPendingMinutes": {
+    "One": "{n} min"
+  },
+  "OauthPendingBindTo": {
+    "One": "Associa a"
+  },
+  "OauthPendingConfirm": {
+    "One": "Associare l'account col codice {codice} all'utente {utente}?"
   }
 }

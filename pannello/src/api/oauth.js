@@ -74,3 +74,17 @@ export function remove (data) {
     data,
   })
 }
+
+export function richieste () {
+  return request({
+    url: '/oauth/richieste',
+  })
+}
+
+export function associaRichiesta (data) {
+  return request({
+    url: '/oauth/associa',
+    method: 'post',
+    data,
+  })
+}
