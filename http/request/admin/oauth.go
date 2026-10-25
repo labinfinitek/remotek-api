@@ -11,6 +11,13 @@ type BindOauthForm struct {
 type OauthConfirmForm struct {
 	Code string `json:"code" binding:"required"`
 }
+
+// AssociaRichiestaForm associa all'utente UserId la richiesta di
+// associazione col codice Codice.
+type AssociaRichiestaForm struct {
+	Codice string `json:"codice" binding:"required"`
+	UserId uint   `json:"user_id" binding:"required"`
+}
 type UnBindOauthForm struct {
 	Op string `json:"op" binding:"required"`
 }

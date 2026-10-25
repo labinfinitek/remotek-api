@@ -422,3 +422,23 @@ other = "Questo utente ha già un account associato a questo provider OIDC."
 description = "The OIDC email belongs to a local account that cannot be matched."
 one = "Questo account OIDC non si può abbinare all'utente con la stessa email: chiedi all'amministratore."
 other = "Questo account OIDC non si può abbinare all'utente con la stessa email: chiedi all'amministratore."
+
+[OauthBindPending]
+description = "The OIDC account is waiting to be bound by an administrator."
+one = "Account da associare"
+other = "Account da associare"
+
+[OauthBindPendingCode]
+description = "Code of a pending OIDC binding, for the administrator; keep {provider} and {codice}."
+one = "Il tuo account {provider} non è ancora associato a un utente Remotek. Comunica all'amministratore questo codice: {codice}. Vale 30 minuti; poi rifai l'accesso."
+other = "Il tuo account {provider} non è ancora associato a un utente Remotek. Comunica all'amministratore questo codice: {codice}. Vale 30 minuti; poi rifai l'accesso."
+
+[OauthBindCodeUnknown]
+description = "Unknown or expired binding code."
+one = "Codice sconosciuto o scaduto: il tecnico rifaccia l'accesso per averne uno nuovo."
+other = "Codice sconosciuto o scaduto: il tecnico rifaccia l'accesso per averne uno nuovo."
+
+[OauthBindAgent]
+description = "An OIDC account cannot be bound to an AI agent account."
+one = "Un account OIDC non si associa a un account agente."
+other = "Un account OIDC non si associa a un account agente."

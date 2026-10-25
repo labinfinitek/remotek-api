@@ -3434,6 +3434,45 @@ const docTemplateadmin = `{
                 }
             }
         },
+        "/admin/oauth/associa": {
+            "post": {
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "description": "Associa all'utente user_id l'account OIDC della richiesta col codice.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Oauth"
+                ],
+                "summary": "Associa una richiesta a un utente",
+                "parameters": [
+                    {
+                        "description": "codice e utente",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/admin.AssociaRichiestaForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/oauth/create": {
             "post": {
                 "security": [
@@ -3634,6 +3673,46 @@ const docTemplateadmin = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/oauth/richieste": {
+            "get": {
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "description": "Gli account OIDC che hanno fatto l'accesso senza essere associati, con l'autoregistrazione spenta, col codice che il tecnico comunica.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Oauth"
+                ],
+                "summary": "Richieste di associazione in attesa",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/admin.RichiestaPannello"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -5107,6 +5186,21 @@ const docTemplateadmin = `{
                 }
             }
         },
+        "admin.AssociaRichiestaForm": {
+            "type": "object",
+            "required": [
+                "codice",
+                "user_id"
+            ],
+            "properties": {
+                "codice": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "admin.AuditConnLogIds": {
             "type": "object",
             "required": [
@@ -5507,6 +5601,29 @@ const docTemplateadmin = `{
                 },
                 "version": {
                     "type": "string"
+                }
+            }
+        },
+        "admin.RichiestaPannello": {
+            "type": "object",
+            "properties": {
+                "codice": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "email_verificata": {
+                    "type": "boolean"
+                },
+                "nome": {
+                    "type": "string"
+                },
+                "op": {
+                    "type": "string"
+                },
+                "secondi": {
+                    "type": "integer"
                 }
             }
         },

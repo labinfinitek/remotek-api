@@ -413,3 +413,23 @@ other = "This user already has an account bound to this OIDC provider."
 description = "The OIDC email belongs to a local account that cannot be matched."
 one = "This OIDC account cannot be matched to the user with the same email: ask the administrator."
 other = "This OIDC account cannot be matched to the user with the same email: ask the administrator."
+
+[OauthBindPending]
+description = "The OIDC account is waiting to be bound by an administrator."
+one = "Account to be bound"
+other = "Account to be bound"
+
+[OauthBindPendingCode]
+description = "Code of a pending OIDC binding, for the administrator; keep {provider} and {codice}."
+one = "Your {provider} account is not yet bound to a Remotek user. Give the administrator this code: {codice}. It is valid for 30 minutes; then sign in again."
+other = "Your {provider} account is not yet bound to a Remotek user. Give the administrator this code: {codice}. It is valid for 30 minutes; then sign in again."
+
+[OauthBindCodeUnknown]
+description = "Unknown or expired binding code."
+one = "Unknown or expired code: the technician should sign in again to get a new one."
+other = "Unknown or expired code: the technician should sign in again to get a new one."
+
+[OauthBindAgent]
+description = "An OIDC account cannot be bound to an AI agent account."
+one = "An OIDC account cannot be bound to an AI agent account."
+other = "An OIDC account cannot be bound to an AI agent account."
