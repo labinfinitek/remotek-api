@@ -1,4 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 64" role="img" aria-label="Remotek">
-  <!-- Logo provvisorio: si sostituisce il file (brand.dir) col definitivo. -->
-  <text x="120" y="44" text-anchor="middle" fill="#1f6bff" font-family="Helvetica, Arial, sans-serif" font-size="40" font-weight="700">Remotek</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Remotek">
+  <!-- Simbolo di default: la "R" bianca su un quadrato arrotondato. Chi
+       installa mette il suo marchio in brand.dir. -->
+  <rect width="64" height="64" rx="14" fill="#1F6BFF"/>
+  <path d="M22 47V17h11a9 9 0 0 1 0 18H22M32 35l11 12" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

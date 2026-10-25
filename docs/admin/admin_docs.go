@@ -5253,6 +5253,10 @@ const docTemplateadmin = `{
                 "email": {
                     "type": "string"
                 },
+                "group_name": {
+                    "description": "GroupName e' il nome del gruppo dell'utente, per il Profilo del\npannello; vuoto se il gruppo non c'e'.",
+                    "type": "string"
+                },
                 "nickname": {
                     "type": "string"
                 },

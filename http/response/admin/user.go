@@ -9,6 +9,9 @@ type LoginPayload struct {
 	Token      string   `json:"token"`
 	RouteNames []string `json:"route_names"`
 	Nickname   string   `json:"nickname"`
+	// GroupName e' il nome del gruppo dell'utente, per il Profilo del
+	// pannello; vuoto se il gruppo non c'e'.
+	GroupName string `json:"group_name"`
 }
 
 func (lp *LoginPayload) FromUser(user *model.User) {

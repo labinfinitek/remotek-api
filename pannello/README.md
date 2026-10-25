@@ -79,6 +79,33 @@ ferma il build se i due file differiscono in chiavi, struttura o segnaposto,
 o se manca una chiave usata con un letterale (`T('...')`, `T("...")`, titoli
 delle rotte). Le chiavi composte a runtime (`T(row.label)`) non le vede.
 
+## Catture
+
+`scripts/catture.mjs` fotografa login, Profilo e barra in alto, nel tema
+chiaro e in quello scuro, a 1600x900 e in italiano, per le MR che cambiano
+l'aspetto del pannello. Usa il build di `dist/` e i file di
+`../resources/brand`; le rotte `/api/*` le simula lo script (un
+amministratore "Mario Rossi" del gruppo "Assistenza", con un provider OIDC
+associato), e una richiesta verso un altro dominio si interrompe. Il
+backend non serve.
+
+Playwright non e' tra le dipendenze del pannello, perche' l'immagine non lo
+usa: lo script lo cerca dove lo trova `require`. Con Playwright installato
+globalmente, insieme al suo Chromium:
+
+```bash
+cd pannello
+npm run build
+NODE_PATH="$(npm root -g)" node scripts/catture.mjs --nome dopo
+# prima: lo stesso script col build e il marchio di un altro commit
+NODE_PATH="$(npm root -g)" node scripts/catture.mjs --dist <altro>/dist --brand <altro>/brand --nome prima
+```
+
+Le catture vanno in `catture/` (`--out` per un'altra cartella), che non
+entra nel repo ne' nell'immagine: `<nome>-login-chiaro.png` e simili, una per
+pagina e per tema. Le rotte che il pannello chiama e lo script non conosce
+rispondono con una lista vuota, e lo script le elenca alla fine.
+
 ## Dipendenze
 
 Il lockfile risolve tutto sul registry ufficiale

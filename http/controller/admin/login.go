@@ -285,10 +285,19 @@ func (ct *Login) OidcAuthQuery(c *gin.Context) {
 	responseLoginSuccess(c, u, ut.Token)
 }
 
+// responseLoginSuccess risponde al pannello con l'utente u e il suo token. Il
+// nome del gruppo serve solo al Profilo: se non si legge, il login vale lo
+// stesso, con il nome vuoto e l'errore nel log.
 func responseLoginSuccess(c *gin.Context, u *model.User, token string) {
 	lp := &adResp.LoginPayload{}
 	lp.FromUser(u)
 	lp.Token = token
 	lp.RouteNames = service.AllService.UserService.RouteNames(u)
+	switch g, err := service.AllService.GroupService.InfoById(u.GroupId); {
+	case err == nil:
+		lp.GroupName = g.Name
+	case !errors.Is(err, service.ErrNotFound):
+		global.Logger.Per(c.Request.Context()).Warnf("nome del gruppo dell'utente %d non letto: %v", u.Id, err)
+	}
 	response.Success(c, lp)
 }

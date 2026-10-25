@@ -11,6 +11,7 @@ export const useUserStore = defineStore({
     nickname: '',
     username: '',
     email: '',
+    group_name: '',
     token: '',
     role: '',
     avatar: '',

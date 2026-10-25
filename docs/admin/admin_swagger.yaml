@@ -141,6 +141,11 @@ definitions:
         type: string
       email:
         type: string
+      group_name:
+        description: |-
+          GroupName e' il nome del gruppo dell'utente, per il Profilo del
+          pannello; vuoto se il gruppo non c'e'.
+        type: string
       nickname:
         type: string
       route_names:

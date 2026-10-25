@@ -23,6 +23,13 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   esatto delle righe di log del login per eccezione e che con LDAP acceso i
   tempi distinguono ancora le eccezioni.
 
+### Modificato
+- Marchio di default: `resources/brand/logo.svg` e `favicon.svg` sono un
+  simbolo, una "R" bianca su un quadrato arrotondato blu `#1F6BFF`, e non
+  piu' la parola "Remotek"; la barra del pannello mostra simbolo e titolo,
+  senza il nome ripetuto. Chi ha il suo marchio in `brand.dir` non vede
+  differenze.
+
 ### Corretto
 - OIDC: la richiesta di associazione dal Profilo di un utente che ha gia' un
   account del provider risponde "Questo utente ha già un account associato a
@@ -36,6 +43,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   campo del segreto ha l'asterisco dell'obbligatorio alla creazione; lo
   swagger non descrive piu' `client_secret` nelle risposte di lista e
   dettaglio.
+- Pannello: il Profilo mostra il gruppo dell'utente. La risposta del login
+  del pannello e di `/api/admin/user/current` ha il campo nuovo
+  `group_name` (vuoto se il gruppo non c'e'); il login del client non
+  cambia.
 
 ## [0.10.0] - 2026-10-25
 Immagine `ghcr.io/labinfinitek/remotek-api:0.10.0`, costruita con Go 1.26.10
