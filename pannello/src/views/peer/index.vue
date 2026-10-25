@@ -84,7 +84,8 @@
           <el-table-column v-if="c.name==='hostname'" prop="hostname" :label="T('Hostname')" align="center" width="120"/>
           <el-table-column v-if="c.name==='memory'" prop="memory" :label="T('Memory')" align="center" width="120"/>
           <el-table-column v-if="c.name==='os'" prop="os" :label="T('Os')" align="center" width="120" show-overflow-tooltip/>
-          <el-table-column v-if="c.name==='last_online_time'" prop="last_online_time" :label="T('LastOnlineTime')" align="center" min-width="170">
+          <!-- fissata a destra accanto ad Azioni: a 1280 px Azioni la copriva, intestazione e pallino compresi -->
+          <el-table-column v-if="c.name==='last_online_time'" prop="last_online_time" :label="T('LastOnlineTime')" align="center" width="170" fixed="right">
             <template #default="{row}">
               <div class="last_oline_time">
                 <span> {{ row.last_online_time ? timeAgo(row.last_online_time * 1000) : '-' }}</span> <span class="dot" :class="{red: timeDis(row.last_online_time) >= 60, green: timeDis(row.last_online_time)< 60}"></span>
