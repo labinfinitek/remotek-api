@@ -65,6 +65,9 @@ type Richieste struct {
 	voci []*RichiestaAssociazione
 	// Ora e' l'orologio delle scadenze; i test lo spostano.
 	Ora func() time.Time
+	// attesa e' dopo quanto la pulizia toglie una richiesta nuova: zero e'
+	// DurataRichiesta; i test la accorciano.
+	attesa time.Duration
 }
 
 // RichiesteAssociazione sono le richieste di associazione dell'API.
@@ -77,10 +80,19 @@ func (r *Richieste) Svuota() {
 	r.voci, r.Ora = nil, time.Now
 }
 
-// valide toglie le richieste scadute; va chiamata col lock.
+// valide toglie le richieste scadute; va chiamata col lock. DeleteFunc
+// azzera i posti liberati: nome ed email non restano nell'array.
 func (r *Richieste) valide() {
 	limite := r.Ora().Add(-DurataRichiesta)
 	r.voci = slices.DeleteFunc(r.voci, func(v *RichiestaAssociazione) bool { return !v.Creata.After(limite) })
+}
+
+// pulisci toglie le richieste scadute anche se nessuno le legge: la chiama
+// un timer per ogni richiesta nuova, alla sua scadenza.
+func (r *Richieste) pulisci() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.valide()
 }
 
 // NormalizzaCodice toglie spazi e trattini, porta a maiuscole e rimette i
@@ -140,10 +152,16 @@ func (r *Richieste) Nuova(op string, ou *model.OauthUser) (string, error) {
 		}
 	}
 	if len(r.voci) >= TettoRichieste {
-		r.voci = r.voci[len(r.voci)-TettoRichieste+1:]
+		// Delete, non una sottofetta: azzera i posti delle richieste uscite
+		r.voci = slices.Delete(r.voci, 0, len(r.voci)-TettoRichieste+1)
 	}
 	r.voci = append(r.voci, &RichiestaAssociazione{Codice: codice, Op: op, Sub: ou.OpenId, Nome: ou.Name,
 		Email: ou.Email, EmailVerificata: ou.VerifiedEmail, Creata: r.Ora()})
+	attesa := r.attesa
+	if attesa == 0 {
+		attesa = DurataRichiesta
+	}
+	time.AfterFunc(attesa, r.pulisci)
 	return codice, nil
 }
 

@@ -2,7 +2,13 @@ package service
 
 import (
 	"regexp"
+	"runtime"
+	"strconv"
 	"testing"
+	"time"
+	"weak"
+
+	"github.com/lejianwen/rustdesk-api/v2/model"
 )
 
 // TestCodiceAssociazione prova che il codice abbia 8 caratteri leggibili al
@@ -25,5 +31,58 @@ func TestCodiceAssociazione(t *testing.T) {
 		if c := NormalizzaCodice(tc.scritto); c != tc.atteso {
 			t.Errorf("NormalizzaCodice(%q) = %q, atteso %q", tc.scritto, c, tc.atteso)
 		}
+	}
+}
+
+// TestRichiesteNonRestano prova che la pulizia a tempo toglie una richiesta
+// scaduta, e con lei nome ed email, anche se nessuno legge le richieste, e
+// che la richiesta espulsa dal tetto non e' piu' raggiungibile: il garbage
+// collector la libera. Prima la scaduta restava fino alla lettura dopo, e
+// l'espulsa restava nell'array sotto la fetta.
+func TestRichiesteNonRestano(t *testing.T) {
+	inMemoria := func(r *Richieste) (n int) {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for _, v := range r.voci[:cap(r.voci)] {
+			if v != nil {
+				n++
+			}
+		}
+		return n
+	}
+
+	adesso := time.Now()
+	r := &Richieste{Ora: func() time.Time { return adesso }, attesa: 10 * time.Millisecond}
+	if _, err := r.Nuova("aziendale", &model.OauthUser{OpenId: "sub-1", Name: "Utente", Email: "utente@esempio.it"}); err != nil {
+		t.Fatal(err)
+	}
+	r.mu.Lock()
+	r.Ora = func() time.Time { return adesso.Add(DurataRichiesta) }
+	r.mu.Unlock()
+	for scadenza := time.Now().Add(5 * time.Second); inMemoria(r) > 0; time.Sleep(5 * time.Millisecond) {
+		if time.Now().After(scadenza) {
+			t.Fatal("la richiesta scaduta e' ancora in memoria dopo la pulizia")
+		}
+	}
+
+	r = &Richieste{Ora: time.Now}
+	var prima weak.Pointer[RichiestaAssociazione]
+	for i := range TettoRichieste + 1 {
+		if i == TettoRichieste {
+			// la piu' vecchia, che la prossima fa uscire, senza tenerla viva
+			r.mu.Lock()
+			prima = weak.Make(r.voci[0])
+			r.mu.Unlock()
+		}
+		if _, err := r.Nuova("aziendale", &model.OauthUser{OpenId: "sub-" + strconv.Itoa(i), Email: "utente@esempio.it"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	runtime.GC()
+	if v := prima.Value(); v != nil {
+		t.Errorf("la richiesta espulsa dal tetto (%s) e' ancora in memoria", v.Sub)
+	}
+	if n := inMemoria(r); n != TettoRichieste {
+		t.Errorf("richieste nell'array: %d, attese %d", n, TettoRichieste)
 	}
 }
