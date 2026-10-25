@@ -335,22 +335,43 @@ func (ct *User) MyOauth(c *gin.Context) {
 	response.Success(c, res)
 }
 
-// GroupUsers risponde coi gruppi e con gli utenti (i primi 999 e 9999).
+// GroupUsers risponde coi gruppi e con gli utenti tra cui scegliere il
+// destinatario di una regola di condivisione (i primi 999 e 9999): solo id,
+// nomi e gruppo, la stessa risposta per amministratori e utenti. Fuori gli
+// utenti disattivati e gli account agente, che non ricevono condivisioni.
+// @Tags 用户
+// @Summary Gruppi e utenti destinatari di una condivisione
+// @Description Gruppi e utenti destinatari di una condivisione
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} response.Response{data=adResp.GroupUsersPayload}
+// @Failure 500 {object} response.Response
+// @Router /admin/user/groupUsers [post]
+// @Security token
 func (ct *User) GroupUsers(c *gin.Context) {
 	aG, err := service.AllService.GroupService.List(1, 999, nil)
 	if err != nil {
 		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
-	aU, err := service.AllService.UserService.List(1, 9999, nil)
+	aU, err := service.AllService.UserService.List(1, 9999, func(tx *gorm.DB) {
+		tx.Where("status = ? AND agente_di = ?", model.COMMON_STATUS_ENABLE, 0)
+	})
 	if err != nil {
 		response.FailErr(c, 101, "SystemError", err)
 		return
 	}
-	response.Success(c, gin.H{
-		"groups": aG.Groups,
-		"users":  aU.Users,
-	})
+	res := &adResp.GroupUsersPayload{
+		Groups: make([]*adResp.GroupUsersGroup, 0, len(aG.Groups)),
+		Users:  make([]*adResp.GroupUsersUser, 0, len(aU.Users)),
+	}
+	for _, g := range aG.Groups {
+		res.Groups = append(res.Groups, &adResp.GroupUsersGroup{Id: g.Id, Name: g.Name})
+	}
+	for _, u := range aU.Users {
+		res.Users = append(res.Users, &adResp.GroupUsersUser{Id: u.Id, Username: u.Username, Nickname: u.Nickname, GroupId: u.GroupId})
+	}
+	response.Success(c, res)
 }
 
 // Register registra un utente, se la registrazione e' aperta, e lo fa

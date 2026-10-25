@@ -22,3 +22,22 @@ type UserOauthItem struct {
 	Op     string `json:"op"`
 	Status int    `json:"status"`
 }
+
+// GroupUsersPayload e' la risposta di groupUsers: quanto serve per scegliere
+// il destinatario di una regola di condivisione, e niente di piu'.
+type GroupUsersPayload struct {
+	Groups []*GroupUsersGroup `json:"groups"`
+	Users  []*GroupUsersUser  `json:"users"`
+}
+
+type GroupUsersGroup struct {
+	Id   uint   `json:"id"`
+	Name string `json:"name"`
+}
+
+type GroupUsersUser struct {
+	Id       uint   `json:"id"`
+	Username string `json:"username"`
+	Nickname string `json:"nickname"`
+	GroupId  uint   `json:"group_id"`
+}

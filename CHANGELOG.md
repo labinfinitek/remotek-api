@@ -6,6 +6,15 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Sicurezza
+- Pannello: `POST /api/admin/user/groupUsers`, aperto a ogni utente del
+  pannello, dava tutti gli utenti con email, nota, `is_admin`, stato,
+  `agente_di`, avatar e date. Ora risponde, uguale per amministratori e
+  utenti, solo con quanto serve a scegliere il destinatario di una regola di
+  condivisione: gruppi con id e nome, utenti con id, username, nickname e
+  gruppo, senza utenti disattivati e account agente. Una regola gia' salvata
+  verso un utente escluso resta nella lista, come `#<id> (escluso)`.
+
 ## [0.10.0] - 2026-10-25
 Immagine `ghcr.io/labinfinitek/remotek-api:0.10.0`, costruita con Go 1.26.10
 su Alpine 3.24.3. Versione minore: il pannello prende la veste di Infinitek

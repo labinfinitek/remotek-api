@@ -616,5 +616,8 @@
   },
   "PrivacyNotice": {
     "One": "Privacy notice"
+  },
+  "ShareToGone": {
+    "One": "#{id} (excluded)"
   }
 }

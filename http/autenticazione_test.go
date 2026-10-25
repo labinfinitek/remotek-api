@@ -382,7 +382,7 @@ func TestPannelloUtenteNonLetto(t *testing.T) {
 		{"POST", "/api/admin/user/changePwd", `{"id":SECONDO,"password":"` + strings.Repeat("p", 15) + `"}`, "id = ? [SECONDO]"},
 		{"POST", "/api/admin/user/update", modifica, "id = ? [SECONDO]"},
 		{"GET", "/api/admin/user/list?username=sec", "", "username like"},
-		{"POST", "/api/admin/user/groupUsers", "", ""},
+		{"POST", "/api/admin/user/groupUsers", "", "agente_di"},
 	} {
 		t.Run(tc.metodo+" "+tc.rotta, func(t *testing.T) {
 			g, _, registro := pannello(t, true)
