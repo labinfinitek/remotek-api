@@ -43,7 +43,9 @@ func (us *UserService) InfoByUsername(un string) (*model.User, error) {
 // InfoByUsernamePassword restituisce l'utente username se password e' la
 // sua, con LDAP acceso prima dalla directory; ErrNotFound se l'utente non
 // c'e' o la password e' sbagliata. Un errore del database non e' una
-// password sbagliata.
+// password sbagliata. Un utente che non c'e', o con un hash che non e'
+// bcrypt, passa dal confronto con hashFinto, perche' i tempi della risposta
+// non dicano quali nomi hanno un utente locale con una password valida.
 func (us *UserService) InfoByUsernamePassword(username, password string) (*model.User, error) {
 	if Config.Ldap.Enable {
 		u, err := AllService.LdapService.Authenticate(username, password)
@@ -54,10 +56,17 @@ func (us *UserService) InfoByUsernamePassword(username, password string) (*model
 		Logger.Warn("Fallback to local database")
 	}
 	u, err := us.InfoByUsername(username)
+	if errors.Is(err, ErrNotFound) {
+		confrontoFinto(password)
+	}
 	if err != nil {
 		return nil, err
 	}
-	if ok, err := utils.VerifyPassword(u.Password, password); err != nil || !ok {
+	ok, err := utils.VerifyPassword(u.Password, password)
+	if err != nil {
+		confrontoFinto(password)
+	}
+	if err != nil || !ok {
 		return nil, ErrNotFound
 	}
 	return u, nil
@@ -90,9 +99,7 @@ func (us *UserService) EccezionePwdLogin(username, password string, agenti bool)
 			return "", fmt.Errorf("eccezione al login con password: %w", err)
 		}
 	}
-	if h, err := hashFinto(); err == nil {
-		_, _ = utils.VerifyPassword(h, password)
-	}
+	confrontoFinto(password)
 	return "", nil
 }
 
@@ -101,6 +108,15 @@ func (us *UserService) EccezionePwdLogin(username, password string, agenti bool)
 var hashFinto = sync.OnceValues(func() (string, error) {
 	return utils.EncryptPassword(crand.Text())
 })
+
+// confrontoFinto confronta password con hashFinto e butta il risultato: costa
+// quanto il controllo di una password vera. I test lo sostituiscono per
+// contare le chiamate.
+var confrontoFinto = func(password string) {
+	if h, err := hashFinto(); err == nil {
+		_, _ = utils.VerifyPassword(h, password)
+	}
+}
 
 // InfoByAccessToken restituisce l'utente del token di sessione token e il
 // token; ErrNotFound se il token non c'e' o e' scaduto, o se il suo utente
