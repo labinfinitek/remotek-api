@@ -14,6 +14,28 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   condivisione: gruppi con id e nome, utenti con id, username, nickname e
   gruppo, senza utenti disattivati e account agente. Una regola gia' salvata
   verso un utente escluso resta nella lista, come `#<id> (escluso)`.
+- Login con password spento: un nome di `app.pwd-login-eccezioni` senza
+  utente locale, o con un hash che non e' bcrypt, fa anche lui il controllo
+  bcrypt su un hash finto, come i nomi fuori dall'elenco: i tempi della
+  risposta non dicono piu' quali nomi hanno un utente. Anche con il login
+  con password acceso uno username che non esiste fa ora un bcrypt su un
+  hash finto, cosi' i tempi non dicono se esiste. Il README dice il formato
+  esatto delle righe di log del login per eccezione e che con LDAP acceso i
+  tempi distinguono ancora le eccezioni.
+
+### Corretto
+- OIDC: la richiesta di associazione dal Profilo di un utente che ha gia' un
+  account del provider risponde "Questo utente ha già un account associato a
+  questo provider OIDC." e non piu' che l'account e' di un altro utente; in
+  italiano il messaggio dell'account gia' associato dice "account OIDC" e
+  non "account OAuth". L'error dei doppioni di `user_thirds` all'avvio dice
+  quante righe sono, che l'indice non c'e', che l'avvio continua, cosa fare
+  e dove leggere nel README.
+- Provider OIDC: un segreto del client di soli spazi vale come vuoto (in
+  modifica tiene quello salvato, alla creazione si rifiuta); nel pannello il
+  campo del segreto ha l'asterisco dell'obbligatorio alla creazione; lo
+  swagger non descrive piu' `client_secret` nelle risposte di lista e
+  dettaglio.
 
 ## [0.10.0] - 2026-10-25
 Immagine `ghcr.io/labinfinitek/remotek-api:0.10.0`, costruita con Go 1.26.10
