@@ -392,9 +392,22 @@ only on `POST /api/login`, and the usernames in `app.pwd-login-eccezioni`
 `/api/login` and `/api/admin/login`. Everyone else, a username that does
 not exist and an exception with the wrong password get the same answer:
 "Password login disabled.", without telling who is an exception; every
-refusal counts for captcha and ban. A successful login by exception writes
-an INFO line `login con password per eccezione` with username and reason
-(`agente` or `elenco`), a warn if the user is an administrator.
+refusal counts for captcha and ban. Timing does not tell either: every
+request runs one bcrypt check, real or against a dummy hash, also for an
+exception with no local user or with a hash that is not bcrypt. With
+`ldap.enable` on, instead, timing does tell the exceptions apart, because
+only they go through LDAP before the database: whoever measures the
+answers can work out which names are in the list or are agents. A
+successful login by exception writes one log line (the text is Italian),
+INFO for a user and WARN for an administrator:
+
+```
+login con password per eccezione: utente <username>, motivo <motivo>
+login con password per eccezione: utente <username> (amministratore), motivo <motivo>
+```
+
+`<motivo>` is `agente` (agent account, only on `/api/login`) or `elenco`
+(`app.pwd-login-eccezioni`).
 **Emergency access:** if the OIDC provider does not answer, the panel shows
 the password form at `/_admin/#/login?password=1`, even with a single
 provider (which without the parameter opens OIDC at once); only a username
