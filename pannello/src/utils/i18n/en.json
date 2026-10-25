@@ -605,6 +605,9 @@
   "Console": {
     "One": "Console"
   },
+  "LinkedAccount": {
+    "One": "Linked account"
+  },
   "LoginWith": {
     "One": "Sign in with {name}"
   },

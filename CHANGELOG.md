@@ -30,8 +30,8 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   1.1, in `resources/admin/LICENSE-inter` e `LICENSE-space-grotesk`): il
   pannello non chiama siti di terzi.
 - Pannello: il Profilo non mostra piu' la card di benvenuto col testo di
-  `admin.hello-file` (o `admin.hello`), e al suo posto non c'e' niente. Le
-  due chiavi restano in configurazione ma il pannello non le legge piu'.
+  `admin.hello-file` (o `admin.hello`). Le due chiavi restano in
+  configurazione ma il pannello non le legge piu'.
 
 ### Corretto
 - Pannello: via il pulsante "Connetti" dalle liste di PC, I miei PC,
@@ -48,6 +48,9 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   con i puntini e il testo intero nel tooltip (note, UUID), date intere,
   nessuna parola spezzata a meta' ("Nome visualizz-ato"); le etichette dei
   filtri stanno su una riga.
+- Pannello: il Profilo riassume utente, email e account OIDC collegato al
+  posto della card tolta; "Cambia password" non e' piu' rosso e sparisce
+  con `app.disable-pwd-login`.
 
 ## [0.9.0] - 2026-10-23
 Immagine `ghcr.io/labinfinitek/remotek-api:0.9.0`, costruita con Go 1.26.10
