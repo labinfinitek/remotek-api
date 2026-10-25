@@ -421,7 +421,7 @@ administrator:
 1. the administrator creates the user (System, Users), with no password to
    hand out;
 2. the technician signs in with OIDC from the client or the panel: the
-   provider page answers "Your <provider> account is not yet bound to a
+   API callback page answers "Your <provider> account is not yet bound to a
    Remotek user. Give the administrator this code: K7Q2-M9XD. It is valid
    for 30 minutes; then sign in again.";
 3. the administrator opens System, Pending bindings, finds the code (with

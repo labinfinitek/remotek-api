@@ -425,7 +425,7 @@ utente da un amministratore:
 1. l'amministratore crea l'utente (Sistema, Utenti), senza password da
    comunicare;
 2. il tecnico entra con OIDC dal client o dal pannello: la pagina del
-   provider risponde "Il tuo account <provider> non è ancora associato a un
+   callback dell'API risponde "Il tuo account <provider> non è ancora associato a un
    utente Remotek. Comunica all'amministratore questo codice: K7Q2-M9XD.
    Vale 30 minuti; poi rifai l'accesso.";
 3. l'amministratore apre Sistema, Associazioni in attesa, trova il codice
