@@ -159,7 +159,7 @@ definitions:
       client_id:
         type: string
       client_secret:
-        description: 'vuoto nell''aggiornamento: tiene quello salvato'
+        description: 'vuoto o di soli spazi nell''aggiornamento: tiene quello salvato'
         type: string
       id:
         type: integer
@@ -178,6 +178,46 @@ definitions:
     required:
     - client_id
     - oauth_type
+    type: object
+  admin.OauthListPannello:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/admin.OauthPannello'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  admin.OauthPannello:
+    properties:
+      auto_register:
+        type: boolean
+      client_id:
+        type: string
+      created_at:
+        type: string
+      has_client_secret:
+        type: boolean
+      id:
+        type: integer
+      issuer:
+        type: string
+      oauth_type:
+        type: string
+      op:
+        type: string
+      pkce_enable:
+        type: boolean
+      pkce_method:
+        type: string
+      scopes:
+        type: string
+      updated_at:
+        type: string
     type: object
   admin.PeerBatchDeleteForm:
     properties:
@@ -730,51 +770,6 @@ definitions:
       list:
         items:
           $ref: '#/definitions/model.LoginLog'
-        type: array
-      page:
-        type: integer
-      page_size:
-        type: integer
-      total:
-        type: integer
-    type: object
-  model.Oauth:
-    properties:
-      auto_register:
-        description: |-
-          RedirectUrl  string `json:"redirect_url"`
-          AutoRegister crea l'utente al primo login di un account del provider
-          che non ne ha uno, invece di rimandare ad associarlo. Un provider
-          salvato senza il campo ha NULL: vale spenta.
-        type: boolean
-      client_id:
-        type: string
-      client_secret:
-        type: string
-      created_at:
-        type: string
-      id:
-        type: integer
-      issuer:
-        type: string
-      oauth_type:
-        type: string
-      op:
-        type: string
-      pkce_enable:
-        type: boolean
-      pkce_method:
-        type: string
-      scopes:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  model.OauthList:
-    properties:
-      list:
-        items:
-          $ref: '#/definitions/model.Oauth'
         type: array
       page:
         type: integer
@@ -3029,12 +3024,7 @@ paths:
         "200":
           description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.Oauth'
-              type: object
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
@@ -3093,7 +3083,7 @@ paths:
             - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/model.Oauth'
+                  $ref: '#/definitions/admin.OauthPannello'
               type: object
         "500":
           description: Internal Server Error
@@ -3128,7 +3118,7 @@ paths:
             - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/model.OauthList'
+                  $ref: '#/definitions/admin.OauthListPannello'
               type: object
         "500":
           description: Internal Server Error
@@ -3157,12 +3147,7 @@ paths:
         "200":
           description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.OauthList'
-              type: object
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:

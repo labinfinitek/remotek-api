@@ -57,7 +57,8 @@
         <el-form-item label="ClientId" prop="client_id">
           <el-input v-model="formData.client_id"></el-input>
         </el-form-item>
-        <el-form-item label="ClientSecret" prop="client_secret">
+        <!-- obbligatorio solo alla creazione: in modifica vuoto tiene il segreto salvato -->
+        <el-form-item label="ClientSecret" prop="client_secret" :required="!formData.id">
           <el-input
               v-model="formData.client_secret"
               :type="formData.id ? 'password' : 'text'"
@@ -188,10 +189,13 @@
   const rules = {
     client_id: [{ required: true, message: T('ParamRequired', { param: 'client_id' }), trigger: 'blur' }],
     // Il segreto salvato non si rilegge: serve solo alla creazione, e in
-    // modifica vuoto vuol dire tenere quello salvato.
+    // modifica vuoto, o di soli spazi, vuol dire tenere quello salvato.
+    // required lo legge Element Plus per l'asterisco, al posto del
+    // :required dell'el-form-item; il controllo vero e' il validator.
     client_secret: [{
+      required: true,
       validator: (rule, value, callback) => {
-        if (!formData.id && !value) {
+        if (!formData.id && !value?.trim()) {
           callback(new Error(T('ParamRequired', { param: 'client_secret' })))
         } else {
           callback()

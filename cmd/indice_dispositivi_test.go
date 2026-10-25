@@ -129,7 +129,8 @@ func TestIndiceUnicoAssociazioni(t *testing.T) {
 	if unico() {
 		t.Errorf("avvio con un doppione: l'indice %s c'e'", service.IndiceOpenIdUnico)
 	}
-	riga := "user_thirds ha 1 account OIDC associati a piu' utenti: l'indice unico " + service.IndiceOpenIdUnico + " non si crea"
+	riga := "user_thirds ha 2 righe che associano lo stesso account OIDC a piu' utenti: l'indice unico " + service.IndiceOpenIdUnico +
+		" non c'e' e l'avvio continua senza"
 	if n := logger.Conta(out, "ERROR", riga); n != 1 || strings.Contains(out, "sub-doppio") {
 		t.Errorf("%d righe ERROR %q, attesa 1, senza sub\n%s", n, riga, out)
 	}

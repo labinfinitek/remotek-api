@@ -65,8 +65,8 @@ other = "Autorizzazione OAuth non riuscita."
 
 [OauthHasBindOtherUser]
 description = "Oauth has bind other user."
-one = "Questo account OAuth è già associato a un altro utente."
-other = "Questo account OAuth è già associato a un altro utente."
+one = "Questo account OIDC è già associato a un altro utente."
+other = "Questo account OIDC è già associato a un altro utente."
 
 [ParamIsEmpty]
 description = "Param is empty."

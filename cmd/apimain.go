@@ -457,7 +457,7 @@ func indiceUnicoDispositivi() {
 
 // indiceUnicoAssociazioni crea all'avvio l'indice unico su
 // user_thirds(open_id, op), come indiceUnicoDispositivi: con doppioni (un
-// account del provider legato a piu' utenti) un error col loro numero,
+// account del provider legato a piu' utenti) un error col numero di righe,
 // senza sub ne' utenti, e l'avvio continua senza indice; il passo si ripete a
 // ogni avvio finche' l'indice non c'e'. Nessuna riga si cancella.
 func indiceUnicoAssociazioni() {
@@ -466,8 +466,10 @@ func indiceUnicoAssociazioni() {
 	case err != nil:
 		global.Logger.Errorf("indice unico %s non creato, l'avvio continua: %v", service.IndiceOpenIdUnico, err)
 	case doppi > 0:
-		global.Logger.Errorf("user_thirds ha %d account OIDC associati a piu' utenti: l'indice unico %s non si crea. "+
-			"Ogni utente in piu' toglie la sua dal suo profilo nel pannello (o si cancella l'utente); al prossimo avvio l'indice si crea", doppi, service.IndiceOpenIdUnico)
+		global.Logger.Errorf("user_thirds ha %d righe che associano lo stesso account OIDC a piu' utenti: l'indice unico %s "+
+			"non c'e' e l'avvio continua senza; riprova al prossimo avvio. Per ogni account doppio, l'utente che non deve averlo "+
+			"toglie l'associazione dal suo Profilo nel pannello, o si cancella l'utente. Nel README: \"Configurazione\", il "+
+			"paragrafo sull'associazione OIDC (user_thirds)", doppi, service.IndiceOpenIdUnico)
 	case creato:
 		global.Logger.Infof("creato l'indice unico %s: un account OIDC e' legato a un utente solo", service.IndiceOpenIdUnico)
 	}

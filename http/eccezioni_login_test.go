@@ -12,8 +12,9 @@ import (
 
 // eccezioniDiProva prepara il login con password con l'interruttore acceso
 // se spento e' falso: oltre a prova (che non e' un'eccezione) un agente di
-// prova, collaudo (persona) ed emergenza (amministratore), questi due
-// nell'elenco, tutti con passwordDiProva.
+// prova, collaudo (persona), emergenza (amministratore) e un agente
+// nell'elenco, agente-elenco, questi tre nell'elenco, tutti con
+// passwordDiProva.
 func eccezioniDiProva(t *testing.T, spento bool) (*strings.Builder, func(rotta, utente, password string) (int, string)) {
 	t.Helper()
 	g, utente, registro := pannello(t, false)
@@ -25,6 +26,7 @@ func eccezioniDiProva(t *testing.T, spento bool) (*strings.Builder, func(rotta, 
 	si := true
 	for _, u := range []*model.User{
 		{Username: "agente-prova", AgenteDi: utente.Id},
+		{Username: "agente-elenco", AgenteDi: utente.Id},
 		{Username: "collaudo"},
 		{Username: "emergenza", IsAdmin: &si},
 	} {
@@ -34,7 +36,7 @@ func eccezioniDiProva(t *testing.T, spento bool) (*strings.Builder, func(rotta, 
 	prec := global.Config.App
 	t.Cleanup(func() { global.Config.App = prec })
 	global.Config.App.DisablePwdLogin = spento
-	global.Config.App.PwdLoginEccezioni = " collaudo,, emergenza "
+	global.Config.App.PwdLoginEccezioni = " collaudo,, emergenza, agente-elenco "
 	login := func(rotta, nome, password string) (int, string) {
 		rec := richiesta(g, "POST", rotta, "", `{"username":"`+nome+`","password":"`+password+`","id":"999000111","uuid":"dXVpZA=="}`)
 		return rec.Code, rec.Body.String()
@@ -44,9 +46,11 @@ func eccezioniDiProva(t *testing.T, spento bool) (*strings.Builder, func(rotta, 
 
 // TestEccezioniLoginPassword prova sul router vero app.pwd-login-eccezioni
 // con app.disable-pwd-login acceso: un utente qualunque, uno che non esiste e
-// un'eccezione con la password sbagliata hanno la stessa risposta di prima;
-// l'agente entra solo dal client, i nomi dell'elenco da tutte e due le rotte,
-// e ogni login per eccezione lascia una riga INFO, warn per l'amministratore.
+// un'eccezione con la password sbagliata, anche un agente, hanno la stessa
+// risposta di prima; l'agente entra solo dal client, i nomi dell'elenco da
+// tutte e due le rotte tranne un agente, che il pannello rifiuta anche se e'
+// nell'elenco, e ogni login per eccezione lascia una riga INFO, warn per
+// l'amministratore.
 func TestEccezioniLoginPassword(t *testing.T) {
 	registro, login := eccezioniDiProva(t, true)
 	const (
@@ -57,24 +61,30 @@ func TestEccezioniLoginPassword(t *testing.T) {
 	for _, tc := range []struct {
 		rotta, utente, password string
 		entra                   bool
+		risposta                string // il rifiuto, se non e' quello del login con password spento
 	}{
-		{"/api/login", "prova", passwordDiProva, false},
-		{"/api/login", "nessuno", passwordDiProva, false},
-		{"/api/login", "collaudo", "sbagliata", false},
-		{"/api/login", "agente-prova", passwordDiProva, true},
-		{"/api/login", "collaudo", passwordDiProva, true},
-		{"/api/login", "emergenza", passwordDiProva, true},
-		{"/api/admin/login", "prova", passwordDiProva, false},
-		{"/api/admin/login", "nessuno", passwordDiProva, false},
-		{"/api/admin/login", "emergenza", "sbagliata", false},
-		{"/api/admin/login", "agente-prova", passwordDiProva, false},
-		{"/api/admin/login", "collaudo", passwordDiProva, true},
-		{"/api/admin/login", "emergenza", passwordDiProva, true},
+		{"/api/login", "prova", passwordDiProva, false, ""},
+		{"/api/login", "nessuno", passwordDiProva, false, ""},
+		{"/api/login", "collaudo", "sbagliata", false, ""},
+		{"/api/login", "agente-prova", "sbagliata", false, ""},
+		{"/api/login", "agente-prova", passwordDiProva, true, ""},
+		{"/api/login", "collaudo", passwordDiProva, true, ""},
+		{"/api/login", "emergenza", passwordDiProva, true, ""},
+		{"/api/admin/login", "prova", passwordDiProva, false, ""},
+		{"/api/admin/login", "nessuno", passwordDiProva, false, ""},
+		{"/api/admin/login", "emergenza", "sbagliata", false, ""},
+		{"/api/admin/login", "agente-prova", passwordDiProva, false, ""},
+		{"/api/admin/login", "agente-elenco", passwordDiProva, false, `{"code":101,"message":"Un account di agente AI usa solo il client CLI.","data":null}`},
+		{"/api/admin/login", "collaudo", passwordDiProva, true, ""},
+		{"/api/admin/login", "emergenza", passwordDiProva, true, ""},
 	} {
 		codice, corpo := login(tc.rotta, tc.utente, tc.password)
 		rifiuto, codiceRifiuto := client, 400
 		if tc.rotta == "/api/admin/login" {
 			rifiuto, codiceRifiuto = pannell, 200
+		}
+		if tc.risposta != "" {
+			rifiuto = tc.risposta
 		}
 		if tc.entra && (codice != 200 || !strings.Contains(corpo, "token")) {
 			t.Errorf("POST %s di %s: %d %s, atteso il token", tc.rotta, tc.utente, codice, corpo)

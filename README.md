@@ -313,9 +313,10 @@ nasce al primo login.
 Il login OIDC trova l'utente dall'*associazione* (`user_thirds`: provider e
 `sub` dell'account), non dall'email. Un `sub` e' associato a un utente solo
 (indice unico su `open_id` e `op`, creato all'avvio; con doppioni un error
-col loro numero, l'avvio continua senza indice e riprova al prossimo), e un
+col numero delle righe doppie, l'avvio continua senza indice e riprova al
+prossimo), e un
 utente ha al massimo un account per provider: l'associazione dal pannello
-rifiuta un account gia' di qualcuno ("Questo account OAuth è già associato a
+rifiuta un account gia' di qualcuno ("Questo account OIDC è già associato a
 un altro utente.") e un utente che ne ha gia' uno ("Questo utente ha già un
 account associato a questo provider OIDC."). Con `auto_register` acceso, un
 account senza associazione si abbina all'utente con la stessa email solo se
@@ -394,9 +395,22 @@ l'utente di collaudo e un amministratore di emergenza), da `/api/login` e da
 `/api/admin/login`. A tutti gli altri, a uno username che non esiste e a
 un'eccezione con la password sbagliata la risposta e' la stessa:
 "L'accesso con password è disattivato.", senza dire chi e' un'eccezione;
-ogni rifiuto conta per captcha e ban. Un login per eccezione riuscito
-scrive una riga INFO `login con password per eccezione` con username e
-motivo (`agente` o `elenco`), un warn se l'utente e' amministratore.
+ogni rifiuto conta per captcha e ban. Anche i tempi non lo dicono: ogni
+richiesta fa un controllo bcrypt, vero o su un hash finto, anche per
+un'eccezione senza utente locale o con un hash che non e' bcrypt. Con
+`ldap.enable` acceso invece i tempi distinguono le eccezioni, perche' solo
+loro passano da LDAP prima del database: chi misura le risposte puo'
+capire quali nomi sono nell'elenco o sono agenti. Un login per eccezione
+riuscito scrive una riga nel log, INFO per un utente e WARN per un
+amministratore:
+
+```
+login con password per eccezione: utente <username>, motivo <motivo>
+login con password per eccezione: utente <username> (amministratore), motivo <motivo>
+```
+
+`<motivo>` e' `agente` (account agente, solo da `/api/login`) o `elenco`
+(`app.pwd-login-eccezioni`).
 **Accesso di emergenza:** se il provider OIDC non risponde, il pannello
 mostra il modulo della password su `/_admin/#/login?password=1`, anche
 con un solo provider (che senza il parametro apre subito l'OIDC); entra

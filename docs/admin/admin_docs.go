@@ -3467,19 +3467,7 @@ const docTemplateadmin = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/model.Oauth"
-                                        }
-                                    }
-                                }
-                            ]
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
@@ -3575,7 +3563,7 @@ const docTemplateadmin = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/model.Oauth"
+                                            "$ref": "#/definitions/admin.OauthPannello"
                                         }
                                     }
                                 }
@@ -3635,7 +3623,7 @@ const docTemplateadmin = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/model.OauthList"
+                                            "$ref": "#/definitions/admin.OauthListPannello"
                                         }
                                     }
                                 }
@@ -3684,19 +3672,7 @@ const docTemplateadmin = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/model.OauthList"
-                                        }
-                                    }
-                                }
-                            ]
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
@@ -5308,7 +5284,7 @@ const docTemplateadmin = `{
                     "type": "string"
                 },
                 "client_secret": {
-                    "description": "vuoto nell'aggiornamento: tiene quello salvato",
+                    "description": "vuoto o di soli spazi nell'aggiornamento: tiene quello salvato",
                     "type": "string"
                 },
                 "id": {
@@ -5330,6 +5306,67 @@ const docTemplateadmin = `{
                     "type": "string"
                 },
                 "scopes": {
+                    "type": "string"
+                }
+            }
+        },
+        "admin.OauthListPannello": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/admin.OauthPannello"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "admin.OauthPannello": {
+            "type": "object",
+            "properties": {
+                "auto_register": {
+                    "type": "boolean"
+                },
+                "client_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "has_client_secret": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "issuer": {
+                    "type": "string"
+                },
+                "oauth_type": {
+                    "type": "string"
+                },
+                "op": {
+                    "type": "string"
+                },
+                "pkce_enable": {
+                    "type": "boolean"
+                },
+                "pkce_method": {
+                    "type": "string"
+                },
+                "scopes": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }
@@ -6147,68 +6184,6 @@ const docTemplateadmin = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.LoginLog"
-                    }
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "page_size": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "model.Oauth": {
-            "type": "object",
-            "properties": {
-                "auto_register": {
-                    "description": "RedirectUrl  string ` + "`" + `json:\"redirect_url\"` + "`" + `\nAutoRegister crea l'utente al primo login di un account del provider\nche non ne ha uno, invece di rimandare ad associarlo. Un provider\nsalvato senza il campo ha NULL: vale spenta.",
-                    "type": "boolean"
-                },
-                "client_id": {
-                    "type": "string"
-                },
-                "client_secret": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "issuer": {
-                    "type": "string"
-                },
-                "oauth_type": {
-                    "type": "string"
-                },
-                "op": {
-                    "type": "string"
-                },
-                "pkce_enable": {
-                    "type": "boolean"
-                },
-                "pkce_method": {
-                    "type": "string"
-                },
-                "scopes": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.OauthList": {
-            "type": "object",
-            "properties": {
-                "list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Oauth"
                     }
                 },
                 "page": {
