@@ -46,7 +46,7 @@ func (o *Oauth) ToBind(c *gin.Context) {
 
 	switch _, err := service.AllService.UserService.UserThirdInfo(u.Id, f.Op); {
 	case err == nil:
-		response.Fail(c, 101, response.TranslateMsg(c, "OauthHasBindOtherUser"))
+		response.Fail(c, 101, response.TranslateMsg(c, "OauthUserHasBind"))
 		return
 	case !errors.Is(err, service.ErrNotFound):
 		response.FailErr(c, 101, "SystemError", err)

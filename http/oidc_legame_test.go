@@ -19,7 +19,7 @@ func associazione(t *testing.T, userId uint, sub string) {
 // testiDelLegame sono i messaggi dei rifiuti dell'associazione, per
 // Accept-Language: vuoto (italiano) ed en.
 var testiDelLegame = map[string]map[string]string{
-	"OauthHasBindOtherUser": {"": "Questo account OAuth è già associato a un altro utente.", "en": "This OIDC account is already bound to another user."},                     //nolint:misspell // italiano
+	"OauthHasBindOtherUser": {"": "Questo account OIDC è già associato a un altro utente.", "en": "This OIDC account is already bound to another user."},                      //nolint:misspell // italiano
 	"OauthUserHasBind":      {"": "Questo utente ha già un account associato a questo provider OIDC.", "en": "This user already has an account bound to this OIDC provider."}, //nolint:misspell // italiano
 }
 
@@ -28,7 +28,9 @@ var testiDelLegame = map[string]map[string]string{
 // chiesta dal profilo: sub-1 gia' legato a un altro utente risponde
 // OauthHasBindOtherUser, un utente che ha gia' un account del provider
 // OauthUserHasBind, e nessuna associazione nasce. Prima bindConfirm le
-// scriveva tutte e due, il callback la seconda.
+// scriveva tutte e due, il callback la seconda. Anche la richiesta di
+// associazione dal profilo (bind) risponde OauthUserHasBind a chi ha gia' un
+// account del provider; prima diceva OauthHasBindOtherUser.
 func TestAssociazioneGiaPresente(t *testing.T) {
 	for _, tc := range []struct {
 		nome, rotta, messaggio string
@@ -50,6 +52,9 @@ func TestAssociazioneGiaPresente(t *testing.T) {
 		{"callback, utente gia' legato", "callback", "OauthUserHasBind", func(t *testing.T, utente *model.User) {
 			associazione(t, utente.Id, "sub-9")
 		}},
+		{"bind, utente gia' legato", "bind", "OauthUserHasBind", func(t *testing.T, utente *model.User) {
+			associazione(t, utente.Id, "sub-9")
+		}},
 	} {
 		t.Run(tc.nome, func(t *testing.T) {
 			g, utente, _ := pannello(t, false)
@@ -58,7 +63,15 @@ func TestAssociazioneGiaPresente(t *testing.T) {
 			prima := righe(t, "user_thirds")
 			t.Cleanup(func() { service.AllService.OauthService.DeleteOauthCache("prova-legame") })
 
-			if tc.rotta == "bindConfirm" {
+			switch tc.rotta {
+			case "bind":
+				for lingua, testo := range testiDelLegame[tc.messaggio] {
+					rec := richiesta(g, "POST", "/api/admin/oauth/bind", lingua, `{"op":"aziendale"}`)
+					if atteso := `{"code":101,"message":"` + testo + `","data":null}`; rec.Body.String() != atteso {
+						t.Errorf("POST bind, lingua %q: %d %s\n want %s", lingua, rec.Code, rec.Body, atteso)
+					}
+				}
+			case "bindConfirm":
 				service.AllService.OauthService.SetOauthCache("prova-legame", &service.OauthCacheItem{
 					Op: "aziendale", Action: service.OauthActionTypeLogin, OpenId: "sub-1"}, 0)
 				for lingua, testo := range testiDelLegame[tc.messaggio] {
@@ -70,7 +83,7 @@ func TestAssociazioneGiaPresente(t *testing.T) {
 				if voce := service.AllService.OauthService.GetOauthCache("prova-legame"); voce == nil || voce.UserId != 0 {
 					t.Errorf("login in cache dopo il rifiuto: %+v, atteso senza utente", voce)
 				}
-			} else {
+			default:
 				service.AllService.OauthService.SetOauthCache("prova-legame", &service.OauthCacheItem{
 					Op: "aziendale", Action: service.OauthActionTypeBind, UserId: utente.Id}, 0)
 				rec := richiesta(g, "GET", "/api/oidc/callback?state=prova-legame&code="+codiceDelProvider, "", "")
