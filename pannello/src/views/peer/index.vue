@@ -27,8 +27,8 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handlerQuery">{{ T('Filter') }}</el-button>
-          <el-button type="danger" @click="toAdd">{{ T('Add') }}</el-button>
-          <el-button type="success" @click="toExport">{{ T('Export') }}</el-button>
+          <el-button type="primary" @click="toAdd">{{ T('Add') }}</el-button>
+          <el-button @click="toExport">{{ T('Export') }}</el-button>
           <el-popover :visible="showImport" placement="bottom" :width="600">
             <el-upload
                 class="upload-demo"
@@ -53,7 +53,7 @@
             </el-upload>
             <el-button @click="showImport=false" type="primary">{{ T('Cancel') }}</el-button>
             <template #reference>
-              <el-button @click="showImport=true" type="danger" :icon="ArrowDown">{{ T('Import') }}</el-button>
+              <el-button @click="showImport=true" :icon="ArrowDown">{{ T('Import') }}</el-button>
             </template>
           </el-popover>
           <el-button type="danger" @click="toBatchDelete">{{ T('BatchDelete') }}</el-button>
@@ -66,7 +66,7 @@
         <el-button :icon="Setting" @click="showColumnSetting"></el-button>
       </div>
 
-      <el-table :data="listRes.list" v-loading="listRes.loading" border size="small" @selection-change="handleSelectionChange">
+      <el-table :data="listRes.list" v-loading="listRes.loading" border show-overflow-tooltip size="small" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center"/>
         <template v-for="c in visibleColumns.filter(cc => cc.visible)" :key="c">
           <el-table-column v-if="c.name==='id'" prop="id" label="ID" align="center" width="150">
@@ -84,7 +84,7 @@
           <el-table-column v-if="c.name==='hostname'" prop="hostname" :label="T('Hostname')" align="center" width="120"/>
           <el-table-column v-if="c.name==='memory'" prop="memory" :label="T('Memory')" align="center" width="120"/>
           <el-table-column v-if="c.name==='os'" prop="os" :label="T('Os')" align="center" width="120" show-overflow-tooltip/>
-          <el-table-column v-if="c.name==='last_online_time'" prop="last_online_time" :label="T('LastOnlineTime')" align="center" min-width="120">
+          <el-table-column v-if="c.name==='last_online_time'" prop="last_online_time" :label="T('LastOnlineTime')" align="center" min-width="170">
             <template #default="{row}">
               <div class="last_oline_time">
                 <span> {{ row.last_online_time ? timeAgo(row.last_online_time * 1000) : '-' }}</span> <span class="dot" :class="{red: timeDis(row.last_online_time) >= 60, green: timeDis(row.last_online_time)< 60}"></span>
@@ -102,15 +102,16 @@
           <el-table-column v-if="c.name==='uuid'" prop="uuid" :label="T('Uuid')" align="center" width="120" show-overflow-tooltip/>
           <el-table-column v-if="c.name==='version'" prop="version" :label="T('Version')" align="center" width="80"/>
           <el-table-column v-if="c.name==='alias'" prop="alias" :label="T('Alias')" align="center" width="80"/>
-          <el-table-column v-if="c.name==='created_at'" prop="created_at" :label="T('CreatedAt')" align="center" width="150"/>
-          <el-table-column v-if="c.name==='updated_at'" prop="updated_at" :label="T('UpdatedAt')" align="center" width="150"/>
+          <el-table-column v-if="c.name==='created_at'" prop="created_at" :label="T('CreatedAt')" align="center" min-width="170"/>
+          <el-table-column v-if="c.name==='updated_at'" prop="updated_at" :label="T('UpdatedAt')" align="center" min-width="170"/>
         </template>
 
-        <el-table-column :label="T('Actions')" align="center" width="400" class-name="table-actions" fixed="right">
+        <el-table-column :label="T('Actions')" align="center" width="320" class-name="table-actions" fixed="right">
           <template #default="{row}">
-            <el-button type="primary" @click="toAddressBook(row)">{{ T('AddToAddressBook') }}</el-button>
-            <el-button @click="toEdit(row)">{{ T('Edit') }}</el-button>
-            <el-button type="danger" @click="del(row)">{{ T('Delete') }}</el-button>
+            <azioni-riga @elimina="del(row)">
+              <el-button link type="primary" @click="toAddressBook(row)">{{ T('AddToAddressBook') }}</el-button>
+              <el-button link type="primary" @click="toEdit(row)">{{ T('Edit') }}</el-button>
+            </azioni-riga>
           </template>
         </el-table-column>
       </el-table>

@@ -7,12 +7,12 @@
                 </el-form-item>-->
         <el-form-item>
           <el-button type="primary" @click="handlerQuery">{{ T('Filter') }}</el-button>
-          <el-button type="danger" @click="toAdd">{{ T('Add') }}</el-button>
+          <el-button type="primary" @click="toAdd">{{ T('Add') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
     <el-card class="list-body" shadow="hover">
-      <el-table :data="listRes.list" v-loading="listRes.loading" border>
+      <el-table :data="listRes.list" v-loading="listRes.loading" border show-overflow-tooltip>
         <el-table-column prop="id" label="ID" align="center"></el-table-column>
         <el-table-column prop="name" :label="T('Name')" align="center"/>
         <el-table-column prop="type" :label="T('Type')" align="center">
@@ -21,12 +21,13 @@
             <span v-else>{{ T('SharedGroup') }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" :label="T('CreatedAt')" align="center"/>
-        <el-table-column prop="updated_at" :label="T('UpdatedAt')" align="center"/>
-        <el-table-column :label="T('Actions')" align="center">
+        <el-table-column prop="created_at" :label="T('CreatedAt')" align="center" min-width="170"/>
+        <el-table-column prop="updated_at" :label="T('UpdatedAt')" align="center" min-width="170"/>
+        <el-table-column :label="T('Actions')" align="center" width="180">
           <template #default="{row}">
-            <el-button @click="toEdit(row)">{{ T('Edit') }}</el-button>
-            <el-button type="danger" @click="del(row)">{{ T('Delete') }}</el-button>
+            <azioni-riga @elimina="del(row)">
+              <el-button link type="primary" @click="toEdit(row)">{{ T('Edit') }}</el-button>
+            </azioni-riga>
           </template>
         </el-table-column>
       </el-table>

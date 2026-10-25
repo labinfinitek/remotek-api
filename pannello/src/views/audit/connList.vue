@@ -11,12 +11,12 @@
         <el-form-item>
           <el-button type="primary" @click="handlerQuery">{{ T('Filter') }}</el-button>
           <el-button type="danger" @click="toBatchDelete">{{ T('BatchDelete') }}</el-button>
-          <el-button type="success" @click="toExport">{{ T('Export') }}</el-button>
+          <el-button @click="toExport">{{ T('Export') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
     <el-card class="list-body" shadow="hover">
-      <el-table :data="listRes.list" v-loading="listRes.loading" border @selection-change="handleSelectionChange">
+      <el-table :data="listRes.list" v-loading="listRes.loading" border show-overflow-tooltip @selection-change="handleSelectionChange">
         <el-table-column type="selection" align="center" width="50"/>
         <el-table-column prop="id" label="ID" align="center" width="100"/>
         <el-table-column :label="T('Peer')" prop="peer_id" align="center" width="120"/>
@@ -38,13 +38,14 @@
           </template>
         </el-table-column>
         <el-table-column prop="uuid" :label="T('Uuid')" align="center" width="120" show-overflow-tooltip/>
-        <el-table-column prop="created_at" :label="T('CreatedAt')" align="center"/>
-        <el-table-column :label="T('CloseTime')" prop="close_time" align="center"/>
+        <el-table-column prop="created_at" :label="T('CreatedAt')" align="center" min-width="170"/>
+        <el-table-column :label="T('CloseTime')" prop="close_time" align="center" min-width="170"/>
         <el-table-column :label="T('Remark')" prop="note" align="center" min-width="160" show-overflow-tooltip/>
-        <el-table-column :label="T('Actions')" align="center" width="220">
+        <el-table-column :label="T('Actions')" align="center" width="200" fixed="right">
           <template #default="{row}">
-            <el-button v-if="row.type === 4" @click="terminal.open(row)">{{ T('Transcript') }}</el-button>
-            <el-button type="danger" @click="del(row)">{{ T('Delete') }}</el-button>
+            <azioni-riga @elimina="del(row)">
+              <el-button v-if="row.type === 4" link type="primary" @click="terminal.open(row)">{{ T('Transcript') }}</el-button>
+            </azioni-riga>
           </template>
         </el-table-column>
       </el-table>

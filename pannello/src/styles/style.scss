@@ -19,6 +19,15 @@
   --rk-fondo-icona: #FFFFFF;
   // Primario sotto il mouse: piu' scuro, non piu' chiaro (bianco su #6297FF fa 2.84:1).
   --rk-primario-sopra: #1956CC;
+  // Primario premuto, ancora piu' scuro: bianco a 8.13:1.
+  --rk-primario-premuto: #1448B0;
+  --rk-collegamento-sopra: #1956CC;
+  // Rosso solo per eliminare: pieno sotto il testo bianco, e per il testo.
+  --rk-rosso: #D12F2F;
+  --rk-rosso-sopra: #B02626;
+  --rk-rosso-testo: #C42B2B;
+  --rk-tabella-testata: #EEF3FB;
+  --rk-tabella-testata-testo: #52617A;
   --rk-interruttore: var(--rk-navy);
   --rk-font-testo: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --rk-font-titoli: "Space Grotesk", "Inter", system-ui, sans-serif;
@@ -59,6 +68,12 @@ html.dark {
   --rk-barra-alto: var(--rk-navy);
   --rk-barra-alto-testo: #EEF3FB;
   --rk-primario-sopra: #1B53C0;
+  // dark-2 (#4C89FF) resta per il testo; sotto il bianco faceva 3.32:1.
+  --rk-primario-premuto: #184397;
+  --rk-collegamento-sopra: #9DC2FF;
+  --rk-rosso-testo: #FF8A8A;
+  --rk-tabella-testata: var(--el-fill-color);
+  --rk-tabella-testata-testo: #94A6C4;
   --rk-interruttore: var(--el-color-primary);
 
   --el-color-primary: #1F6BFF;
@@ -106,6 +121,7 @@ h1, h2, h3, .el-dialog__title, .el-card__header {
 .el-button--primary.is-text {
   --el-link-text-color: var(--rk-accento-testo);
   --el-button-text-color: var(--rk-accento-testo);
+  --el-button-hover-link-text-color: var(--rk-collegamento-sopra);
 }
 
 .el-tag--primary {
@@ -115,6 +131,40 @@ h1, h2, h3, .el-dialog__title, .el-card__header {
 .el-button--primary {
   --el-button-hover-bg-color: var(--rk-primario-sopra);
   --el-button-hover-border-color: var(--rk-primario-sopra);
+  --el-button-active-bg-color: var(--rk-primario-premuto);
+  --el-button-active-border-color: var(--rk-primario-premuto);
+}
+
+.el-button--danger {
+  --el-button-bg-color: var(--rk-rosso);
+  --el-button-border-color: var(--rk-rosso);
+  --el-button-hover-bg-color: var(--rk-rosso-sopra);
+  --el-button-hover-border-color: var(--rk-rosso-sopra);
+  --el-button-active-bg-color: var(--rk-rosso-sopra);
+  --el-button-active-border-color: var(--rk-rosso-sopra);
+}
+
+// "Elimina" nel menu "Altro" delle liste (components/azioniRiga.vue): il menu
+// sta fuori dal componente, lo stile scoped non lo raggiunge.
+.el-dropdown-menu {
+  --el-dropdown-menuItem-hover-color: var(--rk-accento-testo);
+}
+
+.el-dropdown-menu__item.azione-elimina {
+  color: var(--rk-rosso-testo);
+  --el-dropdown-menuItem-hover-color: var(--rk-rosso-testo);
+  --el-dropdown-menuItem-hover-fill: var(--el-color-danger-light-9);
+}
+
+// Tabelle: testata su fondo tenue; nessuna parola spezzata a meta' (le celle
+// stanno su una riga, con i puntini e il testo intero nel tooltip).
+.el-table {
+  --el-table-header-bg-color: var(--rk-tabella-testata);
+  --el-table-header-text-color: var(--rk-tabella-testata-testo);
+
+  th.el-table__cell > .cell {
+    overflow-wrap: normal;
+  }
 }
 
 .el-button--primary.is-plain {
@@ -136,6 +186,12 @@ h1, h2, h3, .el-dialog__title, .el-card__header {
 }
 
 .list-query {
+  // Etichette dei filtri su una riga: la larghezza fissa del form le spezzava.
+  .el-form-item__label {
+    width: auto !important;
+    white-space: nowrap;
+  }
+
   .el-select {
     --el-select-width: 160px;
   }
