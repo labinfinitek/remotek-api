@@ -1,7 +1,7 @@
 // Catture del pannello con l'API simulata: login, Profilo e barra, nel tema
 // chiaro e nel tema scuro, a 1600x900, in italiano; piu' la pagina del
-// codice di associazione OIDC che vede il tecnico e le Associazioni in
-// attesa dell'amministratore. Il pannello e' il build
+// codice di associazione OIDC che vede il tecnico, le Associazioni in
+// attesa dell'amministratore e la lista dei PC a 1280 e 1600 px. Il pannello e' il build
 // di vite (dist/); /api/*, /brand/* e i file del pannello li serve lo script
 // con page.route, e ogni richiesta verso un altro dominio si interrompe:
 // niente esce dalla macchina. Playwright non e' una dipendenza del pannello:
@@ -53,6 +53,16 @@ const api = {
     { codice: 'P4WZ-3HNC', op: 'aziendale', nome: 'Anna Verdi', email: 'anna.verdi@esempio.it', email_verificata: false, secondi: 1260 },
   ],
   '/api/admin/user/groupUsers': { groups: [], users: [{ id: 2, username: 'lbianchi', nickname: 'Luca Bianchi', group_id: 1 }] },
+}
+// La lista dei PC: alcuni in linea e altri no, con tutte le colonne.
+const ora = Math.floor(Date.now() / 1000)
+api['/api/admin/peer/list'] = {
+  total: 3,
+  list: [
+    { row_id: 1, id: '999000111', cpu: 'Intel Core i5-1135G7', hostname: 'PC-UFFICIO', memory: '16GB', os: 'Windows 11', last_online_time: ora - 20, last_online_ip: '192.0.2.10', username: 'mrossi', group_id: 0, uuid: 'dXVpZC0x', version: '1.4.9', alias: '', created_at: '2026-10-01 09:00:00', updated_at: '2026-10-25 10:00:00' },
+    { row_id: 2, id: '999000222', cpu: 'AMD Ryzen 5 5600U', hostname: 'PORTATILE-ANNA', memory: '8GB', os: 'Windows 10', last_online_time: ora - 7200, last_online_ip: '192.0.2.22', username: 'averdi', group_id: 0, uuid: 'dXVpZC0y', version: '1.4.9', alias: '', created_at: '2026-10-02 09:00:00', updated_at: '2026-10-24 18:00:00' },
+    { row_id: 3, id: '999000333', cpu: 'Apple M2', hostname: 'MAC-GRAFICA', memory: '16GB', os: 'macOS 15', last_online_time: 0, last_online_ip: '', username: '', group_id: 0, uuid: 'dXVpZC0z', version: '1.4.8', alias: '', created_at: '2026-10-03 09:00:00', updated_at: '2026-10-03 09:00:00' },
+  ],
 }
 const STATO = 'stato-del-login'
 const CODICE = 'K7Q2-M9XD'
@@ -146,6 +156,21 @@ for (const tema of ['light', 'dark']) {
   await page.waitForLoadState('networkidle')
   await page.screenshot({ path: resolve(opz.out, `${opz.nome}-codice-${nomeTema}.png`) })
   await contesto.close()
+
+  // La lista dei PC a 1280 e a 1600 px, per la colonna Azioni fissata.
+  for (const larghezza of [1280, 1600]) {
+    const c = await browser.newContext({ viewport: { width: larghezza, height: 900 }, colorScheme: tema, locale: 'it-IT' })
+    await c.route('**/*', servi)
+    const p = await c.newPage()
+    await p.goto(`${BASE}/_admin/#/login`)
+    await p.evaluate((t) => localStorage.setItem('access_token', t), TOKEN)
+    await p.goto(`${BASE}/_admin/#/user/peer`)
+    await p.reload()
+    await p.locator('.el-table__row').first().waitFor()
+    await p.waitForLoadState('networkidle')
+    await p.screenshot({ path: resolve(opz.out, `${opz.nome}-pc-${larghezza}-${nomeTema}.png`) })
+    await c.close()
+  }
 }
 await browser.close()
 if (sconosciute.size) console.log('rotte simulate con una lista vuota:', [...sconosciute].sort().join(' '))
