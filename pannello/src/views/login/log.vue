@@ -15,12 +15,12 @@
         <el-form-item>
           <el-button type="primary" @click="handlerQuery">{{ T('Filter') }}</el-button>
           <el-button type="danger" @click="toBatchDelete">{{ T('BatchDelete') }}</el-button>
-          <el-button type="success" @click="toExport">{{ T('Export') }}</el-button>
+          <el-button @click="toExport">{{ T('Export') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
     <el-card class="list-body" shadow="hover">
-      <el-table :data="listRes.list" v-loading="listRes.loading" border @selection-change="handleSelectionChange">
+      <el-table :data="listRes.list" v-loading="listRes.loading" border show-overflow-tooltip @selection-change="handleSelectionChange">
         <el-table-column type="selection" align="center" width="50"/>
         <el-table-column prop="id" label="ID" align="center" width="100"/>
         <el-table-column :label="T('Owner')" align="center" width="120">
@@ -37,11 +37,11 @@
         <el-table-column prop="uuid" :label="T('Uuid')" align="center"/>
         <el-table-column prop="ip" :label="T('Ip')" align="center" width="150"/>
         <el-table-column prop="type" :label="T('Type')" align="center" width="100"/>
-        <el-table-column prop="platform" :label="T('PlatformUA')" align="center" width="120" show-overflow-tooltip/>
-        <el-table-column prop="created_at" :label="T('CreatedAt')" align="center"/>
-        <el-table-column :label="T('Actions')" align="center" width="400">
+        <el-table-column prop="platform" :label="T('PlatformUA')" align="center" width="140" show-overflow-tooltip/>
+        <el-table-column prop="created_at" :label="T('CreatedAt')" align="center" min-width="170"/>
+        <el-table-column :label="T('Actions')" align="center" width="120">
           <template #default="{row}">
-            <el-button type="danger" @click="del(row)">{{ T('Delete') }}</el-button>
+            <azioni-riga @elimina="del(row)"/>
           </template>
         </el-table-column>
       </el-table>

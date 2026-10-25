@@ -7,24 +7,24 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handlerQuery">{{ T('Filter') }}</el-button>
-          <el-button type="danger" @click="toAdd">{{ T('Add') }}</el-button>
-          <el-button type="success" @click="toExport">{{ T('Export') }}</el-button>
+          <el-button type="primary" @click="toAdd">{{ T('Add') }}</el-button>
+          <el-button @click="toExport">{{ T('Export') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
     <el-card class="list-body" shadow="hover">
-      <el-table :data="listRes.list" v-loading="listRes.loading" border>
-        <el-table-column prop="id" label="ID" align="center"></el-table-column>
-        <el-table-column prop="username" :label="T('Username')" align="center"/>
-        <el-table-column prop="email" :label="T('Email')" align="center"/>
-        <el-table-column prop="nickname" :label="T('Nickname')" align="center"/>
-        <el-table-column :label="T('Group')" align="center">
+      <el-table :data="listRes.list" v-loading="listRes.loading" border show-overflow-tooltip>
+        <el-table-column prop="id" label="ID" align="center" width="70"></el-table-column>
+        <el-table-column prop="username" :label="T('Username')" align="center" min-width="120"/>
+        <el-table-column prop="email" :label="T('Email')" align="center" min-width="120"/>
+        <el-table-column prop="nickname" :label="T('Nickname')" align="center" min-width="120"/>
+        <el-table-column :label="T('Group')" align="center" min-width="110">
           <template #default="{row}">
             <span v-if="row.group_id"> <el-tag>{{ listRes.groups?.find(g => g.id === row.group_id)?.name }} </el-tag> </span>
             <span v-else> - </span>
           </template>
         </el-table-column>
-        <el-table-column :label="T('Status')" align="center">
+        <el-table-column :label="T('Status')" align="center" width="80">
           <template #default="{row}">
             <el-switch v-model="row.status"
                        :active-value="ENABLE_STATUS"
@@ -34,15 +34,18 @@
           </template>
         </el-table-column>
         <el-table-column prop="remark" :label="T('Remark')" align="center"/>
-        <el-table-column prop="created_at" :label="T('CreatedAt')" align="center"/>
-        <el-table-column prop="updated_at" :label="T('UpdatedAt')" align="center"/>
-        <el-table-column :label="T('Actions')" align="center" width="650">
+        <el-table-column prop="created_at" :label="T('CreatedAt')" align="center" min-width="170"/>
+        <el-table-column prop="updated_at" :label="T('UpdatedAt')" align="center" min-width="170"/>
+        <el-table-column :label="T('Actions')" align="center" width="180" fixed="right">
           <template #default="{row}">
-            <el-button @click="toTag(row)">{{ T('UserTags') }}</el-button>
-            <el-button @click="toAddressBook(row)">{{ T('UserAddressBook') }}</el-button>
-            <el-button @click="toEdit(row)">{{ T('Edit') }}</el-button>
-            <el-button type="warning" @click="changePass(row)">{{ T('ResetPassword') }}</el-button>
-            <el-button type="danger" @click="remove(row)">{{ T('Delete') }}</el-button>
+            <azioni-riga @elimina="remove(row)">
+              <el-button link type="primary" @click="toEdit(row)">{{ T('Edit') }}</el-button>
+              <template #altro>
+                <el-dropdown-item @click="changePass(row)">{{ T('ResetPassword') }}</el-dropdown-item>
+                <el-dropdown-item @click="toTag(row)">{{ T('UserTags') }}</el-dropdown-item>
+                <el-dropdown-item @click="toAddressBook(row)">{{ T('UserAddressBook') }}</el-dropdown-item>
+              </template>
+            </azioni-riga>
           </template>
         </el-table-column>
       </el-table>

@@ -10,7 +10,7 @@
           <div class="impt">{{ oauthInfo.third_name }}</div>
         </el-form-item>
         <el-form-item label-width="0">
-          <el-button style="width: 100%" v-if="!resStatus" type="success" size="large" @click="toConfirm">{{ T('Bind') }}</el-button>
+          <el-button style="width: 100%" v-if="!resStatus" type="primary" size="large" @click="toConfirm">{{ T('Bind') }}</el-button>
         </el-form-item>
         <el-form-item label-width="0">
           <el-button style="width: 100%" size="large" @click="out">{{ T('Close') }}</el-button>

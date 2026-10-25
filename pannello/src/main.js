@@ -17,11 +17,13 @@ import '@fontsource/space-grotesk/latin-500.css'
 import '@fontsource/space-grotesk/latin-700.css'
 import '@/styles/style.scss'
 import * as ElementIcons from '@element-plus/icons'
+import AzioniRiga from '@/components/azioniRiga.vue'
 
 const app = createApp(App)
 app.use(ElementPlus, { locale: langs[linguaIniziale()].value })
 app.use(pinia)
 app.use(router)
+app.component('AzioniRiga', AzioniRiga)
 for (let icon in ElementIcons){
   app.component("ElIcon" +icon ,ElementIcons[icon])
 }

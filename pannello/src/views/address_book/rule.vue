@@ -4,12 +4,12 @@
       <el-form inline label-width="80px">
         <el-form-item>
           <el-button type="primary" @click="handlerQuery">{{ T('Filter') }}</el-button>
-          <el-button type="danger" @click="toAdd">{{ T('Add') }}</el-button>
+          <el-button type="primary" @click="toAdd">{{ T('Add') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
     <el-card class="list-body" shadow="hover">
-      <el-table :data="listRes.list" v-loading="listRes.loading" border>
+      <el-table :data="listRes.list" v-loading="listRes.loading" border show-overflow-tooltip>
         <el-table-column prop="rule" :label="T('Rule')" align="center">
           <template #default="{row}">
             <div>
@@ -34,12 +34,13 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" :label="T('CreatedAt')" align="center"/>
+        <el-table-column prop="created_at" :label="T('CreatedAt')" align="center" min-width="170"/>
         <!--        <el-table-column prop="updated_at" label="更新时间" align="center"/>-->
         <el-table-column :label="T('Actions')" align="center" class-name="table-actions" width="300" fixed="right">
           <template #default="{row}">
-            <el-button @click="toEdit(row)">{{ T('Edit') }}</el-button>
-            <el-button type="danger" @click="del(row)">{{ T('Delete') }}</el-button>
+            <azioni-riga @elimina="del(row)">
+              <el-button link type="primary" @click="toEdit(row)">{{ T('Edit') }}</el-button>
+            </azioni-riga>
           </template>
         </el-table-column>
       </el-table>

@@ -38,6 +38,16 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   Rubrica e Voci di rubrica. Apriva un link `rustdesk://<id>`, che il
   client Remotek non gestisce: il clic non faceva niente. La colonna
   "Azioni" si stringe di conseguenza.
+- Pannello: rosso solo per eliminare. "Aggiungi" e "Cerca" sono blu pieni,
+  "Esporta" e "Importa" neutri. Nella colonna "Azioni" restano visibili al
+  massimo due azioni, le altre vanno nel menu "Altro"; "Elimina" sta sempre
+  nel menu, in rosso, e chiede conferma (in Utenti "Reimposta la password"
+  usciva dalla colonna). Il pulsante blu premuto nel tema scuro ora si
+  legge (bianco su `#4C89FF` faceva 3.32:1).
+- Pannello: tabelle leggibili. Testata su fondo tenue, celle su una riga
+  con i puntini e il testo intero nel tooltip (note, UUID), date intere,
+  nessuna parola spezzata a meta' ("Nome visualizz-ato"); le etichette dei
+  filtri stanno su una riga.
 
 ## [0.9.0] - 2026-10-23
 Immagine `ghcr.io/labinfinitek/remotek-api:0.9.0`, costruita con Go 1.26.10
