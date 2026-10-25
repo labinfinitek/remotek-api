@@ -28,9 +28,13 @@ const (
 	TettoRichieste = 100
 )
 
-// alfabetoCodice sono i caratteri del codice: niente 0/O e 1/I/L, che al
-// telefono si confondono.
-const alfabetoCodice = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+// Il codice: lunghezzaCodice caratteri di alfabetoCodice, senza 0/O e
+// 1/I/L che al telefono si confondono, scritti a gruppi di gruppoCodice.
+const (
+	alfabetoCodice  = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+	lunghezzaCodice = 8
+	gruppoCodice    = 4
+)
 
 // Rifiuti dell'associazione dall'amministratore; il testo e' l'ID del
 // messaggio.
@@ -79,8 +83,8 @@ func (r *Richieste) valide() {
 	r.voci = slices.DeleteFunc(r.voci, func(v *RichiestaAssociazione) bool { return !v.Creata.After(limite) })
 }
 
-// NormalizzaCodice toglie spazi e trattini, porta a maiuscole e rimette il
-// trattino a meta': "k7q2 m9xd" diventa "K7Q2-M9XD".
+// NormalizzaCodice toglie spazi e trattini, porta a maiuscole e rimette i
+// trattini come nuovoCodice: "k7q2 m9xd" diventa "K7Q2-M9XD".
 func NormalizzaCodice(codice string) string {
 	s := strings.Map(func(c rune) rune {
 		if c == '-' || c == ' ' {
@@ -88,18 +92,27 @@ func NormalizzaCodice(codice string) string {
 		}
 		return c
 	}, strings.ToUpper(strings.TrimSpace(codice)))
-	if len(s) != 8 {
+	if len(s) != lunghezzaCodice {
 		return s
 	}
-	return s[:4] + "-" + s[4:]
+	// un trattino ogni gruppoCodice caratteri, come nuovoCodice
+	b := make([]byte, 0, lunghezzaCodice+lunghezzaCodice/gruppoCodice)
+	for i := range lunghezzaCodice {
+		if i > 0 && i%gruppoCodice == 0 {
+			b = append(b, '-')
+		}
+		b = append(b, s[i])
+	}
+	return string(b)
 }
 
-// nuovoCodice estrae 8 caratteri di alfabetoCodice, a gruppi di 4.
+// nuovoCodice estrae lunghezzaCodice caratteri di alfabetoCodice, a gruppi
+// di gruppoCodice.
 func nuovoCodice() (string, error) {
-	b := make([]byte, 0, 9)
+	b := make([]byte, 0, lunghezzaCodice+lunghezzaCodice/gruppoCodice)
 	n := big.NewInt(int64(len(alfabetoCodice)))
-	for i := range 8 {
-		if i == 4 {
+	for i := range lunghezzaCodice {
+		if i > 0 && i%gruppoCodice == 0 {
 			b = append(b, '-')
 		}
 		k, err := rand.Int(rand.Reader, n)
