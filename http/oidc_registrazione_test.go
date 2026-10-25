@@ -170,3 +170,34 @@ func autoregistrazione(t *testing.T) string {
 	}
 	return v
 }
+
+// TestAutoregistrazioneEmailMaiuscole prova sul router vero il login OIDC
+// con autoregistrazione di sub-1 (utente@esempio.it, verificata) quando
+// l'utente locale ha l'email scritta con maiuscole: l'email lo abbina,
+// senza creare un utente nuovo. Prima la ricerca distingueva le maiuscole e
+// nasceva un secondo utente con la stessa email.
+func TestAutoregistrazioneEmailMaiuscole(t *testing.T) {
+	g, _, _ := pannello(t, false)
+	registra := true
+	crea(t, &model.Oauth{Op: "aziendale", OauthType: model.OauthTypeOidc, ClientId: "id", ClientSecret: "segreto", Issuer: providerOidc(t), AutoRegister: &registra})
+	locale := &model.User{Username: "locale", Email: "Utente@Esempio.IT", Status: model.COMMON_STATUS_ENABLE}
+	crea(t, locale)
+	utenti := righe(t, "users")
+
+	rec := richiesta(g, "POST", "/api/oidc/auth", "", `{"op":"aziendale","id":"999000111","uuid":"dXVpZA==","deviceInfo":{"os":"windows","type":"client","name":"PC"}}`)
+	var risposta struct{ Code string }
+	if err := json.Unmarshal(rec.Body.Bytes(), &risposta); err != nil || rec.Code != 200 {
+		t.Fatalf("POST /api/oidc/auth: %d %s (%v)", rec.Code, rec.Body, err)
+	}
+	t.Cleanup(func() { service.AllService.OauthService.DeleteOauthCache(risposta.Code) })
+	rec = richiesta(g, "GET", "/api/oidc/callback?state="+risposta.Code+"&code="+codiceDelProvider, "", "")
+	if !strings.Contains(rec.Body.String(), "var msg = 'OauthSuccess'") {
+		t.Errorf("GET /api/oidc/callback: %d, atteso OauthSuccess\n%s", rec.Code, rec.Body)
+	}
+	if n := righe(t, "users"); n != utenti {
+		t.Errorf("utenti dopo il callback: %d, erano %d", n, utenti)
+	}
+	if ut, err := service.AllService.OauthService.UserThirdInfo("aziendale", "sub-1"); err != nil || ut.UserId != locale.Id {
+		t.Errorf("associazione di sub-1: %+v (%v), attesa all'utente %d", ut, err, locale.Id)
+	}
+}
