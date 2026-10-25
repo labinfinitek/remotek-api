@@ -4687,6 +4687,52 @@ const docTemplateadmin = `{
                 }
             }
         },
+        "/admin/user/groupUsers": {
+            "post": {
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "description": "Gruppi e utenti destinatari di una condivisione",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户"
+                ],
+                "summary": "Gruppi e utenti destinatari di una condivisione",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/admin.GroupUsersPayload"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/user/list": {
             "get": {
                 "security": [
@@ -5163,6 +5209,51 @@ const docTemplateadmin = `{
                 }
             }
         },
+        "admin.GroupUsersGroup": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "admin.GroupUsersPayload": {
+            "type": "object",
+            "properties": {
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/admin.GroupUsersGroup"
+                    }
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/admin.GroupUsersUser"
+                    }
+                }
+            }
+        },
+        "admin.GroupUsersUser": {
+            "type": "object",
+            "properties": {
+                "group_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "admin.LoginLogIds": {
             "type": "object",
             "required": [
@@ -5207,7 +5298,6 @@ const docTemplateadmin = `{
             "type": "object",
             "required": [
                 "client_id",
-                "client_secret",
                 "oauth_type"
             ],
             "properties": {
@@ -5218,6 +5308,7 @@ const docTemplateadmin = `{
                     "type": "string"
                 },
                 "client_secret": {
+                    "description": "vuoto nell'aggiornamento: tiene quello salvato",
                     "type": "string"
                 },
                 "id": {

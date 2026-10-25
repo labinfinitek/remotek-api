@@ -97,6 +97,35 @@ definitions:
     required:
     - name
     type: object
+  admin.GroupUsersGroup:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  admin.GroupUsersPayload:
+    properties:
+      groups:
+        items:
+          $ref: '#/definitions/admin.GroupUsersGroup'
+        type: array
+      users:
+        items:
+          $ref: '#/definitions/admin.GroupUsersUser'
+        type: array
+    type: object
+  admin.GroupUsersUser:
+    properties:
+      group_id:
+        type: integer
+      id:
+        type: integer
+      nickname:
+        type: string
+      username:
+        type: string
+    type: object
   admin.LoginLogIds:
     properties:
       ids:
@@ -130,6 +159,7 @@ definitions:
       client_id:
         type: string
       client_secret:
+        description: 'vuoto nell''aggiornamento: tiene quello salvato'
         type: string
       id:
         type: integer
@@ -147,7 +177,6 @@ definitions:
         type: string
     required:
     - client_id
-    - client_secret
     - oauth_type
     type: object
   admin.PeerBatchDeleteForm:
@@ -3725,6 +3754,32 @@ paths:
       security:
       - token: []
       summary: 管理员详情
+      tags:
+      - 用户
+  /admin/user/groupUsers:
+    post:
+      consumes:
+      - application/json
+      description: Gruppi e utenti destinatari di una condivisione
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/admin.GroupUsersPayload'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - token: []
+      summary: Gruppi e utenti destinatari di una condivisione
       tags:
       - 用户
   /admin/user/list:
