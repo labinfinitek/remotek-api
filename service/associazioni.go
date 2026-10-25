@@ -54,6 +54,7 @@ type RichiestaAssociazione struct {
 	Op              string
 	Sub             string
 	Nome            string
+	Username        string
 	Email           string
 	EmailVerificata bool
 	Creata          time.Time
@@ -156,7 +157,7 @@ func (r *Richieste) Nuova(op string, ou *model.OauthUser) (string, error) {
 		r.voci = slices.Delete(r.voci, 0, len(r.voci)-TettoRichieste+1)
 	}
 	r.voci = append(r.voci, &RichiestaAssociazione{Codice: codice, Op: op, Sub: ou.OpenId, Nome: ou.Name,
-		Email: ou.Email, EmailVerificata: ou.VerifiedEmail, Creata: r.Ora()})
+		Username: ou.Username, Email: ou.Email, EmailVerificata: ou.VerifiedEmail, Creata: r.Ora()})
 	attesa := r.attesa
 	if attesa == 0 {
 		attesa = DurataRichiesta
@@ -213,7 +214,7 @@ func (os *OauthService) AssociaRichiesta(codice string, userId uint) (*Richiesta
 		return nil, err
 	}
 	ut := &model.UserThird{}
-	ut.FromOauthUser(userId, &model.OauthUser{OpenId: r.Sub, Name: r.Nome, Email: r.Email, VerifiedEmail: r.EmailVerificata}, oauthType, r.Op)
+	ut.FromOauthUser(userId, &model.OauthUser{OpenId: r.Sub, Name: r.Nome, Username: r.Username, Email: r.Email, VerifiedEmail: r.EmailVerificata}, oauthType, r.Op)
 	err = DB.Transaction(func(tx *gorm.DB) error {
 		u := &model.User{}
 		if err := tx.Where("id = ?", userId).First(u).Error; err != nil {

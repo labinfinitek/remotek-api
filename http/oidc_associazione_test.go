@@ -107,9 +107,10 @@ func TestAssociazioneConCodice(t *testing.T) {
 	if pagina, _ = accesso(t, g); !strings.Contains(pagina, "var msg = 'OauthSuccess'") {
 		t.Errorf("accesso dopo l'associazione: atteso OauthSuccess\n%s", pagina)
 	}
+	// username come la scrive bindConfirm: il preferred_username del provider
 	ut, err := service.AllService.OauthService.UserThirdInfo("aziendale", "sub-1")
-	if err != nil || ut.UserId != tecnico.Id {
-		t.Errorf("associazione di sub-1: %+v (%v), attesa all'utente %d", ut, err, tecnico.Id)
+	if err != nil || ut.UserId != tecnico.Id || ut.Username != "utente-oidc" {
+		t.Errorf("associazione di sub-1: %+v (%v), attesa all'utente %d con username utente-oidc", ut, err, tecnico.Id)
 	}
 }
 
