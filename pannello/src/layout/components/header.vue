@@ -4,7 +4,7 @@
     <el-icon-fold v-else></el-icon-fold>
   </el-icon>
   <div class="header-logo">
-    <img :src="setting.logo" alt="" class="logo">
+    <img :src="logo" alt="" class="logo">
     <div class="title">{{setting.title}}</div>
   </div>
   <Setting></Setting>
@@ -16,6 +16,8 @@
   import Setting from '@/layout/components/setting/index.vue'
   import { useAppStore } from '@/store/app'
   import GTags from '@/layout/components/tags/index.vue'
+  import { useDark } from '@vueuse/core'
+  import { marchio, caricaMarchio } from '@/utils/marchio'
 
   export default defineComponent({
     name: 'LayerHeader',
@@ -26,11 +28,16 @@
     setup (props) {
       const appStore = useAppStore()
       const setting = computed(() => appStore.setting)
+      // Nel tema scuro il logo per il fondo navy di brand.json, se c'e'.
+      const scuro = useDark()
+      caricaMarchio()
+      const logo = computed(() => scuro.value && marchio.logoScuro ? marchio.logoScuro : setting.value.logo)
       const expandOrFoldSlider = () => {
         appStore.sideCollapse()
       }
       return {
         setting,
+        logo,
         expandOrFoldSlider,
       }
     },
@@ -44,8 +51,9 @@
     display: flex;
     align-items: center;
     margin-right: 10px;
-    font-size: 16px;
+    font-size: 18px;
     cursor: pointer;
+    color: var(--rk-barra-alto-testo);
   }
 
   .header-logo {
@@ -55,13 +63,17 @@
 
     .title {
       display: block;
-      margin-left: 10px;
+      margin-left: 12px;
+      font-family: var(--rk-font-titoli);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--rk-barra-alto-testo);
     }
 
     // Altezza fissa e larghezza dal logo: un marchio largo non si rimpicciolisce.
     .logo {
       display: block;
-      height: 30px;
+      height: 32px;
       width: auto;
       max-width: 160px;
       object-fit: contain;

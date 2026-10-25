@@ -8,6 +8,13 @@ import { pinia } from '@/store'
 import { langs, linguaIniziale } from '@/store/app'
 import '@/permission'
 import 'element-plus/theme-chalk/dark/css-vars.css'
+// Caratteri ospitati nel pannello (@fontsource, OFL): nessuna richiesta a
+// terzi. Solo l'alfabeto latino e i pesi usati.
+import '@fontsource/inter/latin-400.css'
+import '@fontsource/inter/latin-500.css'
+import '@fontsource/inter/latin-600.css'
+import '@fontsource/space-grotesk/latin-500.css'
+import '@fontsource/space-grotesk/latin-700.css'
 import '@/styles/style.scss'
 import * as ElementIcons from '@element-plus/icons'
 

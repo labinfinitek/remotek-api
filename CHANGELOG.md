@@ -6,7 +6,29 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Aggiunto
+- Pannello: marchio di chi installa da `brand.json`, facoltativo, in
+  `brand.dir` (servito su `/brand/brand.json`): ragione sociale, link
+  all'informativa, nome e icona del pulsante OIDC del login, logo per il
+  tema scuro. Senza il file, valori neutri. Formato nel README ("Marchio del
+  pannello").
+
 ### Modificato
+- Pannello nello stile di Infinitek e del client Remotek: colori in un
+  posto solo (variabili di Element Plus in `style.scss`, valori del client),
+  fondo chiaro con accento blu `#1F6BFF` e tema scuro navy; barra in alto
+  chiara con logo e nome e una riga blu sotto; barra laterale navy con
+  "Area personale" e "Amministrazione" come intestazioni; schede aperte con
+  una riga blu sotto quella attiva; piede col nome, la ragione sociale di
+  `brand.json` e la versione dell'API. Login su fondo chiaro: titolo
+  "<nome> · Console", pulsante OIDC principale ("Accedi con ..."), modulo
+  della password sotto e secondario (nascosto con `app.disable-pwd-login`,
+  salvo `?password=1`), ragione sociale e informativa di `brand.json` in
+  fondo. Stessi colori per le pagine di associazione OAuth e registrazione.
+- Pannello: caratteri Inter (testo) e Space Grotesk (titoli e nome del
+  prodotto), ospitati nel pannello dai pacchetti `@fontsource` (licenza OFL
+  1.1, in `resources/admin/LICENSE-inter` e `LICENSE-space-grotesk`): il
+  pannello non chiama siti di terzi.
 - Pannello: il Profilo non mostra piu' la card di benvenuto col testo di
   `admin.hello-file` (o `admin.hello`), e al suo posto non c'e' niente. Le
   due chiavi restano in configurazione ma il pannello non le legge piu'.

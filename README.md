@@ -424,6 +424,37 @@ codice:
 - il titolo che il pannello mostra prima di caricare la configurazione si
   fissa nella build: `docker build --build-arg BRAND_NAME=<nome> ...`.
 
+**Marchio del pannello.** Cio' che e' di chi installa non sta nel codice del
+pannello: lo legge, se c'e', da `brand.json` in `brand.dir`, servito su
+`/brand/brand.json` accanto al logo. Il file e' facoltativo e ogni campo pure:
+senza, il pannello non mostra ragione sociale ne' informativa, il pulsante del
+login dice "Accedi con <provider OIDC>" con l'icona di sempre e il tema scuro
+usa `logo.svg`. Formato (tutti stringhe):
+
+```json
+{
+  "ragione_sociale": "Esempio S.r.l.",
+  "informativa": "https://esempio.it/privacy",
+  "nome_accesso": "Esempio",
+  "logo_scuro": "logo-scuro.svg",
+  "icona_accesso": "marchio.svg"
+}
+```
+
+- `ragione_sociale` (massimo 120 caratteri): in fondo al login e nel piede
+  del pannello, dopo il nome;
+- `informativa`: link all'informativa sulla privacy in fondo al login; solo
+  indirizzi `https://`, gli altri si ignorano;
+- `nome_accesso` (massimo 60 caratteri) e `icona_accesso`: nome e icona del
+  pulsante OIDC del login ("Accedi con <nome_accesso>"); valgono solo con un
+  provider OIDC, con piu' provider ognuno tiene il suo nome;
+- `logo_scuro`: logo per la barra e il login nel tema scuro (fondo navy).
+
+`logo_scuro` e `icona_accesso` sono nomi di file nella stessa cartella
+(`.svg`, `.png` o `.webp`, niente percorsi), con le stesse regole di
+`logo.svg`. Un campo non valido vale come assente; il pannello rilegge il file
+a ogni apertura.
+
 Non cambiano nome: il prefisso `RUSTDESK_API_`, la sezione `rustdesk:`, il
 module path Go.
 

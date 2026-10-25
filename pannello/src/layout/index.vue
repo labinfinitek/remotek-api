@@ -21,6 +21,9 @@
             </transition>
           </router-view>
         </el-main>
+        <el-footer class="app-footer" height="auto">
+          <g-footer></g-footer>
+        </el-footer>
       </el-container>
     </el-container>
   </el-config-provider>
@@ -33,6 +36,7 @@
   import Tags from '@/layout/components/tags/index.vue'
   import GAside from '@/layout/components/aside.vue'
   import GHeader from '@/layout/components/header.vue'
+  import GFooter from '@/layout/components/footer.vue'
 
   const appStore = useAppStore()
   const tagStore = useTagsStore()
@@ -45,17 +49,30 @@
 </script>
 
 <style lang="scss" scoped>
+// Barra in alto chiara (navy nel tema scuro) con una riga blu sottile sotto.
 .app-header {
-  background-color: #3f454b;
-  color: var(--basicWhite);
+  background-color: var(--rk-barra-alto);
+  color: var(--rk-barra-alto-testo);
+  border-bottom: 2px solid var(--el-color-primary);
   display: flex;
-  height: 50px;
+  height: 56px;
 }
 
 .header-tags {
   height: auto;
-  border-bottom: 1px solid #eee;
+  background-color: var(--el-bg-color);
+  border-bottom: 1px solid var(--el-border-color-light);
   display: flex;
+  flex-wrap: wrap;
+  padding: 0 8px;
+}
+
+.app-main {
+  background-color: var(--el-bg-color-page);
+}
+
+.app-footer {
+  background-color: var(--el-bg-color-page);
   padding: 0;
 }
 
@@ -65,6 +82,8 @@
 
 .app-container {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 </style>
 

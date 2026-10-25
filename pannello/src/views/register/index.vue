@@ -20,7 +20,7 @@
                     class="login-input"></el-input>
         </el-form-item>
         <el-form-item label="">
-          <el-button @click="submit" class="login-button" type="success">{{ T('Submit') }}</el-button>
+          <el-button @click="submit" class="login-button" type="primary">{{ T('Submit') }}</el-button>
           <el-button @click="toLogin" class="login-button">{{ T('ToLogin') }}</el-button>
         </el-form-item>
       </el-form>
@@ -95,14 +95,15 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #2d3a4b;
+  background-color: var(--el-bg-color-page);
   padding: 20px;
   box-sizing: border-box;
 }
 
 .login-card {
   width: 360px;
-  background-color: #283342;
+  background-color: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
   padding: 40px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -132,26 +133,12 @@ h1 {
 }
 
 .login-logo {
-  width: 80px;
-  height: 80px;
+  height: 64px;
+  width: auto;
+  max-width: 300px;
+  object-fit: contain;
   margin: 0 auto 20px;
   display: block;
 }
 
-.el-form-item {
-  ::v-deep(.el-form-item__label) {
-    color: #fff;
-  }
-
-  .el-input {
-    ::v-deep(.el-input__wrapper) {
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: transparent;
-    }
-
-    ::v-deep(input) {
-      color: #fff;
-    }
-  }
-}
 </style>

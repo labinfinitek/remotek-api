@@ -89,6 +89,10 @@ COPY resources/ ./resources/
 COPY --from=pannello /pannello/dist/ ./resources/admin/
 # Il pannello e' MIT: la sua licenza va con i suoi file (pannello/README.md).
 COPY pannello/LICENSE ./resources/admin/LICENSE
+# I caratteri del pannello (Inter, Space Grotesk) sono OFL-1.1: la licenza
+# va con i file dei caratteri.
+COPY --from=pannello /pannello/node_modules/@fontsource/inter/LICENSE ./resources/admin/LICENSE-inter
+COPY --from=pannello /pannello/node_modules/@fontsource/space-grotesk/LICENSE ./resources/admin/LICENSE-space-grotesk
 # /api/version legge resources/version (service.AppService); l'a capo finale
 # e' quello dell'immagine di v2.7.
 RUN echo "$VERSION" > resources/version \

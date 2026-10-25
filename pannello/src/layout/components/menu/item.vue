@@ -1,20 +1,17 @@
 <template>
-  <el-sub-menu v-if="route.children&&route.children.filter(c=>!c.meta?.hide).length>1&&route.children.some(r => !r.meta?.hide)"
-               :key="route.name"
-               :index="route.name"
+  <!-- Un gruppo (Area personale, Amministrazione) e' un'intestazione con le voci sotto, sempre aperte. -->
+  <el-menu-item-group v-if="route.children&&route.children.filter(c=>!c.meta?.hide).length>1&&route.children.some(r => !r.meta?.hide)"
+                      :key="route.name"
+                      :title="collassato ? '' : (T(route.meta?.title) || T(route.name))"
   >
-    <template #title>
-      <el-icon v-if="route.meta?.icon">
-        <component :is="`el-icon-${route.meta.icon}`"></component>
-      </el-icon>
-      <span>{{ T(route.meta?.title) || T(route.name) }}</span>
-    </template>
     <menu-item v-for="(_route,_index) in route.children"
                :route="_route"
                :key="_route.name">
     </menu-item>
-  </el-sub-menu>
-  <el-menu-item v-else-if="!parseRoute(route).meta?.hide" :route="parseRoute(route)" :index="parseRoute(route).name">
+  </el-menu-item-group>
+  <!-- Con la barra chiusa resta solo l'icona: il nome va nel title. -->
+  <el-menu-item v-else-if="!parseRoute(route).meta?.hide" :route="parseRoute(route)" :index="parseRoute(route).name"
+                :title="collassato ? (T(parseRoute(route).meta?.title) || T(parseRoute(route).name)) : undefined">
     <el-icon v-if="parseRoute(route).meta?.icon">
       <component :is="`el-icon-${parseRoute(route).meta.icon}`"></component>
     </el-icon>
@@ -23,8 +20,9 @@
 </template>
 
 <script>
-  import { defineComponent } from 'vue'
+  import { defineComponent, computed } from 'vue'
   import { T } from '@/utils/i18n'
+  import { useAppStore } from '@/store/app'
 
   export default defineComponent({
     name: 'MenuItem',
@@ -42,7 +40,10 @@
           return route
         }
       }
+      const app = useAppStore()
+      const collassato = computed(() => app.setting.sideIsCollapse)
       return {
+        collassato,
         parseRoute,
         T,
       }

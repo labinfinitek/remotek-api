@@ -422,6 +422,38 @@ code:
 - the title the panel shows before it loads its configuration is set at
   build time: `docker build --build-arg BRAND_NAME=<name> ...`.
 
+**Panel branding.** What belongs to whoever installs it is not in the panel
+code: the panel reads it, if present, from `brand.json` in `brand.dir`, served
+on `/brand/brand.json` next to the logo. The file is optional and so is every
+field: without it the panel shows no company name and no privacy notice, the
+login button says "Sign in with <OIDC provider>" with the usual icon and the
+dark theme uses `logo.svg`. Format (all strings):
+
+```json
+{
+  "ragione_sociale": "Example Ltd",
+  "informativa": "https://example.com/privacy",
+  "nome_accesso": "Example",
+  "logo_scuro": "logo-dark.svg",
+  "icona_accesso": "mark.svg"
+}
+```
+
+- `ragione_sociale` (company name, at most 120 characters): at the bottom of
+  the login page and in the panel footer, after the product name;
+- `informativa` (privacy notice): link at the bottom of the login page; only
+  `https://` addresses, others are ignored;
+- `nome_accesso` (at most 60 characters) and `icona_accesso`: name and icon of
+  the OIDC login button ("Sign in with <nome_accesso>"); they apply only with
+  one OIDC provider, with more providers each keeps its own name;
+- `logo_scuro`: logo for the top bar and the login page in the dark theme
+  (navy background).
+
+`logo_scuro` and `icona_accesso` are file names in the same directory
+(`.svg`, `.png` or `.webp`, no paths), with the same rules as `logo.svg`. An
+invalid field counts as missing; the panel reads the file again every time it
+opens.
+
 Not renamed: the `RUSTDESK_API_` prefix, the `rustdesk:` section, the Go
 module path.
 

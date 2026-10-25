@@ -3,7 +3,7 @@
     <div class="menu-item">
       <el-switch
           v-model="isDark"
-          style="--el-switch-on-color:#18222c"
+          style="--el-switch-on-color: var(--rk-interruttore); --el-switch-border-color: var(--el-border-color)"
       >
         <template #active-action>
           <el-icon>
@@ -12,7 +12,7 @@
         </template>
         <template #inactive-action>
           <el-icon>
-            <Sunny color="#000"/>
+            <Sunny color="var(--rk-navy)"/>
           </el-icon>
         </template>
       </el-switch>
@@ -94,7 +94,7 @@
   }
 
   .title {
-    color: #fff;
+    color: var(--rk-barra-alto-testo);
     display: flex;
     align-items: center;
     justify-content: space-around;
