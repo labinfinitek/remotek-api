@@ -368,12 +368,13 @@ const IndiceOpenIdUnico = "idx_user_thirds_open_id_op"
 
 // CreaIndiceOpenIdUnico crea l'indice IndiceOpenIdUnico se non c'e' e
 // user_thirds non ha doppioni; creato dice se l'ha creato ora. Con doppioni
-// non lo crea e restituisce quanti sono; non cancella righe.
+// non lo crea e restituisce quante righe associano a piu' utenti lo stesso
+// account; non cancella righe.
 func (os *OauthService) CreaIndiceOpenIdUnico() (creato bool, doppi int64, err error) {
 	if DB.Migrator().HasIndex(&model.UserThird{}, IndiceOpenIdUnico) {
 		return false, 0, nil
 	}
-	err = DB.Raw("SELECT count(*) FROM (SELECT open_id FROM user_thirds GROUP BY open_id, op HAVING count(*) > 1)").Scan(&doppi).Error
+	err = DB.Raw("SELECT coalesce(sum(n), 0) FROM (SELECT count(*) AS n FROM user_thirds GROUP BY open_id, op HAVING count(*) > 1)").Scan(&doppi).Error
 	if err != nil {
 		return false, 0, fmt.Errorf("conteggio dei doppioni in user_thirds: %w", err)
 	}

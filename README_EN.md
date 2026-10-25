@@ -310,8 +310,8 @@ the first login.
 The OIDC login finds the user through the *binding* (`user_thirds`: provider
 and the account's `sub`), not through the email. A `sub` is bound to one
 user only (unique index on `open_id` and `op`, created at startup; with
-duplicates an error with their number, startup goes on without the index
-and retries at the next one), and a user has at most one account per
+duplicates an error with the number of duplicate rows, startup goes on
+without the index and retries at the next one), and a user has at most one account per
 provider: binding from the panel refuses an account that already belongs to
 someone ("This OIDC account is already bound to another user.") and a user
 who already has one ("This user already has an account bound to this OIDC

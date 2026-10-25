@@ -313,7 +313,8 @@ nasce al primo login.
 Il login OIDC trova l'utente dall'*associazione* (`user_thirds`: provider e
 `sub` dell'account), non dall'email. Un `sub` e' associato a un utente solo
 (indice unico su `open_id` e `op`, creato all'avvio; con doppioni un error
-col loro numero, l'avvio continua senza indice e riprova al prossimo), e un
+col numero delle righe doppie, l'avvio continua senza indice e riprova al
+prossimo), e un
 utente ha al massimo un account per provider: l'associazione dal pannello
 rifiuta un account gia' di qualcuno ("Questo account OIDC è già associato a
 un altro utente.") e un utente che ne ha gia' uno ("Questo utente ha già un
