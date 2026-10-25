@@ -501,7 +501,8 @@ func (os *OauthService) Delete(oauthInfo *model.Oauth) error {
 // Update salva i campi del modulo del pannello (admin.OauthForm), anche
 // vuoti: issuer e scope svuotati restano vuoti. Op, PKCE e autoregistrazione
 // vuoti prendono prima i default di FormatOauthInfo, come oggi; client_id il
-// validatore non lo accetta vuoto, client_secret vuoto lascia quello salvato.
+// validatore non lo accetta vuoto, client_secret vuoto o di soli spazi lascia
+// quello salvato.
 // La data di creazione resta quella di prima.
 func (os *OauthService) Update(oauthInfo *model.Oauth) error {
 	err := oauthInfo.FormatOauthInfo()
@@ -509,7 +510,7 @@ func (os *OauthService) Update(oauthInfo *model.Oauth) error {
 		return err
 	}
 	campi := []string{"op", "oauth_type", "client_id", "auto_register", "scopes", "issuer", "pkce_enable", "pkce_method"}
-	if oauthInfo.ClientSecret != "" {
+	if strings.TrimSpace(oauthInfo.ClientSecret) != "" {
 		campi = append(campi, "client_secret")
 	}
 	if err := DB.Model(oauthInfo).Select(campi).Updates(oauthInfo).Error; err != nil {

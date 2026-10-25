@@ -3,6 +3,7 @@ package admin
 import (
 	"errors"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -170,7 +171,7 @@ func (o *Oauth) Unbind(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param id path int true "ID"
-// @Success 200 {object} response.Response{data=model.Oauth}
+// @Success 200 {object} response.Response{data=adResp.OauthPannello}
 // @Failure 500 {object} response.Response
 // @Router /admin/oauth/detail/{id} [get]
 // @Security token
@@ -192,7 +193,7 @@ func (o *Oauth) Detail(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param body body admin.OauthForm true "Oauth信息"
-// @Success 200 {object} response.Response{data=model.Oauth}
+// @Success 200 {object} response.Response
 // @Failure 500 {object} response.Response
 // @Router /admin/oauth/create [post]
 // @Security token
@@ -204,11 +205,11 @@ func (o *Oauth) Create(c *gin.Context) {
 	}
 	errList := global.Validator.ValidStruct(c, f)
 	if len(errList) == 0 {
-		// Il segreto serve alla creazione; nell'aggiornamento vuoto vuol
-		// dire "tieni quello salvato".
+		// Il segreto serve alla creazione; nell'aggiornamento vuoto, o di
+		// soli spazi, vuol dire "tieni quello salvato".
 		errList = global.Validator.ValidStruct(c, &struct {
 			ClientSecret string `validate:"required"`
-		}{f.ClientSecret})
+		}{strings.TrimSpace(f.ClientSecret)})
 	}
 	if len(errList) > 0 {
 		response.Fail(c, 101, errList[0])
@@ -244,7 +245,7 @@ func (o *Oauth) Create(c *gin.Context) {
 // @Produce  json
 // @Param page query int false "页码"
 // @Param page_size query int false "页大小"
-// @Success 200 {object} response.Response{data=model.OauthList}
+// @Success 200 {object} response.Response{data=adResp.OauthListPannello}
 // @Failure 500 {object} response.Response
 // @Router /admin/oauth/list [get]
 // @Security token
@@ -274,7 +275,7 @@ func (o *Oauth) List(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param body body admin.OauthForm true "Oauth信息"
-// @Success 200 {object} response.Response{data=model.OauthList}
+// @Success 200 {object} response.Response
 // @Failure 500 {object} response.Response
 // @Router /admin/oauth/update [post]
 // @Security token

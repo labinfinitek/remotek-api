@@ -2,18 +2,31 @@ package admin
 
 import "github.com/lejianwen/rustdesk-api/v2/model"
 
-// OauthPannello e' un provider come lo vede il pannello: senza il segreto
-// del client, che non si rilegge; HasClientSecret dice se c'e'.
+// OauthPannello e' un provider come lo vede il pannello: i campi di
+// model.Oauth senza il segreto del client, che non si rilegge e che cosi' lo
+// swagger non descrive; HasClientSecret dice se c'e'.
 type OauthPannello struct {
-	*model.Oauth
-	// ClientSecret copre il campo di model.Oauth: sempre nil, non esce.
-	ClientSecret    *struct{} `json:"client_secret,omitempty"`
-	HasClientSecret bool      `json:"has_client_secret"`
+	model.IdModel
+	Op           string `json:"op"`
+	OauthType    string `json:"oauth_type"`
+	ClientId     string `json:"client_id"`
+	AutoRegister *bool  `json:"auto_register"`
+	Scopes       string `json:"scopes"`
+	Issuer       string `json:"issuer"`
+	PkceEnable   *bool  `json:"pkce_enable"`
+	PkceMethod   string `json:"pkce_method"`
+	model.TimeModel
+	HasClientSecret bool `json:"has_client_secret"`
 }
 
 // NuovoOauthPannello restituisce o per il pannello.
 func NuovoOauthPannello(o *model.Oauth) OauthPannello {
-	return OauthPannello{Oauth: o, HasClientSecret: o.ClientSecret != ""}
+	return OauthPannello{
+		IdModel: o.IdModel, Op: o.Op, OauthType: o.OauthType, ClientId: o.ClientId,
+		AutoRegister: o.AutoRegister, Scopes: o.Scopes, Issuer: o.Issuer,
+		PkceEnable: o.PkceEnable, PkceMethod: o.PkceMethod, TimeModel: o.TimeModel,
+		HasClientSecret: o.ClientSecret != "",
+	}
 }
 
 // OauthListPannello e' la lista dei provider del pannello, con le pagine di
