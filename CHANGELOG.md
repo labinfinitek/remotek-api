@@ -6,6 +6,17 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+## [0.10.0] - 2026-10-25
+Immagine `ghcr.io/labinfinitek/remotek-api:0.10.0`, costruita con Go 1.26.10
+su Alpine 3.24.3. Versione minore: il pannello prende la veste di Infinitek
+e del client Remotek (colori, caratteri ospitati, barre, login, tabelle,
+pulsanti, Profilo) e legge il marchio di chi installa da un `brand.json`
+facoltativo. Cambia solo il pannello: nessuna migrazione del database
+(`DatabaseVersion` resta 275), nessuna variabile nuova, rotte e contratto
+col client invariati. Le chiavi `admin.hello` e `admin.hello-file`
+restano ma il pannello non le mostra piu'. Dalla 0.9.0 si passa
+direttamente alla 0.10.0.
+
 ### Aggiunto
 - Pannello: marchio di chi installa da `brand.json`, facoltativo, in
   `brand.dir` (servito su `/brand/brand.json`): ragione sociale, link
