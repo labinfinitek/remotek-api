@@ -375,13 +375,16 @@ func TestPannelloUtenteNonLetto(t *testing.T) {
 	const erroreDiSistema = `{"code":101,"message":"Errore di sistema.","data":null}`
 	const modifica = `{"id":SECONDO,"username":"secondo","group_id":1,"status":1,"is_admin":false}`
 	for _, tc := range []struct {
-		metodo, rotta, corpo, dove string // in rotta, corpo e dove SECONDO diventa l'id di secondo
+		// in rotta, corpo e dove SECONDO diventa l'id di secondo; dove vuoto
+		// rifiuta le letture degli utenti senza WHERE
+		metodo, rotta, corpo, dove string
 	}{
 		{"GET", "/api/admin/user/detail/SECONDO", "", "id = ? [SECONDO]"},
 		{"POST", "/api/admin/user/delete", `{"id":SECONDO}`, "id = ? [SECONDO]"},
 		{"POST", "/api/admin/user/changePwd", `{"id":SECONDO,"password":"` + strings.Repeat("p", 15) + `"}`, "id = ? [SECONDO]"},
 		{"POST", "/api/admin/user/update", modifica, "id = ? [SECONDO]"},
 		{"GET", "/api/admin/user/list?username=sec", "", "username like"},
+		{"GET", "/api/admin/user/list", "", ""}, // senza filtri: rifiutaElenchi
 		{"POST", "/api/admin/user/groupUsers", "", "agente_di"},
 	} {
 		t.Run(tc.metodo+" "+tc.rotta, func(t *testing.T) {
