@@ -6,6 +6,19 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+## [0.11.0] - 2026-10-25
+Immagine `ghcr.io/labinfinitek/remotek-api:0.11.0`, costruita con Go 1.26.10
+su Alpine 3.24.3. Versione minore: la risposta del login del pannello ha il
+campo nuovo `group_name`. Due correzioni di sicurezza (la lista dei
+destinatari di una condivisione non espone piu' i dati degli utenti; i
+tempi del login con password non dicono piu' chi e' un'eccezione o se un
+utente esiste) e rifiniture di OIDC e pannello. Nessuna migrazione del
+database (`DatabaseVersion` resta 275), nessuna variabile nuova, contratto
+col client invariato. Ogni login con password fallito per uno username che
+non esiste costa ora un bcrypt, come uno con la password sbagliata. Il
+marchio di default diventa un simbolo: chi ha il suo in `brand.dir` non
+vede differenze. Dalla 0.10.0 si passa direttamente alla 0.11.0.
+
 ### Sicurezza
 - Pannello: `POST /api/admin/user/groupUsers`, aperto a ogni utente del
   pannello, dava tutti gli utenti con email, nota, `is_admin`, stato,
