@@ -35,6 +35,7 @@ resources/version
 !pannello/
 pannello/node_modules/
 pannello/dist/
+pannello/catture/
 # .env.*.local li legge vite build: restano fuori come i log di npm.
 pannello/**/*.local
 pannello/**/*.log
