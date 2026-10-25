@@ -27,7 +27,8 @@
         <el-table-column prop="to_id" :label="T('ShareTo')" align="center">
           <template #default="{row}">
             <div v-if="row.type===TYPE_U">
-              {{ users.find(u => u.id === row.to_id)?.username }}
+              <!-- un utente disattivato o agente non e' tra i destinatari: la regola resta visibile col suo id -->
+              {{ users.find(u => u.id === row.to_id)?.username ?? (users.length ? T('ShareToGone', { id: row.to_id }) : '') }}
             </div>
             <div v-else-if="row.type===TYPE_G">
               {{ groups.find(g => g.id === row.to_id)?.name }}
