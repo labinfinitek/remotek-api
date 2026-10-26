@@ -1286,12 +1286,6 @@ const docTemplateapi = `{
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
                     }
                 }
             }

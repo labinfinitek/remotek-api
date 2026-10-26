@@ -299,8 +299,9 @@ requested, even when it is not in the saved scopes), callback URL
 `<rustdesk.api-server>/api/oidc/callback`. The client secret is written
 at creation and cannot be read back: the provider list and detail only say
 whether it is set (`has_client_secret`); when editing, left empty or
-blank, the saved one stays, and to change it you write the new one. Scopes are
-comma-separated; surrounding spaces and empty entries are dropped. The provider must send the
+blank, the saved one stays, and to change it you write the new one.
+Scopes are comma-separated; surrounding spaces and empty entries are
+dropped. The provider must send the
 `id_token` in the token response (OIDC Core): without it, or with an
 `id_token` that does not verify, the login stops. Auto-registration
 (`auto_register`) is off unless you turn it on: a provider account without a
@@ -312,8 +313,9 @@ The OIDC login finds the user through the *binding* (`user_thirds`: provider
 and the account's `sub`), not through the email. A `sub` is bound to one
 user only (unique index on `open_id` and `op`, created at startup; with
 duplicates an error with the number of duplicate rows, startup goes on
-without the index and retries at the next one), and a user has at most one account per
-provider: binding from the panel refuses an account that already belongs to
+without the index and retries at the next one), and a user has at most
+one account per provider:
+binding from the panel refuses an account that already belongs to
 someone ("This OIDC account is already bound to another user.") and a user
 who already has one ("This user already has an account bound to this OIDC
 provider."). With `auto_register` on, an account without a binding is
@@ -874,8 +876,8 @@ chiave-nuova /app/data/lasciapassare.key`, then
 **Route.** `POST /api/agente/lasciapassare`, with the agent's login token
 (`Authorization: Bearer`), body `{"id": "<PC ID>"}` and, optional,
 `"modo": "utente"` for a session without administrator rights
-(Technicians' pass, Modes), and `capacita` and `porte` (Capabilities,
-below). It answers
+(Technicians' pass, Modes), and `capacita`, `porte` and `durata`
+(Capabilities, below). It answers
 `{"lasciapassare": "<string>"}` only if the feature is configured, the
 token's user is an enabled AI agent, its technician exists and is enabled,
 the PC is in `peers` and it is in the technician's address book: one of
