@@ -6,6 +6,20 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Aggiunto
+- Il token di sessione ricorda se e' nato da un login con password o da
+  OIDC (colonna `tipo_login` di `user_tokens`); servira' al lasciapassare
+  dei tecnici, che lo riceveranno solo se entrati con OIDC. I token di
+  prima valgono come login con password, e cosi' quelli del login
+  `webauth` (`app.web-sso`), che un utente del pannello conferma anche se
+  e' entrato con la password: nel registro degli accessi il loro tipo e'
+  ora `webauth`, non piu' `oauth`. `GET /api/oidc/auth-query` e
+  `/api/admin/oidc/auth-query` col codice di un'associazione (Profilo,
+  "Associa") rispondono come a un codice scaduto e non danno piu' un
+  token: il pannello non le chiama mai con quel codice. Per chi installa:
+  migrazione del database alla versione 276, solo una colonna aggiunta,
+  all'avvio come sempre.
+
 ## [0.12.0] - 2026-10-26
 Immagine `ghcr.io/labinfinitek/remotek-api:0.12.0`, costruita con Go 1.26.10
 su Alpine 3.24.3. Versione minore: un tecnico nuovo si associa al suo

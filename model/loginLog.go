@@ -22,6 +22,10 @@ const (
 const (
 	LoginLogTypeAccount = "account"
 	LoginLogTypeOauth   = "oauth"
+	// LoginLogTypeWebauth e' il login del client confermato dal pannello
+	// (app.web-sso): chi lo conferma puo' essere entrato con la password,
+	// quindi il token non vale come OIDC.
+	LoginLogTypeWebauth = "webauth"
 )
 
 const (

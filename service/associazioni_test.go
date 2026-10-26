@@ -51,14 +51,21 @@ func TestRichiesteNonRestano(t *testing.T) {
 		return n
 	}
 
-	adesso := time.Now()
-	r := &Richieste{Ora: func() time.Time { return adesso }, attesa: 10 * time.Millisecond}
+	// Nuova legge l'ora due volte (pulizia e creazione); dalla terza, quella
+	// della pulizia a tempo, la richiesta e' scaduta. Spostare l'orologio dal
+	// test dopo Nuova era una corsa col timer: se scattava prima, la pulizia
+	// non toglieva niente e nessun'altra la ripeteva.
+	adesso, letture := time.Now(), 0
+	ora := func() time.Time {
+		if letture++; letture > 2 {
+			return adesso.Add(DurataRichiesta)
+		}
+		return adesso
+	}
+	r := &Richieste{Ora: ora, attesa: 10 * time.Millisecond}
 	if _, err := r.Nuova("aziendale", &model.OauthUser{OpenId: "sub-1", Name: "Utente", Email: "utente@esempio.it"}); err != nil {
 		t.Fatal(err)
 	}
-	r.mu.Lock()
-	r.Ora = func() time.Time { return adesso.Add(DurataRichiesta) }
-	r.mu.Unlock()
 	for scadenza := time.Now().Add(5 * time.Second); inMemoria(r) > 0; time.Sleep(5 * time.Millisecond) {
 		if time.Now().After(scadenza) {
 			t.Fatal("la richiesta scaduta e' ancora in memoria dopo la pulizia")

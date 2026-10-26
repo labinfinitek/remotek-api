@@ -958,6 +958,12 @@ definitions:
         type: integer
       id:
         type: integer
+      tipo_login:
+        description: |-
+          TipoLogin e' il tipo del login che ha creato il token, come
+          LoginLog.Type (account, oauth o webauth; versione del database 276).
+          Vuoto nei token di prima, che valgono come login con password.
+        type: string
       token:
         type: string
       updated_at:

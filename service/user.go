@@ -181,6 +181,7 @@ func (us *UserService) Login(u *model.User, llog *model.LoginLog) (*model.UserTo
 		DeviceUuid: llog.Uuid,
 		DeviceId:   llog.DeviceId,
 		ExpiredAt:  us.UserTokenExpireTimestamp(),
+		TipoLogin:  llog.Type,
 	}
 	err := DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(ut).Error; err != nil {
@@ -201,6 +202,17 @@ func (us *UserService) Login(u *model.User, llog *model.LoginLog) (*model.UserTo
 		}
 	}
 	return ut, nil
+}
+
+// LoginDaOidc dice se il token della richiesta, quello che RustAuth ha
+// gia' letto, e' nato da un login OIDC; false se la richiesta non ne ha uno.
+func (us *UserService) LoginDaOidc(c *gin.Context) bool {
+	ut, ok := c.Get("curUserToken")
+	if !ok {
+		return false
+	}
+	t, ok := ut.(*model.UserToken)
+	return ok && t.DaOidc()
 }
 
 // CurUser 获取当前用户
