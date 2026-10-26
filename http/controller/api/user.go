@@ -78,9 +78,10 @@ func (u *User) Agente(c *gin.Context) {
 }
 
 // Lasciapassare rilascia all'agente AI del token il lasciapassare firmato
-// per aprire, entro 60 secondi e una volta sola, una sessione da
-// amministratore sul PC id (ADR-0028). Rifiuta se la funzione e' spenta,
-// se l'utente non e' un agente attivo, se il suo tecnico non e' attivo, se
+// per aprire, entro 60 secondi e una volta sola, una sessione sul PC id
+// (ADR-0028), da amministratore o, con modo utente, senza. Rifiuta se la
+// funzione e' spenta, se l'utente non e' un agente attivo, se il suo
+// tecnico non e' attivo, se
 // il PC non e' in peers o non e' nella rubrica del tecnico. Nel log mai il
 // lasciapassare ne' il nonce.
 // @Tags 用户
@@ -99,15 +100,58 @@ func (u *User) Lasciapassare(c *gin.Context) {
 		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
+	modo := f.Modo
+	if modo == "" { // i client -4 e -5 non mandano il campo
+		modo = service.ModoAmministratore
+	}
 	agente := service.AllService.UserService.CurUser(c)
-	lp, tecnico, err := service.AllService.LasciapassareService.Rilascia(agente, f.Id, time.Now())
+	lp, tecnico, err := service.AllService.LasciapassareService.Rilascia(agente, f.Id, modo, time.Now())
 	if err != nil {
 		response.ErrorErr(c, "SystemError", err)
 		return
 	}
-	global.Logger.Per(c.Request.Context()).Infof("lasciapassare rilasciato: agente %s, tecnico %s, PC %s", agente.Username, tecnico.Username, f.Id)
-	if err := service.AllService.EventiService.AccodaLasciapassare(f.Id, agente, tecnico); err != nil {
+	global.Logger.Per(c.Request.Context()).Infof("lasciapassare rilasciato: agente %s, tecnico %s, PC %s, modo %s", agente.Username, tecnico.Username, f.Id, modo)
+	if err := service.AllService.EventiService.AccodaLasciapassare(f.Id, agente, tecnico, modo == service.ModoAmministratore); err != nil {
 		eventoNonAccodato(c, service.EventoAgenteLasciapassare, err)
+	}
+	c.JSON(http.StatusOK, apiResp.LasciapassarePayload{Lasciapassare: lp})
+}
+
+// LasciapassareTecnico rilascia al tecnico del token il lasciapassare
+// firmato per aprire, entro 60 secondi e una volta sola, la sua sessione sul
+// PC id (ADR-0032), senza la rubrica: a chi e' entrato con OIDC, o all'admin
+// di emergenza (amministratore in app.pwd-login-eccezioni) con un warn.
+// Rifiuta gli altri entrati con la password, un PC che non e' in peers e la
+// funzione spenta; un agente AI ha la sua rotta. Nessun evento verso
+// l'integrazione; nel log mai il lasciapassare ne' il nonce.
+// @Tags 用户
+// @Summary lasciapassare del tecnico
+// @Accept  json
+// @Produce  json
+// @Param body body apiReq.LasciapassareTecnicoForm true "ID del PC"
+// @Success 200 {object} apiResp.LasciapassarePayload
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 401 {object} response.ErrorResponse
+// @Failure 403 {object} response.ErrorResponse
+// @Router /lasciapassare [post]
+// @Security token
+func (u *User) LasciapassareTecnico(c *gin.Context) {
+	f := &apiReq.LasciapassareTecnicoForm{}
+	if err := c.ShouldBindBodyWith(f, binding.JSON); err != nil {
+		response.ErrorErr(c, "ParamsError", err)
+		return
+	}
+	tecnico := service.AllService.UserService.CurUser(c)
+	daOidc := service.AllService.UserService.LoginDaOidc(c)
+	lp, emergenza, err := service.AllService.LasciapassareService.RilasciaTecnico(tecnico, daOidc, f.Id, time.Now())
+	if err != nil {
+		response.ErrorErr(c, "SystemError", err)
+		return
+	}
+	if emergenza {
+		global.Logger.Per(c.Request.Context()).Warnf("lasciapassare all'admin di emergenza: utente %s, PC %s", tecnico.Username, f.Id)
+	} else {
+		global.Logger.Per(c.Request.Context()).Infof("lasciapassare rilasciato al tecnico %s, PC %s", tecnico.Username, f.Id)
 	}
 	c.JSON(http.StatusOK, apiResp.LasciapassarePayload{Lasciapassare: lp})
 }

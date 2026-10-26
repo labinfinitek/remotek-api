@@ -1240,6 +1240,62 @@ const docTemplateapi = `{
                 }
             }
         },
+        "/lasciapassare": {
+            "post": {
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户"
+                ],
+                "summary": "lasciapassare del tecnico",
+                "parameters": [
+                    {
+                        "description": "ID del PC",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.LasciapassareTecnicoForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.LasciapassarePayload"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/login": {
             "post": {
                 "description": "登录",
@@ -2059,6 +2115,13 @@ const docTemplateapi = `{
                 "id": {
                     "type": "string",
                     "maxLength": 100
+                },
+                "modo": {
+                    "type": "string",
+                    "enum": [
+                        "amministratore",
+                        "utente"
+                    ]
                 }
             }
         },
@@ -2067,6 +2130,18 @@ const docTemplateapi = `{
             "properties": {
                 "lasciapassare": {
                     "type": "string"
+                }
+            }
+        },
+        "api.LasciapassareTecnicoForm": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "maxLength": 100
                 }
             }
         },

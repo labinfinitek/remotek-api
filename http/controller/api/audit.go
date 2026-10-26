@@ -124,7 +124,7 @@ func (a *Audit) AuditConn(c *gin.Context) {
 // errore del database e' un error. La riga resta com'e' e al PC va la
 // risposta di sempre.
 func legaLasciapassare(c *gin.Context, nonce string, conn *model.AuditConn) {
-	if nonce == "" || conn.AgenteLasciapassare != "" {
+	if nonce == "" || conn.TecnicoLasciapassare != "" {
 		return
 	}
 	switch err := service.AllService.LasciapassareService.Lega(nonce, conn); {
@@ -134,6 +134,10 @@ func legaLasciapassare(c *gin.Context, nonce string, conn *model.AuditConn) {
 		return
 	case err != nil:
 		global.Logger.Per(c.Request.Context()).Errorf("%s %s: lasciapassare non legato alla connessione %d del PC %s: %v", c.Request.Method, c.FullPath(), conn.ConnId, conn.PeerId, err)
+		return
+	}
+	if conn.AgenteLasciapassare == "" {
+		global.Logger.Per(c.Request.Context()).Infof("connessione %d del PC %s aperta col lasciapassare del tecnico %s", conn.ConnId, conn.PeerId, conn.TecnicoLasciapassare)
 		return
 	}
 	global.Logger.Per(c.Request.Context()).Infof("connessione %d del PC %s aperta col lasciapassare: agente %s, tecnico %s", conn.ConnId, conn.PeerId, conn.AgenteLasciapassare, conn.TecnicoLasciapassare)

@@ -53,7 +53,15 @@ type PeerListQuery struct {
 }
 
 // LasciapassareForm e' il PC per cui l'agente AI chiede il lasciapassare
-// (POST /api/agente/lasciapassare, ADR-0028).
+// (POST /api/agente/lasciapassare, ADR-0028), e il modo: assente o
+// amministratore come prima, utente senza i permessi di amministratore.
 type LasciapassareForm struct {
+	Id   string `json:"id" binding:"required,max=100"`
+	Modo string `json:"modo" binding:"omitempty,oneof=amministratore utente"`
+}
+
+// LasciapassareTecnicoForm e' il PC per cui il tecnico chiede il
+// lasciapassare (POST /api/lasciapassare, ADR-0032).
+type LasciapassareTecnicoForm struct {
 	Id string `json:"id" binding:"required,max=100"`
 }

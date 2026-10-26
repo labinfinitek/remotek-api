@@ -26,6 +26,8 @@
             <div>{{ row.from_name }}</div>
             <!-- Agente AI verificato col lasciapassare e permessi detti dal PC (ADR-0028), indipendenti -->
             <el-tag v-if="row.agente_lasciapassare" type="success">{{ T('VerifiedAgent', { agente: row.agente_lasciapassare, tecnico: row.tecnico_lasciapassare }) }}</el-tag>
+            <!-- Tecnico col lasciapassare, senza agente (ADR-0032) -->
+            <el-tag v-else-if="row.tecnico_lasciapassare" type="success">{{ T('VerifiedTechnician', { tecnico: row.tecnico_lasciapassare }) }}</el-tag>
             <el-tag v-if="row.amministratore" type="danger">{{ T('Administrator') }}</el-tag>
           </template>
         </el-table-column>

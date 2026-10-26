@@ -399,6 +399,16 @@ description = "The PC is not in the address book of this AI agent's technician."
 one = "The PC is not in the address book of this AI agent's technician."
 other = "The PC is not in the address book of this AI agent's technician."
 
+[PassNeedsOidc]
+description = "The PC pass goes only to who signed in with OIDC."
+one = "The PC pass goes only to who signed in with OIDC: sign out and sign in again with the company login."
+other = "The PC pass goes only to who signed in with OIDC: sign out and sign in again with the company login."
+
+[PassAgentOwnRoute]
+description = "An AI agent asks for its pass with /api/agente/lasciapassare."
+one = "An AI agent asks for its pass with /api/agente/lasciapassare."
+other = "An AI agent asks for its pass with /api/agente/lasciapassare."
+
 [AgentCliOnly]
 description = "An AI agent account only uses the CLI client."
 one = "An AI agent account only uses the CLI client."

@@ -204,10 +204,14 @@ func (us *UserService) Login(u *model.User, llog *model.LoginLog) (*model.UserTo
 	return ut, nil
 }
 
+// ChiaveTokenRichiesta e' la chiave del contesto gin dove RustAuth mette il
+// token della richiesta (*model.UserToken) che ha letto.
+const ChiaveTokenRichiesta = "curUserToken"
+
 // LoginDaOidc dice se il token della richiesta, quello che RustAuth ha
 // gia' letto, e' nato da un login OIDC; false se la richiesta non ne ha uno.
 func (us *UserService) LoginDaOidc(c *gin.Context) bool {
-	ut, ok := c.Get("curUserToken")
+	ut, ok := c.Get(ChiaveTokenRichiesta)
 	if !ok {
 		return false
 	}

@@ -408,6 +408,16 @@ description = "The PC is not in the address book of this AI agent's technician."
 one = "Il PC non è nella rubrica del tecnico di questo agente AI."
 other = "Il PC non è nella rubrica del tecnico di questo agente AI."
 
+[PassNeedsOidc]
+description = "The PC pass goes only to who signed in with OIDC."
+one = "Il lasciapassare per i PC va solo a chi è entrato con OIDC: esci e rientra con l'accesso aziendale."
+other = "Il lasciapassare per i PC va solo a chi è entrato con OIDC: esci e rientra con l'accesso aziendale."
+
+[PassAgentOwnRoute]
+description = "An AI agent asks for its pass with /api/agente/lasciapassare."
+one = "Un agente AI chiede il lasciapassare con /api/agente/lasciapassare."
+other = "Un agente AI chiede il lasciapassare con /api/agente/lasciapassare."
+
 [AgentCliOnly]
 description = "An AI agent account only uses the CLI client."
 one = "Un account di agente AI usa solo il client CLI."

@@ -13,13 +13,15 @@ import (
 
 // rotteAgente sono le rotte con login che un agente AI puo' chiamare: quelle
 // del client CLI (README, Agenti AI e Lasciapassare
-// dell'agente).
+// dell'agente). POST /api/lasciapassare e' dei tecnici: l'agente ci arriva
+// solo per sentirsi dire, dal gestore, di usare la sua.
 var rotteAgente = map[string]bool{
 	"GET /api/user/info":             true,
 	"POST /api/currentUser":          true,
 	"POST /api/logout":               true,
 	"GET /api/agente":                true,
 	"POST /api/agente/lasciapassare": true,
+	"POST /api/lasciapassare":        true,
 }
 
 func RustAuth() gin.HandlerFunc {
@@ -94,7 +96,7 @@ func RustAuth() gin.HandlerFunc {
 
 		c.Set("curUser", user)
 		c.Set("token", token)
-		c.Set("curUserToken", ut)
+		c.Set(service.ChiaveTokenRichiesta, ut)
 
 		if err := service.AllService.UserService.AutoRefreshAccessToken(ut); err != nil {
 			// Il token vale fino alla scadenza di prima: la richiesta va avanti.

@@ -396,7 +396,7 @@ func TestCampiAltriEventi(t *testing.T) {
 		es.AccodaTerminale(conn, &model.AuditTerminalVerifica{Integra: true, Blocchi: 3, Fine: true, Hash: "ab12"}),
 		es.AccodaPcNuovo(pc),
 		es.AccodaCopia("999000111", 10),
-		es.AccodaLasciapassare("999000111", &model.User{Username: "agente-mario", Password: "segreto"}, &model.User{Username: "mario"}),
+		es.AccodaLasciapassare("999000111", &model.User{Username: "agente-mario", Password: "segreto"}, &model.User{Username: "mario"}, true),
 	} {
 		if err != nil {
 			t.Fatal(err)
