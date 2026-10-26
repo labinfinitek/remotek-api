@@ -433,3 +433,8 @@ other = "Unknown or expired code: the technician should sign in again to get a n
 description = "An OIDC account cannot be bound to an AI agent account."
 one = "An OIDC account cannot be bound to an AI agent account."
 other = "An OIDC account cannot be bound to an AI agent account."
+
+[ShareTargetNotAllowed]
+description = "A sharing rule cannot target a disabled user or an AI agent account."
+one = "You cannot share with a disabled user or an AI agent account."
+other = "You cannot share with a disabled user or an AI agent account."

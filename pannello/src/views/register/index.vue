@@ -2,6 +2,8 @@
   <div class="login-container">
     <div class="login-card">
       <img :src="'/brand/logo.svg'" alt="logo" class="login-logo"/>
+      <!-- il logo di default e' un simbolo: il nome sta nel titolo, come nel login -->
+      <h1 class="login-titolo">{{ appStore.setting.title }}</h1>
       <el-form ref="f" :model="form" label-position="top" class="login-form" :rules="rules">
         <el-form-item :label="T('Username')" prop="username">
           <el-input v-model="form.username" class="login-input"></el-input>
@@ -39,6 +41,7 @@
 
   const router = useRouter()
   const userStore = useUserStore()
+  const appStore = useAppStore()
   const form = reactive({
     username: '',
     email: '',
@@ -79,7 +82,7 @@
       return
     }
     userStore.saveUserData(res.data)
-    useAppStore().loadConfig()
+    appStore.loadConfig()
     ElMessage.success(T('OperationSuccess'))
     router.push('/')
   }
@@ -130,6 +133,15 @@ h1 {
   margin-bottom: 20px;
   margin-top: 20px;
   margin-left: 0;
+}
+
+.login-titolo {
+  margin: 0 0 28px;
+  font-family: var(--rk-font-titoli);
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--el-text-color-primary);
 }
 
 .login-logo {

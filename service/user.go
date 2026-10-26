@@ -513,7 +513,8 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (*
 		if user.Id == 0 {
 			// this means the user is not found in ldap, maybe ldao is not enabled
 			user = &model.User{}
-			switch err := DB.Where("email = ?", email).First(user).Error; {
+			// l'email salvata puo' avere maiuscole (utente creato a mano)
+			switch err := DB.Where("LOWER(email) = ?", email).First(user).Error; {
 			case errors.Is(err, gorm.ErrRecordNotFound):
 				user = nil
 			case err != nil:

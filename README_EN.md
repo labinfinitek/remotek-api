@@ -298,8 +298,8 @@ the `Issuer`, `Scopes` default to `openid,profile,email` (`openid` is always
 requested, even when it is not in the saved scopes), callback URL
 `<rustdesk.api-server>/api/oidc/callback`. The client secret is written
 at creation and cannot be read back: the provider list and detail only say
-whether it is set (`has_client_secret`); when editing, left empty, the
-saved one stays, and to change it you write the new one. Scopes are
+whether it is set (`has_client_secret`); when editing, left empty or
+blank, the saved one stays, and to change it you write the new one. Scopes are
 comma-separated; surrounding spaces and empty entries are dropped. The provider must send the
 `id_token` in the token response (OIDC Core): without it, or with an
 `id_token` that does not verify, the login stops. Auto-registration
@@ -421,7 +421,7 @@ administrator:
 1. the administrator creates the user (System, Users), with no password to
    hand out;
 2. the technician signs in with OIDC from the client or the panel: the
-   provider page answers "Your <provider> account is not yet bound to a
+   API callback page answers "Your <provider> account is not yet bound to a
    Remotek user. Give the administrator this code: K7Q2-M9XD. It is valid
    for 30 minutes; then sign in again.";
 3. the administrator opens System, Pending bindings, finds the code (with

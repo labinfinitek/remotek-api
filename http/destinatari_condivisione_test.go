@@ -3,6 +3,7 @@ package http
 import (
 	"encoding/json"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -72,5 +73,53 @@ func TestDestinatariCondivisione(t *testing.T) {
 	}
 	if corpi[false] != corpi[true] {
 		t.Errorf("risposte diverse:\n utente %s\n admin  %s", corpi[false], corpi[true])
+	}
+}
+
+// TestRegolaVersoEscluso prova sul router vero che una regola di
+// condivisione non nasce ne' si sposta verso un utente disattivato o un
+// account agente, dall'amministrazione e dalla sezione dell'utente, anche
+// per chiamata diretta; la regola gia' salvata verso amico, poi escluso,
+// resta e si cancella. Prima groupUsers li toglieva solo dalla scelta del
+// pannello e la creazione riusciva.
+func TestRegolaVersoEscluso(t *testing.T) {
+	const rifiuto = `{"code":101,"message":"Non si condivide con un utente disattivato o con un account agente.","data":null}`
+	const ok = `{"code":0,"message":"success","data":null}`
+	const nuova = `{"user_id":UTENTE,"collection_id":RUBRICA,"type":1,"rule":1,"to_id":ESCLUSO}`
+	const modifica = `{"id":REGOLA,"user_id":UTENTE,"collection_id":RUBRICA,"type":1,"rule":1,"to_id":ESCLUSO}`
+	for _, escluso := range []struct {
+		nome  string
+		campi map[string]any
+	}{
+		{"disattivato", map[string]any{"status": model.COMMON_STATUS_DISABLED}},
+		{"agente", map[string]any{"agente_di": 1}},
+	} {
+		for _, rotta := range []string{"/api/admin/address_book_collection_rule", "/api/admin/my/address_book_collection_rule"} {
+			t.Run(escluso.nome+" "+rotta, func(t *testing.T) {
+				g, _, segnaposto := pannelloDiProva(t)
+				altro := &model.User{Username: "escluso", Status: model.COMMON_STATUS_ENABLE}
+				crea(t, altro)
+				for _, u := range []string{"escluso", "amico"} {
+					if err := service.DB.Model(&model.User{}).Where("username = ?", u).Updates(escluso.campi).Error; err != nil {
+						t.Fatal(err)
+					}
+				}
+				id := strings.NewReplacer("ESCLUSO", strconv.FormatUint(uint64(altro.Id), 10))
+				prima := statoDelPannello(t)
+				for _, caso := range []struct{ azione, corpo string }{{"/create", nuova}, {"/update", modifica}} {
+					corpo := id.Replace(segnaposto.Replace(caso.corpo))
+					if rec := richiesta(g, "POST", rotta+caso.azione, "", corpo); rec.Body.String() != rifiuto {
+						t.Errorf("POST %s%s: %d %s\n want %s", rotta, caso.azione, rec.Code, rec.Body, rifiuto)
+					}
+				}
+				if dopo := statoDelPannello(t); dopo != prima {
+					t.Errorf("regole cambiate dopo il rifiuto:\n prima %s\n dopo  %s", prima, dopo)
+				}
+				// la regola verso amico, ora escluso, si cancella
+				if rec := richiesta(g, "POST", rotta+"/delete", "", segnaposto.Replace(`{"id":REGOLA}`)); rec.Body.String() != ok {
+					t.Errorf("POST %s/delete: %d %s", rotta, rec.Code, rec.Body)
+				}
+			})
+		}
 	}
 }

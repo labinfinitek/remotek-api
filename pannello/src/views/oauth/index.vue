@@ -190,8 +190,9 @@
     client_id: [{ required: true, message: T('ParamRequired', { param: 'client_id' }), trigger: 'blur' }],
     // Il segreto salvato non si rilegge: serve solo alla creazione, e in
     // modifica vuoto, o di soli spazi, vuol dire tenere quello salvato.
-    // required lo legge Element Plus per l'asterisco, al posto del
-    // :required dell'el-form-item; il controllo vero e' il validator.
+    // L'asterisco lo decide il :required dell'el-form-item, che sovrascrive
+    // questo required (solo alla creazione); il controllo vero e' il
+    // validator.
     client_secret: [{
       required: true,
       validator: (rule, value, callback) => {

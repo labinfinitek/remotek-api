@@ -17,6 +17,29 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   memoria, al massimo 100. Con il login con password acceso resta la pagina
   di associazione, che mostra anche il codice.
 
+### Sicurezza
+- Regole di condivisione della rubrica: creazione e modifica, dal pannello
+  di amministrazione e dalla sezione dell'utente, rifiutano come
+  destinatario un utente disattivato o un account agente ("Non si condivide
+  con un utente disattivato o con un account agente."), anche per chiamata
+  diretta all'API; prima li toglieva solo la scelta del pannello. Una
+  regola gia' salvata verso uno di loro resta e si puo' cancellare.
+
+### Corretto
+- Associazione OIDC dall'amministratore: una richiesta scaduta o uscita
+  oltre il tetto non resta piu' in memoria, con nome ed email, oltre i 30
+  minuti; prima usciva solo alla lettura successiva.
+- OIDC con autoregistrazione: l'email del provider abbina anche un utente
+  locale con l'email scritta con maiuscole; prima nasceva un secondo
+  utente con la stessa email.
+- OIDC: l'associazione dall'amministratore scrive anche lo username del
+  provider, come quella dalla pagina di associazione.
+- Pannello: nella lista dei PC e in I miei PC "Ultimo collegamento" e'
+  fissata accanto ad Azioni, che a 1280 px la copriva, intestazione e
+  pallino di stato compresi.
+- Pannello: la pagina di registrazione mostra il titolo sotto il simbolo,
+  come il login.
+
 ## [0.11.0] - 2026-10-25
 Immagine `ghcr.io/labinfinitek/remotek-api:0.11.0`, costruita con Go 1.26.10
 su Alpine 3.24.3. Versione minore: la risposta del login del pannello ha il

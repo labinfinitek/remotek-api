@@ -28,9 +28,13 @@ const (
 	TettoRichieste = 100
 )
 
-// alfabetoCodice sono i caratteri del codice: niente 0/O e 1/I/L, che al
-// telefono si confondono.
-const alfabetoCodice = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+// Il codice: lunghezzaCodice caratteri di alfabetoCodice, senza 0/O e
+// 1/I/L che al telefono si confondono, scritti a gruppi di gruppoCodice.
+const (
+	alfabetoCodice  = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+	lunghezzaCodice = 8
+	gruppoCodice    = 4
+)
 
 // Rifiuti dell'associazione dall'amministratore; il testo e' l'ID del
 // messaggio.
@@ -50,6 +54,7 @@ type RichiestaAssociazione struct {
 	Op              string
 	Sub             string
 	Nome            string
+	Username        string
 	Email           string
 	EmailVerificata bool
 	Creata          time.Time
@@ -61,6 +66,9 @@ type Richieste struct {
 	voci []*RichiestaAssociazione
 	// Ora e' l'orologio delle scadenze; i test lo spostano.
 	Ora func() time.Time
+	// attesa e' dopo quanto la pulizia toglie una richiesta nuova: zero e'
+	// DurataRichiesta; i test la accorciano.
+	attesa time.Duration
 }
 
 // RichiesteAssociazione sono le richieste di associazione dell'API.
@@ -73,14 +81,23 @@ func (r *Richieste) Svuota() {
 	r.voci, r.Ora = nil, time.Now
 }
 
-// valide toglie le richieste scadute; va chiamata col lock.
+// valide toglie le richieste scadute; va chiamata col lock. DeleteFunc
+// azzera i posti liberati: nome ed email non restano nell'array.
 func (r *Richieste) valide() {
 	limite := r.Ora().Add(-DurataRichiesta)
 	r.voci = slices.DeleteFunc(r.voci, func(v *RichiestaAssociazione) bool { return !v.Creata.After(limite) })
 }
 
-// NormalizzaCodice toglie spazi e trattini, porta a maiuscole e rimette il
-// trattino a meta': "k7q2 m9xd" diventa "K7Q2-M9XD".
+// pulisci toglie le richieste scadute anche se nessuno le legge: la chiama
+// un timer per ogni richiesta nuova, alla sua scadenza.
+func (r *Richieste) pulisci() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.valide()
+}
+
+// NormalizzaCodice toglie spazi e trattini, porta a maiuscole e rimette i
+// trattini come nuovoCodice: "k7q2 m9xd" diventa "K7Q2-M9XD".
 func NormalizzaCodice(codice string) string {
 	s := strings.Map(func(c rune) rune {
 		if c == '-' || c == ' ' {
@@ -88,18 +105,27 @@ func NormalizzaCodice(codice string) string {
 		}
 		return c
 	}, strings.ToUpper(strings.TrimSpace(codice)))
-	if len(s) != 8 {
+	if len(s) != lunghezzaCodice {
 		return s
 	}
-	return s[:4] + "-" + s[4:]
+	// un trattino ogni gruppoCodice caratteri, come nuovoCodice
+	b := make([]byte, 0, lunghezzaCodice+lunghezzaCodice/gruppoCodice)
+	for i := range lunghezzaCodice {
+		if i > 0 && i%gruppoCodice == 0 {
+			b = append(b, '-')
+		}
+		b = append(b, s[i])
+	}
+	return string(b)
 }
 
-// nuovoCodice estrae 8 caratteri di alfabetoCodice, a gruppi di 4.
+// nuovoCodice estrae lunghezzaCodice caratteri di alfabetoCodice, a gruppi
+// di gruppoCodice.
 func nuovoCodice() (string, error) {
-	b := make([]byte, 0, 9)
+	b := make([]byte, 0, lunghezzaCodice+lunghezzaCodice/gruppoCodice)
 	n := big.NewInt(int64(len(alfabetoCodice)))
-	for i := range 8 {
-		if i == 4 {
+	for i := range lunghezzaCodice {
+		if i > 0 && i%gruppoCodice == 0 {
 			b = append(b, '-')
 		}
 		k, err := rand.Int(rand.Reader, n)
@@ -127,10 +153,16 @@ func (r *Richieste) Nuova(op string, ou *model.OauthUser) (string, error) {
 		}
 	}
 	if len(r.voci) >= TettoRichieste {
-		r.voci = r.voci[len(r.voci)-TettoRichieste+1:]
+		// Delete, non una sottofetta: azzera i posti delle richieste uscite
+		r.voci = slices.Delete(r.voci, 0, len(r.voci)-TettoRichieste+1)
 	}
 	r.voci = append(r.voci, &RichiestaAssociazione{Codice: codice, Op: op, Sub: ou.OpenId, Nome: ou.Name,
-		Email: ou.Email, EmailVerificata: ou.VerifiedEmail, Creata: r.Ora()})
+		Username: ou.Username, Email: ou.Email, EmailVerificata: ou.VerifiedEmail, Creata: r.Ora()})
+	attesa := r.attesa
+	if attesa == 0 {
+		attesa = DurataRichiesta
+	}
+	time.AfterFunc(attesa, r.pulisci)
 	return codice, nil
 }
 
@@ -182,7 +214,7 @@ func (os *OauthService) AssociaRichiesta(codice string, userId uint) (*Richiesta
 		return nil, err
 	}
 	ut := &model.UserThird{}
-	ut.FromOauthUser(userId, &model.OauthUser{OpenId: r.Sub, Name: r.Nome, Email: r.Email, VerifiedEmail: r.EmailVerificata}, oauthType, r.Op)
+	ut.FromOauthUser(userId, &model.OauthUser{OpenId: r.Sub, Name: r.Nome, Username: r.Username, Email: r.Email, VerifiedEmail: r.EmailVerificata}, oauthType, r.Op)
 	err = DB.Transaction(func(tx *gorm.DB) error {
 		u := &model.User{}
 		if err := tx.Where("id = ?", userId).First(u).Error; err != nil {

@@ -115,8 +115,14 @@ func (abcr *AddressBookCollectionRule) CheckForm(u *model.User, t *model.Address
 			return errors.New("CannotShareToSelf")
 		}
 		// ErrNotFound ha per testo ItemNotFound, la risposta di prima
-		if _, err := service.AllService.UserService.InfoById(t.ToId); err != nil {
+		to, err := service.AllService.UserService.InfoById(t.ToId)
+		if err != nil {
 			return err
+		}
+		// groupUsers non li offre; qui li ferma anche per chiamata diretta.
+		// Una regola gia' salvata verso di loro resta e si cancella.
+		if to.AgenteDi != 0 || to.Status != model.COMMON_STATUS_ENABLE {
+			return errors.New("ShareTargetNotAllowed")
 		}
 		// 非管理员不能分享给非本组织用户
 		// if tou.GroupId != u.GroupId {

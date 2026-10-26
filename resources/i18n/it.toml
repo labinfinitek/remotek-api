@@ -442,3 +442,8 @@ other = "Codice sconosciuto o scaduto: il tecnico rifaccia l'accesso per averne 
 description = "An OIDC account cannot be bound to an AI agent account."
 one = "Un account OIDC non si associa a un account agente."
 other = "Un account OIDC non si associa a un account agente."
+
+[ShareTargetNotAllowed]
+description = "A sharing rule cannot target a disabled user or an AI agent account."
+one = "Non si condivide con un utente disattivato o con un account agente."
+other = "Non si condivide con un utente disattivato o con un account agente."

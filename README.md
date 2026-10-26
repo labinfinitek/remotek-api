@@ -301,8 +301,8 @@ l'`Issuer`, `Scopes` di default `openid,profile,email` (`openid` si chiede
 sempre, anche se non e' negli scope salvati), URL di callback
 `<rustdesk.api-server>/api/oidc/callback`. Il segreto del client si scrive
 alla creazione e non si rilegge: lista e dettaglio del provider dicono solo
-se c'e' (`has_client_secret`); in modifica, lasciato vuoto, resta quello
-salvato, e per cambiarlo si scrive quello nuovo. Gli scope si separano con
+se c'e' (`has_client_secret`); in modifica, lasciato vuoto o di soli
+spazi, resta quello salvato, e per cambiarlo si scrive quello nuovo. Gli scope si separano con
 la virgola; gli spazi intorno e le voci vuote si tolgono. Serve un provider che nella
 risposta del token manda l'`id_token` (OIDC Core): senza, o con un
 `id_token` che non si verifica, il login si ferma. L'autoregistrazione
@@ -425,7 +425,7 @@ utente da un amministratore:
 1. l'amministratore crea l'utente (Sistema, Utenti), senza password da
    comunicare;
 2. il tecnico entra con OIDC dal client o dal pannello: la pagina del
-   provider risponde "Il tuo account <provider> non è ancora associato a un
+   callback dell'API risponde "Il tuo account <provider> non è ancora associato a un
    utente Remotek. Comunica all'amministratore questo codice: K7Q2-M9XD.
    Vale 30 minuti; poi rifai l'accesso.";
 3. l'amministratore apre Sistema, Associazioni in attesa, trova il codice
