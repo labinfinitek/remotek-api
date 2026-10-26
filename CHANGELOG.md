@@ -6,6 +6,16 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+## [0.12.0] - 2026-10-26
+Immagine `ghcr.io/labinfinitek/remotek-api:0.12.0`, costruita con Go 1.26.10
+su Alpine 3.24.3. Versione minore: un tecnico nuovo si associa al suo
+account OIDC con un codice che l'amministratore conferma dal pannello
+(ADR-0031), senza password e senza riavvii; una correzione di sicurezza
+sulle regole di condivisione; rifiniture di OIDC e pannello. Nessuna
+migrazione del database (`DatabaseVersion` resta 275), nessuna variabile
+nuova, contratto col client invariato. Rotte nuove solo del pannello e
+per i soli amministratori. Dalla 0.11.0 si passa direttamente alla 0.12.0.
+
 ### Aggiunto
 - OIDC con il login con password spento: un account senza utente, con
   `auto_register` spento, riceve nella pagina del callback un codice di
@@ -14,8 +24,10 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   esistente; prima la pagina di associazione voleva il login al pannello e
   il tecnico nuovo non entrava. Rotte `GET /api/admin/oauth/richieste` e
   `POST /api/admin/oauth/associa`, solo amministratori; richieste in
-  memoria, al massimo 100. Con il login con password acceso resta la pagina
-  di associazione, che mostra anche il codice.
+  memoria, al massimo 100, tolte a tempo dopo 30 minuti (con nome ed
+  email); l'associazione scrive anche lo username del provider, come quella
+  dalla pagina di associazione. Con il login con password acceso resta la
+  pagina di associazione, che mostra anche il codice.
 
 ### Sicurezza
 - Regole di condivisione della rubrica: creazione e modifica, dal pannello
@@ -26,14 +38,9 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   regola gia' salvata verso uno di loro resta e si puo' cancellare.
 
 ### Corretto
-- Associazione OIDC dall'amministratore: una richiesta scaduta o uscita
-  oltre il tetto non resta piu' in memoria, con nome ed email, oltre i 30
-  minuti; prima usciva solo alla lettura successiva.
 - OIDC con autoregistrazione: l'email del provider abbina anche un utente
   locale con l'email scritta con maiuscole; prima nasceva un secondo
   utente con la stessa email.
-- OIDC: l'associazione dall'amministratore scrive anche lo username del
-  provider, come quella dalla pagina di associazione.
 - Pannello: nella lista dei PC e in I miei PC "Ultimo collegamento" e'
   fissata accanto ad Azioni, che a 1280 px la copriva, intestazione e
   pallino di stato compresi.
