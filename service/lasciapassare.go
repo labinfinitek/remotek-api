@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -31,6 +33,21 @@ const (
 	ModoTecnico        = "tecnico"
 )
 
+// Capacita' del lasciapassare dell'agente (ADR-0033): cosa apre la
+// sessione. Il terminale e' il lasciapassare v 1 di sempre; le altre danno
+// il v 2, che il PC del client -5 non accetta.
+const (
+	CapacitaTerminale = "terminale"
+	CapacitaExec      = "exec"
+	CapacitaFile      = "file"
+	CapacitaTunnel    = "tunnel"
+	CapacitaSchermo   = "schermo"
+)
+
+// DurataTunnel e' la durata massima del tunnel, in secondi, quando
+// l'agente non la chiede (ADR-0033).
+const DurataTunnel = 3600
+
 // Errori del rilascio: il testo e' l'ID del messaggio che ErrorErr trova
 // nella catena.
 var (
@@ -53,16 +70,44 @@ var (
 )
 
 // PayloadLasciapassare e' cio' che il lasciapassare dice al PC; i campi
-// vanno nel JSON in quest'ordine, che fa parte del formato.
+// vanno nel JSON in quest'ordine, che fa parte del formato. Capacita, Porte
+// e Durata ci sono solo col v 2 (Porte e' [] e Durata 0 tranne che per il
+// tunnel): il v 1 e' quello di prima, byte per byte.
 type PayloadLasciapassare struct {
-	V       int    `json:"v"`
-	Pc      string `json:"pc"`
-	Agente  string `json:"agente"`
-	Tecnico string `json:"tecnico"`
-	Modo    string `json:"modo"`
-	Emesso  int64  `json:"emesso"`
-	Scade   int64  `json:"scade"`
-	Nonce   string `json:"nonce"`
+	V        int    `json:"v"`
+	Pc       string `json:"pc"`
+	Agente   string `json:"agente"`
+	Tecnico  string `json:"tecnico"`
+	Modo     string `json:"modo"`
+	Capacita string `json:"capacita"`
+	Porte    []int  `json:"porte"`
+	Durata   int    `json:"durata"`
+	Emesso   int64  `json:"emesso"`
+	Scade    int64  `json:"scade"`
+	Nonce    string `json:"nonce"`
+}
+
+// MarshalJSON scrive il payload v 1 senza capacita, porte e durata, gli
+// altri con porte sempre una lista.
+func (p PayloadLasciapassare) MarshalJSON() ([]byte, error) {
+	if p.V == 1 {
+		return json.Marshal(struct {
+			V       int    `json:"v"`
+			Pc      string `json:"pc"`
+			Agente  string `json:"agente"`
+			Tecnico string `json:"tecnico"`
+			Modo    string `json:"modo"`
+			Emesso  int64  `json:"emesso"`
+			Scade   int64  `json:"scade"`
+			Nonce   string `json:"nonce"`
+		}{p.V, p.Pc, p.Agente, p.Tecnico, p.Modo, p.Emesso, p.Scade, p.Nonce})
+	}
+	type v2 PayloadLasciapassare
+	q := v2(p)
+	if q.Porte == nil {
+		q.Porte = []int{}
+	}
+	return json.Marshal(q)
 }
 
 // FirmaLasciapassare restituisce il lasciapassare di p:
@@ -82,15 +127,17 @@ type LasciapassareService struct {
 }
 
 // Rilascia firma, all'ora adesso, il lasciapassare dell'agente per il PC
-// pc nel modo modo (ModoAmministratore o ModoUtente) e lo registra, senza
-// firma. Restituisce il lasciapassare e il tecnico dell'agente. Rifiuta con
+// pc nel modo modo (ModoAmministratore o ModoUtente), con la capacita'
+// capacita e, per il tunnel, le porte porte e la durata massima durata (in
+// secondi), e lo registra, senza firma.
+// Restituisce il lasciapassare e il tecnico dell'agente. Rifiuta con
 // ErrLasciapassareSpento senza chiave, con ErrNonAgente se agente non e' un
 // agente AI attivo, con ErrTecnicoNonAttivo se il suo tecnico non c'e' o e'
 // disattivato, con ErrPcSconosciuto se pc non e' in peers, con
 // ErrPcFuoriRubrica (avvolto con PC, tecnico e agente, che il warn della
 // risposta riporta) se pc non e' nella rubrica del tecnico: un agente
 // lavora solo sui PC su cui lavora il suo tecnico.
-func (ls *LasciapassareService) Rilascia(agente *model.User, pc, modo string, adesso time.Time) (string, *model.User, error) {
+func (ls *LasciapassareService) Rilascia(agente *model.User, pc, modo, capacita string, porte []int, durata int, adesso time.Time) (string, *model.User, error) {
 	chiave := Config.Agente.Chiave()
 	if chiave == nil {
 		return "", nil, ErrLasciapassareSpento
@@ -117,7 +164,7 @@ func (ls *LasciapassareService) Rilascia(agente *model.User, pc, modo string, ad
 		return "", nil, fmt.Errorf("lasciapassare rifiutato: il PC %s non e' nella rubrica del tecnico %s (agente %s): %w",
 			pc, tecnico.Username, agente.Username, ErrPcFuoriRubrica)
 	}
-	lp, err := firmaERegistra(chiave, pc, agente, tecnico, modo, adesso)
+	lp, err := firmaERegistra(chiave, pc, agente, tecnico, modo, capacita, porte, durata, adesso)
 	return lp, tecnico, err
 }
 
@@ -147,7 +194,7 @@ func (ls *LasciapassareService) RilasciaTecnico(u *model.User, daOidc bool, pc s
 	if err := pcNoto(pc); err != nil {
 		return "", false, err
 	}
-	lp, err = firmaERegistra(chiave, pc, nil, u, ModoTecnico, adesso)
+	lp, err = firmaERegistra(chiave, pc, nil, u, ModoTecnico, CapacitaTerminale, nil, 0, adesso)
 	return lp, emergenza, err
 }
 
@@ -161,17 +208,27 @@ func pcNoto(pc string) error {
 	return nil
 }
 
-// firmaERegistra firma il lasciapassare (v 1) per pc, dell'agente (nil per
-// un tecnico) e del tecnico nel modo modo, e ne registra il nonce.
-func firmaERegistra(chiave ed25519.PrivateKey, pc string, agente, tecnico *model.User, modo string, adesso time.Time) (string, error) {
+// firmaERegistra firma il lasciapassare per pc, dell'agente (nil per un
+// tecnico) e del tecnico nel modo modo, con la capacita' capacita, le
+// porte porte e la durata durata (v 1 col terminale, v 2 con le altre), e
+// ne registra il nonce con capacita', porte e durata.
+func firmaERegistra(chiave ed25519.PrivateKey, pc string, agente, tecnico *model.User, modo, capacita string, porte []int, durata int, adesso time.Time) (string, error) {
 	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {
 		return "", fmt.Errorf("nonce del lasciapassare: %w", err)
 	}
 	p := PayloadLasciapassare{V: 1, Pc: pc, Tecnico: tecnico.Username, Modo: modo,
 		Emesso: adesso.Unix(), Scade: adesso.Add(DurataLasciapassare).Unix(), Nonce: base64.RawURLEncoding.EncodeToString(b)}
-	r := &model.Lasciapassare{Nonce: p.Nonce, Pc: pc, TecnicoId: tecnico.Id, Modo: modo,
+	r := &model.Lasciapassare{Nonce: p.Nonce, Pc: pc, TecnicoId: tecnico.Id, Modo: modo, Capacita: capacita,
 		Emesso: p.Emesso, Scade: p.Scade, Creato: adesso.Unix()}
+	if capacita != CapacitaTerminale {
+		p.V, p.Capacita, p.Porte, p.Durata, r.Durata = 2, capacita, porte, durata, durata
+		testo := make([]string, len(porte))
+		for i, n := range porte {
+			testo[i] = strconv.Itoa(n)
+		}
+		r.Porte = strings.Join(testo, ",")
+	}
 	if agente != nil {
 		p.Agente, r.AgenteId = agente.Username, agente.Id
 	}

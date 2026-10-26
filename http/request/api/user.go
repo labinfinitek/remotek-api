@@ -1,5 +1,7 @@
 package api
 
+import "errors"
+
 /*
 *
 
@@ -54,10 +56,28 @@ type PeerListQuery struct {
 
 // LasciapassareForm e' il PC per cui l'agente AI chiede il lasciapassare
 // (POST /api/agente/lasciapassare, ADR-0028), e il modo: assente o
-// amministratore come prima, utente senza i permessi di amministratore.
+// amministratore come prima, utente senza i permessi di amministratore; la
+// capacita' (ADR-0033, assente = terminale) e, solo col tunnel, da 1 a 8
+// porte TCP diverse e la durata massima in secondi (Valida).
 type LasciapassareForm struct {
-	Id   string `json:"id" binding:"required,max=100"`
-	Modo string `json:"modo" binding:"omitempty,oneof=amministratore utente"`
+	Id       string `json:"id" binding:"required,max=100"`
+	Modo     string `json:"modo" binding:"omitempty,oneof=amministratore utente"`
+	Capacita string `json:"capacita" binding:"omitempty,oneof=terminale exec file tunnel schermo"`
+	Porte    []int  `json:"porte" binding:"max=8,unique,dive,min=1,max=65535"`
+	Durata   int    `json:"durata" binding:"omitempty,min=60,max=28800"`
+}
+
+// errPorte e' il rifiuto di Valida, solo per il log.
+var errPorte = errors.New("porte o durata che non vanno con la capacita'")
+
+// Valida rifiuta porte e durata che non vanno con la capacita': col tunnel
+// almeno una porta, con le altre nessuna porta (neanche []) e nessuna
+// durata.
+func (f *LasciapassareForm) Valida() error {
+	if (f.Capacita == "tunnel" && len(f.Porte) == 0) || (f.Capacita != "tunnel" && (f.Porte != nil || f.Durata != 0)) {
+		return errPorte
+	}
+	return nil
 }
 
 // LasciapassareTecnicoForm e' il PC per cui il tecnico chiede il

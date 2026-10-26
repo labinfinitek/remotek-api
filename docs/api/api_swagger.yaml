@@ -150,6 +150,18 @@ definitions:
     type: object
   api.LasciapassareForm:
     properties:
+      capacita:
+        enum:
+        - terminale
+        - exec
+        - file
+        - tunnel
+        - schermo
+        type: string
+      durata:
+        maximum: 28800
+        minimum: 60
+        type: integer
       id:
         maxLength: 100
         type: string
@@ -158,6 +170,12 @@ definitions:
         - amministratore
         - utente
         type: string
+      porte:
+        items:
+          type: integer
+        maxItems: 8
+        type: array
+        uniqueItems: true
     required:
     - id
     type: object

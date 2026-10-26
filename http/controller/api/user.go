@@ -79,7 +79,8 @@ func (u *User) Agente(c *gin.Context) {
 
 // Lasciapassare rilascia all'agente AI del token il lasciapassare firmato
 // per aprire, entro 60 secondi e una volta sola, una sessione sul PC id
-// (ADR-0028), da amministratore o, con modo utente, senza. Rifiuta se la
+// (ADR-0028), da amministratore o, con modo utente, senza, per la capacita'
+// chiesta (ADR-0033: terminale se assente). Rifiuta se la
 // funzione e' spenta, se l'utente non e' un agente attivo, se il suo
 // tecnico non e' attivo, se
 // il PC non e' in peers o non e' nella rubrica del tecnico. Nel log mai il
@@ -100,18 +101,30 @@ func (u *User) Lasciapassare(c *gin.Context) {
 		response.ErrorErr(c, "ParamsError", err)
 		return
 	}
-	modo := f.Modo
+	if err := f.Valida(); err != nil {
+		response.ErrorErr(c, "ParamsError", err)
+		return
+	}
+	modo, capacita := f.Modo, f.Capacita
 	if modo == "" { // i client -4 e -5 non mandano il campo
 		modo = service.ModoAmministratore
 	}
+	if capacita == "" { // ne' questo
+		capacita = service.CapacitaTerminale
+	}
+	durata := f.Durata
+	if capacita == service.CapacitaTunnel && durata == 0 {
+		durata = service.DurataTunnel
+	}
 	agente := service.AllService.UserService.CurUser(c)
-	lp, tecnico, err := service.AllService.LasciapassareService.Rilascia(agente, f.Id, modo, time.Now())
+	lp, tecnico, err := service.AllService.LasciapassareService.Rilascia(agente, f.Id, modo, capacita, f.Porte, durata, time.Now())
 	if err != nil {
 		response.ErrorErr(c, "SystemError", err)
 		return
 	}
-	global.Logger.Per(c.Request.Context()).Infof("lasciapassare rilasciato: agente %s, tecnico %s, PC %s, modo %s", agente.Username, tecnico.Username, f.Id, modo)
-	if err := service.AllService.EventiService.AccodaLasciapassare(f.Id, agente, tecnico, modo == service.ModoAmministratore); err != nil {
+	global.Logger.Per(c.Request.Context()).Infof("lasciapassare rilasciato: agente %s, tecnico %s, PC %s, modo %s, capacita' %s, porte %v, durata %d",
+		agente.Username, tecnico.Username, f.Id, modo, capacita, f.Porte, durata)
+	if err := service.AllService.EventiService.AccodaLasciapassare(f.Id, agente, tecnico, modo == service.ModoAmministratore, capacita, f.Porte, durata); err != nil {
 		eventoNonAccodato(c, service.EventoAgenteLasciapassare, err)
 	}
 	c.JSON(http.StatusOK, apiResp.LasciapassarePayload{Lasciapassare: lp})

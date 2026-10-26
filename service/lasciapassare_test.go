@@ -51,3 +51,37 @@ func TestLasciapassareVettore(t *testing.T) {
 		t.Errorf("chiave pubblica del vettore %s", got)
 	}
 }
+
+// TestLasciapassareVettoreV2 fissa il vettore v 2 del README (ADR-0033):
+// lo stesso seme, la stessa firma (prefisso e chiave), il payload con
+// capacita, porte e durata dopo modo.
+func TestLasciapassareVettoreV2(t *testing.T) {
+	p := PayloadLasciapassare{V: 2, Pc: "999000111", Agente: "agente-mario", Tecnico: "mario", Modo: ModoAmministratore,
+		Capacita: CapacitaTunnel, Porte: []int{22, 3389}, Durata: 3600, Emesso: 1791000000, Scade: 1791000060, Nonce: "AAECAwQFBgcICQoLDA0ODw"}
+	got, err := FirmaLasciapassare(semeDiProva(), p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const want = "eyJ2IjoyLCJwYyI6Ijk5OTAwMDExMSIsImFnZW50ZSI6ImFnZW50ZS1tYXJpbyIsInRlY25pY28iOiJtYXJpbyIsIm1vZG8iOiJhbW1pbmlzdHJhdG9yZSIsImNhcGFjaXRhIjoidHVubmVsIiwicG9ydGUiOlsyMiwzMzg5XSwiZHVyYXRhIjozNjAwLCJlbWVzc28iOjE3OTEwMDAwMDAsInNjYWRlIjoxNzkxMDAwMDYwLCJub25jZSI6IkFBRUNBd1FGQmdjSUNRb0xEQTBPRHcifQ" +
+		".kahITkYNGYmo1y2rCRX08LPvdZjiMCzrQPrcvZExTBF3g_eAAAYyPqPjjgl4pImNa-rcg5LmhkH_yqGFu_hOAw"
+	if got != want {
+		t.Errorf("FirmaLasciapassare:\n got  %s\n want %s", got, want)
+	}
+	payload, firma, _ := strings.Cut(got, ".")
+	pb, _ := base64.RawURLEncoding.DecodeString(payload)
+	fb, _ := base64.RawURLEncoding.DecodeString(firma)
+	const json = `{"v":2,"pc":"999000111","agente":"agente-mario","tecnico":"mario","modo":"amministratore",` +
+		`"capacita":"tunnel","porte":[22,3389],"durata":3600,"emesso":1791000000,"scade":1791000060,"nonce":"AAECAwQFBgcICQoLDA0ODw"}`
+	if string(pb) != json {
+		t.Errorf("payload:\n got  %s\n want %s", pb, json)
+	}
+	if !ed25519.Verify(semeDiProva().Public().(ed25519.PublicKey), []byte(PrefissoLasciapassare+json), fb) {
+		t.Error("la firma non si verifica con la chiave pubblica")
+	}
+	// Senza porte, porte e' [] e non null.
+	p.Capacita, p.Porte, p.Durata = CapacitaExec, nil, 0
+	got, _ = FirmaLasciapassare(semeDiProva(), p)
+	if pb, _ := base64.RawURLEncoding.DecodeString(strings.Split(got, ".")[0]); !strings.Contains(string(pb), `"capacita":"exec","porte":[],"durata":0,"emesso"`) {
+		t.Errorf("payload exec %s", pb)
+	}
+}

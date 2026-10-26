@@ -730,7 +730,7 @@ others, so the reliable order is `ora`.
 | `terminale.chiuso` | the block with `fine` of a terminal session transcript arrives; with `sessione` and `verifica` (`integra`, final `hash`), computed as the panel's verification. No blocks or data. `sessione.fine` is `null` if the PC records the close later |
 | `pc.nuovo` | a sysinfo creates a PC the API did not know |
 | `pc.possibile_copia` | the API writes the `possibile copia del PC` warn (Copies of the same PC), at most one per hour per PC; with `copia.cambi`, without the addresses |
-| `agente.lasciapassare` | the API issues a pass to an AI agent (Agent pass); with `agente.agente` and `agente.tecnico` (the usernames) and `agente.amministratore`: `true` with mode `amministratore`, `false` with mode `utente` (Technicians' pass, Modes). Never the pass nor the nonce; no event for a technician's pass |
+| `agente.lasciapassare` | the API issues a pass to an AI agent (Agent pass); with `agente.agente` and `agente.tecnico` (the usernames) and `agente.amministratore`: `true` with mode `amministratore`, `false` with mode `utente` (Technicians' pass, Modes), and `agente.capacita` (Agent pass, Capabilities), with `agente.porte` and `agente.durata` for `tunnel`. Never the pass nor the nonce; no event for a technician's pass |
 
 **Fields.** Every event has `schema`, `id`, `tipo`, `ora` and `pc`; on top
 of these, and nothing else:
@@ -775,6 +775,13 @@ The other objects:
 "verifica": {"integra": true, "hash": "9f2c...e01a"}
 "copia": {"cambi": 10}
 "agente": {"agente": "agente-mario", "tecnico": "mario", "amministratore": true}
+```
+
+In `agente.lasciapassare` the `agente` object also has the capability and,
+for the tunnel, ports and duration (Agent pass, Capabilities):
+
+```json
+"agente": {"agente": "agente-mario", "tecnico": "mario", "amministratore": true, "capacita": "tunnel", "porte": [22, 3389], "durata": 3600}
 ```
 
 **Signature.** Every request carries `X-Remotek-Evento-Id` (the `id`) and
@@ -867,7 +874,8 @@ chiave-nuova /app/data/lasciapassare.key`, then
 **Route.** `POST /api/agente/lasciapassare`, with the agent's login token
 (`Authorization: Bearer`), body `{"id": "<PC ID>"}` and, optional,
 `"modo": "utente"` for a session without administrator rights
-(Technicians' pass, Modes). It answers
+(Technicians' pass, Modes), and `capacita` and `porte` (Capabilities,
+below). It answers
 `{"lasciapassare": "<string>"}` only if the feature is configured, the
 token's user is an enabled AI agent, its technician exists and is enabled,
 the PC is in `peers` and it is in the technician's address book: one of
@@ -884,7 +892,10 @@ agent disabled, 401 like the other login routes. Every pass goes into the
 `lasciapassare` table (database version 273): nonce, PC, agent,
 technician, issued, expiry, `conn_id` (0 until it opens a session); never
 the whole pass nor the signature. In the log an INFO line `lasciapassare
-rilasciato` with agent, technician and PC, never the pass nor the nonce;
+rilasciato` with agent, technician, PC, mode, capability, ports and
+duration (`lasciapassare rilasciato: agente agente-mario, tecnico mario, PC
+999000111, modo amministratore, capacita' tunnel, porte [22 3389], durata
+3600`), never the pass nor the nonce;
 for the integration the `agente.lasciapassare` event.
 
 **Format.**
@@ -906,6 +917,44 @@ give the pass
 
 ```text
 eyJ2IjoxLCJwYyI6Ijk5OTAwMDExMSIsImFnZW50ZSI6ImFnZW50ZS1tYXJpbyIsInRlY25pY28iOiJtYXJpbyIsIm1vZG8iOiJhbW1pbmlzdHJhdG9yZSIsImVtZXNzbyI6MTc5MTAwMDAwMCwic2NhZGUiOjE3OTEwMDAwNjAsIm5vbmNlIjoiQUFFQ0F3UUZCZ2NJQ1FvTERBME9EdyJ9.BRkkm77ln4n8PxwF7Jmi3_-LiCHX7xGjLFjiXb3Knpc3kg9Rlv6DNoxForK3F28DLaUF5HWkudV4ZaWexK4YDA
+```
+
+**Capabilities (ADR-0033).** The optional `capacita` field of `POST
+/api/agente/lasciapassare` says what the session opens: `terminale` (the
+default, also without the field), `exec` (non-interactive commands),
+`file` (file transfer), `tunnel` (TCP tunnel to ports of the PC) or
+`schermo` (screen). With `tunnel`, and only with it, `porte` is required:
+1 to 8 TCP ports, each between 1 and 65535, without duplicates (for
+example `"porte": [22, 3389]`), and `durata` applies: the tunnel's
+maximum duration in seconds, between 60 and 28800, 3600 if missing. Any
+other value, a tunnel without ports, or `porte` or `durata` with another
+capability (`"porte": []` too) give 400 "Params validation failed.". The
+register (`lasciapassare`, database version 278) has the columns
+`capacita` (default `terminale`, also for earlier rows and for
+technicians), `porte` (comma-separated, empty except for the tunnel) and
+`durata` (0 except for the tunnel).
+
+Without `capacita`, or with `terminale`, the pass is the `v` 1 above, byte
+for byte. With the others it is **`v` 2**: same signature (same prefix,
+same key), payload with `capacita`, `porte` (list of integers, `[]`
+except for the tunnel) and `durata` (seconds, 0 except for the tunnel)
+after `modo`, in this order, which is part of the
+format:
+`{"v":2,"pc":"<ID>","agente":"<username>","tecnico":"<technician username>","modo":"<mode>","capacita":"<capability>","porte":[<ports>],"durata":<seconds>,"emesso":<unix>,"scade":<emesso+60>,"nonce":"<nonce>"}`.
+The PC of the `-5` client accepts only `v` 1: for it a `v` 2 counts as no
+pass at all, by design. Technicians (`POST /api/lasciapassare`) always get
+`v` 1, without a capability.
+
+`v` 2 test vector: the same seed and the payload
+
+```json
+{"v":2,"pc":"999000111","agente":"agente-mario","tecnico":"mario","modo":"amministratore","capacita":"tunnel","porte":[22,3389],"durata":3600,"emesso":1791000000,"scade":1791000060,"nonce":"AAECAwQFBgcICQoLDA0ODw"}
+```
+
+give the pass
+
+```text
+eyJ2IjoyLCJwYyI6Ijk5OTAwMDExMSIsImFnZW50ZSI6ImFnZW50ZS1tYXJpbyIsInRlY25pY28iOiJtYXJpbyIsIm1vZG8iOiJhbW1pbmlzdHJhdG9yZSIsImNhcGFjaXRhIjoidHVubmVsIiwicG9ydGUiOlsyMiwzMzg5XSwiZHVyYXRhIjozNjAwLCJlbWVzc28iOjE3OTEwMDAwMDAsInNjYWRlIjoxNzkxMDAwMDYwLCJub25jZSI6IkFBRUNBd1FGQmdjSUNRb0xEQTBPRHcifQ.kahITkYNGYmo1y2rCRX08LPvdZjiMCzrQPrcvZExTBF3g_eAAAYyPqPjjgl4pImNa-rcg5LmhkH_yqGFu_hOAw
 ```
 
 **How the PC verifies it.** It splits the string at the dot, decodes the
