@@ -19,6 +19,19 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   token: il pannello non le chiama mai con quel codice. Per chi installa:
   migrazione del database alla versione 276, solo una colonna aggiunta,
   all'avvio come sempre.
+- Lasciapassare dei tecnici (ADR-0032): `POST /api/lasciapassare` da' a un
+  tecnico entrato con OIDC il lasciapassare firmato per qualunque PC in
+  `peers`, senza la rubrica, nel modo `tecnico`; col login con password
+  solo all'admin di emergenza (amministratore in `app.pwd-login-eccezioni`),
+  con un warn, e a nessun altro. `POST /api/agente/lasciapassare` accetta il
+  campo facoltativo `modo`: `utente` da' un lasciapassare senza i permessi
+  di amministratore, e l'evento `agente.lasciapassare` ha allora
+  `agente.amministratore` falso; senza il campo, come prima. Il registro dei
+  lasciapassare ha anche il modo, e il legame alla connessione vale anche
+  per i tecnici (tecnico verificato, senza agente; nel registro delle
+  connessioni del pannello l'etichetta "Tecnico verificato"). Il PC del
+  client `-5` accetta solo il modo `amministratore`. Per chi installa:
+  migrazione del database alla versione 277, solo una colonna aggiunta.
 
 ### Corretto
 - Con `jwt.key` impostata, due login dello stesso utente nello stesso

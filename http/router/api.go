@@ -104,6 +104,8 @@ func ApiInit(g *gin.Engine) {
 		frg.GET("/agente", u.Agente)
 		// Lasciapassare firmato dell'agente per un PC (ADR-0028).
 		frg.POST("/agente/lasciapassare", u.Lasciapassare)
+		// Lasciapassare firmato del tecnico per un PC (ADR-0032).
+		frg.POST("/lasciapassare", u.LasciapassareTecnico)
 	}
 	{
 		au := &api.Audit{}

@@ -380,8 +380,9 @@ cambiano.
 
 Un agente usa solo il client a riga di comando (ADR-0028). Tra le rotte con
 login gli rispondono solo `GET /api/user/info`, `POST /api/currentUser`,
-`POST /api/logout`, `GET /api/agente` e `POST /api/agente/lasciapassare`;
-le altre (rubriche, PC, utenti, note) rispondono 403 `{"error": msg}`, con
+`POST /api/logout`, `GET /api/agente` e `POST /api/agente/lasciapassare`
+(e `POST /api/lasciapassare`, dei tecnici, che lo rifiuta con 400); le
+altre (rubriche, PC, utenti, note) rispondono 403 `{"error": msg}`, con
 un warn. Il login del pannello (`POST /api/admin/login`, e quello OIDC) lo
 rifiuta senza dare un token, e ogni rotta del pannello con login risponde
 col code 403, che per il pannello e' un logout, anche a un token gia'
@@ -732,7 +733,7 @@ altri, quindi l'ordine sicuro e' quello di `ora`.
 | `terminale.chiuso` | arriva il blocco con `fine` della trascrizione di una sessione terminale; con `sessione` e `verifica` (`integra`, `hash` finale), calcolata come la verifica del pannello. Niente blocchi ne' dati. `sessione.fine` e' `null` se il PC registra la chiusura dopo |
 | `pc.nuovo` | un sysinfo crea un PC che l'API non conosceva |
 | `pc.possibile_copia` | l'API scrive il warn `possibile copia del PC` (Copie dello stesso PC), al massimo uno all'ora per PC; con `copia.cambi`, senza gli indirizzi |
-| `agente.lasciapassare` | l'API rilascia un lasciapassare a un agente AI (Lasciapassare dell'agente); con `agente.agente` e `agente.tecnico` (gli username) e `agente.amministratore` (`true`). Mai il lasciapassare ne' il nonce |
+| `agente.lasciapassare` | l'API rilascia un lasciapassare a un agente AI (Lasciapassare dell'agente); con `agente.agente` e `agente.tecnico` (gli username) e `agente.amministratore`: `true` col modo `amministratore`, `false` col modo `utente` (Lasciapassare dei tecnici, Modi). Mai il lasciapassare ne' il nonce; nessun evento per il lasciapassare di un tecnico |
 
 **Campi.** Ogni evento ha `schema`, `id`, `tipo`, `ora` e `pc`; oltre a
 questi, e nient'altro:
@@ -867,7 +868,9 @@ sovrascrive per sbaglio. Con docker compose, per esempio:
 `RUSTDESK_API_AGENTE_LASCIAPASSARE_CHIAVE=/app/data/lasciapassare.key`.
 
 **Rotta.** `POST /api/agente/lasciapassare`, col token del login
-dell'agente (`Authorization: Bearer`), corpo `{"id": "<ID del PC>"}`.
+dell'agente (`Authorization: Bearer`), corpo `{"id": "<ID del PC>"}` e,
+facoltativo, `"modo": "utente"` per una sessione senza i permessi di
+amministratore (Lasciapassare dei tecnici, Modi).
 Risponde `{"lasciapassare": "<stringa>"}` solo se la funzione e'
 configurata, l'utente del token e' un agente AI attivo, il suo tecnico
 esiste ed e' attivo, il PC e' in `peers` ed e' nella rubrica del tecnico:
@@ -954,6 +957,61 @@ verificato" (con agente e tecnico) c'e' solo col nonce legato, e
 eventi `connessione.aperta` e `connessione.chiusa` portano
 `sessione.amministratore` e, per una sessione verificata, `agente` con
 `amministratore` preso dalla riga.
+
+## Lasciapassare dei tecnici (ADR-0032)
+
+Ogni sessione verso un PC Remotek portera' un lasciapassare firmato
+dall'API, non solo quella di un agente AI: lo stesso formato, la stessa
+chiave (`agente.lasciapassare-chiave`), la stessa durata (60 secondi, una
+volta sola, un solo PC) e lo stesso registro. Chi lo riceve:
+
+- un **tecnico entrato con OIDC** (con l'MFA del provider), per qualunque
+  PC in `peers`, senza guardare la rubrica: modo `tecnico`, `agente`
+  vuoto, `tecnico` = il suo username;
+- l'**admin di emergenza**, entrato con la password: solo un
+  amministratore il cui username sta in `app.pwd-login-eccezioni`, con una
+  riga WARN `lasciapassare all'admin di emergenza: utente <u>, PC <id>`;
+- un **agente AI**, solo per i PC della rubrica del suo tecnico, dalla sua
+  rotta (Lasciapassare dell'agente).
+
+Nessun altro: un utente entrato con la password che non e' l'admin di
+emergenza (anche se sta nell'elenco, come `collaudo-contratto`, che non e'
+amministratore) riceve 400 `{"error": "Il lasciapassare per i PC va solo a
+chi è entrato con OIDC: esci e rientra con l'accesso aziendale."}`. Un
+token nato da `webauth` (`app.web-sso`) non vale come OIDC: lo conferma un
+utente del pannello, che puo' esserci entrato con la password. I token di
+prima della versione 276 del database valgono come login con password: per
+il lasciapassare il tecnico rientra con OIDC.
+
+**Rotta.** `POST /api/lasciapassare`, col token del login del tecnico
+(`Authorization: Bearer`), corpo `{"id": "<ID del PC>"}`. Risponde
+`{"lasciapassare": "<stringa>"}`, oppure 400 `{"error": msg}` se la
+funzione e' spenta, se il PC non e' in `peers`, o per i rifiuti sopra; un
+agente AI riceve 400 "Un agente AI chiede il lasciapassare con
+/api/agente/lasciapassare.". Nel registro (`lasciapassare`) `agente_id` e'
+0 e `tecnico_id` e' l'utente; nel log una riga INFO `lasciapassare
+rilasciato al tecnico <u>, PC <id>` (WARN per l'admin di emergenza), mai il
+lasciapassare ne' il nonce. Nessun evento verso l'integrazione.
+
+**Modi.** Il campo `modo` del payload (colonna `modo` del registro,
+versione del database 277) e' uno di:
+
+- `amministratore`: l'agente AI chiede i permessi di amministratore (come
+  prima);
+- `utente`: l'agente AI senza i permessi di amministratore, col campo
+  facoltativo `"modo": "utente"` di `POST /api/agente/lasciapassare`
+  (assente o `amministratore` come prima; un altro valore e' 400);
+- `tecnico`: la sessione del tecnico, da `POST /api/lasciapassare`.
+
+Il PC del client `-5` accetta solo `amministratore` e ignora gli altri:
+la rotta si puo' rilasciare prima del client che li usa, e i client `-4`
+e `-5` dell'agente, che non mandano `modo`, continuano come prima.
+
+**Collegamento alla connessione.** Come per l'agente: il PC manda il nonce
+in `POST /api/audit/conn` e l'API lega il lasciapassare alla riga; nel
+registro delle connessioni `tecnico_lasciapassare` e' il tecnico
+verificato e `agente_lasciapassare` resta vuoto, con una riga INFO
+`connessione <conn> del PC <id> aperta col lasciapassare del tecnico <u>`.
 
 ## Origine e licenza
 

@@ -175,13 +175,15 @@ func (es *EventiService) AccodaCopia(id string, cambi int) error {
 }
 
 // AccodaLasciapassare accoda agente.lasciapassare per il lasciapassare
-// rilasciato all'agente agente, del tecnico tecnico, per il PC pc.
-func (es *EventiService) AccodaLasciapassare(pc string, agente, tecnico *model.User) error {
+// rilasciato all'agente agente, del tecnico tecnico, per il PC pc;
+// amministratore e' vero se l'agente ha chiesto quei permessi (modo
+// amministratore), falso col modo utente.
+func (es *EventiService) AccodaLasciapassare(pc string, agente, tecnico *model.User, amministratore bool) error {
 	if !Config.Integrazione.Attiva() {
 		return nil
 	}
 	return accodaDelPc(pc, corpoEvento{Tipo: EventoAgenteLasciapassare,
-		Agente: &AgenteEvento{Agente: agente.Username, Tecnico: tecnico.Username, Amministratore: true}})
+		Agente: &AgenteEvento{Agente: agente.Username, Tecnico: tecnico.Username, Amministratore: amministratore}})
 }
 
 // accodaDelPc accoda c col PC id letto dal database.

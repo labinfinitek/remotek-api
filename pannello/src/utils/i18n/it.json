@@ -593,6 +593,9 @@
   "VerifiedAgent": {
     "One": "Agente verificato: {agente} (tecnico {tecnico})"
   },
+  "VerifiedTechnician": {
+    "One": "Tecnico verificato: {tecnico}"
+  },
   "Administrator": {
     "One": "Amministratore"
   },

@@ -26,8 +26,10 @@ type AuditConn struct {
 	// AgenteLasciapassare e TecnicoLasciapassare sono gli username
 	// dell'agente AI e del suo tecnico verificati col lasciapassare
 	// (ADR-0028, versione del database 274), vuoti per una connessione
-	// senza. Amministratore dice, come l'ha detto il PC, che la shell della
-	// sessione ha i permessi di amministratore, con o senza agente.
+	// senza; col lasciapassare di un tecnico (ADR-0032) TecnicoLasciapassare
+	// e' il tecnico e AgenteLasciapassare resta vuoto. Amministratore dice,
+	// come l'ha detto il PC, che la shell della sessione ha i permessi di
+	// amministratore, con o senza agente.
 	AgenteLasciapassare  string `json:"agente_lasciapassare" gorm:"default:'';not null;"`
 	TecnicoLasciapassare string `json:"tecnico_lasciapassare" gorm:"default:'';not null;"`
 	Amministratore       bool   `json:"amministratore" gorm:"default:false;not null;"`

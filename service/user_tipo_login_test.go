@@ -68,7 +68,7 @@ func TestLoginDaOidc(t *testing.T) {
 			t.Fatalf("token %s: %v", tc.nome, err)
 		}
 		c, _ := gin.CreateTestContext(httptest.NewRecorder())
-		c.Set("curUserToken", ut)
+		c.Set(ChiaveTokenRichiesta, ut)
 		if oidc := us.LoginDaOidc(c); oidc != tc.oidc {
 			t.Errorf("token %s: da OIDC %t, atteso %t", tc.nome, oidc, tc.oidc)
 		}

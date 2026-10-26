@@ -153,6 +153,11 @@ definitions:
       id:
         maxLength: 100
         type: string
+      modo:
+        enum:
+        - amministratore
+        - utente
+        type: string
     required:
     - id
     type: object
@@ -160,6 +165,14 @@ definitions:
     properties:
       lasciapassare:
         type: string
+    type: object
+  api.LasciapassareTecnicoForm:
+    properties:
+      id:
+        maxLength: 100
+        type: string
+    required:
+    - id
     type: object
   api.LoginForm:
     properties:
@@ -1109,6 +1122,41 @@ paths:
       summary: PC, per l'integrazione
       tags:
       - Integrazione
+  /lasciapassare:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID del PC
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.LasciapassareTecnicoForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.LasciapassarePayload'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - token: []
+      summary: lasciapassare del tecnico
+      tags:
+      - 用户
   /login:
     post:
       consumes:

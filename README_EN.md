@@ -376,7 +376,8 @@ username if the nickname is empty) or `{"agente":false,"tecnico":""}`;
 An agent only uses the command-line client (ADR-0028). Among the login
 routes only `GET /api/user/info`, `POST /api/currentUser`,
 `POST /api/logout`, `GET /api/agente` and `POST /api/agente/lasciapassare`
-answer it; the others (address books, PCs, users, notes) answer 403
+(and `POST /api/lasciapassare`, the technicians', which refuses it with
+400) answer it; the others (address books, PCs, users, notes) answer 403
 `{"error": msg}`, with a warn. The panel login (`POST /api/admin/login`, and
 the OIDC one) refuses it without a token, and every panel login route
 answers code 403, which for the panel is a logout, even to a token issued
@@ -729,7 +730,7 @@ others, so the reliable order is `ora`.
 | `terminale.chiuso` | the block with `fine` of a terminal session transcript arrives; with `sessione` and `verifica` (`integra`, final `hash`), computed as the panel's verification. No blocks or data. `sessione.fine` is `null` if the PC records the close later |
 | `pc.nuovo` | a sysinfo creates a PC the API did not know |
 | `pc.possibile_copia` | the API writes the `possibile copia del PC` warn (Copies of the same PC), at most one per hour per PC; with `copia.cambi`, without the addresses |
-| `agente.lasciapassare` | the API issues a pass to an AI agent (Agent pass); with `agente.agente` and `agente.tecnico` (the usernames) and `agente.amministratore` (`true`). Never the pass nor the nonce |
+| `agente.lasciapassare` | the API issues a pass to an AI agent (Agent pass); with `agente.agente` and `agente.tecnico` (the usernames) and `agente.amministratore`: `true` with mode `amministratore`, `false` with mode `utente` (Technicians' pass, Modes). Never the pass nor the nonce; no event for a technician's pass |
 
 **Fields.** Every event has `schema`, `id`, `tipo`, `ora` and `pc`; on top
 of these, and nothing else:
@@ -864,7 +865,9 @@ chiave-nuova /app/data/lasciapassare.key`, then
 `RUSTDESK_API_AGENTE_LASCIAPASSARE_CHIAVE=/app/data/lasciapassare.key`.
 
 **Route.** `POST /api/agente/lasciapassare`, with the agent's login token
-(`Authorization: Bearer`), body `{"id": "<PC ID>"}`. It answers
+(`Authorization: Bearer`), body `{"id": "<PC ID>"}` and, optional,
+`"modo": "utente"` for a session without administrator rights
+(Technicians' pass, Modes). It answers
 `{"lasciapassare": "<string>"}` only if the feature is configured, the
 token's user is an enabled AI agent, its technician exists and is enabled,
 the PC is in `peers` and it is in the technician's address book: one of
@@ -951,6 +954,59 @@ agent and technician) appears only with a linked nonce, and
 `connessione.aperta` and `connessione.chiusa` events carry
 `sessione.amministratore` and, for a verified session, `agente` with
 `amministratore` taken from the row.
+
+## Technicians' pass (ADR-0032)
+
+Every session to a Remotek PC will carry a pass signed by the API, not only
+an AI agent's: same format, same key (`agente.lasciapassare-chiave`), same
+duration (60 seconds, once, one PC) and same log. Who gets it:
+
+- a **technician signed in with OIDC** (with the provider's MFA), for any
+  PC in `peers`, without looking at the address book: mode `tecnico`,
+  empty `agente`, `tecnico` = their username;
+- the **emergency admin**, signed in with the password: only an
+  administrator whose username is in `app.pwd-login-eccezioni`, with a
+  WARN line `lasciapassare all'admin di emergenza: utente <u>, PC <id>`;
+- an **AI agent**, only for the PCs in its technician's address book, from
+  its own route (AI agent pass).
+
+Nobody else: a user signed in with the password who is not the emergency
+admin (even if listed, like `collaudo-contratto`, which is not an
+administrator) gets 400 `{"error": msg}` ("The PC pass goes only to who
+signed in with OIDC..."). A token born from `webauth` (`app.web-sso`) does
+not count as OIDC: a panel user confirms it, and may have signed in with
+the password. Tokens from before database version 276 count as a password
+login: for the pass the technician signs in again with OIDC.
+
+**Route.** `POST /api/lasciapassare`, with the technician's login token
+(`Authorization: Bearer`), body `{"id": "<PC ID>"}`. It answers
+`{"lasciapassare": "<string>"}`, or 400 `{"error": msg}` if the feature is
+off, the PC is not in `peers`, or for the refusals above; an AI agent gets
+400 ("An AI agent asks for its pass with /api/agente/lasciapassare."). In
+the log table (`lasciapassare`) `agente_id` is 0 and `tecnico_id` is the
+user; in the log an INFO line `lasciapassare rilasciato al tecnico <u>, PC
+<id>` (WARN for the emergency admin), never the pass nor the nonce. No
+event to the integration.
+
+**Modes.** The payload's `modo` field (log column `modo`, database version
+277) is one of:
+
+- `amministratore`: the AI agent asks for administrator rights (as before);
+- `utente`: the AI agent without administrator rights, with the optional
+  field `"modo": "utente"` of `POST /api/agente/lasciapassare` (absent or
+  `amministratore` as before; any other value is 400);
+- `tecnico`: the technician's session, from `POST /api/lasciapassare`.
+
+The PC of client `-5` accepts only `amministratore` and ignores the
+others: the route can be released before the client that uses them, and
+the agent's `-4` and `-5` clients, which do not send `modo`, go on as
+before.
+
+**Link to the connection.** As for the agent: the PC sends the nonce in
+`POST /api/audit/conn` and the API links the pass to the row; in the
+connection log `tecnico_lasciapassare` is the verified technician and
+`agente_lasciapassare` stays empty, with an INFO line `connessione <conn>
+del PC <id> aperta col lasciapassare del tecnico <u>`.
 
 ## Origin and licence
 

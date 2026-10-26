@@ -5946,7 +5946,7 @@ const docTemplateadmin = `{
                     "type": "string"
                 },
                 "agente_lasciapassare": {
-                    "description": "AgenteLasciapassare e TecnicoLasciapassare sono gli username\ndell'agente AI e del suo tecnico verificati col lasciapassare\n(ADR-0028, versione del database 274), vuoti per una connessione\nsenza. Amministratore dice, come l'ha detto il PC, che la shell della\nsessione ha i permessi di amministratore, con o senza agente.",
+                    "description": "AgenteLasciapassare e TecnicoLasciapassare sono gli username\ndell'agente AI e del suo tecnico verificati col lasciapassare\n(ADR-0028, versione del database 274), vuoti per una connessione\nsenza; col lasciapassare di un tecnico (ADR-0032) TecnicoLasciapassare\ne' il tecnico e AgenteLasciapassare resta vuoto. Amministratore dice,\ncome l'ha detto il PC, che la shell della sessione ha i permessi di\namministratore, con o senza agente.",
                     "type": "string"
                 },
                 "amministratore": {
