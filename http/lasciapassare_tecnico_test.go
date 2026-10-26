@@ -123,7 +123,7 @@ func TestLasciapassareTecnico(t *testing.T) {
 				t.Fatal(err)
 			}
 			want := model.Lasciapassare{IdModel: righe[0].IdModel, Nonce: p.Nonce, Pc: tc.pc, AgenteId: 0, TecnicoId: tecnico.Id,
-				Modo: "tecnico", Emesso: p.Emesso, Scade: p.Scade, Creato: p.Emesso}
+				Modo: "tecnico", Capacita: "terminale", Emesso: p.Emesso, Scade: p.Scade, Creato: p.Emesso}
 			if len(righe) != 1 || righe[0] != want {
 				t.Errorf("registro %+v, atteso %+v", righe, want)
 			}

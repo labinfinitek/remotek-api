@@ -135,7 +135,7 @@ func TestLasciapassareRilasciato(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := model.Lasciapassare{IdModel: righe[0].IdModel, Nonce: p.Nonce, Pc: "999000111", AgenteId: 4, TecnicoId: 2,
-		Modo: "amministratore", Emesso: p.Emesso, Scade: p.Scade, Creato: p.Emesso}
+		Modo: "amministratore", Capacita: "terminale", Emesso: p.Emesso, Scade: p.Scade, Creato: p.Emesso}
 	if len(righe) != 1 || righe[0] != want {
 		t.Errorf("registro %+v, atteso %+v", righe, want)
 	}
@@ -153,7 +153,7 @@ func TestLasciapassareRilasciato(t *testing.T) {
 	}
 	var e model.Evento
 	if err := service.DB.First(&e).Error; err != nil || e.Tipo != service.EventoAgenteLasciapassare ||
-		!strings.Contains(e.Corpo, `"agente":{"agente":"agente-mario","tecnico":"mario","amministratore":true}`) || strings.Contains(e.Corpo, p.Nonce) {
+		!strings.Contains(e.Corpo, `"agente":{"agente":"agente-mario","tecnico":"mario","amministratore":true,"capacita":"terminale"}`) || strings.Contains(e.Corpo, p.Nonce) {
 		t.Errorf("evento %+v (%v)", e, err)
 	}
 	// Due richieste danno due nonce diversi.

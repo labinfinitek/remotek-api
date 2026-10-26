@@ -82,12 +82,16 @@ type CopiaEvento struct {
 }
 
 // AgenteEvento e' l'agente AI di un lasciapassare (ADR-0028): gli username
-// dell'agente e del suo tecnico, e se ha i permessi di amministratore. Mai
-// il lasciapassare ne' il nonce.
+// dell'agente e del suo tecnico, e se ha i permessi di amministratore; in
+// agente.lasciapassare anche la capacita' (ADR-0033) e, per il tunnel, le
+// porte e la durata massima. Mai il lasciapassare ne' il nonce.
 type AgenteEvento struct {
 	Agente         string `json:"agente"`
 	Tecnico        string `json:"tecnico"`
 	Amministratore bool   `json:"amministratore"`
+	Capacita       string `json:"capacita,omitempty"`
+	Porte          []int  `json:"porte,omitempty"`
+	Durata         int    `json:"durata,omitempty"`
 }
 
 // corpoEvento e' il corpo comune degli eventi; i campi dopo Pc ci sono solo
@@ -177,13 +181,15 @@ func (es *EventiService) AccodaCopia(id string, cambi int) error {
 // AccodaLasciapassare accoda agente.lasciapassare per il lasciapassare
 // rilasciato all'agente agente, del tecnico tecnico, per il PC pc;
 // amministratore e' vero se l'agente ha chiesto quei permessi (modo
-// amministratore), falso col modo utente.
-func (es *EventiService) AccodaLasciapassare(pc string, agente, tecnico *model.User, amministratore bool) error {
+// amministratore), falso col modo utente; capacita, porte e durata sono
+// quelle del lasciapassare.
+func (es *EventiService) AccodaLasciapassare(pc string, agente, tecnico *model.User, amministratore bool, capacita string, porte []int, durata int) error {
 	if !Config.Integrazione.Attiva() {
 		return nil
 	}
 	return accodaDelPc(pc, corpoEvento{Tipo: EventoAgenteLasciapassare,
-		Agente: &AgenteEvento{Agente: agente.Username, Tecnico: tecnico.Username, Amministratore: amministratore}})
+		Agente: &AgenteEvento{Agente: agente.Username, Tecnico: tecnico.Username, Amministratore: amministratore,
+			Capacita: capacita, Porte: porte, Durata: durata}})
 }
 
 // accodaDelPc accoda c col PC id letto dal database.

@@ -4,9 +4,13 @@ package model
 // (ADR-0028, versione del database 273) e ai tecnici (ADR-0032): per un
 // tecnico AgenteId e' 0 e TecnicoId e' il tecnico. Modo e' quello del
 // payload (versione del database 277; vuoto nelle righe di prima, che erano
-// tutte amministratore). Mai il lasciapassare intero ne' la firma: solo il
-// nonce, che il PC rimanda quando apre la sessione. Le ore sono secondi
-// UNIX. ConnId (il conn_id del client, che si ripete a ogni
+// tutte amministratore). Capacita, Porte e Durata (versione del database
+// 278) sono cio' che apre la sessione dell'agente (ADR-0033), le porte del
+// tunnel, separate da virgole, e la sua durata massima in secondi; i default, anche per le righe di prima, dicono il
+// terminale. Per un tecnico (modo tecnico) Capacita resta terminale e non
+// conta: il suo lasciapassare non la porta. Mai il lasciapassare intero
+// ne' la firma: solo il nonce, che il PC rimanda quando apre la sessione.
+// Le ore sono secondi UNIX. ConnId (il conn_id del client, che si ripete a ogni
 // riavvio del PC) e AuditConnId (l'id della riga di audit_conns, versione
 // del database 275) sono 0 finche' il lasciapassare non apre una
 // connessione: il legame che vale e' AuditConnId.
@@ -17,6 +21,9 @@ type Lasciapassare struct {
 	AgenteId    uint   `gorm:"not null;index"`
 	TecnicoId   uint   `gorm:"not null"`
 	Modo        string `gorm:"size:20;not null;default:''"`
+	Capacita    string `gorm:"size:20;not null;default:'terminale'"`
+	Porte       string `gorm:"size:60;not null;default:''"`
+	Durata      int    `gorm:"not null;default:0"`
 	Emesso      int64  `gorm:"not null"`
 	Scade       int64  `gorm:"not null"`
 	ConnId      int64  `gorm:"not null;default:0"`

@@ -2112,6 +2112,21 @@ const docTemplateapi = `{
                 "id"
             ],
             "properties": {
+                "capacita": {
+                    "type": "string",
+                    "enum": [
+                        "terminale",
+                        "exec",
+                        "file",
+                        "tunnel",
+                        "schermo"
+                    ]
+                },
+                "durata": {
+                    "type": "integer",
+                    "maximum": 28800,
+                    "minimum": 60
+                },
                 "id": {
                     "type": "string",
                     "maxLength": 100
@@ -2122,6 +2137,14 @@ const docTemplateapi = `{
                         "amministratore",
                         "utente"
                     ]
+                },
+                "porte": {
+                    "type": "array",
+                    "maxItems": 8,
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },

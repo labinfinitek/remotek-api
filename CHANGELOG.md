@@ -6,6 +6,21 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+### Aggiunto
+- Il lasciapassare dell'agente dice cosa apre (ADR-0033): `POST
+  /api/agente/lasciapassare` accetta i campi facoltativi `capacita`
+  (`terminale`, il default, `exec`, `file`, `tunnel`, `schermo`) e, solo col
+  `tunnel`, `porte` (obbligatorio, da 1 a 8 porte TCP diverse) e `durata`
+  (secondi fra 60 e 28800, 3600 se manca); un valore fuori regola e' 400.
+  Senza `capacita`, o col terminale, il lasciapassare e' quello di prima
+  (`v` 1); con le altre e' il `v` 2, con `capacita`, `porte` e `durata`
+  dopo `modo`, che il PC del client `-5` non accetta. Il registro dei
+  lasciapassare ha capacita', porte e durata, l'evento
+  `agente.lasciapassare` `agente.capacita` e, per il tunnel, `agente.porte`
+  e `agente.durata`. I tecnici non cambiano. Per chi installa: migrazione
+  del database alla versione 278, solo tre colonne aggiunte, con default
+  che dicono il terminale.
+
 ## [0.13.0] - 2026-10-26
 Immagine `ghcr.io/labinfinitek/remotek-api:0.13.0`, costruita con Go 1.26.10
 su Alpine 3.24.3. Versione minore: il lasciapassare per i tecnici entrati

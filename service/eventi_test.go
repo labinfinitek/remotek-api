@@ -396,7 +396,7 @@ func TestCampiAltriEventi(t *testing.T) {
 		es.AccodaTerminale(conn, &model.AuditTerminalVerifica{Integra: true, Blocchi: 3, Fine: true, Hash: "ab12"}),
 		es.AccodaPcNuovo(pc),
 		es.AccodaCopia("999000111", 10),
-		es.AccodaLasciapassare("999000111", &model.User{Username: "agente-mario", Password: "segreto"}, &model.User{Username: "mario"}, true),
+		es.AccodaLasciapassare("999000111", &model.User{Username: "agente-mario", Password: "segreto"}, &model.User{Username: "mario"}, true, CapacitaTunnel, []int{22, 3389}, 7200),
 	} {
 		if err != nil {
 			t.Fatal(err)
@@ -410,7 +410,8 @@ func TestCampiAltriEventi(t *testing.T) {
 			"sessione": map[string]any{"conn_id": 7.0, "tipo": 4.0, "tecnico": "mario", "inizio": "2026-10-11T09:00:00Z", "fine": nil, "durata_s": nil, "nota": "#83100"}},
 		{"tipo": EventoPcNuovo},
 		{"tipo": EventoPcCopia, "copia": map[string]any{"cambi": 10.0}},
-		{"tipo": EventoAgenteLasciapassare, "agente": map[string]any{"agente": "agente-mario", "tecnico": "mario", "amministratore": true}},
+		{"tipo": EventoAgenteLasciapassare, "agente": map[string]any{"agente": "agente-mario", "tecnico": "mario", "amministratore": true,
+			"capacita": "tunnel", "porte": []any{22.0, 3389.0}, "durata": 7200.0}},
 	}
 	coda := eventi(t)
 	if len(coda) != len(want) {

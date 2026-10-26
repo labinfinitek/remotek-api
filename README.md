@@ -733,7 +733,7 @@ altri, quindi l'ordine sicuro e' quello di `ora`.
 | `terminale.chiuso` | arriva il blocco con `fine` della trascrizione di una sessione terminale; con `sessione` e `verifica` (`integra`, `hash` finale), calcolata come la verifica del pannello. Niente blocchi ne' dati. `sessione.fine` e' `null` se il PC registra la chiusura dopo |
 | `pc.nuovo` | un sysinfo crea un PC che l'API non conosceva |
 | `pc.possibile_copia` | l'API scrive il warn `possibile copia del PC` (Copie dello stesso PC), al massimo uno all'ora per PC; con `copia.cambi`, senza gli indirizzi |
-| `agente.lasciapassare` | l'API rilascia un lasciapassare a un agente AI (Lasciapassare dell'agente); con `agente.agente` e `agente.tecnico` (gli username) e `agente.amministratore`: `true` col modo `amministratore`, `false` col modo `utente` (Lasciapassare dei tecnici, Modi). Mai il lasciapassare ne' il nonce; nessun evento per il lasciapassare di un tecnico |
+| `agente.lasciapassare` | l'API rilascia un lasciapassare a un agente AI (Lasciapassare dell'agente); con `agente.agente` e `agente.tecnico` (gli username) e `agente.amministratore`: `true` col modo `amministratore`, `false` col modo `utente` (Lasciapassare dei tecnici, Modi), e `agente.capacita` (Lasciapassare dell'agente, Capacita'), con `agente.porte` e `agente.durata` per il `tunnel`. Mai il lasciapassare ne' il nonce; nessun evento per il lasciapassare di un tecnico |
 
 **Campi.** Ogni evento ha `schema`, `id`, `tipo`, `ora` e `pc`; oltre a
 questi, e nient'altro:
@@ -778,6 +778,13 @@ Gli altri oggetti:
 "verifica": {"integra": true, "hash": "9f2c...e01a"}
 "copia": {"cambi": 10}
 "agente": {"agente": "agente-mario", "tecnico": "mario", "amministratore": true}
+```
+
+In `agente.lasciapassare` l'oggetto `agente` ha anche la capacita' e, per
+il tunnel, porte e durata (Lasciapassare dell'agente, Capacita'):
+
+```json
+"agente": {"agente": "agente-mario", "tecnico": "mario", "amministratore": true, "capacita": "tunnel", "porte": [22, 3389], "durata": 3600}
 ```
 
 **Firma.** Ogni richiesta ha gli header `X-Remotek-Evento-Id` (l'`id`) e
@@ -870,7 +877,8 @@ sovrascrive per sbaglio. Con docker compose, per esempio:
 **Rotta.** `POST /api/agente/lasciapassare`, col token del login
 dell'agente (`Authorization: Bearer`), corpo `{"id": "<ID del PC>"}` e,
 facoltativo, `"modo": "utente"` per una sessione senza i permessi di
-amministratore (Lasciapassare dei tecnici, Modi).
+amministratore (Lasciapassare dei tecnici, Modi), e `capacita` e `porte`
+(Capacita', sotto).
 Risponde `{"lasciapassare": "<stringa>"}` solo se la funzione e'
 configurata, l'utente del token e' un agente AI attivo, il suo tecnico
 esiste ed e' attivo, il PC e' in `peers` ed e' nella rubrica del tecnico:
@@ -886,8 +894,10 @@ con l'agente disattivato, 401 come le altre rotte con login. Ogni
 lasciapassare va nella tabella `lasciapassare` (versione del database 273):
 nonce, PC, agente, tecnico, emesso, scade, `conn_id` (0 finche' non apre
 una sessione); mai il lasciapassare intero ne' la firma. Nel log una riga
-INFO `lasciapassare rilasciato` con agente, tecnico e PC, mai il
-lasciapassare ne' il nonce; per l'integrazione l'evento
+INFO `lasciapassare rilasciato` con agente, tecnico, PC, modo, capacita',
+porte e durata (`lasciapassare rilasciato: agente agente-mario, tecnico
+mario, PC 999000111, modo amministratore, capacita' tunnel, porte [22
+3389], durata 3600`), mai il lasciapassare ne' il nonce; per l'integrazione l'evento
 `agente.lasciapassare`.
 
 **Formato.**
@@ -909,6 +919,43 @@ danno il lasciapassare
 
 ```text
 eyJ2IjoxLCJwYyI6Ijk5OTAwMDExMSIsImFnZW50ZSI6ImFnZW50ZS1tYXJpbyIsInRlY25pY28iOiJtYXJpbyIsIm1vZG8iOiJhbW1pbmlzdHJhdG9yZSIsImVtZXNzbyI6MTc5MTAwMDAwMCwic2NhZGUiOjE3OTEwMDAwNjAsIm5vbmNlIjoiQUFFQ0F3UUZCZ2NJQ1FvTERBME9EdyJ9.BRkkm77ln4n8PxwF7Jmi3_-LiCHX7xGjLFjiXb3Knpc3kg9Rlv6DNoxForK3F28DLaUF5HWkudV4ZaWexK4YDA
+```
+
+**Capacita' (ADR-0033).** Il campo facoltativo `capacita` di `POST
+/api/agente/lasciapassare` dice cosa apre la sessione: `terminale` (il
+default, anche senza il campo), `exec` (comandi non interattivi), `file`
+(trasferimento di file), `tunnel` (tunnel TCP verso porte del PC) o
+`schermo`. Col `tunnel`, e solo con quello, serve `porte`: da 1 a 8 porte
+TCP, ognuna fra 1 e 65535, senza doppioni (per esempio `"porte": [22,
+3389]`), e vale `durata`: la durata massima del tunnel in secondi, fra 60 e
+28800, 3600 se manca. Un altro valore, il tunnel senza porte, o `porte` o
+`durata` con un'altra capacita' (anche `"porte": []`) danno 400 "Parametri
+non validi.". Il registro (`lasciapassare`, versione del database 278) ha
+le colonne `capacita` (default `terminale`, anche per le righe di prima e
+per i tecnici), `porte` (separate da virgole, vuoto tranne che per il
+tunnel) e `durata` (0 tranne che per il tunnel).
+
+Senza `capacita`, o col `terminale`, il lasciapassare e' il `v` 1 sopra,
+byte per byte. Con le altre e' il **`v` 2**: stessa firma (stesso prefisso,
+stessa chiave), payload con `capacita`, `porte` (lista di interi, `[]`
+tranne che per il tunnel) e `durata` (secondi, 0 tranne che per il tunnel)
+dopo `modo`, in quest'ordine, che fa parte del
+formato:
+`{"v":2,"pc":"<ID>","agente":"<username>","tecnico":"<username del tecnico>","modo":"<modo>","capacita":"<capacita'>","porte":[<porte>],"durata":<secondi>,"emesso":<unix>,"scade":<emesso+60>,"nonce":"<nonce>"}`.
+Il PC del client `-5` accetta solo il `v` 1: per lui un `v` 2 vale come
+nessun lasciapassare, ed e' voluto. I tecnici (`POST /api/lasciapassare`)
+ricevono sempre il `v` 1, senza capacita'.
+
+Vettore di prova `v` 2: lo stesso seme e il payload
+
+```json
+{"v":2,"pc":"999000111","agente":"agente-mario","tecnico":"mario","modo":"amministratore","capacita":"tunnel","porte":[22,3389],"durata":3600,"emesso":1791000000,"scade":1791000060,"nonce":"AAECAwQFBgcICQoLDA0ODw"}
+```
+
+danno il lasciapassare
+
+```text
+eyJ2IjoyLCJwYyI6Ijk5OTAwMDExMSIsImFnZW50ZSI6ImFnZW50ZS1tYXJpbyIsInRlY25pY28iOiJtYXJpbyIsIm1vZG8iOiJhbW1pbmlzdHJhdG9yZSIsImNhcGFjaXRhIjoidHVubmVsIiwicG9ydGUiOlsyMiwzMzg5XSwiZHVyYXRhIjozNjAwLCJlbWVzc28iOjE3OTEwMDAwMDAsInNjYWRlIjoxNzkxMDAwMDYwLCJub25jZSI6IkFBRUNBd1FGQmdjSUNRb0xEQTBPRHcifQ.kahITkYNGYmo1y2rCRX08LPvdZjiMCzrQPrcvZExTBF3g_eAAAYyPqPjjgl4pImNa-rcg5LmhkH_yqGFu_hOAw
 ```
 
 **Come lo verifica il PC.** Divide la stringa al punto, decodifica le due
