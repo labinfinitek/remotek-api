@@ -20,6 +20,11 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   migrazione del database alla versione 276, solo una colonna aggiunta,
   all'avvio come sempre.
 
+### Corretto
+- Con `jwt.key` impostata, due login dello stesso utente nello stesso
+  secondo davano lo stesso token di sessione; ora ogni token ha un `jti`
+  casuale. I token gia' rilasciati restano validi.
+
 ## [0.12.0] - 2026-10-26
 Immagine `ghcr.io/labinfinitek/remotek-api:0.12.0`, costruita con Go 1.26.10
 su Alpine 3.24.3. Versione minore: un tecnico nuovo si associa al suo

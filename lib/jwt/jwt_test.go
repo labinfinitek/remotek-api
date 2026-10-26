@@ -78,3 +78,18 @@ func BenchmarkJwtService_ParseToken(b *testing.B) {
 	}
 
 }
+
+// TestGenerateTokenDiversi prova che due token dello stesso utente nello
+// stesso secondo sono diversi (jti casuale) e restano validi.
+func TestGenerateTokenDiversi(t *testing.T) {
+	j := NewJwt("chiave-di-prova", time.Hour)
+	a, b := j.GenerateToken(7), j.GenerateToken(7)
+	if a == "" || a == b {
+		t.Fatalf("token %q e %q: servono due token diversi", a, b)
+	}
+	for _, tok := range []string{a, b} {
+		if id, err := j.ParseToken(tok); err != nil || id != 7 {
+			t.Errorf("ParseToken: utente %d, errore %v", id, err)
+		}
+	}
+}

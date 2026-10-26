@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"crypto/rand"
 	"log/slog"
 	"time"
 
@@ -29,11 +30,15 @@ func (s *Jwt) GenerateToken(userId uint) string {
 		slog.Error("jwt.key vuota: token non generato")
 		return ""
 	}
+	// jti casuale: senza, due login dello stesso utente nello stesso
+	// secondo davano lo stesso token, e le due righe di user_tokens (password
+	// e OIDC) non si distinguevano.
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		UserClaims{
 			UserId: userId,
 			RegisteredClaims: jwt.RegisteredClaims{
 				ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.TokenExpireDuration)),
+				ID:        rand.Text(),
 			},
 		})
 	token, err := t.SignedString(s.Key)
