@@ -6,19 +6,24 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+## [0.13.0] - 2026-10-26
+Immagine `ghcr.io/labinfinitek/remotek-api:0.13.0`, costruita con Go 1.26.10
+su Alpine 3.24.3. Versione minore: il lasciapassare per i tecnici entrati
+con OIDC e il modo `utente` per gli agenti (ADR-0032, parte dell'API). Il
+PC del client `-5` accetta solo il modo `amministratore` e ignora gli
+altri: per i PC installati non cambia niente finche' non arriva il client
+che verifica ogni sessione. **Due migrazioni del database** (alla versione
+276 e poi 277), ciascuna una colonna aggiunta, all'avvio come sempre;
+nessuna variabile nuova; contratto col client invariato. Il login
+`webauth` (spento per default) ha nel registro degli accessi il tipo
+`webauth`. Dalla 0.12.0 si passa direttamente alla 0.13.0.
+
 ### Aggiunto
 - Il token di sessione ricorda se e' nato da un login con password o da
-  OIDC (colonna `tipo_login` di `user_tokens`); servira' al lasciapassare
-  dei tecnici, che lo riceveranno solo se entrati con OIDC. I token di
-  prima valgono come login con password, e cosi' quelli del login
-  `webauth` (`app.web-sso`), che un utente del pannello conferma anche se
-  e' entrato con la password: nel registro degli accessi il loro tipo e'
-  ora `webauth`, non piu' `oauth`. `GET /api/oidc/auth-query` e
-  `/api/admin/oidc/auth-query` col codice di un'associazione (Profilo,
-  "Associa") rispondono come a un codice scaduto e non danno piu' un
-  token: il pannello non le chiama mai con quel codice. Per chi installa:
-  migrazione del database alla versione 276, solo una colonna aggiunta,
-  all'avvio come sempre.
+  OIDC (colonna `tipo_login` di `user_tokens`): il lasciapassare dei
+  tecnici lo da' solo a chi e' entrato con OIDC. I token di prima valgono
+  come login con password. Per chi installa: migrazione del database alla
+  versione 276, solo una colonna aggiunta, all'avvio come sempre.
 - Lasciapassare dei tecnici (ADR-0032): `POST /api/lasciapassare` da' a un
   tecnico entrato con OIDC il lasciapassare firmato per qualunque PC in
   `peers`, senza la rubrica, nel modo `tecnico`; col login con password
@@ -32,6 +37,15 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
   connessioni del pannello l'etichetta "Tecnico verificato"). Il PC del
   client `-5` accetta solo il modo `amministratore`. Per chi installa:
   migrazione del database alla versione 277, solo una colonna aggiunta.
+
+### Sicurezza
+- Un token nato senza un login al provider non vale piu' come OIDC: il
+  login `webauth` (`app.web-sso`), che un utente del pannello conferma anche
+  se e' entrato con la password, ha nel registro degli accessi il tipo
+  `webauth` e non piu' `oauth`; `GET /api/oidc/auth-query` e
+  `/api/admin/oidc/auth-query` col codice di un'associazione (Profilo,
+  "Associa") rispondono come a un codice scaduto e non danno piu' un token
+  (il pannello non le chiama mai con quel codice).
 
 ### Corretto
 - Con `jwt.key` impostata, due login dello stesso utente nello stesso
