@@ -80,11 +80,10 @@ func (u *User) Agente(c *gin.Context) {
 // Lasciapassare rilascia all'agente AI del token il lasciapassare firmato
 // per aprire, entro 60 secondi e una volta sola, una sessione sul PC id
 // (ADR-0028), da amministratore o, con modo utente, senza, per la capacita'
-// chiesta (ADR-0033: terminale se assente). Rifiuta se la
-// funzione e' spenta, se l'utente non e' un agente attivo, se il suo
-// tecnico non e' attivo, se
-// il PC non e' in peers o non e' nella rubrica del tecnico. Nel log mai il
-// lasciapassare ne' il nonce.
+// chiesta (ADR-0033: terminale se assente). Rifiuta se la funzione e'
+// spenta, se l'utente non e' un agente attivo, se il suo tecnico non e'
+// attivo, se il PC non e' in peers o non e' nella rubrica del tecnico. Nel
+// log mai il lasciapassare ne' il nonce.
 // @Tags 用户
 // @Summary lasciapassare dell'agente AI
 // @Accept  json
@@ -145,7 +144,6 @@ func (u *User) Lasciapassare(c *gin.Context) {
 // @Success 200 {object} apiResp.LasciapassarePayload
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 401 {object} response.ErrorResponse
-// @Failure 403 {object} response.ErrorResponse
 // @Router /lasciapassare [post]
 // @Security token
 func (u *User) LasciapassareTecnico(c *gin.Context) {

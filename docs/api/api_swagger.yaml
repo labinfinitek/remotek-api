@@ -1166,10 +1166,6 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/response.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
       security:
       - token: []
       summary: lasciapassare del tecnico
