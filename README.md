@@ -888,7 +888,8 @@ per lui). Un agente lavora solo sui PC su cui lavora il suo tecnico; un PC
 fuori dalla rubrica lascia anche un warn `lasciapassare rifiutato` con
 agente, tecnico e PC. Le rubriche di un agente AI, o di un proprietario che
 non c'e' piu', non contano anche se condivise col tecnico; e un account
-agente non puo' scrivere rubriche ne' entrare nel pannello (Agenti AI). Altrimenti 400 `{"error": msg}`,
+agente non puo' scrivere rubriche ne' entrare nel pannello (Agenti AI).
+Altrimenti 400 `{"error": msg}`,
 che dice quale condizione manca (in italiano o in inglese); senza token, o
 con l'agente disattivato, 401 come le altre rotte con login. Ogni
 lasciapassare va nella tabella `lasciapassare` (versione del database 273):
@@ -897,8 +898,8 @@ una sessione); mai il lasciapassare intero ne' la firma. Nel log una riga
 INFO `lasciapassare rilasciato` con agente, tecnico, PC, modo, capacita',
 porte e durata (`lasciapassare rilasciato: agente agente-mario, tecnico
 mario, PC 999000111, modo amministratore, capacita' tunnel, porte [22
-3389], durata 3600`), mai il lasciapassare ne' il nonce; per l'integrazione l'evento
-`agente.lasciapassare`.
+3389], durata 3600`), mai il lasciapassare ne' il nonce; per
+l'integrazione l'evento `agente.lasciapassare`.
 
 **Formato.**
 
