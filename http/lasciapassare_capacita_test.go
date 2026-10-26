@@ -78,7 +78,7 @@ func TestLasciapassarePorteRifiutate(t *testing.T) {
 		{"durata 59", `"capacita":"tunnel","porte":[22],"durata":59`},
 		{"durata 28801", `"capacita":"tunnel","porte":[22],"durata":28801`},
 		{"porte con exec", `"capacita":"exec","porte":[22]`},
-		{"durata con file", `"capacita":"file","durata":3600}`},
+		{"durata con file", `"capacita":"file","durata":3600`},
 		{"porte senza capacita", `"porte":[22]`},
 		{"capacita fuori elenco", `"capacita":"shell"`},
 	} {
