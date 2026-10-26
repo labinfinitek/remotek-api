@@ -6,6 +6,16 @@ Una riga per cambiamento visibile a chi usa o installa il prodotto; la sezione
 
 ## [Non rilasciato]
 
+## [0.14.0] - 2026-10-26
+Immagine `ghcr.io/labinfinitek/remotek-api:0.14.0`, costruita con Go 1.26.10
+su Alpine 3.24.3. Versione minore: il lasciapassare dell'agente dice cosa
+apre (ADR-0033, parte dell'API). Senza `capacita`, o col terminale, il
+lasciapassare resta quello di prima: per i PC installati e per gli agenti
+di oggi non cambia niente; le capacita' nuove serviranno al client che le
+verifica. **Una migrazione del database** (alla versione 278), tre colonne
+aggiunte, all'avvio come sempre; nessuna variabile nuova; contratto col
+client invariato. Dalla 0.13.0 si passa direttamente alla 0.14.0.
+
 ### Aggiunto
 - Il lasciapassare dell'agente dice cosa apre (ADR-0033): `POST
   /api/agente/lasciapassare` accetta i campi facoltativi `capacita`
