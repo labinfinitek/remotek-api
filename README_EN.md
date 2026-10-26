@@ -876,8 +876,8 @@ chiave-nuova /app/data/lasciapassare.key`, then
 **Route.** `POST /api/agente/lasciapassare`, with the agent's login token
 (`Authorization: Bearer`), body `{"id": "<PC ID>"}` and, optional,
 `"modo": "utente"` for a session without administrator rights
-(Technicians' pass, Modes), and `capacita` and `porte` (Capabilities,
-below). It answers
+(Technicians' pass, Modes), and `capacita`, `porte` and `durata`
+(Capabilities, below). It answers
 `{"lasciapassare": "<string>"}` only if the feature is configured, the
 token's user is an enabled AI agent, its technician exists and is enabled,
 the PC is in `peers` and it is in the technician's address book: one of

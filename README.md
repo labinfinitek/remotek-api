@@ -877,8 +877,8 @@ sovrascrive per sbaglio. Con docker compose, per esempio:
 **Rotta.** `POST /api/agente/lasciapassare`, col token del login
 dell'agente (`Authorization: Bearer`), corpo `{"id": "<ID del PC>"}` e,
 facoltativo, `"modo": "utente"` per una sessione senza i permessi di
-amministratore (Lasciapassare dei tecnici, Modi), e `capacita` e `porte`
-(Capacita', sotto).
+amministratore (Lasciapassare dei tecnici, Modi), e `capacita`, `porte` e
+`durata` (Capacita', sotto).
 Risponde `{"lasciapassare": "<stringa>"}` solo se la funzione e'
 configurata, l'utente del token e' un agente AI attivo, il suo tecnico
 esiste ed e' attivo, il PC e' in `peers` ed e' nella rubrica del tecnico:
