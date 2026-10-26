@@ -74,9 +74,11 @@ func (o *Oauth) OidcAuthQueryPre(c *gin.Context) (*model.User, *model.UserToken)
 		return nil, nil
 	}
 
-	// 获取 OAuth 缓存
+	// Solo il codice di un login da' un token: quello di un'associazione
+	// (bind) ha gia' l'utente del pannello che l'ha chiesta, anche entrato
+	// con la password, e il suo token varrebbe come OIDC (ADR-0032).
 	v := service.AllService.OauthService.GetOauthCache(q.Code)
-	if v == nil {
+	if v == nil || v.Action != service.OauthActionTypeLogin {
 		response.Error(c, response.TranslateMsg(c, "OauthExpired"))
 		return nil, nil
 	}
@@ -117,14 +119,19 @@ func (o *Oauth) OidcAuthQueryPre(c *gin.Context) (*model.User, *model.UserToken)
 		return nil, nil
 	}
 
-	// 创建登录日志并生成用户令牌
+	// Un login webauth lo conferma un utente del pannello, entrato magari con
+	// la password: il suo token non e' nato da OIDC (ADR-0032).
+	tipo := model.LoginLogTypeOauth
+	if v.Op == model.OauthTypeWebauth {
+		tipo = model.LoginLogTypeWebauth
+	}
 	ut, err = service.AllService.UserService.Login(u, &model.LoginLog{
 		UserId:   u.Id,
 		Client:   v.DeviceType,
 		DeviceId: v.Id,
 		Uuid:     v.Uuid,
 		Ip:       c.ClientIP(),
-		Type:     model.LoginLogTypeOauth,
+		Type:     tipo,
 		Platform: v.DeviceOs,
 	})
 	if err != nil {

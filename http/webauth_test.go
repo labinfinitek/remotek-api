@@ -1,11 +1,14 @@
 package http
 
 import (
+	"encoding/json"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/lejianwen/rustdesk-api/v2/global"
+	"github.com/lejianwen/rustdesk-api/v2/lib/jwt"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"github.com/lejianwen/rustdesk-api/v2/service"
 )
@@ -97,5 +100,76 @@ func TestWebauthConferma(t *testing.T) {
 	g.ServeHTTP(rec, req)
 	if got, want := rec.Body.String(), `{"code":0,"message":"success","data":{"device_name":"PC-COLLAUDO","id":"999000111","op":"prova"}}`; got != want {
 		t.Errorf("GET /api/admin/oauth/info:\n got  %s\n want %s", got, want)
+	}
+}
+
+// TestWebauthNonValeOidc prova sul router vero, con app.web-sso acceso, che
+// il token che GET /api/oidc/auth-query da' al client dopo un login webauth
+// non vale come OIDC (DaOidc, che LoginDaOidc chiede al token della richiesta): chi lo conferma dal pannello puo' esserci entrato con
+// la password (ADR-0032). Lo stesso flusso con un provider OIDC si'.
+func TestWebauthNonValeOidc(t *testing.T) {
+	g, utente, _ := pannello(t, false)
+	if err := service.DB.AutoMigrate(&model.LoginLog{}); err != nil {
+		t.Fatal(err)
+	}
+	global.Config.App.WebSso = true
+	prec := service.Jwt
+	service.Jwt = jwt.NewJwt("", time.Hour) // token casuale, come il default
+	t.Cleanup(func() { global.Config.App.WebSso, service.Jwt = false, prec })
+	for _, tc := range []struct {
+		op   string
+		oidc bool
+	}{
+		{model.OauthTypeWebauth, false},
+		{"prova", true},
+	} {
+		codice := "codice-" + tc.op
+		service.AllService.OauthService.SetOauthCache(codice, &service.OauthCacheItem{Op: tc.op, Action: service.OauthActionTypeLogin, UserId: utente.Id}, 0)
+		t.Cleanup(func() { service.AllService.OauthService.DeleteOauthCache(codice) })
+		rec := daTecnico(g, "GET", "/api/oidc/auth-query?code="+codice, "", "")
+		var res struct {
+			AccessToken string `json:"access_token"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &res); err != nil || res.AccessToken == "" {
+			t.Fatalf("op %s: %d %s", tc.op, rec.Code, rec.Body)
+		}
+		_, ut, err := service.AllService.UserService.InfoByAccessToken(res.AccessToken)
+		if err != nil || ut.DaOidc() != tc.oidc {
+			t.Errorf("op %s: token %+v (errore %v), da OIDC atteso %t", tc.op, ut, err, tc.oidc)
+		}
+	}
+}
+
+// TestAssociazioneSenzaToken prova sul router vero che il codice di
+// un'associazione (bind), che ha gia' l'utente del pannello che l'ha
+// chiesta, non da' un token su GET /api/oidc/auth-query ne' su
+// /api/admin/oidc/auth-query: risponde come a un codice scaduto. Altrimenti
+// chi entra nel pannello con la password avrebbe un token che vale come OIDC
+// (ADR-0032).
+func TestAssociazioneSenzaToken(t *testing.T) {
+	g, utente, _ := pannello(t, false)
+	if err := service.DB.AutoMigrate(&model.LoginLog{}); err != nil {
+		t.Fatal(err)
+	}
+	prec := service.Jwt
+	service.Jwt = jwt.NewJwt("", time.Hour)
+	t.Cleanup(func() { service.Jwt = prec })
+	token := func() (n int64) {
+		if err := service.DB.Model(&model.UserToken{}).Count(&n).Error; err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+	prima := token()
+	for _, rotta := range []string{"/api/oidc/auth-query", "/api/admin/oidc/auth-query"} {
+		service.AllService.OauthService.SetOauthCache("prova-bind", &service.OauthCacheItem{Op: "prova", Action: service.OauthActionTypeBind, UserId: utente.Id}, 0)
+		rec := daTecnico(g, "GET", rotta+"?code=prova-bind", "", "")
+		if body := rec.Body.String(); strings.Contains(body, "access_token") || strings.Contains(body, `"token"`) || !strings.Contains(body, "OAuth") || token() != prima {
+			t.Errorf("%s col codice di un'associazione: %d %s, token %d -> %d", rotta, rec.Code, body, prima, token())
+		}
+		if service.AllService.OauthService.GetOauthCache("prova-bind") == nil {
+			t.Errorf("%s: il codice dell'associazione non c'e' piu', il callback del provider non lo trova", rotta)
+		}
+		service.AllService.OauthService.DeleteOauthCache("prova-bind")
 	}
 }
