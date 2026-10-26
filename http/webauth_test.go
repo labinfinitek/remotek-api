@@ -105,8 +105,9 @@ func TestWebauthConferma(t *testing.T) {
 
 // TestWebauthNonValeOidc prova sul router vero, con app.web-sso acceso, che
 // il token che GET /api/oidc/auth-query da' al client dopo un login webauth
-// non vale come OIDC (DaOidc, che LoginDaOidc chiede al token della richiesta): chi lo conferma dal pannello puo' esserci entrato con
-// la password (ADR-0032). Lo stesso flusso con un provider OIDC si'.
+// non vale come OIDC (DaOidc, che LoginDaOidc chiede al token della
+// richiesta): chi lo conferma dal pannello puo' esserci entrato con la
+// password (ADR-0032). Lo stesso flusso con un provider OIDC si'.
 func TestWebauthNonValeOidc(t *testing.T) {
 	g, utente, _ := pannello(t, false)
 	if err := service.DB.AutoMigrate(&model.LoginLog{}); err != nil {
