@@ -1,6 +1,10 @@
 package api
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/lejianwen/rustdesk-api/v2/service"
+)
 
 /*
 *
@@ -58,7 +62,9 @@ type PeerListQuery struct {
 // (POST /api/agente/lasciapassare, ADR-0028), e il modo: assente o
 // amministratore come prima, utente senza i permessi di amministratore; la
 // capacita' (ADR-0033, assente = terminale) e, solo col tunnel, da 1 a 8
-// porte TCP diverse e la durata massima in secondi (Valida).
+// porte TCP diverse e la durata massima in secondi (Valida). I valori di
+// oneof sono quelli di service.Modo* e service.Capacita*: un tag non prende
+// costanti.
 type LasciapassareForm struct {
 	Id       string `json:"id" binding:"required,max=100"`
 	Modo     string `json:"modo" binding:"omitempty,oneof=amministratore utente"`
@@ -74,7 +80,8 @@ var errPorte = errors.New("porte o durata che non vanno con la capacita'")
 // almeno una porta, con le altre nessuna porta (neanche []) e nessuna
 // durata.
 func (f *LasciapassareForm) Valida() error {
-	if (f.Capacita == "tunnel" && len(f.Porte) == 0) || (f.Capacita != "tunnel" && (f.Porte != nil || f.Durata != 0)) {
+	tunnel := f.Capacita == service.CapacitaTunnel
+	if (tunnel && len(f.Porte) == 0) || (!tunnel && (f.Porte != nil || f.Durata != 0)) {
 		return errPorte
 	}
 	return nil
