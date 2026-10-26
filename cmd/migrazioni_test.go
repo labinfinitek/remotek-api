@@ -87,3 +87,67 @@ func indiciDeiDispositivi(t *testing.T, db *gorm.DB) []string {
 	}
 	return indici
 }
+
+// lasciapassare277 e' model.Lasciapassare com'era alla versione del database
+// 277, prima di capacita, porte e durata.
+type lasciapassare277 struct {
+	model.IdModel
+	Nonce       string `gorm:"size:32;not null;uniqueIndex"`
+	Pc          string `gorm:"size:100;not null;index"`
+	AgenteId    uint   `gorm:"not null;index"`
+	TecnicoId   uint   `gorm:"not null"`
+	Modo        string `gorm:"size:20;not null;default:''"`
+	Emesso      int64  `gorm:"not null"`
+	Scade       int64  `gorm:"not null"`
+	ConnId      int64  `gorm:"not null;default:0"`
+	AuditConnId uint   `gorm:"not null;default:0;index"`
+	Creato      int64  `gorm:"not null"`
+}
+
+func (lasciapassare277) TableName() string { return "lasciapassare" }
+
+// TestLasciapassareDiPrima prova sul binario vero che una riga di
+// lasciapassare scritta alla versione 277 del database, senza le colonne
+// della 278, dopo la migrazione si legge col terminale, nessuna porta e
+// durata 0, e il resto com'era.
+func TestLasciapassareDiPrima(t *testing.T) {
+	dir := sandbox(t)
+	if codice, out := esegui(t, dir); codice != 0 {
+		t.Fatalf("primo avvio: codice %d\n%s", codice, out)
+	}
+	db := apriDB(t, dir)
+	prima := lasciapassare277{Nonce: "bm9uY2UtZGktcHJpbWE", Pc: "999000111", AgenteId: 3, TecnicoId: 2,
+		Modo: "utente", Emesso: 1793000000, Scade: 1793000060, ConnId: 7, AuditConnId: 5, Creato: 1793000000}
+	err := db.Migrator().DropTable("lasciapassare")
+	if err == nil {
+		err = db.AutoMigrate(&lasciapassare277{})
+	}
+	if err == nil {
+		err = db.Create(&prima).Error
+	}
+	if err == nil {
+		err = db.Exec("UPDATE versions SET version = 277").Error
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []string{"capacita", "porte", "durata"} {
+		if db.Migrator().HasColumn("lasciapassare", c) {
+			t.Fatalf("la tabella di prima ha gia' la colonna %s", c)
+		}
+	}
+
+	if codice, out := esegui(t, dir); codice != 0 {
+		t.Fatalf("avvio sul database alla versione 277: codice %d\n%s", codice, out)
+	}
+	var dopo model.Lasciapassare
+	if err := db.Where("nonce = ?", prima.Nonce).First(&dopo).Error; err != nil {
+		t.Fatalf("lasciapassare di prima dopo la migrazione: %v", err)
+	}
+	atteso := model.Lasciapassare{IdModel: prima.IdModel, Nonce: prima.Nonce, Pc: prima.Pc, AgenteId: prima.AgenteId,
+		TecnicoId: prima.TecnicoId, Modo: prima.Modo, Capacita: "terminale", Porte: "", Durata: 0, Emesso: prima.Emesso,
+		Scade: prima.Scade, ConnId: prima.ConnId, AuditConnId: prima.AuditConnId, Creato: prima.Creato}
+	if dopo != atteso {
+		t.Errorf("lasciapassare di prima dopo la migrazione:\n%+v\natteso\n%+v", dopo, atteso)
+	}
+}
